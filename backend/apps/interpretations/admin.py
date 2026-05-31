@@ -1,0 +1,27 @@
+from django.contrib import admin
+
+from .models import InterpretationBlock, InterpretationRule, RemedyPolicy
+
+
+@admin.register(InterpretationRule)
+class InterpretationRuleAdmin(admin.ModelAdmin):
+    list_display = ("title", "slug", "priority", "review_status")
+    list_filter = ("review_status",)
+    search_fields = ("title", "slug")
+    filter_horizontal = ("passages",)
+
+
+@admin.register(InterpretationBlock)
+class InterpretationBlockAdmin(admin.ModelAdmin):
+    list_display = ("title", "section", "language_code", "review_status")
+    list_filter = ("section", "language_code", "review_status")
+    search_fields = ("title", "body")
+
+
+@admin.register(RemedyPolicy)
+class RemedyPolicyAdmin(admin.ModelAdmin):
+    list_display = ("slug", "classical_trigger", "review_status")
+    list_filter = ("review_status",)
+    search_fields = ("slug", "classical_trigger", "vaishnava_reframe")
+    filter_horizontal = ("passages",)
+

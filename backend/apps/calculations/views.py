@@ -1,0 +1,42 @@
+from __future__ import annotations
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .primitives import zodiac_placement
+
+
+class ZodiacPlacementView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        raw_longitude = request.query_params.get("longitude")
+        if raw_longitude is None:
+            return Response({"error": "longitude query parameter is required"}, status=400)
+
+        try:
+            longitude = float(raw_longitude)
+        except ValueError:
+            return Response({"error": "longitude must be a number"}, status=400)
+
+        placement = zodiac_placement(longitude)
+        return Response(
+            {
+                "longitude": placement.longitude,
+                "rashi": {
+                    "index": placement.rashi_index,
+                    "name": placement.rashi,
+                },
+                "nakshatra": {
+                    "index": placement.nakshatra_index,
+                    "name": placement.nakshatra,
+                    "pada": placement.pada,
+                },
+                "navamsa": {
+                    "index": placement.navamsa_index,
+                    "name": placement.navamsa,
+                },
+            }
+        )
+
