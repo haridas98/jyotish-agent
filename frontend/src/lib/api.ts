@@ -116,6 +116,20 @@ export type PlaceCandidate = {
   timezone: string;
 };
 
+export type VLSearchResult = {
+  id: number;
+  unit_id: number | null;
+  work_id: number | null;
+  work_title: string;
+  document_type: string;
+  language_code: string;
+  title: string;
+  body: string;
+  date_text: string;
+  metadata: Record<string, unknown>;
+  public_url: string;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8100";
 
 export async function fetchZodiacPlacement(longitude: number): Promise<ZodiacPlacement> {
@@ -169,5 +183,19 @@ export async function searchPlaces(query: string): Promise<PlaceCandidate[]> {
   }
 
   const data = await response.json();
+  return data.items ?? [];
+}
+
+export async function searchVLSources(query: string): Promise<VLSearchResult[]> {
+  if (!query.trim()) return [];
+  const response = await fetch(`${API_BASE_URL}/api/sources/vl/search?q=${encodeURIComponent(query)}`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
   return data.items ?? [];
 }

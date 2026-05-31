@@ -14,7 +14,7 @@ Jyotish Agent is a Gaudiya Vaishnava astrology service. The goal is accurate jyo
 - Authenticated birth profile API with private per-user profile listing.
 - Real Swiss-backed D1 calculation basics: grahas, Lagna, whole-sign houses, panchanga.
 - Vimshottari mahadasha MVP engine from Moon longitude, marked draft until JHora parity.
-- Accuracy comparison helpers for JHora-style fixtures.
+- Accuracy fixture runner for JHora-style parity cases.
 - Policy docs for sources, JHora parity, and Vaishnava interpretation.
 
 ## Local Start

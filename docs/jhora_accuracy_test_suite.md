@@ -25,6 +25,7 @@ The backend now has a first fixture comparison layer in `apps.calculations.accur
 
 - `compare_longitude` for shortest angular delta in arcseconds;
 - `compare_chart_to_fixture` for graha longitude, Lagna longitude, rashi, nakshatra, pada, and panchanga exact matches.
+- `run_accuracy_fixtures` management command for local and CI fixture runs.
 
 This is a harness only. A case is not authoritative until the expected values come from a recorded JHora export or another reviewed source.
 

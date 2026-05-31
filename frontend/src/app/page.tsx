@@ -4,10 +4,12 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   calculateBirthChart,
   searchPlaces,
+  searchVLSources,
   type BirthChart,
   type DashaPeriod,
   type GrahaPosition,
   type PlaceCandidate,
+  type VLSearchResult,
 } from "@/lib/api";
 
 const sourceRows = [
@@ -107,6 +109,9 @@ export default function Home() {
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [status, setStatus] = useState("Calculation not started");
+  const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
+  const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
+  const [sourceStatus, setSourceStatus] = useState("VL search not started");
 
   const calculatedLabel = useMemo(() => {
     if (!chart) return "Chart will stay empty until real ephemeris positions are available.";
@@ -163,6 +168,19 @@ export default function Home() {
     } catch (error) {
       setChart(null);
       setStatus(error instanceof Error ? error.message : "API check failed");
+    }
+  }
+
+  async function handleSourceSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSourceStatus("Searching VL...");
+    try {
+      const results = await searchVLSources(sourceQuery);
+      setSourceResults(results);
+      setSourceStatus(results.length ? `${results.length} source results` : "No VL results");
+    } catch (error) {
+      setSourceResults([]);
+      setSourceStatus(error instanceof Error ? error.message : "VL search failed");
     }
   }
 
@@ -288,6 +306,22 @@ export default function Home() {
                 <h2>Citation & Source Status</h2>
                 <button type="button" className="secondary-button">View all sources</button>
               </div>
+              <form className="source-search" onSubmit={handleSourceSearch}>
+                <input value={sourceQuery} onChange={(event) => setSourceQuery(event.target.value)} />
+                <button type="submit" className="secondary-button">Search VL</button>
+                <span>{sourceStatus}</span>
+              </form>
+              {sourceResults.length ? (
+                <div className="source-results">
+                  {sourceResults.map((result) => (
+                    <a href={result.public_url || "#"} key={result.id} target="_blank" rel="noreferrer">
+                      <strong>{result.title || result.work_title}</strong>
+                      <span>{result.work_title}</span>
+                      <p>{result.body}</p>
+                    </a>
+                  ))}
+                </div>
+              ) : null}
               <div className="source-table">
                 {sourceRows.map(([component, source, citation, state]) => (
                   <div className="source-row" key={component}>

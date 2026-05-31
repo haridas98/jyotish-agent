@@ -1,0 +1,41 @@
+{
+  "id": "internal-smoke-vrindavan-1990",
+  "source": "jyotish-agent-current-output",
+  "review_status": "draft",
+  "notes": "Internal smoke fixture only. Not a JHora reference and not authoritative.",
+  "input": {
+    "birth_date": "1990-08-15",
+    "birth_time": "10:24",
+    "place_name": "Vrindavan, Uttar Pradesh, India"
+  },
+  "tolerances": {
+    "planet_longitude_arcseconds": 0.1,
+    "lagna_arcseconds": 0.1
+  },
+  "expected": {
+    "grahas": {
+      "Surya": {
+        "longitude": 118.39095892553976,
+        "rashi": "Karka",
+        "nakshatra": "Ashlesha",
+        "pada": 4
+      },
+      "Chandra": {
+        "longitude": 48.870567436138785,
+        "rashi": "Vrishabha",
+        "nakshatra": "Rohini",
+        "pada": 3
+      }
+    },
+    "ascendant": {
+      "longitude": 177.96517803391413,
+      "rashi": "Kanya"
+    },
+    "panchanga": {
+      "tithi": "Dashami",
+      "vara": "Budhavara",
+      "yoga": "Vyaghata",
+      "karana": "Vanija"
+    }
+  }
+}
