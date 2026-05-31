@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "apps.accounts",
+    "apps.places",
     "apps.health",
     "apps.calculations",
     "apps.charts",

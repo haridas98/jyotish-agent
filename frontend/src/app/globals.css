@@ -219,6 +219,49 @@ select {
   padding: 14px;
 }
 
+.place-hints {
+  min-height: 38px;
+}
+
+.place-hints button,
+.place-hints span,
+.place-match-list button {
+  align-items: center;
+  border-radius: 7px;
+  display: flex;
+  font-size: 14px;
+  line-height: 1.35;
+  min-height: 38px;
+  padding: 8px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.place-hints button,
+.place-match-list button {
+  background: #f7fbf8;
+  border: 1px solid #c9ddcf;
+  color: var(--green);
+}
+
+.place-hints span {
+  background: #faf8f1;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.place-match-list {
+  display: grid;
+  gap: 6px;
+  margin-top: -8px;
+}
+
+.place-match-list button {
+  background: #ffffff;
+  color: var(--muted);
+  min-height: 34px;
+}
+
 .primary-button {
   background: linear-gradient(180deg, var(--green-2), var(--green));
   border: 0;

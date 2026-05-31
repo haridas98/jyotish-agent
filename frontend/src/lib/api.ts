@@ -24,10 +24,10 @@ export type EphemerisStatus = {
 export type BirthChartRequest = {
   birth_date: string;
   birth_time: string;
-  timezone: string;
   place_name: string;
-  latitude: number;
-  longitude: number;
+  timezone?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type GrahaPosition = {
@@ -51,11 +51,25 @@ export type BirthChart = {
     utc_datetime: string;
   };
   place: {
+    id?: string;
     name: string;
+    label?: string;
+    country_code?: string;
     latitude: number;
     longitude: number;
   };
   grahas: GrahaPosition[];
+};
+
+export type PlaceCandidate = {
+  id: string;
+  name: string;
+  label: string;
+  admin_name: string;
+  country_code: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8100";
@@ -98,4 +112,18 @@ export async function calculateBirthChart(payload: BirthChartRequest): Promise<B
   }
 
   return data;
+}
+
+export async function searchPlaces(query: string): Promise<PlaceCandidate[]> {
+  if (!query.trim()) return [];
+  const response = await fetch(`${API_BASE_URL}/api/places/search?q=${encodeURIComponent(query)}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`API returned ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.items ?? [];
 }

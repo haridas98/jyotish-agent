@@ -40,10 +40,7 @@ def test_build_birth_chart_uses_local_timezone_and_provider():
         {
             "birth_date": "2000-01-01",
             "birth_time": "15:30",
-            "timezone": "Asia/Kolkata",
             "place_name": "Vrindavan",
-            "latitude": 27.58,
-            "longitude": 77.7,
         },
         provider=provider,
     )
@@ -64,10 +61,7 @@ def test_build_birth_chart_rejects_missing_time():
         build_birth_chart(
             {
                 "birth_date": "2000-01-01",
-                "timezone": "Asia/Kolkata",
                 "place_name": "Vrindavan",
-                "latitude": 27.58,
-                "longitude": 77.7,
             },
             provider=FakeProvider(),
         )
@@ -93,10 +87,7 @@ def test_birth_chart_api_returns_503_when_ephemeris_missing(monkeypatch):
         {
             "birth_date": "2000-01-01",
             "birth_time": "15:30",
-            "timezone": "Asia/Kolkata",
             "place_name": "Vrindavan",
-            "latitude": 27.58,
-            "longitude": 77.7,
         },
         format="json",
     )
@@ -121,10 +112,7 @@ def test_birth_chart_api_returns_chart(monkeypatch):
         {
             "birth_date": "2000-01-01",
             "birth_time": "15:30",
-            "timezone": "Asia/Kolkata",
             "place_name": "Vrindavan",
-            "latitude": 27.58,
-            "longitude": 77.7,
         },
         format="json",
     )

@@ -4,6 +4,8 @@ from datetime import date, datetime, time
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from apps.places.catalog import PlaceNotFound, resolve_place
+
 from .constants import GRAHAS
 from .ephemeris import BodyPosition, CalculationSettings, EphemerisProvider, SwissEphemerisProvider
 
@@ -20,10 +22,15 @@ def build_birth_chart(
 ) -> dict[str, Any]:
     birth_date = _required_date(data, "birth_date")
     birth_time = _required_time(data, "birth_time")
-    timezone_name = _required_string(data, "timezone")
     place_name = _required_string(data, "place_name")
-    latitude = _required_float(data, "latitude", minimum=-90, maximum=90)
-    longitude = _required_float(data, "longitude", minimum=-180, maximum=180)
+    try:
+        place = resolve_place(place_name)
+    except PlaceNotFound as exc:
+        raise ChartInputError(str(exc)) from exc
+
+    timezone_name = str(data.get("timezone") or place.timezone).strip()
+    latitude = _optional_float(data, "latitude", default=place.latitude, minimum=-90, maximum=90)
+    longitude = _optional_float(data, "longitude", default=place.longitude, minimum=-180, maximum=180)
 
     try:
         tz = ZoneInfo(timezone_name)
@@ -51,7 +58,10 @@ def build_birth_chart(
             "utc_datetime": local_moment.astimezone(ZoneInfo("UTC")).isoformat(),
         },
         "place": {
-            "name": place_name,
+            "id": place.id,
+            "name": place.name,
+            "label": place.label,
+            "country_code": place.country_code,
             "latitude": latitude,
             "longitude": longitude,
         },
@@ -100,14 +110,15 @@ def _required_time(data: dict[str, Any], field: str) -> time:
     return parsed.replace(second=0, microsecond=0)
 
 
-def _required_float(
+def _optional_float(
     data: dict[str, Any],
     field: str,
+    default: float,
     minimum: float,
     maximum: float,
 ) -> float:
     if data.get(field) in {None, ""}:
-        raise ChartInputError(f"{field} is required")
+        return default
     try:
         value = float(data[field])
     except (TypeError, ValueError) as exc:

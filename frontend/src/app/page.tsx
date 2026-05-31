@@ -1,11 +1,12 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   calculateBirthChart,
+  searchPlaces,
   type BirthChart,
-  type BirthChartRequest,
   type GrahaPosition,
+  type PlaceCandidate,
 } from "@/lib/api";
 
 const sourceRows = [
@@ -13,14 +14,6 @@ const sourceRows = [
   ["Chart system", "Parashara siddhanta", "Source mapping pending", "draft"],
   ["VL corpus", "Srila Prabhupada database", "Read-only link planned", "ready"],
 ];
-
-const knownPlaces: Record<string, Pick<BirthChartRequest, "latitude" | "longitude" | "timezone">> = {
-  vrindavan: {
-    latitude: 27.565,
-    longitude: 77.6593,
-    timezone: "Asia/Kolkata",
-  },
-};
 
 function ChartPreview() {
   return (
@@ -35,7 +28,7 @@ function ChartPreview() {
 }
 
 function formatDegrees(value: number) {
-  return `${value.toFixed(4)}°`;
+  return `${value.toFixed(4)} deg`;
 }
 
 function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
@@ -76,39 +69,49 @@ export default function Home() {
   const [birthDate, setBirthDate] = useState("1990-08-15");
   const [birthTime, setBirthTime] = useState("10:24");
   const [placeName, setPlaceName] = useState("Vrindavan, Uttar Pradesh, India");
-  const [timezone, setTimezone] = useState("Asia/Kolkata");
+  const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [status, setStatus] = useState("Calculation not started");
 
   const calculatedLabel = useMemo(() => {
     if (!chart) return "Chart will stay empty until real ephemeris positions are available.";
-    return `${chart.grahas.length} grahas calculated for ${chart.place.name}.`;
+    return `${chart.grahas.length} grahas calculated for ${chart.place.label ?? chart.place.name}.`;
   }, [chart]);
 
-  function resolvePlace(): Pick<BirthChartRequest, "latitude" | "longitude" | "timezone"> | null {
-    const normalized = placeName.toLowerCase();
-    if (normalized.includes("vrindavan")) return knownPlaces.vrindavan;
-    return null;
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const place = resolvePlace();
-    if (!place) {
-      setStatus("Place lookup is not wired yet. Use the Vrindavan example for now.");
-      setChart(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (placeName.trim().length < 2) {
+      setPlaceMatches([]);
+      setSelectedPlace(null);
       return;
     }
 
+    searchPlaces(placeName)
+      .then((items) => {
+        if (cancelled) return;
+        setPlaceMatches(items);
+        setSelectedPlace(items[0] ?? null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPlaceMatches([]);
+        setSelectedPlace(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [placeName]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setStatus("Calculating chart...");
     try {
       const result = await calculateBirthChart({
         birth_date: birthDate,
         birth_time: birthTime,
-        timezone: timezone || place.timezone,
         place_name: placeName,
-        latitude: place.latitude,
-        longitude: place.longitude,
       });
       setChart(result);
       setStatus("Chart calculated");
@@ -121,7 +124,7 @@ export default function Home() {
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <div className="mark">ॐ</div>
+        <div className="mark">Om</div>
         <div>
           <h1>Jyotish Agent</h1>
           <p>Gaudiya Siddhanta Jyotish</p>
@@ -173,14 +176,24 @@ export default function Home() {
                 Place of Birth
                 <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
               </label>
-              <label>
-                Time Zone
-                <select value={timezone} onChange={(event) => setTimezone(event.target.value)}>
-                  <option>Asia/Kolkata</option>
-                  <option>Asia/Yekaterinburg</option>
-                  <option>UTC</option>
-                </select>
-              </label>
+              <div className="place-hints">
+                {selectedPlace ? (
+                  <button type="button" onClick={() => setPlaceName(selectedPlace.label)}>
+                    {selectedPlace.label} - {selectedPlace.timezone}
+                  </button>
+                ) : (
+                  <span>Place will be resolved on the backend.</span>
+                )}
+              </div>
+              {placeMatches.length > 1 ? (
+                <div className="place-match-list">
+                  {placeMatches.slice(1, 4).map((place) => (
+                    <button type="button" key={place.id} onClick={() => setPlaceName(place.label)}>
+                      {place.label} - {place.timezone}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <div className="notice">
                 MVP calculation policy: Lahiri ayanamsa target, Parashara framing, citations required.
               </div>
