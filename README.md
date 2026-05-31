@@ -11,6 +11,8 @@ Jyotish Agent is a Gaudiya Vaishnava astrology service. The goal is accurate jyo
 - First calculation primitives: Julian day, rashi, nakshatra, pada, navamsa.
 - Optional Swiss Ephemeris provider interface.
 - Backend place search and timezone resolution for the first curated locations.
+- Authenticated birth profile API with private per-user profile listing.
+- Vimshottari mahadasha MVP engine from Moon longitude, marked draft until JHora parity.
 - Policy docs for sources, JHora parity, and Vaishnava interpretation.
 
 ## Local Start

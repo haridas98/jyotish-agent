@@ -355,6 +355,44 @@ select {
   padding: 18px;
 }
 
+.dasha-timeline {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(9, minmax(118px, 1fr));
+  overflow-x: auto;
+  padding: 0;
+}
+
+.dasha-period {
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 5px;
+  min-height: 92px;
+  padding: 13px 12px;
+}
+
+.dasha-period:last-child {
+  border-right: 0;
+}
+
+.dasha-period strong {
+  color: var(--red);
+  font-size: 15px;
+}
+
+.dasha-period span {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dasha-period small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .readiness-panel strong {
   color: var(--green);
 }
@@ -432,7 +470,7 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .timeline {
+  .dasha-timeline {
     grid-template-columns: repeat(9, 96px);
   }
 }

@@ -31,6 +31,20 @@ class FakeProvider:
         }
 
 
+class FakeProviderWithMoon:
+    def planet_positions(self, moment, bodies, settings):
+        return {
+            "Chandra": BodyPosition(
+                body="Chandra",
+                longitude=0.0,
+                latitude=0.0,
+                distance_au=1.0,
+                speed_longitude=1.0,
+                placement=zodiac_placement(0.0),
+            )
+        }
+
+
 def test_build_birth_chart_uses_local_timezone_and_provider():
     from apps.calculations.chart import build_birth_chart
 
@@ -65,6 +79,23 @@ def test_build_birth_chart_rejects_missing_time():
             },
             provider=FakeProvider(),
         )
+
+
+def test_build_birth_chart_adds_vimshottari_when_moon_is_available():
+    from apps.calculations.chart import build_birth_chart
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=FakeProviderWithMoon(),
+    )
+
+    periods = result["dashas"]["vimshottari"]["mahadashas"]
+    assert periods[0]["lord"] == "Ketu"
+    assert periods[0]["duration_years"] == 7.0
 
 
 @pytest.mark.django_db

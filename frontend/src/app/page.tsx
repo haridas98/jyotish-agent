@@ -5,6 +5,7 @@ import {
   calculateBirthChart,
   searchPlaces,
   type BirthChart,
+  type DashaPeriod,
   type GrahaPosition,
   type PlaceCandidate,
 } from "@/lib/api";
@@ -29,6 +30,14 @@ function ChartPreview() {
 
 function formatDegrees(value: number) {
   return `${value.toFixed(4)} deg`;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
 function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
@@ -65,6 +74,31 @@ function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
   );
 }
 
+function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
+  if (periods.length === 0) {
+    return (
+      <div className="pending-strip">
+        Real dasha periods will appear here after Moon longitude and the Vimshottari engine are
+        connected.
+      </div>
+    );
+  }
+
+  return (
+    <div className="dasha-timeline">
+      {periods.map((period) => (
+        <div className="dasha-period" key={`${period.lord}-${period.starts_at}`}>
+          <strong>{period.lord}</strong>
+          <span>{period.duration_years.toFixed(2)}Y</span>
+          <small>
+            {formatDate(period.starts_at)} - {formatDate(period.ends_at)}
+          </small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const [birthDate, setBirthDate] = useState("1990-08-15");
   const [birthTime, setBirthTime] = useState("10:24");
@@ -78,6 +112,7 @@ export default function Home() {
     if (!chart) return "Chart will stay empty until real ephemeris positions are available.";
     return `${chart.grahas.length} grahas calculated for ${chart.place.label ?? chart.place.name}.`;
   }, [chart]);
+  const vimshottariPeriods = chart?.dashas?.vimshottari?.mahadashas ?? [];
 
   useEffect(() => {
     let cancelled = false;
@@ -221,11 +256,9 @@ export default function Home() {
             <section className="panel" id="reports">
               <div className="panel-heading">
                 <h2>Vimshottari Dasha Timeline</h2>
-                <span>Pending Moon longitude and dasha engine</span>
+                <span>{vimshottariPeriods.length ? "Mahadasha level, MVP engine" : "Pending Moon longitude"}</span>
               </div>
-              <div className="pending-strip">
-                Real dasha periods will appear here after the Vimshottari engine is connected.
-              </div>
+              <DashaTimeline periods={vimshottariPeriods} />
             </section>
 
             <section className="panel" id="sources">

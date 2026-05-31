@@ -8,6 +8,7 @@ from apps.places.catalog import PlaceNotFound, resolve_place
 
 from .constants import GRAHAS
 from .ephemeris import BodyPosition, CalculationSettings, EphemerisProvider, SwissEphemerisProvider
+from .vimshottari import vimshottari_payload
 
 CALCULATION_VERSION = "mvp-0.1"
 
@@ -42,7 +43,7 @@ def build_birth_chart(
     ephemeris = provider or SwissEphemerisProvider()
     positions = ephemeris.planet_positions(local_moment, GRAHAS, settings)
 
-    return {
+    payload = {
         "calculation_version": CALCULATION_VERSION,
         "settings": {
             "zodiac": settings.zodiac,
@@ -66,7 +67,14 @@ def build_birth_chart(
             "longitude": longitude,
         },
         "grahas": [_position_payload(positions[body]) for body in GRAHAS if body in positions],
+        "dashas": {},
     }
+    if "Chandra" in positions:
+        payload["dashas"]["vimshottari"] = vimshottari_payload(
+            positions["Chandra"].longitude,
+            local_moment,
+        )
+    return payload
 
 
 def _position_payload(position: BodyPosition) -> dict[str, Any]:

@@ -41,6 +41,15 @@ export type GrahaPosition = {
   navamsa: string;
 };
 
+export type DashaPeriod = {
+  lord: string;
+  level: number;
+  starts_at: string;
+  ends_at: string;
+  duration_years: number;
+  sequence_index: number;
+};
+
 export type BirthChart = {
   calculation_version: string;
   birth: {
@@ -59,6 +68,14 @@ export type BirthChart = {
     longitude: number;
   };
   grahas: GrahaPosition[];
+  dashas?: {
+    vimshottari?: {
+      system: string;
+      level: string;
+      year_length_days: number;
+      mahadashas: DashaPeriod[];
+    };
+  };
 };
 
 export type PlaceCandidate = {
