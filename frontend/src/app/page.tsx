@@ -2,9 +2,10 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
-  calculateBirthChart,
+  generateBirthReport,
   searchPlaces,
   searchVLSources,
+  type BirthReport,
   type BirthChart,
   type DashaPeriod,
   type GrahaPosition,
@@ -108,6 +109,7 @@ export default function Home() {
   const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
   const [chart, setChart] = useState<BirthChart | null>(null);
+  const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [status, setStatus] = useState("Calculation not started");
   const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
   const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
@@ -156,17 +158,19 @@ export default function Home() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Calculating chart...");
+    setStatus("Generating citation-first report...");
     try {
-      const result = await calculateBirthChart({
+      const result = await generateBirthReport({
         birth_date: birthDate,
         birth_time: birthTime,
         place_name: placeName,
       });
-      setChart(result);
-      setStatus("Chart calculated");
+      setChart(result.chart);
+      setBirthReport(result.report);
+      setStatus("Report generated");
     } catch (error) {
       setChart(null);
+      setBirthReport(null);
       setStatus(error instanceof Error ? error.message : "API check failed");
     }
   }
@@ -299,6 +303,37 @@ export default function Home() {
                 <span>{vimshottariPeriods.length ? "Mahadasha level, MVP engine" : "Pending Moon longitude"}</span>
               </div>
               <DashaTimeline periods={vimshottariPeriods} />
+            </section>
+
+            <section className="panel report-preview">
+              <div className="panel-heading">
+                <h2>Report Preview</h2>
+                <span>{birthReport ? birthReport.review_status : "Pending report"}</span>
+              </div>
+              {birthReport ? (
+                <div className="report-sections">
+                  {birthReport.sections.map((section) => (
+                    <article className="report-section" key={section.key}>
+                      <div>
+                        <strong>{section.title}</strong>
+                        <em>{section.review_status}</em>
+                      </div>
+                      <p>{section.body}</p>
+                      {section.citations.length ? (
+                        <div className="report-citations">
+                          {section.citations.map((citation) => (
+                            <a href={citation.public_url || "#"} key={`${section.key}-${citation.title}`} target="_blank" rel="noreferrer">
+                              {citation.title || citation.work_title}
+                            </a>
+                          ))}
+                        </div>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="pending-strip">The report appears after chart calculation.</div>
+              )}
             </section>
 
             <section className="panel" id="sources">

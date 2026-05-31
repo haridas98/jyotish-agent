@@ -430,6 +430,62 @@ select {
   line-height: 1.35;
 }
 
+.report-sections {
+  border-top: 1px solid var(--line);
+  display: grid;
+}
+
+.report-section {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+}
+
+.report-section + .report-section {
+  border-top: 1px solid var(--line);
+}
+
+.report-section div:first-child {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.report-section strong {
+  color: var(--green);
+}
+
+.report-section em {
+  background: #f7ead9;
+  border-radius: 999px;
+  color: #985a12;
+  font-size: 12px;
+  font-style: normal;
+  padding: 4px 8px;
+}
+
+.report-section p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.report-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-citations a {
+  border: 1px solid #c9ddcf;
+  border-radius: 999px;
+  color: var(--green);
+  font-size: 13px;
+  padding: 5px 9px;
+  text-decoration: none;
+}
+
 .readiness-panel strong {
   color: var(--green);
 }

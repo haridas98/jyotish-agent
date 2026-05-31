@@ -105,6 +105,32 @@ export type BirthChart = {
   };
 };
 
+export type ReportCitation = {
+  title: string;
+  work_title: string;
+  snippet: string;
+  public_url: string;
+};
+
+export type ReportSection = {
+  key: string;
+  title: string;
+  body: string;
+  review_status: string;
+  calculation_only: boolean;
+  citations: ReportCitation[];
+};
+
+export type BirthReport = {
+  chart: BirthChart;
+  report: {
+    review_status: string;
+    calculation_version: string;
+    source_policy: string;
+    sections: ReportSection[];
+  };
+};
+
 export type PlaceCandidate = {
   id: string;
   name: string;
@@ -159,6 +185,21 @@ export async function fetchEphemerisStatus(): Promise<EphemerisStatus> {
 
 export async function calculateBirthChart(payload: BirthChartRequest): Promise<BirthChart> {
   const response = await fetch(`${API_BASE_URL}/api/calculations/birth-chart`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function generateBirthReport(payload: BirthChartRequest): Promise<BirthReport> {
+  const response = await fetch(`${API_BASE_URL}/api/reports/birth-chart`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

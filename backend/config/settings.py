@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.charts",
     "apps.sources",
     "apps.interpretations",
+    "apps.reports",
     "apps.vl_integration",
 ]
 
