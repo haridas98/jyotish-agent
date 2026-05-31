@@ -1,25 +1,26 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { fetchEphemerisStatus, type EphemerisStatus } from "@/lib/api";
-
-const dasha = [
-  ["Ma", "6Y 2M 18D", "15 Aug 1990"],
-  ["Ra", "18Y", "15 Oct 1996"],
-  ["Ju", "16Y", "15 Oct 2014"],
-  ["Sa", "19Y", "15 Oct 2030"],
-  ["Me", "17Y", "15 Oct 2049"],
-  ["Ke", "7Y", "15 Oct 2066"],
-  ["Ve", "20Y", "15 Oct 2073"],
-  ["Su", "6Y", "15 Oct 2093"],
-  ["Mo", "10Y", "15 Oct 2099"],
-];
+import {
+  calculateBirthChart,
+  type BirthChart,
+  type BirthChartRequest,
+  type GrahaPosition,
+} from "@/lib/api";
 
 const sourceRows = [
   ["Ayanamsa", "Lahiri", "Review required", "draft"],
   ["Chart system", "Parashara siddhanta", "Source mapping pending", "draft"],
   ["VL corpus", "Srila Prabhupada database", "Read-only link planned", "ready"],
 ];
+
+const knownPlaces: Record<string, Pick<BirthChartRequest, "latitude" | "longitude" | "timezone">> = {
+  vrindavan: {
+    latitude: 27.565,
+    longitude: 77.6593,
+    timezone: "Asia/Kolkata",
+  },
+};
 
 function ChartPreview() {
   return (
@@ -33,24 +34,86 @@ function ChartPreview() {
   );
 }
 
+function formatDegrees(value: number) {
+  return `${value.toFixed(4)}°`;
+}
+
+function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
+  if (grahas.length === 0) {
+    return (
+      <div className="readiness-panel">
+        <strong>No calculated grahas yet</strong>
+        <p>The chart stays empty until the backend returns real ephemeris positions.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="planet-table">
+      <div className="table-row table-head">
+        <span>Graha</span>
+        <span>Longitude</span>
+        <span>Rashi</span>
+        <span>Nakshatra</span>
+        <span>D9</span>
+      </div>
+      {grahas.map((graha) => (
+        <div className="table-row" key={graha.body}>
+          <strong>{graha.body}</strong>
+          <span>{formatDegrees(graha.longitude)}</span>
+          <span>{graha.rashi}</span>
+          <span>
+            {graha.nakshatra} {graha.pada}
+          </span>
+          <span>{graha.navamsa}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
-  const [ephemeris, setEphemeris] = useState<EphemerisStatus | null>(null);
+  const [birthDate, setBirthDate] = useState("1990-08-15");
+  const [birthTime, setBirthTime] = useState("10:24");
+  const [placeName, setPlaceName] = useState("Vrindavan, Uttar Pradesh, India");
+  const [timezone, setTimezone] = useState("Asia/Kolkata");
+  const [chart, setChart] = useState<BirthChart | null>(null);
   const [status, setStatus] = useState("Calculation not started");
 
   const calculatedLabel = useMemo(() => {
-    if (!ephemeris) return "Chart will stay empty until a real ephemeris provider is available.";
-    if (!ephemeris.available) return "Swiss Ephemeris is not installed in this local environment.";
-    return "Ephemeris provider is available; full chart calculation can be wired next.";
-  }, [ephemeris]);
+    if (!chart) return "Chart will stay empty until real ephemeris positions are available.";
+    return `${chart.grahas.length} grahas calculated for ${chart.place.name}.`;
+  }, [chart]);
+
+  function resolvePlace(): Pick<BirthChartRequest, "latitude" | "longitude" | "timezone"> | null {
+    const normalized = placeName.toLowerCase();
+    if (normalized.includes("vrindavan")) return knownPlaces.vrindavan;
+    return null;
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Checking ephemeris...");
+    const place = resolvePlace();
+    if (!place) {
+      setStatus("Place lookup is not wired yet. Use the Vrindavan example for now.");
+      setChart(null);
+      return;
+    }
+
+    setStatus("Calculating chart...");
     try {
-      const result = await fetchEphemerisStatus();
-      setEphemeris(result);
-      setStatus(result.available ? "Ephemeris available" : "Ephemeris not installed");
+      const result = await calculateBirthChart({
+        birth_date: birthDate,
+        birth_time: birthTime,
+        timezone: timezone || place.timezone,
+        place_name: placeName,
+        latitude: place.latitude,
+        longitude: place.longitude,
+      });
+      setChart(result);
+      setStatus("Chart calculated");
     } catch (error) {
+      setChart(null);
       setStatus(error instanceof Error ? error.message : "API check failed");
     }
   }
@@ -100,19 +163,19 @@ export default function Home() {
             <form onSubmit={handleSubmit} className="birth-form">
               <label>
                 Date of Birth
-                <input type="date" defaultValue="1990-08-15" />
+                <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
               </label>
               <label>
                 Time of Birth
-                <input type="time" defaultValue="10:24" />
+                <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
               </label>
               <label>
                 Place of Birth
-                <input defaultValue="Vrindavan, Uttar Pradesh, India" />
+                <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
               </label>
               <label>
                 Time Zone
-                <select defaultValue="Asia/Kolkata">
+                <select value={timezone} onChange={(event) => setTimezone(event.target.value)}>
                   <option>Asia/Kolkata</option>
                   <option>Asia/Yekaterinburg</option>
                   <option>UTC</option>
@@ -137,11 +200,7 @@ export default function Home() {
               </div>
               <div className="chart-layout">
                 <ChartPreview />
-                <div className="readiness-panel">
-                  <strong>Calculation readiness</strong>
-                  <span>{status}</span>
-                  {ephemeris ? <p>{ephemeris.detail}</p> : <p>No placeholder grahas are shown.</p>}
-                </div>
+                <GrahaTable grahas={chart?.grahas ?? []} />
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
             </section>
@@ -149,16 +208,10 @@ export default function Home() {
             <section className="panel" id="reports">
               <div className="panel-heading">
                 <h2>Vimshottari Dasha Timeline</h2>
-                <span>Balance at birth: Mars 6Y 2M 18D</span>
+                <span>Pending Moon longitude and dasha engine</span>
               </div>
-              <div className="timeline">
-                {dasha.map(([lord, span, date], index) => (
-                  <div className={index === 0 ? "period selected" : "period"} key={lord}>
-                    <strong>{lord}</strong>
-                    <span>{span}</span>
-                    <small>{date}</small>
-                  </div>
-                ))}
+              <div className="pending-strip">
+                Real dasha periods will appear here after the Vimshottari engine is connected.
               </div>
             </section>
 

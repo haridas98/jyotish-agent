@@ -253,14 +253,14 @@ select {
 .chart-layout {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(360px, 560px) 280px;
+  grid-template-columns: minmax(360px, 520px) minmax(360px, 1fr);
   align-items: start;
 }
 
 .chart-box {
   aspect-ratio: 1 / 1;
   position: relative;
-  width: min(100%, 560px);
+  width: min(100%, 520px);
 }
 
 .chart-box svg {
@@ -279,6 +279,39 @@ select {
   padding: 16px;
 }
 
+.planet-table {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  font-size: 14px;
+  gap: 10px;
+  grid-template-columns: 90px 96px 92px minmax(120px, 1fr) 70px;
+  min-height: 42px;
+  padding: 9px 11px;
+}
+
+.table-row:first-child {
+  border-top: 0;
+}
+
+.table-head {
+  background: #faf8f1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pending-strip {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  padding: 18px;
+}
+
 .readiness-panel strong {
   color: var(--green);
 }
@@ -291,36 +324,6 @@ select {
 .readiness-panel p {
   color: var(--muted);
   margin: 0;
-}
-
-.timeline {
-  display: grid;
-  grid-template-columns: repeat(9, minmax(80px, 1fr));
-  overflow-x: auto;
-  padding: 0 18px 18px;
-}
-
-.period {
-  border: 1px solid var(--line);
-  display: grid;
-  gap: 5px;
-  min-width: 86px;
-  padding: 12px 10px;
-  text-align: center;
-}
-
-.period.selected {
-  border-color: var(--saffron);
-  box-shadow: inset 0 0 0 1px var(--saffron);
-}
-
-.period strong {
-  color: var(--red);
-}
-
-.period small {
-  color: var(--muted);
-  white-space: nowrap;
 }
 
 .source-table {
