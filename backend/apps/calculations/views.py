@@ -3,6 +3,7 @@ from __future__ import annotations
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .ephemeris import EphemerisUnavailable, SwissEphemerisProvider
 from .primitives import zodiac_placement
 
 
@@ -40,3 +41,28 @@ class ZodiacPlacementView(APIView):
             }
         )
 
+
+class EphemerisStatusView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        provider = SwissEphemerisProvider()
+        try:
+            provider._load_swisseph()
+        except EphemerisUnavailable as exc:
+            return Response(
+                {
+                    "provider": "swiss",
+                    "available": False,
+                    "detail": str(exc),
+                }
+            )
+
+        return Response(
+            {
+                "provider": "swiss",
+                "available": True,
+                "detail": "Swiss Ephemeris Python bindings are importable",
+            }
+        )

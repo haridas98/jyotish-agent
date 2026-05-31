@@ -9,6 +9,7 @@ Jyotish Agent is a Gaudiya Vaishnava astrology service. The goal is accurate jyo
 - PostgreSQL and Redis local services.
 - Health endpoints.
 - First calculation primitives: Julian day, rashi, nakshatra, pada, navamsa.
+- Optional Swiss Ephemeris provider interface.
 - Policy docs for sources, JHora parity, and Vaishnava interpretation.
 
 ## Local Start
@@ -37,3 +38,4 @@ npm run dev -- --hostname 127.0.0.1 --port 3130
 - Do not duplicate `C:\Projects\vl` content. Query it read-only for citations.
 - Do not publish unreviewed shastra imports or unapproved interpretation rules.
 - Do not recommend independent demigod worship. Remedies must be Krishna-centered.
+- Do not enable Swiss Ephemeris in production until licensing is resolved.

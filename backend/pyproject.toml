@@ -17,6 +17,9 @@ dev = [
   "pytest-django>=4.11,<4.12",
   "ruff>=0.11,<0.12",
 ]
+swisseph = [
+  "pyswisseph==2.10.3.2",
+]
 
 [build-system]
 requires = ["setuptools>=80"]
@@ -34,4 +37,3 @@ testpaths = ["apps"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-
