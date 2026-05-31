@@ -10,6 +10,7 @@ import {
   type DashaPeriod,
   type GrahaPosition,
   type PlaceCandidate,
+  type VargaPlacement,
   type VLSearchResult,
 } from "@/lib/api";
 
@@ -77,6 +78,32 @@ function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
   );
 }
 
+function VargaTable({ placements }: { placements: VargaPlacement[] }) {
+  if (placements.length === 0) {
+    return (
+      <div className="readiness-panel">
+        <strong>No D9 placements yet</strong>
+        <p>Navamsa appears after grahas and Lagna are calculated.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="planet-table compact-table">
+      <div className="table-row table-head">
+        <span>Point</span>
+        <span>D9 Rashi</span>
+      </div>
+      {placements.map((placement) => (
+        <div className="table-row" key={placement.body}>
+          <strong>{placement.body}</strong>
+          <span>{placement.rashi}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
   if (periods.length === 0) {
     return (
@@ -109,6 +136,7 @@ export default function Home() {
   const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
   const [chart, setChart] = useState<BirthChart | null>(null);
+  const [chartMode, setChartMode] = useState<"D1" | "D9">("D1");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [status, setStatus] = useState("Calculation not started");
   const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
@@ -120,6 +148,7 @@ export default function Home() {
     return `${chart.grahas.length} grahas calculated for ${chart.place.label ?? chart.place.name}.`;
   }, [chart]);
   const vimshottariPeriods = chart?.dashas?.vimshottari?.mahadashas ?? [];
+  const d9Placements = chart?.vargas?.D9?.placements ?? [];
   const chartFacts = useMemo(() => {
     if (!chart) return [];
     return [
@@ -272,16 +301,23 @@ export default function Home() {
           <section className="main-stack">
             <section className="panel chart-panel">
               <div className="panel-heading">
-                <h2>Rashi Chart</h2>
-                <select defaultValue="D1">
-                  <option>D1 Rashi</option>
-                  <option>D9 Navamsa</option>
+                <h2>{chartMode === "D1" ? "Rashi Chart" : "Navamsa Chart"}</h2>
+                <select
+                  value={chartMode}
+                  onChange={(event) => setChartMode(event.target.value as "D1" | "D9")}
+                >
+                  <option value="D1">D1 Rashi</option>
+                  <option value="D9">D9 Navamsa</option>
                 </select>
               </div>
               <div className="chart-layout">
                 <ChartPreview />
                 <div className="chart-data-stack">
-                  <GrahaTable grahas={chart?.grahas ?? []} />
+                  {chartMode === "D1" ? (
+                    <GrahaTable grahas={chart?.grahas ?? []} />
+                  ) : (
+                    <VargaTable placements={d9Placements} />
+                  )}
                   {chartFacts.length ? (
                     <div className="fact-grid">
                       {chartFacts.map(([label, value]) => (

@@ -71,6 +71,9 @@ def build_birth_chart(
         "grahas": [_position_payload(positions[body]) for body in GRAHAS if body in positions],
         "ascendant": _position_payload(ascendant) if ascendant else None,
         "houses": _whole_sign_houses(ascendant) if ascendant else [],
+        "vargas": {
+            "D9": _navamsa_varga(positions, ascendant),
+        },
         "panchanga": {},
         "dashas": {},
     }
@@ -113,6 +116,34 @@ def _whole_sign_houses(ascendant: BodyPosition) -> list[dict[str, Any]]:
         }
         for house in range(1, 13)
     ]
+
+
+def _navamsa_varga(
+    positions: dict[str, BodyPosition],
+    ascendant: BodyPosition | None,
+) -> dict[str, Any]:
+    placements = []
+    if ascendant:
+        placements.append(_navamsa_placement("Lagna", ascendant))
+    placements.extend(
+        _navamsa_placement(body, positions[body])
+        for body in GRAHAS
+        if body in positions
+    )
+    return {
+        "code": "D9",
+        "name": "Navamsa",
+        "method": "108 equal navamsa divisions from sidereal longitude",
+        "placements": placements,
+    }
+
+
+def _navamsa_placement(body: str, position: BodyPosition) -> dict[str, Any]:
+    return {
+        "body": body,
+        "rashi_index": position.placement.navamsa_index,
+        "rashi": position.placement.navamsa,
+    }
 
 
 def _position_payload(position: BodyPosition) -> dict[str, Any]:

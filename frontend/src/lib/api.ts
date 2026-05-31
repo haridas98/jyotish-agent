@@ -47,6 +47,19 @@ export type HousePlacement = {
   rashi: string;
 };
 
+export type VargaPlacement = {
+  body: string;
+  rashi_index: number;
+  rashi: string;
+};
+
+export type VargaChart = {
+  code: string;
+  name: string;
+  method: string;
+  placements: VargaPlacement[];
+};
+
 export type Panchanga = {
   tithi?: {
     number: number;
@@ -94,6 +107,9 @@ export type BirthChart = {
   grahas: GrahaPosition[];
   ascendant: GrahaPosition | null;
   houses: HousePlacement[];
+  vargas?: {
+    D9?: VargaChart;
+  };
   panchanga: Panchanga;
   dashas?: {
     vimshottari?: {

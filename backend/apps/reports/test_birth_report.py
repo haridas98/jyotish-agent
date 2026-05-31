@@ -69,12 +69,44 @@ def test_compose_birth_report_uses_chart_facts_citations_and_vaishnava_guard():
     assert "Worship Shani" not in guidance["body"]
 
 
+def test_compose_birth_report_accepts_interpretation_sections():
+    result = compose_birth_report(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=ReportProvider(),
+        interpretation_provider=lambda chart: [
+            {
+                "key": "interpretation:kanya-lagna-service",
+                "title": "Service Orientation",
+                "body": f"{chart['ascendant']['rashi']} lagna section.",
+                "review_status": "approved",
+                "calculation_only": False,
+                "citations": [
+                    {
+                        "title": "Bhagavad-gita 9.22",
+                        "work_title": "Bhagavad-gita As It Is",
+                        "snippet": "Krishna protects His devotee.",
+                        "public_url": "http://127.0.0.1:3001/bg/9/22",
+                    }
+                ],
+            }
+        ],
+    )
+
+    keys = [section["key"] for section in result["report"]["sections"]]
+
+    assert "interpretation:kanya-lagna-service" in keys
+
+
 @pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_birth_report_api_returns_report(monkeypatch):
     monkeypatch.setattr(
         "apps.reports.views.compose_birth_report",
-        lambda data, citation_search=None: {
+        lambda data, citation_search=None, interpretation_provider=None: {
             "chart": {"grahas": []},
             "report": {
                 "review_status": "draft",

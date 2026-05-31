@@ -7,15 +7,18 @@ from apps.calculations.ephemeris import EphemerisProvider
 from apps.interpretations.vaishnava_policy import reframe_remedial_advice
 
 CitationSearch = Callable[[str], list[dict[str, object]]]
+InterpretationProvider = Callable[[dict[str, Any]], list[dict[str, Any]]]
 
 
 def compose_birth_report(
     data: dict[str, Any],
     provider: EphemerisProvider | None = None,
     citation_search: CitationSearch | None = None,
+    interpretation_provider: InterpretationProvider | None = None,
 ) -> dict[str, Any]:
     chart = build_birth_chart(data, provider=provider)
     citation_search = citation_search or (lambda query: [])
+    interpretation_provider = interpretation_provider or (lambda chart: [])
     guidance_citations = _citation_payloads(citation_search("Hare Krishna maha mantra Krishna shelter"))
     remedy = reframe_remedial_advice("Worship Shani on Saturday to pacify Saturn affliction.")
 
@@ -23,6 +26,7 @@ def compose_birth_report(
         _calculation_summary(chart),
         _panchanga_summary(chart),
         _dasha_summary(chart),
+        *interpretation_provider(chart),
         {
             "key": "devotional_guidance",
             "title": "Devotional Guidance",

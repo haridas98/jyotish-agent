@@ -167,6 +167,56 @@ def test_build_birth_chart_adds_lagna_and_whole_sign_houses_when_provider_suppor
     assert result["houses"][1]["rashi"] == "Simha"
 
 
+def test_build_birth_chart_adds_d9_navamsa_varga_payload():
+    from apps.calculations.chart import build_birth_chart
+
+    class FakeProviderWithGrahaAndLagna:
+        def planet_positions(self, moment, bodies, settings):
+            return {
+                "Surya": BodyPosition(
+                    body="Surya",
+                    longitude=30.0,
+                    latitude=0.0,
+                    distance_au=1.0,
+                    speed_longitude=1.0,
+                    placement=zodiac_placement(30.0),
+                )
+            }
+
+        def ascendant_position(self, moment, latitude, longitude, settings):
+            return BodyPosition(
+                body="Lagna",
+                longitude=90.0,
+                latitude=None,
+                distance_au=None,
+                speed_longitude=None,
+                placement=zodiac_placement(90.0),
+            )
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=FakeProviderWithGrahaAndLagna(),
+    )
+
+    d9 = result["vargas"]["D9"]
+
+    assert d9["name"] == "Navamsa"
+    assert d9["placements"][0] == {
+        "body": "Lagna",
+        "rashi_index": 3,
+        "rashi": "Karka",
+    }
+    assert d9["placements"][1] == {
+        "body": "Surya",
+        "rashi_index": 9,
+        "rashi": "Makara",
+    }
+
+
 @pytest.mark.django_db
 def test_birth_chart_api_returns_400_for_bad_input():
     response = APIClient().post(reverse("birth-chart"), {"birth_date": "2000-01-01"}, format="json")
