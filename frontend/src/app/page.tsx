@@ -1,20 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { fetchZodiacPlacement, type ZodiacPlacement } from "@/lib/api";
-
-const planets = [
-  ["As", "Ascendant", "Dhanu", "gold"],
-  ["Su", "Sun", "Simha", "saffron"],
-  ["Mo", "Moon", "Karka", "blue"],
-  ["Ma", "Mars", "Kanya", "red"],
-  ["Me", "Mercury", "Simha", "green"],
-  ["Ju", "Jupiter", "Mithuna", "saffron"],
-  ["Ve", "Venus", "Karka", "rose"],
-  ["Sa", "Saturn", "Dhanu", "blue"],
-  ["Ra", "Rahu", "Tula", "violet"],
-  ["Ke", "Ketu", "Mesha", "brown"],
-];
+import { fetchEphemerisStatus, type EphemerisStatus } from "@/lib/api";
 
 const dasha = [
   ["Ma", "6Y 2M 18D", "15 Aug 1990"],
@@ -37,43 +24,32 @@ const sourceRows = [
 function ChartPreview() {
   return (
     <div className="chart-box" aria-label="Rashi chart preview">
-      <svg viewBox="0 0 600 420" role="img" aria-label="North Indian chart grid">
-        <rect x="2" y="2" width="596" height="416" fill="white" stroke="#b88a2f" strokeWidth="2" />
-        <path d="M2 2 L598 418 M598 2 L2 418" stroke="#c99a43" strokeWidth="1.4" />
-        <path d="M300 2 L598 210 L300 418 L2 210 Z" fill="none" stroke="#c99a43" strokeWidth="1.4" />
-        <path d="M151 2 L598 210 L449 418 M449 2 L2 210 L151 418" fill="none" stroke="#c99a43" strokeWidth="1.1" />
+      <svg viewBox="0 0 600 600" role="img" aria-label="North Indian chart grid">
+        <rect x="2" y="2" width="596" height="596" fill="white" stroke="#b88a2f" strokeWidth="2" />
+        <path d="M2 2 L598 598 M598 2 L2 598" stroke="#c99a43" strokeWidth="1.35" />
+        <path d="M300 2 L598 300 L300 598 L2 300 Z" fill="none" stroke="#c99a43" strokeWidth="1.35" />
       </svg>
-      <span className="chart-graha chart-as">As</span>
-      <span className="chart-graha chart-su">Su</span>
-      <span className="chart-graha chart-mo">Mo</span>
-      <span className="chart-graha chart-ma">Ma</span>
-      <span className="chart-graha chart-ra">Ra</span>
-      <span className="chart-graha chart-ke">Ke</span>
-      <span className="chart-house house-1">1</span>
-      <span className="chart-house house-4">4</span>
-      <span className="chart-house house-7">7</span>
-      <span className="chart-house house-10">10</span>
     </div>
   );
 }
 
 export default function Home() {
-  const [longitude, setLongitude] = useState("30");
-  const [placement, setPlacement] = useState<ZodiacPlacement | null>(null);
-  const [status, setStatus] = useState("API not checked");
+  const [ephemeris, setEphemeris] = useState<EphemerisStatus | null>(null);
+  const [status, setStatus] = useState("Calculation not started");
 
   const calculatedLabel = useMemo(() => {
-    if (!placement) return "Enter a longitude to test the calculation API.";
-    return `${placement.rashi.name}, ${placement.nakshatra.name} pada ${placement.nakshatra.pada}, D9 ${placement.navamsa.name}`;
-  }, [placement]);
+    if (!ephemeris) return "Chart will stay empty until a real ephemeris provider is available.";
+    if (!ephemeris.available) return "Swiss Ephemeris is not installed in this local environment.";
+    return "Ephemeris provider is available; full chart calculation can be wired next.";
+  }, [ephemeris]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Checking API...");
+    setStatus("Checking ephemeris...");
     try {
-      const result = await fetchZodiacPlacement(Number(longitude));
-      setPlacement(result);
-      setStatus("Calculation API connected");
+      const result = await fetchEphemerisStatus();
+      setEphemeris(result);
+      setStatus(result.available ? "Ephemeris available" : "Ephemeris not installed");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "API check failed");
     }
@@ -142,14 +118,6 @@ export default function Home() {
                   <option>UTC</option>
                 </select>
               </label>
-              <label>
-                Test Longitude
-                <input
-                  inputMode="decimal"
-                  value={longitude}
-                  onChange={(event) => setLongitude(event.target.value)}
-                />
-              </label>
               <div className="notice">
                 MVP calculation policy: Lahiri ayanamsa target, Parashara framing, citations required.
               </div>
@@ -169,18 +137,10 @@ export default function Home() {
               </div>
               <div className="chart-layout">
                 <ChartPreview />
-                <div className="planet-table">
-                  <div className="table-row table-head">
-                    <span>Planet</span>
-                    <span>Sign</span>
-                  </div>
-                  {planets.map(([abbr, name, sign, tone]) => (
-                    <div className="table-row" key={abbr}>
-                      <span className={`planet ${tone}`}>{abbr}</span>
-                      <span>{name}</span>
-                      <strong>{sign}</strong>
-                    </div>
-                  ))}
+                <div className="readiness-panel">
+                  <strong>Calculation readiness</strong>
+                  <span>{status}</span>
+                  {ephemeris ? <p>{ephemeris.detail}</p> : <p>No placeholder grahas are shown.</p>}
                 </div>
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
@@ -224,4 +184,3 @@ export default function Home() {
     </main>
   );
 }
-

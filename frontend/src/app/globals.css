@@ -253,13 +253,14 @@ select {
 .chart-layout {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(360px, 1fr) 280px;
+  grid-template-columns: minmax(360px, 560px) 280px;
+  align-items: start;
 }
 
 .chart-box {
-  aspect-ratio: 10 / 7;
-  min-height: 320px;
+  aspect-ratio: 1 / 1;
   position: relative;
+  width: min(100%, 560px);
 }
 
 .chart-box svg {
@@ -268,121 +269,28 @@ select {
   width: 100%;
 }
 
-.chart-graha,
-.chart-house {
-  font-weight: 700;
-  position: absolute;
-}
-
-.chart-as {
-  color: var(--gold);
-  left: 49%;
-  top: 43%;
-}
-
-.chart-su {
-  color: var(--saffron);
-  left: 53%;
-  top: 8%;
-}
-
-.chart-mo {
-  color: var(--blue);
-  left: 13%;
-  top: 30%;
-}
-
-.chart-ma {
-  color: var(--red);
-  right: 9%;
-  top: 22%;
-}
-
-.chart-ra {
-  color: var(--violet);
-  right: 27%;
-  top: 60%;
-}
-
-.chart-ke {
-  color: #80572c;
-  left: 18%;
-  top: 8%;
-}
-
-.house-1 {
-  left: 25%;
-  top: 64%;
-}
-
-.house-4 {
-  right: 36%;
-  bottom: 17%;
-}
-
-.house-7 {
-  right: 25%;
-  top: 43%;
-}
-
-.house-10 {
-  left: 51%;
-  top: 16%;
-}
-
-.planet-table {
+.readiness-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
-  overflow: hidden;
-}
-
-.table-row {
-  align-items: center;
-  border-top: 1px solid var(--line);
   display: grid;
-  font-size: 14px;
-  gap: 8px;
-  grid-template-columns: 38px 1fr 86px;
-  padding: 9px 11px;
-}
-
-.table-row:first-child {
-  border-top: 0;
-}
-
-.table-head {
   background: #faf8f1;
-  color: var(--muted);
-  grid-template-columns: 1fr 86px;
+  gap: 10px;
+  line-height: 1.45;
+  padding: 16px;
 }
 
-.planet.gold,
-.planet.saffron {
+.readiness-panel strong {
+  color: var(--green);
+}
+
+.readiness-panel span {
   color: var(--saffron);
+  font-weight: 700;
 }
 
-.planet.blue {
-  color: var(--blue);
-}
-
-.planet.red {
-  color: var(--red);
-}
-
-.planet.green {
-  color: var(--green-2);
-}
-
-.planet.rose {
-  color: #bb4f75;
-}
-
-.planet.violet {
-  color: var(--violet);
-}
-
-.planet.brown {
-  color: #80572c;
+.readiness-panel p {
+  color: var(--muted);
+  margin: 0;
 }
 
 .timeline {
@@ -482,4 +390,3 @@ select {
     grid-template-columns: repeat(9, 96px);
   }
 }
-

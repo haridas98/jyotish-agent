@@ -15,6 +15,12 @@ export type ZodiacPlacement = {
   };
 };
 
+export type EphemerisStatus = {
+  provider: string;
+  available: boolean;
+  detail: string;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8100";
 
 export async function fetchZodiacPlacement(longitude: number): Promise<ZodiacPlacement> {
@@ -22,6 +28,18 @@ export async function fetchZodiacPlacement(longitude: number): Promise<ZodiacPla
     `${API_BASE_URL}/api/calculations/zodiac-placement?longitude=${encodeURIComponent(longitude)}`,
     { cache: "no-store" },
   );
+
+  if (!response.ok) {
+    throw new Error(`API returned ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchEphemerisStatus(): Promise<EphemerisStatus> {
+  const response = await fetch(`${API_BASE_URL}/api/calculations/ephemeris/status`, {
+    cache: "no-store",
+  });
 
   if (!response.ok) {
     throw new Error(`API returned ${response.status}`);
