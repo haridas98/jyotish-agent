@@ -73,3 +73,35 @@ def test_swiss_provider_maps_positions_and_derives_ketu(monkeypatch):
     assert positions["Rahu"].longitude == 210
     assert positions["Ketu"].longitude == 30
     assert positions["Ketu"].latitude == pytest.approx(0.4)
+
+
+def test_swiss_provider_calculates_sidereal_lagna(monkeypatch):
+    class FakeSwe:
+        FLG_SIDEREAL = 65536
+        SIDM_LAHIRI = 1
+        sid_mode = None
+        houses_args = None
+
+        @classmethod
+        def set_sid_mode(cls, sid_mode):
+            cls.sid_mode = sid_mode
+
+        @classmethod
+        def houses_ex(cls, jd, latitude, longitude, hsys=b"P", flags=0):
+            cls.houses_args = (round(jd, 1), latitude, longitude, hsys, flags)
+            return tuple(float(index * 30) for index in range(12)), (123.4, 0, 0, 0, 0, 0, 0, 0)
+
+    monkeypatch.setattr("apps.calculations.ephemeris.import_module", lambda name: FakeSwe)
+
+    lagna = SwissEphemerisProvider().ascendant_position(
+        datetime(2000, 1, 1, 12, tzinfo=timezone.utc),
+        latitude=27.565,
+        longitude=77.6593,
+        settings=CalculationSettings(),
+    )
+
+    assert FakeSwe.sid_mode == FakeSwe.SIDM_LAHIRI
+    assert FakeSwe.houses_args[1:] == (27.565, 77.6593, b"W", FakeSwe.FLG_SIDEREAL)
+    assert lagna.body == "Lagna"
+    assert lagna.longitude == 123.4
+    assert lagna.placement.rashi == "Simha"

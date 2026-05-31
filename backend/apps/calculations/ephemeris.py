@@ -90,6 +90,27 @@ class SwissEphemerisProvider:
 
         return output
 
+    def ascendant_position(
+        self,
+        moment: datetime,
+        latitude: float,
+        longitude: float,
+        settings: CalculationSettings,
+    ) -> BodyPosition:
+        swe = self._load_swisseph()
+        self._apply_settings(swe, settings)
+        jd = julian_day(moment)
+        _cusps, ascmc = swe.houses_ex(jd, latitude, longitude, b"W", swe.FLG_SIDEREAL)
+        ascendant_longitude = normalize_degrees(float(ascmc[0]))
+        return BodyPosition(
+            body="Lagna",
+            longitude=ascendant_longitude,
+            latitude=None,
+            distance_au=None,
+            speed_longitude=None,
+            placement=zodiac_placement(ascendant_longitude),
+        )
+
     def _load_swisseph(self):
         try:
             return import_module("swisseph")

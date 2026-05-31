@@ -41,6 +41,30 @@ export type GrahaPosition = {
   navamsa: string;
 };
 
+export type HousePlacement = {
+  house: number;
+  rashi_index: number;
+  rashi: string;
+};
+
+export type Panchanga = {
+  tithi?: {
+    number: number;
+    name: string;
+    paksha: string;
+  };
+  vara?: {
+    name: string;
+  };
+  yoga?: {
+    number: number;
+    name: string;
+  };
+  karana?: {
+    name: string;
+  };
+};
+
 export type DashaPeriod = {
   lord: string;
   level: number;
@@ -68,6 +92,9 @@ export type BirthChart = {
     longitude: number;
   };
   grahas: GrahaPosition[];
+  ascendant: GrahaPosition | null;
+  houses: HousePlacement[];
+  panchanga: Panchanga;
   dashas?: {
     vimshottari?: {
       system: string;

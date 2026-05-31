@@ -312,6 +312,12 @@ select {
   width: 100%;
 }
 
+.chart-data-stack {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
 .readiness-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -347,6 +353,37 @@ select {
   background: #faf8f1;
   color: var(--muted);
   font-size: 13px;
+}
+
+.fact-grid {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(96px, 1fr));
+  overflow: hidden;
+}
+
+.fact-item {
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+  min-height: 70px;
+  padding: 11px;
+}
+
+.fact-item:last-child {
+  border-right: 0;
+}
+
+.fact-item span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fact-item strong {
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.25;
 }
 
 .pending-strip {
@@ -468,6 +505,19 @@ select {
 
   .source-row {
     grid-template-columns: 1fr;
+  }
+
+  .fact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fact-item {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+  }
+
+  .fact-item:last-child {
+    border-bottom: 0;
   }
 
   .dasha-timeline {

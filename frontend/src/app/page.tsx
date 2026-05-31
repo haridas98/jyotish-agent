@@ -113,6 +113,16 @@ export default function Home() {
     return `${chart.grahas.length} grahas calculated for ${chart.place.label ?? chart.place.name}.`;
   }, [chart]);
   const vimshottariPeriods = chart?.dashas?.vimshottari?.mahadashas ?? [];
+  const chartFacts = useMemo(() => {
+    if (!chart) return [];
+    return [
+      ["Lagna", chart.ascendant?.rashi ?? "Pending"],
+      ["Tithi", chart.panchanga.tithi ? `${chart.panchanga.tithi.paksha} ${chart.panchanga.tithi.name}` : "Pending"],
+      ["Vara", chart.panchanga.vara?.name ?? "Pending"],
+      ["Yoga", chart.panchanga.yoga?.name ?? "Pending"],
+      ["Karana", chart.panchanga.karana?.name ?? "Pending"],
+    ];
+  }, [chart]);
 
   useEffect(() => {
     let cancelled = false;
@@ -248,7 +258,19 @@ export default function Home() {
               </div>
               <div className="chart-layout">
                 <ChartPreview />
-                <GrahaTable grahas={chart?.grahas ?? []} />
+                <div className="chart-data-stack">
+                  <GrahaTable grahas={chart?.grahas ?? []} />
+                  {chartFacts.length ? (
+                    <div className="fact-grid">
+                      {chartFacts.map(([label, value]) => (
+                        <div className="fact-item" key={label}>
+                          <span>{label}</span>
+                          <strong>{value}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
             </section>

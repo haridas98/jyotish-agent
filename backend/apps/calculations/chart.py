@@ -8,6 +8,7 @@ from apps.places.catalog import PlaceNotFound, resolve_place
 
 from .constants import GRAHAS
 from .ephemeris import BodyPosition, CalculationSettings, EphemerisProvider, SwissEphemerisProvider
+from .panchanga import panchanga_from_longitudes
 from .vimshottari import vimshottari_payload
 
 CALCULATION_VERSION = "mvp-0.1"
@@ -42,6 +43,7 @@ def build_birth_chart(
     settings = CalculationSettings()
     ephemeris = provider or SwissEphemerisProvider()
     positions = ephemeris.planet_positions(local_moment, GRAHAS, settings)
+    ascendant = _calculate_ascendant(ephemeris, local_moment, latitude, longitude, settings)
 
     payload = {
         "calculation_version": CALCULATION_VERSION,
@@ -67,14 +69,50 @@ def build_birth_chart(
             "longitude": longitude,
         },
         "grahas": [_position_payload(positions[body]) for body in GRAHAS if body in positions],
+        "ascendant": _position_payload(ascendant) if ascendant else None,
+        "houses": _whole_sign_houses(ascendant) if ascendant else [],
+        "panchanga": {},
         "dashas": {},
     }
+    if "Surya" in positions and "Chandra" in positions:
+        payload["panchanga"] = panchanga_from_longitudes(
+            positions["Surya"].longitude,
+            positions["Chandra"].longitude,
+            local_moment,
+        )
     if "Chandra" in positions:
         payload["dashas"]["vimshottari"] = vimshottari_payload(
             positions["Chandra"].longitude,
             local_moment,
         )
     return payload
+
+
+def _calculate_ascendant(
+    provider: EphemerisProvider,
+    local_moment: datetime,
+    latitude: float,
+    longitude: float,
+    settings: CalculationSettings,
+) -> BodyPosition | None:
+    calculator = getattr(provider, "ascendant_position", None)
+    if calculator is None:
+        return None
+    return calculator(local_moment, latitude, longitude, settings)
+
+
+def _whole_sign_houses(ascendant: BodyPosition) -> list[dict[str, Any]]:
+    from .constants import RASHIS
+
+    start = ascendant.placement.rashi_index
+    return [
+        {
+            "house": house,
+            "rashi_index": (start + house - 1) % len(RASHIS),
+            "rashi": RASHIS[(start + house - 1) % len(RASHIS)],
+        }
+        for house in range(1, 13)
+    ]
 
 
 def _position_payload(position: BodyPosition) -> dict[str, Any]:

@@ -98,6 +98,75 @@ def test_build_birth_chart_adds_vimshottari_when_moon_is_available():
     assert periods[0]["duration_years"] == 7.0
 
 
+def test_build_birth_chart_adds_panchanga_when_sun_and_moon_are_available():
+    from apps.calculations.chart import build_birth_chart
+
+    class FakeProviderWithSunMoon:
+        def planet_positions(self, moment, bodies, settings):
+            return {
+                "Surya": BodyPosition(
+                    body="Surya",
+                    longitude=0.0,
+                    latitude=0.0,
+                    distance_au=1.0,
+                    speed_longitude=1.0,
+                    placement=zodiac_placement(0.0),
+                ),
+                "Chandra": BodyPosition(
+                    body="Chandra",
+                    longitude=13.0,
+                    latitude=0.0,
+                    distance_au=1.0,
+                    speed_longitude=1.0,
+                    placement=zodiac_placement(13.0),
+                ),
+            }
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-03",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=FakeProviderWithSunMoon(),
+    )
+
+    assert result["panchanga"]["tithi"]["name"] == "Dvitiya"
+    assert result["panchanga"]["karana"]["name"] == "Balava"
+
+
+def test_build_birth_chart_adds_lagna_and_whole_sign_houses_when_provider_supports_it():
+    from apps.calculations.chart import build_birth_chart
+
+    class FakeProviderWithLagna:
+        def planet_positions(self, moment, bodies, settings):
+            return {}
+
+        def ascendant_position(self, moment, latitude, longitude, settings):
+            return BodyPosition(
+                body="Lagna",
+                longitude=90.0,
+                latitude=None,
+                distance_au=None,
+                speed_longitude=None,
+                placement=zodiac_placement(90.0),
+            )
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=FakeProviderWithLagna(),
+    )
+
+    assert result["ascendant"]["rashi"] == "Karka"
+    assert result["houses"][0]["house"] == 1
+    assert result["houses"][0]["rashi"] == "Karka"
+    assert result["houses"][1]["rashi"] == "Simha"
+
+
 @pytest.mark.django_db
 def test_birth_chart_api_returns_400_for_bad_input():
     response = APIClient().post(reverse("birth-chart"), {"birth_date": "2000-01-01"}, format="json")

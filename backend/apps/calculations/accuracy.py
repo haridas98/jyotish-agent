@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from .primitives import normalize_degrees
 
@@ -12,6 +13,15 @@ class LongitudeComparison:
     actual_degrees: float
     delta_arcseconds: float
     tolerance_arcseconds: float
+    passed: bool
+
+
+@dataclass(frozen=True)
+class ChartAccuracyReport:
+    fixture_id: str
+    longitude_comparisons: list[LongitudeComparison]
+    exact_matches: dict[str, bool]
+    missing_fields: list[str]
     passed: bool
 
 
@@ -38,3 +48,114 @@ def compare_longitude(
         tolerance_arcseconds=tolerance_arcseconds,
         passed=delta <= tolerance_arcseconds,
     )
+
+
+def compare_chart_to_fixture(chart: dict[str, Any], fixture: dict[str, Any]) -> ChartAccuracyReport:
+    expected = fixture.get("expected", {})
+    tolerances = fixture.get("tolerances", {})
+    planet_tolerance = float(tolerances.get("planet_longitude_arcseconds", 1.0))
+    lagna_tolerance = float(tolerances.get("lagna_arcseconds", planet_tolerance))
+    comparisons: list[LongitudeComparison] = []
+    exact_matches: dict[str, bool] = {}
+    missing_fields: list[str] = []
+
+    actual_grahas = {
+        graha.get("body"): graha
+        for graha in chart.get("grahas", [])
+        if isinstance(graha, dict) and graha.get("body")
+    }
+    for body, expected_graha in expected.get("grahas", {}).items():
+        actual = actual_grahas.get(body)
+        if actual is None:
+            missing_fields.append(f"grahas.{body}")
+            continue
+        comparisons.append(
+            compare_longitude(
+                body=body,
+                expected_degrees=float(expected_graha["longitude"]),
+                actual_degrees=float(actual["longitude"]),
+                tolerance_arcseconds=planet_tolerance,
+            )
+        )
+        _compare_exact(exact_matches, missing_fields, f"{body}.rashi", actual, expected_graha, "rashi")
+        _compare_exact(
+            exact_matches,
+            missing_fields,
+            f"{body}.nakshatra",
+            actual,
+            expected_graha,
+            "nakshatra",
+        )
+        _compare_exact(exact_matches, missing_fields, f"{body}.pada", actual, expected_graha, "pada")
+
+    expected_ascendant = expected.get("ascendant")
+    if expected_ascendant:
+        actual_ascendant = chart.get("ascendant")
+        if not actual_ascendant:
+            missing_fields.append("ascendant")
+        else:
+            comparisons.append(
+                compare_longitude(
+                    body="Lagna",
+                    expected_degrees=float(expected_ascendant["longitude"]),
+                    actual_degrees=float(actual_ascendant["longitude"]),
+                    tolerance_arcseconds=lagna_tolerance,
+                )
+            )
+            _compare_exact(
+                exact_matches,
+                missing_fields,
+                "Lagna.rashi",
+                actual_ascendant,
+                expected_ascendant,
+                "rashi",
+            )
+
+    _compare_panchanga(chart, expected, exact_matches, missing_fields)
+    passed = (
+        not missing_fields
+        and all(comparison.passed for comparison in comparisons)
+        and all(exact_matches.values())
+    )
+    return ChartAccuracyReport(
+        fixture_id=str(fixture.get("id", "")),
+        longitude_comparisons=comparisons,
+        exact_matches=exact_matches,
+        missing_fields=missing_fields,
+        passed=passed,
+    )
+
+
+def _compare_exact(
+    exact_matches: dict[str, bool],
+    missing_fields: list[str],
+    key: str,
+    actual: dict[str, Any],
+    expected: dict[str, Any],
+    field: str,
+) -> None:
+    if field not in expected:
+        return
+    if field not in actual:
+        missing_fields.append(key)
+        return
+    exact_matches[key] = actual[field] == expected[field]
+
+
+def _compare_panchanga(
+    chart: dict[str, Any],
+    expected: dict[str, Any],
+    exact_matches: dict[str, bool],
+    missing_fields: list[str],
+) -> None:
+    expected_panchanga = expected.get("panchanga", {})
+    actual_panchanga = chart.get("panchanga", {})
+    for field in ("tithi", "vara", "yoga", "karana"):
+        if field not in expected_panchanga:
+            continue
+        actual_value = actual_panchanga.get(field, {}).get("name")
+        key = f"panchanga.{field}"
+        if actual_value is None:
+            missing_fields.append(key)
+            continue
+        exact_matches[key] = actual_value == expected_panchanga[field]
