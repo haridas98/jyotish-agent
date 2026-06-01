@@ -14,6 +14,7 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Rashi, nakshatra, and pada.
 - Panchanga basics.
 - Vimshottari dasha baseline.
+- Transit, compatibility, and muhurta API baselines.
 - Report sections with citations.
 - Read-only integration with the VL database.
 - Accuracy comparison harness against Jagannatha Hora exports.
@@ -23,10 +24,10 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Full dasha catalog.
 - Full yoga catalog with citations.
 - Shadbala and ashtakavarga.
-- Transit engine.
+- Full transit engine.
 - Annual charts.
-- Compatibility.
-- Muhurta.
+- Full compatibility/ashtakuta.
+- Full muhurta workflow.
 - Prashna.
 - PDF export.
 - Admin review workflow for rules and citations.

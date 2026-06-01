@@ -16,9 +16,9 @@
 | Ashtakavarga | no | Phase 2 | Status exposed as pending until BAV/SAV rule tables are fixture-tested. |
 | Argala | partial | Phase 2 | Primary Lagna argala 2/4/11 with obstruction 12/10/3. |
 | Special points | partial | Phase 2 | Arabic lots of fortune calculated; upagrahas and Vedic points pending fixture audit. |
-| Transits | no | Phase 2 | API status placeholder; reuse calculation engine next. |
+| Transits | partial | Phase 2 | `/api/calculations/transits` compares current/as-of grahas to natal Lagna and Moon. |
 | Annual charts | no | Phase 3 | After core parity. |
-| Compatibility | no | Phase 3 | Requires ethical wording. |
-| Muhurta | no | Phase 3 | Separate policy review. |
+| Compatibility | partial | Phase 3 | `/api/calculations/compatibility` exposes Moon/Tara baseline with Vaishnava caution text. |
+| Muhurta | partial | Phase 3 | `/api/calculations/muhurta` ranks date candidates by panchanga rules and Vaishnava priority. |
 | Prashna | no | Phase 3 | Separate input model. |
 | Reports | partial | MVP | Citation-first, no free hallucination. |

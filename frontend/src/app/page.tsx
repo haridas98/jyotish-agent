@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   calculateSavedProfile,
+  calculateMuhurta,
+  calculateTransits,
   createChartProfile,
   fetchCurrentUser,
   generateBirthReport,
@@ -18,8 +20,10 @@ import {
   type ChartProfile,
   type DashaPeriod,
   type GrahaPosition,
+  type MuhurtaReport,
   type PersonSummary,
   type PlaceCandidate,
+  type TransitReport,
   type User,
   type VargaPlacement,
   type VLSearchResult,
@@ -120,6 +124,12 @@ function formatDate(value: string) {
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function isoDateOffset(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
 function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
@@ -486,6 +496,67 @@ function formatArgalaRows(rows: { house: number; bodies: string[] }[]) {
   return rows.map((row) => `дом ${row.house}: ${row.bodies.map(labelRu).join(", ")}`).join("; ");
 }
 
+function TransitPanel({ report, status }: { report: TransitReport | null; status: string }) {
+  const rows = report?.transits.slice(0, 9) ?? [];
+  return (
+    <section className="panel workflow-panel">
+      <div className="panel-heading">
+        <h2>Транзиты</h2>
+        <span>{status}</span>
+      </div>
+      {rows.length ? (
+        <div className="workflow-table">
+          <div className="workflow-row workflow-head">
+            <span>Граха</span>
+            <span>Раши</span>
+            <span>От лагны</span>
+            <span>От Луны</span>
+          </div>
+          {rows.map((row) => (
+            <div className="workflow-row" key={row.body}>
+              <strong>{labelRu(row.body)}</strong>
+              <span>{row.rashi}</span>
+              <span>{row.house_from_lagna ?? "-"}</span>
+              <span>{row.house_from_moon ?? "-"}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="pending-strip">Транзиты появятся после расчёта карты.</div>
+      )}
+    </section>
+  );
+}
+
+function MuhurtaPanel({ report, status }: { report: MuhurtaReport | null; status: string }) {
+  const rows = report?.candidates.slice(0, 5) ?? [];
+  return (
+    <section className="panel workflow-panel">
+      <div className="panel-heading">
+        <h2>Мухурта</h2>
+        <span>{status}</span>
+      </div>
+      {rows.length ? (
+        <div className="muhurta-list">
+          {rows.map((candidate) => (
+            <div className="muhurta-item" key={`${candidate.date}-${candidate.time}`}>
+              <strong>{formatDate(candidate.date)} · {candidate.time}</strong>
+              <span>{candidate.score}/100</span>
+              <small>
+                {candidate.panchanga.tithi?.name ?? "Титхи"} · {candidate.panchanga.vara?.name ?? "Вара"}
+              </small>
+              <p>{candidate.reasons.length ? candidate.reasons.join("; ") : "Нейтральная панчанга"}</p>
+            </div>
+          ))}
+          <p className="workflow-note">{report?.vaishnava_note}</p>
+        </div>
+      ) : (
+        <div className="pending-strip">Кандидаты мухурты появятся после расчёта карты.</div>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
   const [birthDate, setBirthDate] = useState("1990-08-15");
   const [birthTime, setBirthTime] = useState("10:24");
@@ -501,7 +572,10 @@ export default function Home() {
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
+  const [transitReport, setTransitReport] = useState<TransitReport | null>(null);
+  const [muhurtaReport, setMuhurtaReport] = useState<MuhurtaReport | null>(null);
   const [status, setStatus] = useState("Расчёт не запускался");
+  const [workflowStatus, setWorkflowStatus] = useState("Ожидает расчёт карты");
   const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
   const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
   const [sourceStatus, setSourceStatus] = useState("Поиск по VL не запускался");
@@ -676,6 +750,44 @@ export default function Home() {
     }
   }
 
+  async function refreshWorkflowReports(payload: BirthChartRequest) {
+    setWorkflowStatus("Считаю транзиты и мухурту...");
+    const today = isoDateOffset(0);
+    const weekEnd = isoDateOffset(7);
+    const [transits, muhurta] = await Promise.allSettled([
+      calculateTransits({
+        ...payload,
+        as_of_date: today,
+        as_of_time: "09:00",
+      }),
+      calculateMuhurta({
+        place_name: payload.place_name,
+        timezone: payload.timezone,
+        latitude: payload.latitude,
+        longitude: payload.longitude,
+        start_date: today,
+        end_date: weekEnd,
+        time: "09:00",
+      }),
+    ]);
+
+    if (transits.status === "fulfilled") {
+      setTransitReport(transits.value);
+    } else {
+      setTransitReport(null);
+    }
+    if (muhurta.status === "fulfilled") {
+      setMuhurtaReport(muhurta.value);
+    } else {
+      setMuhurtaReport(null);
+    }
+    setWorkflowStatus(
+      transits.status === "fulfilled" && muhurta.status === "fulfilled"
+        ? "рассчитано"
+        : "частично, см. API",
+    );
+  }
+
   async function handleCalculateProfile(profile: ChartProfile) {
     setProfileStatus(`Рассчитываю: ${profile.display_name}`);
     try {
@@ -683,6 +795,14 @@ export default function Home() {
       setChart(calculation.result);
       setChartMode("D1");
       setBirthReport(null);
+      await refreshWorkflowReports({
+        birth_date: profile.birth_date,
+        birth_time: profile.birth_time ?? "",
+        place_name: profile.place.label,
+        timezone: profile.timezone,
+        latitude: profile.place.latitude,
+        longitude: profile.place.longitude,
+      });
       setStatus("Сохранённая карта рассчитана");
       await refreshProfiles();
     } catch (error) {
@@ -700,10 +820,13 @@ export default function Home() {
       setChart(result.chart);
       setChartMode("D1");
       setBirthReport(result.report);
+      await refreshWorkflowReports(payload);
       setStatus("Отчёт построен");
     } catch (error) {
       setChart(null);
       setBirthReport(null);
+      setTransitReport(null);
+      setMuhurtaReport(null);
       setStatus(error instanceof Error ? error.message : "Ошибка API");
     }
   }
@@ -977,6 +1100,8 @@ export default function Home() {
 
             <PersonSummaryPanel summary={personSummary} />
             <ClassicalPanel classical={chart?.classical} />
+            <TransitPanel report={transitReport} status={workflowStatus} />
+            <MuhurtaPanel report={muhurtaReport} status={workflowStatus} />
 
             <section className="panel" id="reports">
               <div className="panel-heading">

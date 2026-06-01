@@ -209,13 +209,22 @@ def _persist_result_rows(calculation: ChartCalculation, result: dict[str, Any]) 
                 "nakshatra_index": graha.get("nakshatra_index"),
             },
         )
-        VargaPlacement.objects.create(
-            calculation=calculation,
-            varga="D9",
-            graha=graha["body"],
-            rashi=graha["navamsa"],
-            metadata={"navamsa_index": graha.get("navamsa_index")},
-        )
+    for varga_code, varga in result.get("vargas", {}).items():
+        if not isinstance(varga, dict):
+            continue
+        for placement in varga.get("placements", []):
+            if placement.get("body") == "Lagna":
+                continue
+            VargaPlacement.objects.create(
+                calculation=calculation,
+                varga=varga_code,
+                graha=placement["body"],
+                rashi=placement["rashi"],
+                metadata={
+                    "rashi_index": placement.get("rashi_index"),
+                    "method": varga.get("method"),
+                },
+            )
 
     for period in result.get("dashas", {}).get("vimshottari", {}).get("mahadashas", []):
         starts_at = parse_datetime(period["starts_at"])

@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from .chart import ChartInputError, build_birth_chart
 from .ephemeris import EphemerisUnavailable, SwissEphemerisProvider
 from .primitives import zodiac_placement
+from .workflows import build_compatibility_report, build_muhurta_report, build_transit_report
 
 
 class ZodiacPlacementView(APIView):
@@ -77,6 +78,45 @@ class BirthChartView(APIView):
         try:
             return Response(build_birth_chart(request.data))
         except ChartInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class TransitView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def post(self, request):
+        try:
+            return Response(build_transit_report(request.data))
+        except (ChartInputError, ValueError) as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class CompatibilityView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def post(self, request):
+        try:
+            return Response(build_compatibility_report(request.data))
+        except (ChartInputError, ValueError) as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class MuhurtaView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def post(self, request):
+        try:
+            return Response(build_muhurta_report(request.data))
+        except (ChartInputError, ValueError) as exc:
             return Response({"error": str(exc)}, status=400)
         except EphemerisUnavailable as exc:
             return Response({"error": str(exc)}, status=503)

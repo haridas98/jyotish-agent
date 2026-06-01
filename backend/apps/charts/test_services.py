@@ -33,7 +33,7 @@ class FakeProvider:
 
 
 @pytest.mark.django_db
-def test_calculate_profile_chart_persists_positions_and_d9():
+def test_calculate_profile_chart_persists_positions_and_all_vargas():
     user = get_user_model().objects.create_user(username="haridas", password="strong-pass-108")
     place = Place.objects.create(
         external_id="in-vrindavan",
@@ -60,4 +60,5 @@ def test_calculate_profile_chart_persists_positions_and_d9():
     assert calculation.result["birth"]["timezone"] == "Asia/Kolkata"
     assert PlanetPosition.objects.filter(calculation=calculation).count() == len(GRAHAS)
     assert VargaPlacement.objects.filter(calculation=calculation, varga="D9").count() == len(GRAHAS)
+    assert VargaPlacement.objects.filter(calculation=calculation, varga="D60").count() == len(GRAHAS)
     assert DashaPeriod.objects.filter(calculation=calculation, system="vimshottari").count() == 9

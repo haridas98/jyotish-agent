@@ -875,6 +875,71 @@ select {
   overflow-wrap: anywhere;
 }
 
+.workflow-panel {
+  padding: 18px;
+}
+
+.workflow-table {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.workflow-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(90px, 1fr) minmax(90px, 1fr) 80px 80px;
+  min-height: 42px;
+  padding: 9px 12px;
+}
+
+.workflow-row:first-child {
+  border-top: 0;
+}
+
+.workflow-head {
+  background: #faf8f1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.workflow-row strong {
+  color: var(--green);
+}
+
+.muhurta-list {
+  display: grid;
+  gap: 10px;
+}
+
+.muhurta-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.muhurta-item strong {
+  color: var(--green);
+}
+
+.muhurta-item span {
+  color: var(--saffron);
+  font-weight: 700;
+}
+
+.muhurta-item small,
+.muhurta-item p,
+.workflow-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  margin: 0;
+}
+
 .house-overview {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1176,6 +1241,10 @@ select {
   }
 
   .summary-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .workflow-row {
     grid-template-columns: 1fr 1fr;
   }
 

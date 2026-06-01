@@ -32,6 +32,26 @@ export type BirthChartRequest = {
   longitude?: number;
 };
 
+export type TransitRequest = BirthChartRequest & {
+  as_of_date: string;
+  as_of_time?: string;
+};
+
+export type MuhurtaRequest = {
+  place_name: string;
+  timezone?: string;
+  latitude?: number;
+  longitude?: number;
+  start_date: string;
+  end_date: string;
+  time?: string;
+};
+
+export type CompatibilityRequest = {
+  person_a: BirthChartRequest;
+  person_b: BirthChartRequest;
+};
+
 export type GrahaPosition = {
   body: string;
   longitude: number;
@@ -274,6 +294,55 @@ export type BirthReport = {
   };
 };
 
+export type TransitRow = {
+  body: string;
+  longitude: number;
+  rashi: string;
+  nakshatra: string;
+  pada: number;
+  house_from_lagna: number | null;
+  house_from_moon: number | null;
+};
+
+export type TransitReport = {
+  status: string;
+  method: string;
+  as_of: {
+    date: string;
+    time: string;
+    timezone: string;
+    local_datetime: string;
+  };
+  natal: {
+    lagna: Record<string, unknown>;
+    moon: Record<string, unknown>;
+  };
+  transits: TransitRow[];
+};
+
+export type MuhurtaCandidate = {
+  date: string;
+  time: string;
+  score: number;
+  panchanga: Panchanga;
+  reasons: string[];
+};
+
+export type MuhurtaReport = {
+  status: string;
+  method: string;
+  candidates: MuhurtaCandidate[];
+  vaishnava_note: string;
+};
+
+export type CompatibilityReport = {
+  status: string;
+  method: string;
+  moon: Record<string, unknown>;
+  kuta: Record<string, unknown>;
+  vaishnava_note: string;
+};
+
 export type PlaceCandidate = {
   id: string;
   name: string;
@@ -421,6 +490,51 @@ export async function calculateBirthChart(payload: BirthChartRequest): Promise<B
 
 export async function generateBirthReport(payload: BirthChartRequest): Promise<BirthReport> {
   const response = await apiFetch("/api/reports/birth-chart", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function calculateTransits(payload: TransitRequest): Promise<TransitReport> {
+  const response = await apiFetch("/api/calculations/transits", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function calculateMuhurta(payload: MuhurtaRequest): Promise<MuhurtaReport> {
+  const response = await apiFetch("/api/calculations/muhurta", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function calculateCompatibility(payload: CompatibilityRequest): Promise<CompatibilityReport> {
+  const response = await apiFetch("/api/calculations/compatibility", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
