@@ -219,6 +219,23 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
             </div>
           ))}
         </div>
+        {summary.houses.length ? (
+          <div className="house-overview">
+            <div>
+              <h3>House Overview</h3>
+              <span>Whole-sign houses</span>
+            </div>
+            <div className="house-grid">
+              {summary.houses.map((house) => (
+                <div className="house-card" key={house.house}>
+                  <span>House {house.house}</span>
+                  <strong>{house.rashi}</strong>
+                  <small>{house.grahas.length ? house.grahas.join(", ") : "Empty"}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {summary.dasha.current_mahadasha_antardashas.length ? (
           <div className="antardasha-panel">
             <div>

@@ -550,6 +550,58 @@ select {
   color: var(--green);
 }
 
+.house-overview {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.house-overview > div:first-child {
+  align-items: center;
+  background: #faf8f1;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.house-overview h3 {
+  color: var(--green);
+  font-size: 15px;
+  margin: 0;
+}
+
+.house-overview span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.house-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+}
+
+.house-card {
+  border-right: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 5px;
+  min-height: 86px;
+  padding: 11px 12px;
+}
+
+.house-card:nth-child(4n) {
+  border-right: 0;
+}
+
+.house-card strong {
+  color: var(--green);
+}
+
+.house-card small {
+  color: var(--saffron);
+  line-height: 1.35;
+}
+
 .antardasha-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -795,6 +847,14 @@ select {
 
   .summary-row {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .house-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .house-card:nth-child(2n) {
+    border-right: 0;
   }
 
   .summary-head {

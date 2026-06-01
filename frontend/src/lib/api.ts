@@ -153,10 +153,17 @@ export type GrahaHouseSummary = {
   navamsa: string;
 };
 
+export type HouseSummary = {
+  house: number;
+  rashi: string;
+  grahas: string[];
+};
+
 export type PersonSummary = {
   birth_context: SummaryItem[];
   core_factors: SummaryItem[];
   graha_houses: GrahaHouseSummary[];
+  houses: HouseSummary[];
   panchanga: SummaryItem[];
   dasha: {
     birth_mahadasha_lord: string | null;

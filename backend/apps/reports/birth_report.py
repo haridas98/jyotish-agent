@@ -124,6 +124,7 @@ def _person_summary(
         "birth_context": _birth_context(chart),
         "core_factors": _core_factors(chart, chart_facts),
         "graha_houses": _graha_house_rows(chart_facts),
+        "houses": _house_rows(chart, chart_facts),
         "panchanga": _panchanga_rows(chart),
         "dasha": _dasha_facts(data, chart, chart_facts),
     }
@@ -183,6 +184,27 @@ def _graha_house_rows(chart_facts: dict[str, Any]) -> list[dict[str, object]]:
         for placement in placements
         if isinstance(placement, dict)
     ]
+
+
+def _house_rows(chart: dict[str, Any], chart_facts: dict[str, Any]) -> list[dict[str, object]]:
+    placements = _graha_house_rows(chart_facts)
+    rows = []
+    for house in chart.get("houses", []):
+        if not isinstance(house, dict):
+            continue
+        house_number = house.get("house")
+        rows.append(
+            {
+                "house": house_number,
+                "rashi": house.get("rashi"),
+                "grahas": [
+                    placement["body"]
+                    for placement in placements
+                    if placement.get("house") == house_number and placement.get("body")
+                ],
+            }
+        )
+    return rows
 
 
 def _panchanga_rows(chart: dict[str, Any]) -> list[dict[str, object]]:
