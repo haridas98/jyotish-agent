@@ -91,3 +91,78 @@ def vimshottari_payload(
             for period in vimshottari_mahadashas(moon_longitude, birth_moment, count=count)
         ],
     }
+
+
+def active_vimshottari_periods(
+    moon_longitude: float,
+    birth_moment: datetime,
+    as_of: datetime,
+    count: int = 9,
+) -> dict[str, object]:
+    if as_of.tzinfo is None:
+        raise ValueError("as_of must be timezone-aware")
+
+    mahadashas = vimshottari_mahadashas(moon_longitude, birth_moment, count=count)
+    mahadasha = _active_period(mahadashas, as_of)
+    if mahadasha is None:
+        return {"as_of": as_of.isoformat(), "mahadasha": None, "antardasha": None}
+
+    antardasha = _active_period(_antardashas_for(mahadasha), as_of)
+    return {
+        "as_of": as_of.isoformat(),
+        "mahadasha": _period_payload(mahadasha),
+        "antardasha": _period_payload(antardasha, parent_lord=mahadasha.lord)
+        if antardasha
+        else None,
+    }
+
+
+def _active_period(
+    periods: list[VimshottariPeriod],
+    as_of: datetime,
+) -> VimshottariPeriod | None:
+    for period in periods:
+        if period.starts_at <= as_of < period.ends_at:
+            return period
+    return None
+
+
+def _antardashas_for(mahadasha: VimshottariPeriod) -> list[VimshottariPeriod]:
+    total_days = (mahadasha.ends_at - mahadasha.starts_at).total_seconds() / 86_400
+    periods: list[VimshottariPeriod] = []
+    starts_at = mahadasha.starts_at
+    parent_index = VIMSHOTTARI_SEQUENCE.index(mahadasha.lord)
+    for offset in range(len(VIMSHOTTARI_SEQUENCE)):
+        sequence_index = (parent_index + offset) % len(VIMSHOTTARI_SEQUENCE)
+        lord = VIMSHOTTARI_SEQUENCE[sequence_index]
+        duration_days = total_days * (VIMSHOTTARI_YEARS[lord] / 120.0)
+        ends_at = starts_at + timedelta(days=duration_days)
+        periods.append(
+            VimshottariPeriod(
+                lord=lord,
+                level=2,
+                starts_at=starts_at,
+                ends_at=ends_at,
+                duration_years=round(duration_days / VIMSHOTTARI_YEAR_DAYS, 10),
+                sequence_index=sequence_index,
+            )
+        )
+        starts_at = ends_at
+    return periods
+
+
+def _period_payload(
+    period: VimshottariPeriod,
+    parent_lord: str | None = None,
+) -> dict[str, object]:
+    payload = {
+        "lord": period.lord,
+        "level": period.level,
+        "starts_at": period.starts_at.isoformat(),
+        "ends_at": period.ends_at.isoformat(),
+        "duration_years": period.duration_years,
+        "sequence_index": period.sequence_index,
+    }
+    if parent_lord:
+        payload["parent_lord"] = parent_lord
+    return payload

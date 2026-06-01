@@ -181,6 +181,22 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
               <span>Birth Dasha</span>
               <strong>{summary.dasha.birth_mahadasha_lord ?? "Pending"}</strong>
             </div>
+            <div>
+              <span>Current MD</span>
+              <strong>{summary.dasha.current_mahadasha?.lord ?? "Pending"}</strong>
+            </div>
+            <div>
+              <span>Current AD</span>
+              <strong>
+                {summary.dasha.current_antardasha
+                  ? `${summary.dasha.current_antardasha.parent_lord ?? ""}/${summary.dasha.current_antardasha.lord}`
+                  : "Pending"}
+              </strong>
+            </div>
+            <div>
+              <span>As Of</span>
+              <strong>{summary.dasha.as_of ? formatDate(summary.dasha.as_of) : "Pending"}</strong>
+            </div>
           </div>
         </div>
         <div className="summary-table">

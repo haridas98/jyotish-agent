@@ -85,6 +85,7 @@ export type DashaPeriod = {
   ends_at: string;
   duration_years: number;
   sequence_index: number;
+  parent_lord?: string;
 };
 
 export type BirthChart = {
@@ -159,6 +160,9 @@ export type PersonSummary = {
   panchanga: SummaryItem[];
   dasha: {
     birth_mahadasha_lord: string | null;
+    current_mahadasha: DashaPeriod | null;
+    current_antardasha: DashaPeriod | null;
+    as_of: string | null;
     starts_at: string | null;
     ends_at: string | null;
   };

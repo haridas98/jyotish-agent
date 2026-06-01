@@ -55,6 +55,7 @@ def test_compose_birth_report_uses_chart_facts_citations_and_vaishnava_guard():
             "birth_date": "2000-01-01",
             "birth_time": "15:30",
             "place_name": "Vrindavan",
+            "as_of_date": "2025-01-01",
         },
         provider=ReportProvider(),
         citation_search=citation_search,
@@ -68,6 +69,8 @@ def test_compose_birth_report_uses_chart_facts_citations_and_vaishnava_guard():
     assert result["report"]["person_summary"]["graha_houses"][1]["body"] == "Chandra"
     assert result["report"]["person_summary"]["graha_houses"][1]["house"] == 2
     assert result["report"]["person_summary"]["dasha"]["birth_mahadasha_lord"] == "Ketu"
+    assert result["report"]["person_summary"]["dasha"]["current_mahadasha"]["lord"] == "Surya"
+    assert result["report"]["person_summary"]["dasha"]["current_antardasha"]["parent_lord"] == "Surya"
     assert result["report"]["sections"][0]["key"] == "calculation_summary"
     guidance = next(section for section in result["report"]["sections"] if section["key"] == "devotional_guidance")
     assert guidance["citations"][0]["title"] == "Bhagavad-gita 9.22"

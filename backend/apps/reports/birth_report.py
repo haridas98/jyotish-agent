@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from datetime import date, datetime, time
 from typing import Any, Callable
 
-from apps.calculations.chart import build_birth_chart
+from apps.calculations.chart import ChartInputError, build_birth_chart
 from apps.calculations.ephemeris import EphemerisProvider
+from apps.calculations.vimshottari import active_vimshottari_periods
 from apps.interpretations.facts import build_chart_facts
 from apps.interpretations.vaishnava_policy import reframe_remedial_advice
 
@@ -50,7 +52,7 @@ def compose_birth_report(
             "calculation_version": chart["calculation_version"],
             "source_policy": "citation_first",
             "chart_facts": chart_facts,
-            "person_summary": _person_summary(chart, chart_facts),
+            "person_summary": _person_summary(data, chart, chart_facts),
             "sections": sections,
         },
     }
@@ -113,13 +115,17 @@ def _dasha_summary(chart: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _person_summary(chart: dict[str, Any], chart_facts: dict[str, Any]) -> dict[str, Any]:
+def _person_summary(
+    data: dict[str, Any],
+    chart: dict[str, Any],
+    chart_facts: dict[str, Any],
+) -> dict[str, Any]:
     return {
         "birth_context": _birth_context(chart),
         "core_factors": _core_factors(chart, chart_facts),
         "graha_houses": _graha_house_rows(chart_facts),
         "panchanga": _panchanga_rows(chart),
-        "dasha": _dasha_facts(chart, chart_facts),
+        "dasha": _dasha_facts(data, chart, chart_facts),
     }
 
 
@@ -192,17 +198,52 @@ def _panchanga_rows(chart: dict[str, Any]) -> list[dict[str, object]]:
     return rows
 
 
-def _dasha_facts(chart: dict[str, Any], chart_facts: dict[str, Any]) -> dict[str, object]:
+def _dasha_facts(
+    data: dict[str, Any],
+    chart: dict[str, Any],
+    chart_facts: dict[str, Any],
+) -> dict[str, object]:
     periods = chart.get("dashas", {}).get("vimshottari", {}).get("mahadashas", [])
     first = periods[0] if periods else {}
     vimshottari = chart_facts.get("vimshottari", {})
+    active = _active_dasha(data, chart)
     return {
         "birth_mahadasha_lord": vimshottari.get("birth_mahadasha_lord")
         if isinstance(vimshottari, dict)
         else None,
         "starts_at": first.get("starts_at") if isinstance(first, dict) else None,
         "ends_at": first.get("ends_at") if isinstance(first, dict) else None,
+        "current_mahadasha": active["mahadasha"],
+        "current_antardasha": active["antardasha"],
+        "as_of": active["as_of"],
     }
+
+
+def _active_dasha(data: dict[str, Any], chart: dict[str, Any]) -> dict[str, object]:
+    moon = next(
+        (graha for graha in chart.get("grahas", []) if graha.get("body") == "Chandra"),
+        None,
+    )
+    if not isinstance(moon, dict) or not isinstance(moon.get("longitude"), int | float):
+        return {"as_of": _as_of_moment(data, chart).isoformat(), "mahadasha": None, "antardasha": None}
+    birth_moment = datetime.fromisoformat(chart["birth"]["local_datetime"])
+    return active_vimshottari_periods(
+        float(moon["longitude"]),
+        birth_moment,
+        _as_of_moment(data, chart),
+    )
+
+
+def _as_of_moment(data: dict[str, Any], chart: dict[str, Any]) -> datetime:
+    birth_moment = datetime.fromisoformat(chart["birth"]["local_datetime"])
+    raw_date = str(data.get("as_of_date") or "").strip()
+    if raw_date:
+        try:
+            parsed_date = date.fromisoformat(raw_date)
+        except ValueError as exc:
+            raise ChartInputError("as_of_date must be YYYY-MM-DD") from exc
+        return datetime.combine(parsed_date, time.min, tzinfo=birth_moment.tzinfo)
+    return datetime.now(tz=birth_moment.tzinfo)
 
 
 def _rashi_house_value(placement: dict[str, object]) -> str:
