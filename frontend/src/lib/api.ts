@@ -90,6 +90,73 @@ export type DashaPeriod = {
   parent_lord?: string;
 };
 
+export type ClassicalStatus = {
+  status: string;
+  method?: string;
+};
+
+export type BaladiAvastha = {
+  body: string;
+  state: string;
+  strength: number;
+  degree_band: string;
+};
+
+export type YogaSignature = {
+  key: string;
+  name: string;
+  bodies: string[];
+  status: string;
+};
+
+export type ArgalaRow = {
+  house: number;
+  bodies: string[];
+};
+
+export type SpecialPoint = {
+  key: string;
+  name: string;
+  longitude: number;
+  rashi: string;
+  rashi_index: number;
+  nakshatra: string;
+  pada: number;
+};
+
+export type VimshopakaRow = {
+  body: string;
+  supportive_vargas: string[];
+  support_count: number;
+};
+
+export type ClassicalCalculations = {
+  avasthas?: ClassicalStatus & {
+    baladi: BaladiAvastha[];
+  };
+  vimshopaka_bala?: ClassicalStatus & {
+    items: VimshopakaRow[];
+  };
+  ashtakavarga?: ClassicalStatus;
+  shadbala?: ClassicalStatus;
+  yogas?: ClassicalStatus & {
+    items: YogaSignature[];
+  };
+  argala?: ClassicalStatus & {
+    reference: string;
+    primary: ArgalaRow[];
+    obstruction: ArgalaRow[];
+  };
+  special_points?: ClassicalStatus & {
+    arabic_lots: SpecialPoint[];
+    upagrahas: ClassicalStatus;
+    vedic_points: ClassicalStatus;
+  };
+  transits?: ClassicalStatus;
+  compatibility?: ClassicalStatus;
+  muhurta?: ClassicalStatus;
+};
+
 export type BirthChart = {
   calculation_version: string;
   birth: {
@@ -111,10 +178,9 @@ export type BirthChart = {
   grahas: GrahaPosition[];
   ascendant: GrahaPosition | null;
   houses: HousePlacement[];
-  vargas?: {
-    D9?: VargaChart;
-  };
+  vargas?: Record<string, VargaChart>;
   panchanga: Panchanga;
+  classical?: ClassicalCalculations;
   dashas?: {
     vimshottari?: {
       system: string;

@@ -112,6 +112,7 @@ def compare_chart_to_fixture(chart: dict[str, Any], fixture: dict[str, Any]) -> 
             )
 
     _compare_panchanga(chart, expected, exact_matches, missing_fields)
+    _compare_vargas(chart, expected, exact_matches, missing_fields)
     passed = (
         not missing_fields
         and all(comparison.passed for comparison in comparisons)
@@ -159,3 +160,46 @@ def _compare_panchanga(
             missing_fields.append(key)
             continue
         exact_matches[key] = actual_value == expected_panchanga[field]
+
+
+def _compare_vargas(
+    chart: dict[str, Any],
+    expected: dict[str, Any],
+    exact_matches: dict[str, bool],
+    missing_fields: list[str],
+) -> None:
+    expected_vargas = expected.get("vargas", {})
+    if not isinstance(expected_vargas, dict):
+        return
+    actual_vargas = chart.get("vargas", {})
+    if not isinstance(actual_vargas, dict):
+        actual_vargas = {}
+
+    for code, expected_placements in expected_vargas.items():
+        actual_varga = actual_vargas.get(code)
+        if not isinstance(actual_varga, dict):
+            missing_fields.append(f"vargas.{code}")
+            continue
+        actual_placements = {
+            placement.get("body"): placement
+            for placement in actual_varga.get("placements", [])
+            if isinstance(placement, dict) and placement.get("body")
+        }
+        if not isinstance(expected_placements, dict):
+            continue
+        for body, expected_placement in expected_placements.items():
+            actual_placement = actual_placements.get(body)
+            if actual_placement is None:
+                missing_fields.append(f"vargas.{code}.{body}")
+                continue
+            if not isinstance(expected_placement, dict):
+                continue
+            for field in ("rashi", "rashi_index"):
+                _compare_exact(
+                    exact_matches,
+                    missing_fields,
+                    f"{code}.{body}.{field}",
+                    actual_placement,
+                    expected_placement,
+                    field,
+                )

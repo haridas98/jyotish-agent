@@ -798,6 +798,83 @@ select {
   color: var(--green);
 }
 
+.classical-panel {
+  padding: 18px;
+}
+
+.classical-content {
+  display: grid;
+  gap: 14px;
+}
+
+.classical-status-grid {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(96px, 1fr));
+  overflow: hidden;
+}
+
+.classical-status {
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 5px;
+  min-height: 70px;
+  padding: 11px;
+}
+
+.classical-status:last-child {
+  border-right: 0;
+}
+
+.classical-status span,
+.classical-list span,
+.classical-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.classical-status strong {
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.classical-columns {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.classical-list {
+  background: #fbfaf5;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+}
+
+.classical-list h3 {
+  color: var(--green);
+  font-size: 17px;
+  margin: 0;
+}
+
+.classical-list div {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 3px;
+  padding-top: 9px;
+}
+
+.classical-list strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 .house-overview {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1063,8 +1140,13 @@ select {
   }
 
   .content-grid,
-  .chart-layout {
+  .chart-layout,
+  .classical-columns {
     grid-template-columns: 1fr;
+  }
+
+  .classical-status-grid {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
   }
 }
 
@@ -1113,6 +1195,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .classical-status-grid {
+    grid-template-columns: 1fr;
+  }
+
   .place-detail-grid {
     grid-template-columns: 1fr;
   }
@@ -1127,6 +1213,15 @@ select {
   }
 
   .fact-item:last-child {
+    border-bottom: 0;
+  }
+
+  .classical-status {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+  }
+
+  .classical-status:last-child {
     border-bottom: 0;
   }
 

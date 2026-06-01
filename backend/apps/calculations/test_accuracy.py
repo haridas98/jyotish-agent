@@ -71,3 +71,44 @@ def test_compare_chart_to_fixture_reports_longitude_and_exact_matches():
     assert len(report.longitude_comparisons) == 2
     assert report.exact_matches["Surya.rashi"] is True
     assert report.exact_matches["panchanga.tithi"] is True
+
+
+def test_compare_chart_to_fixture_checks_varga_placements():
+    report = compare_chart_to_fixture(
+        {
+            "grahas": [{"body": "Surya", "longitude": 10.0, "rashi": "Mesha"}],
+            "vargas": {
+                "D9": {
+                    "placements": [
+                        {"body": "Lagna", "rashi": "Karka"},
+                        {"body": "Surya", "rashi": "Mithuna"},
+                    ]
+                },
+                "D60": {
+                    "placements": [
+                        {"body": "Surya", "rashi": "Kumbha"},
+                    ]
+                },
+            },
+        },
+        {
+            "id": "varga-case",
+            "expected": {
+                "grahas": {"Surya": {"longitude": 10.0, "rashi": "Mesha"}},
+                "vargas": {
+                    "D9": {
+                        "Lagna": {"rashi": "Karka"},
+                        "Surya": {"rashi": "Mithuna"},
+                    },
+                    "D60": {
+                        "Surya": {"rashi": "Meena"},
+                    },
+                },
+            },
+        },
+    )
+
+    assert report.exact_matches["D9.Lagna.rashi"] is True
+    assert report.exact_matches["D9.Surya.rashi"] is True
+    assert report.exact_matches["D60.Surya.rashi"] is False
+    assert report.passed is False

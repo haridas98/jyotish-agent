@@ -7,9 +7,11 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from apps.places.catalog import PlaceCandidate, PlaceNotFound, resolve_place
 
+from .classical import classical_calculations
 from .constants import GRAHAS
 from .ephemeris import BodyPosition, CalculationSettings, EphemerisProvider, SwissEphemerisProvider
 from .panchanga import panchanga_from_longitudes
+from .vargas import divisional_chart
 from .vimshottari import vimshottari_payload
 
 CALCULATION_VERSION = "mvp-0.1"
@@ -70,9 +72,7 @@ def build_birth_chart(
         "grahas": [_position_payload(positions[body]) for body in GRAHAS if body in positions],
         "ascendant": _position_payload(ascendant) if ascendant else None,
         "houses": _whole_sign_houses(ascendant) if ascendant else [],
-        "vargas": {
-            "D9": _navamsa_varga(positions, ascendant),
-        },
+        "vargas": _varga_payload(positions, ascendant),
         "panchanga": {},
         "dashas": {},
     }
@@ -87,6 +87,7 @@ def build_birth_chart(
             positions["Chandra"].longitude,
             local_moment,
         )
+    payload["classical"] = classical_calculations(payload)
     return payload
 
 
@@ -150,32 +151,14 @@ def _whole_sign_houses(ascendant: BodyPosition) -> list[dict[str, Any]]:
     ]
 
 
-def _navamsa_varga(
+def _varga_payload(
     positions: dict[str, BodyPosition],
     ascendant: BodyPosition | None,
-) -> dict[str, Any]:
-    placements = []
-    if ascendant:
-        placements.append(_navamsa_placement("Lagna", ascendant))
-    placements.extend(
-        _navamsa_placement(body, positions[body])
-        for body in GRAHAS
-        if body in positions
+) -> dict[str, dict[str, object]]:
+    return divisional_chart(
+        {body: positions[body].longitude for body in GRAHAS if body in positions},
+        ascendant_longitude=ascendant.longitude if ascendant else None,
     )
-    return {
-        "code": "D9",
-        "name": "Navamsa",
-        "method": "108 equal navamsa divisions from sidereal longitude",
-        "placements": placements,
-    }
-
-
-def _navamsa_placement(body: str, position: BodyPosition) -> dict[str, Any]:
-    return {
-        "body": body,
-        "rashi_index": position.placement.navamsa_index,
-        "rashi": position.placement.navamsa,
-    }
 
 
 def _position_payload(position: BodyPosition) -> dict[str, Any]:

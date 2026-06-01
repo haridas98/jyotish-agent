@@ -37,3 +37,25 @@ Do not mark a fixture as `jhora_verified` without recording:
 - who reviewed it and when.
 
 The included `internal-smoke-vrindavan-1990` fixture is deliberately `draft`; it only checks that the pipeline stays stable.
+
+## Varga Checks
+
+The fixture harness now also checks exact varga placements. Add reviewed JHora values under:
+
+```json
+{
+  "expected": {
+    "vargas": {
+      "D9": {
+        "Lagna": { "rashi": "Karka" },
+        "Surya": { "rashi": "Makara" }
+      },
+      "D60": {
+        "Surya": { "rashi": "Meena" }
+      }
+    }
+  }
+}
+```
+
+Use `rashi_index` too when the source export gives it.

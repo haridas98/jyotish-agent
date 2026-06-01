@@ -66,6 +66,8 @@ def test_build_birth_chart_uses_local_timezone_and_provider():
     assert result["grahas"][0]["body"] == "Surya"
     assert result["grahas"][0]["rashi"] == "Vrishabha"
     assert result["grahas"][0]["nakshatra"] == "Krittika"
+    assert result["classical"]["avasthas"]["status"] == "calculated"
+    assert result["classical"]["ashtakavarga"]["status"] == "pending_jhora_audit"
 
 
 def test_build_birth_chart_accepts_custom_place_with_coordinates():
@@ -229,7 +231,7 @@ def test_build_birth_chart_adds_lagna_and_whole_sign_houses_when_provider_suppor
     assert result["houses"][1]["rashi"] == "Simha"
 
 
-def test_build_birth_chart_adds_d9_navamsa_varga_payload():
+def test_build_birth_chart_adds_shodasha_varga_payload():
     from apps.calculations.chart import build_birth_chart
 
     class FakeProviderWithGrahaAndLagna:
@@ -264,6 +266,8 @@ def test_build_birth_chart_adds_d9_navamsa_varga_payload():
         provider=FakeProviderWithGrahaAndLagna(),
     )
 
+    assert "D2" in result["vargas"]
+    assert "D60" in result["vargas"]
     d9 = result["vargas"]["D9"]
 
     assert d9["name"] == "Navamsa"

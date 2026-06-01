@@ -10,7 +10,7 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Birth profile storage.
 - Place, timezone, and coordinate input.
 - D1 chart.
-- D9 chart.
+- D9 chart and shodasha varga payload D1-D60 with audit status.
 - Rashi, nakshatra, and pada.
 - Panchanga basics.
 - Vimshottari dasha baseline.
@@ -20,9 +20,8 @@ Build a web jyotish service that calculates charts accurately and explains resul
 
 ## Later Phases
 
-- D1-D60 vargas.
 - Full dasha catalog.
-- Yoga catalog.
+- Full yoga catalog with citations.
 - Shadbala and ashtakavarga.
 - Transit engine.
 - Annual charts.
@@ -39,4 +38,3 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Fatalistic guarantees.
 - Unreviewed remedial prescriptions.
 - Public display of unverified shastra imports.
-

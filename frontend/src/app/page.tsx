@@ -36,6 +36,19 @@ const stateLabels: Record<string, string> = {
   ready: "готово",
 };
 
+const calculationStatusLabelsRu: Record<string, string> = {
+  calculated: "рассчитано",
+  partial: "частично",
+  draft_needs_citation: "нужны цитаты",
+  draft_needs_jhora_audit: "нужна сверка JHora",
+  pending_jhora_audit: "ждёт сверку JHora",
+  pending_endpoint: "ждёт API",
+  pending_separate_chart_pair: "нужны две карты",
+  pending_separate_workflow: "отдельный режим",
+  signature_only: "только признак",
+  missing_lagna: "нет лагны",
+};
+
 const bodyLabelsRu: Record<string, string> = {
   Ascendant: "Асцендент",
   Lagna: "Лагна",
@@ -74,6 +87,11 @@ function labelRu(value: string) {
 function valueRu(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === "") return "Ожидает";
   return String(value).replace(/house (\d+)/g, "дом $1");
+}
+
+function statusRu(value: string | null | undefined) {
+  if (!value) return "ожидает";
+  return calculationStatusLabelsRu[value] ?? value;
 }
 
 function formatCoordinate(value: number) {
@@ -138,12 +156,12 @@ function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
   );
 }
 
-function VargaTable({ placements }: { placements: VargaPlacement[] }) {
+function VargaTable({ placements, code }: { placements: VargaPlacement[]; code: string }) {
   if (placements.length === 0) {
     return (
       <div className="readiness-panel">
-        <strong>Положения D9 ещё не рассчитаны</strong>
-        <p>Навамша появится после расчёта грах и лагны.</p>
+        <strong>Положения {code} ещё не рассчитаны</strong>
+        <p>Варга появится после расчёта грах и лагны.</p>
       </div>
     );
   }
@@ -152,7 +170,7 @@ function VargaTable({ placements }: { placements: VargaPlacement[] }) {
     <div className="planet-table compact-table">
       <div className="table-row table-head">
         <span>Точка</span>
-        <span>Раши D9</span>
+        <span>Раши {code}</span>
       </div>
       {placements.map((placement) => (
         <div className="table-row" key={placement.body}>
@@ -364,6 +382,110 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
   );
 }
 
+function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | undefined }) {
+  if (!classical) {
+    return (
+      <section className="panel classical-panel">
+        <div className="panel-heading">
+          <h2>Дополнительные расчёты</h2>
+          <span>Ожидает карту</span>
+        </div>
+        <div className="pending-strip">Авастхи, варга-сила, йоги и статусы сложных модулей появятся после расчёта.</div>
+      </section>
+    );
+  }
+
+  const statusItems = [
+    ["Авастхи", classical.avasthas?.status],
+    ["Вимшопака", classical.vimshopaka_bala?.status],
+    ["Аштакаварга", classical.ashtakavarga?.status],
+    ["Шадбала", classical.shadbala?.status],
+    ["Транзиты", classical.transits?.status],
+    ["Мухурта", classical.muhurta?.status],
+  ];
+  const baladi = classical.avasthas?.baladi ?? [];
+  const yogas = classical.yogas?.items ?? [];
+  const lots = classical.special_points?.arabic_lots ?? [];
+
+  return (
+    <section className="panel classical-panel">
+      <div className="panel-heading">
+        <h2>Дополнительные расчёты</h2>
+        <span>Черновой слой с явными статусами</span>
+      </div>
+      <div className="classical-content">
+        <div className="classical-status-grid">
+          {statusItems.map(([label, status]) => (
+            <div className="classical-status" key={label}>
+              <span>{label}</span>
+              <strong>{statusRu(status)}</strong>
+            </div>
+          ))}
+        </div>
+        <div className="classical-columns">
+          <div className="classical-list">
+            <h3>Авастхи</h3>
+            {baladi.slice(0, 9).map((item) => (
+              <div key={item.body}>
+                <span>{labelRu(item.body)}</span>
+                <strong>{item.state}</strong>
+                <small>{item.degree_band}°, сила {item.strength}</small>
+              </div>
+            ))}
+          </div>
+          <div className="classical-list">
+            <h3>Йоги</h3>
+            {yogas.length ? (
+              yogas.map((item) => (
+                <div key={item.key}>
+                  <span>{item.name}</span>
+                  <strong>{item.bodies.map(labelRu).join(", ")}</strong>
+                  <small>{statusRu(item.status)}</small>
+                </div>
+              ))
+            ) : (
+              <div>
+                <span>Найдено</span>
+                <strong>0</strong>
+              </div>
+            )}
+          </div>
+          <div className="classical-list">
+            <h3>Аргала</h3>
+            <div>
+              <span>Главная</span>
+              <strong>{formatArgalaRows(classical.argala?.primary ?? [])}</strong>
+            </div>
+            <div>
+              <span>Препятствие</span>
+              <strong>{formatArgalaRows(classical.argala?.obstruction ?? [])}</strong>
+            </div>
+          </div>
+          <div className="classical-list">
+            <h3>Точки</h3>
+            {lots.map((point) => (
+              <div key={point.key}>
+                <span>{point.name}</span>
+                <strong>{point.rashi}</strong>
+                <small>{formatDegrees(point.longitude)}</small>
+              </div>
+            ))}
+            <div>
+              <span>Упаграхи</span>
+              <strong>{statusRu(classical.special_points?.upagrahas.status)}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function formatArgalaRows(rows: { house: number; bodies: string[] }[]) {
+  if (!rows.length) return "-";
+  return rows.map((row) => `дом ${row.house}: ${row.bodies.map(labelRu).join(", ")}`).join("; ");
+}
+
 export default function Home() {
   const [birthDate, setBirthDate] = useState("1990-08-15");
   const [birthTime, setBirthTime] = useState("10:24");
@@ -377,7 +499,7 @@ export default function Home() {
   const [showPlaceSuggestions, setShowPlaceSuggestions] = useState(false);
   const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
-  const [chartMode, setChartMode] = useState<"D1" | "D9">("D1");
+  const [chartMode, setChartMode] = useState("D1");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [status, setStatus] = useState("Расчёт не запускался");
   const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
@@ -395,7 +517,12 @@ export default function Home() {
     return `${chart.grahas.length} грах рассчитано для ${chart.place.label ?? chart.place.name}.`;
   }, [chart]);
   const vimshottariPeriods = chart?.dashas?.vimshottari?.mahadashas ?? [];
-  const d9Placements = chart?.vargas?.D9?.placements ?? [];
+  const vargaOptions = useMemo(
+    () => ["D1", ...Object.keys(chart?.vargas ?? {}).filter((code) => code !== "D1")],
+    [chart],
+  );
+  const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
+  const selectedVargaPlacements = selectedVarga?.placements ?? [];
   const personSummary = birthReport?.person_summary ?? null;
   const alternatePlaceMatches = useMemo(
     () => placeMatches.filter((place) => place.id !== selectedPlace?.id).slice(0, 4),
@@ -554,6 +681,7 @@ export default function Home() {
     try {
       const calculation = await calculateSavedProfile(profile.id);
       setChart(calculation.result);
+      setChartMode("D1");
       setBirthReport(null);
       setStatus("Сохранённая карта рассчитана");
       await refreshProfiles();
@@ -570,6 +698,7 @@ export default function Home() {
       if (!payload) return;
       const result = await generateBirthReport(payload);
       setChart(result.chart);
+      setChartMode("D1");
       setBirthReport(result.report);
       setStatus("Отчёт построен");
     } catch (error) {
@@ -811,13 +940,16 @@ export default function Home() {
           <section className="main-stack">
             <section className="panel chart-panel">
               <div className="panel-heading">
-                <h2>{chartMode === "D1" ? "Карта раши" : "Карта навамши"}</h2>
+                <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
                 <select
                   value={chartMode}
-                  onChange={(event) => setChartMode(event.target.value as "D1" | "D9")}
+                  onChange={(event) => setChartMode(event.target.value)}
                 >
-                  <option value="D1">D1 Раши</option>
-                  <option value="D9">D9 Навамша</option>
+                  {vargaOptions.map((code) => (
+                    <option value={code} key={code}>
+                      {code === "D1" ? "D1 Раши" : `${code} ${chart?.vargas?.[code]?.name ?? ""}`}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="chart-layout">
@@ -826,7 +958,7 @@ export default function Home() {
                   {chartMode === "D1" ? (
                     <GrahaTable grahas={chart?.grahas ?? []} />
                   ) : (
-                    <VargaTable placements={d9Placements} />
+                    <VargaTable placements={selectedVargaPlacements} code={chartMode} />
                   )}
                   {chartFacts.length ? (
                     <div className="fact-grid">
@@ -844,6 +976,7 @@ export default function Home() {
             </section>
 
             <PersonSummaryPanel summary={personSummary} />
+            <ClassicalPanel classical={chart?.classical} />
 
             <section className="panel" id="reports">
               <div className="panel-heading">
