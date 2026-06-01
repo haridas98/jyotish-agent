@@ -6,10 +6,12 @@ from django.db.models import Prefetch
 
 from apps.sources.models import ReviewStatus, SourcePassage
 
+from .facts import build_chart_facts
 from .models import InterpretationBlock, InterpretationRule
 
 
 def public_interpretation_sections_for_chart(chart: dict[str, Any]) -> list[dict[str, Any]]:
+    chart_with_facts = {**chart, "facts": build_chart_facts(chart)}
     rules = (
         InterpretationRule.objects.filter(review_status=ReviewStatus.APPROVED)
         .prefetch_related(
@@ -26,7 +28,7 @@ def public_interpretation_sections_for_chart(chart: dict[str, Any]) -> list[dict
     )
     sections: list[dict[str, Any]] = []
     for rule in rules:
-        if not _matches_condition(rule.condition, chart):
+        if not _matches_condition(rule.condition, chart_with_facts):
             continue
         citations = _approved_citations(rule)
         if not citations:
@@ -70,7 +72,7 @@ def _matches_clause(clause: Any, chart: dict[str, Any]) -> bool:
     collection = clause.get("collection")
     where = clause.get("where")
     if isinstance(collection, str) and isinstance(where, dict):
-        items = chart.get(collection)
+        items = _value_at_path(chart, collection)
         if not isinstance(items, list):
             return False
         return any(

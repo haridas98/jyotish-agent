@@ -100,6 +100,42 @@ def test_public_interpretation_sections_match_collection_condition():
     assert [section["key"] for section in sections] == ["interpretation:moon-vrishabha"]
 
 
+@pytest.mark.django_db
+def test_public_interpretation_sections_can_match_derived_chart_facts():
+    passage = _approved_passage()
+    rule = InterpretationRule.objects.create(
+        slug="moon-ninth-house",
+        title="Moon in Ninth House",
+        condition={
+            "all": [
+                {"path": "facts.grahas.Chandra.house", "equals": 9},
+                {
+                    "collection": "facts.placements",
+                    "where": {"body": "Chandra", "house": 9},
+                },
+            ]
+        },
+        review_status=ReviewStatus.APPROVED,
+    )
+    rule.passages.add(passage)
+    InterpretationBlock.objects.create(
+        rule=rule,
+        section="dharma",
+        title="Dharma Orientation",
+        body="Derived house facts can support reviewed interpretation rules.",
+        review_status=ReviewStatus.APPROVED,
+    )
+
+    sections = public_interpretation_sections_for_chart(
+        {
+            "ascendant": {"body": "Lagna", "rashi": "Kanya", "rashi_index": 5},
+            "grahas": [{"body": "Chandra", "rashi": "Vrishabha", "rashi_index": 1}],
+        }
+    )
+
+    assert [section["key"] for section in sections] == ["interpretation:moon-ninth-house"]
+
+
 def _approved_passage(slug="bg-9-22", reference="Bhagavad-gita 9.22"):
     work = SourceWork.objects.create(
         slug=slug,

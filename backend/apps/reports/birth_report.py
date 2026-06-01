@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 from apps.calculations.chart import build_birth_chart
 from apps.calculations.ephemeris import EphemerisProvider
+from apps.interpretations.facts import build_chart_facts
 from apps.interpretations.vaishnava_policy import reframe_remedial_advice
 
 CitationSearch = Callable[[str], list[dict[str, object]]]
@@ -17,6 +18,7 @@ def compose_birth_report(
     interpretation_provider: InterpretationProvider | None = None,
 ) -> dict[str, Any]:
     chart = build_birth_chart(data, provider=provider)
+    chart_facts = build_chart_facts(chart)
     citation_search = citation_search or (lambda query: [])
     interpretation_provider = interpretation_provider or (lambda chart: [])
     guidance_citations = _citation_payloads(citation_search("Hare Krishna maha mantra Krishna shelter"))
@@ -47,6 +49,7 @@ def compose_birth_report(
             "review_status": _report_status(sections),
             "calculation_version": chart["calculation_version"],
             "source_policy": "citation_first",
+            "chart_facts": chart_facts,
             "sections": sections,
         },
     }

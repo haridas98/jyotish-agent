@@ -143,6 +143,7 @@ export type BirthReport = {
     review_status: string;
     calculation_version: string;
     source_policy: string;
+    chart_facts?: Record<string, unknown>;
     sections: ReportSection[];
   };
 };
