@@ -550,6 +550,64 @@ select {
   color: var(--green);
 }
 
+.antardasha-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.antardasha-panel > div:first-child {
+  align-items: center;
+  background: #faf8f1;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.antardasha-panel h3 {
+  color: var(--green);
+  font-size: 15px;
+  margin: 0;
+}
+
+.antardasha-panel span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.antardasha-strip {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(120px, 1fr));
+  overflow-x: auto;
+}
+
+.antardasha-item {
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 5px;
+  min-height: 90px;
+  padding: 12px;
+}
+
+.antardasha-item:last-child {
+  border-right: 0;
+}
+
+.antardasha-item.active {
+  background: #eef6ef;
+}
+
+.antardasha-item strong {
+  color: var(--red);
+  font-size: 15px;
+}
+
+.antardasha-item small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .report-sections {
   border-top: 1px solid var(--line);
   display: grid;
@@ -758,5 +816,9 @@ select {
 
   .dasha-timeline {
     grid-template-columns: repeat(9, 96px);
+  }
+
+  .antardasha-strip {
+    grid-template-columns: repeat(9, 112px);
   }
 }

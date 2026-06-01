@@ -33,6 +33,10 @@ def test_active_vimshottari_finds_current_mahadasha_and_antardasha():
     assert active["mahadasha"]["lord"] == "Ketu"
     assert active["antardasha"]["lord"] == "Shukra"
     assert active["antardasha"]["parent_lord"] == "Ketu"
+    assert len(active["mahadasha_antardashas"]) == 9
+    assert active["mahadasha_antardashas"][0]["lord"] == "Ketu"
+    assert active["mahadasha_antardashas"][1]["lord"] == "Shukra"
+    assert active["mahadasha_antardashas"][1]["parent_lord"] == "Ketu"
     assert active["as_of"] == "2000-07-01T00:00:00+00:00"
 
 
@@ -44,3 +48,4 @@ def test_active_vimshottari_returns_none_when_date_is_outside_generated_range():
 
     assert active["mahadasha"] is None
     assert active["antardasha"] is None
+    assert active["mahadasha_antardashas"] == []

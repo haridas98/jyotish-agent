@@ -105,15 +105,24 @@ def active_vimshottari_periods(
     mahadashas = vimshottari_mahadashas(moon_longitude, birth_moment, count=count)
     mahadasha = _active_period(mahadashas, as_of)
     if mahadasha is None:
-        return {"as_of": as_of.isoformat(), "mahadasha": None, "antardasha": None}
+        return {
+            "as_of": as_of.isoformat(),
+            "mahadasha": None,
+            "antardasha": None,
+            "mahadasha_antardashas": [],
+        }
 
-    antardasha = _active_period(_antardashas_for(mahadasha), as_of)
+    antardashas = _antardashas_for(mahadasha)
+    antardasha = _active_period(antardashas, as_of)
     return {
         "as_of": as_of.isoformat(),
         "mahadasha": _period_payload(mahadasha),
         "antardasha": _period_payload(antardasha, parent_lord=mahadasha.lord)
         if antardasha
         else None,
+        "mahadasha_antardashas": [
+            _period_payload(period, parent_lord=mahadasha.lord) for period in antardashas
+        ],
     }
 
 

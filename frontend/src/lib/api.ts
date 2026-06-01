@@ -162,6 +162,7 @@ export type PersonSummary = {
     birth_mahadasha_lord: string | null;
     current_mahadasha: DashaPeriod | null;
     current_antardasha: DashaPeriod | null;
+    current_mahadasha_antardashas: DashaPeriod[];
     as_of: string | null;
     starts_at: string | null;
     ends_at: string | null;

@@ -71,6 +71,7 @@ def test_compose_birth_report_uses_chart_facts_citations_and_vaishnava_guard():
     assert result["report"]["person_summary"]["dasha"]["birth_mahadasha_lord"] == "Ketu"
     assert result["report"]["person_summary"]["dasha"]["current_mahadasha"]["lord"] == "Surya"
     assert result["report"]["person_summary"]["dasha"]["current_antardasha"]["parent_lord"] == "Surya"
+    assert len(result["report"]["person_summary"]["dasha"]["current_mahadasha_antardashas"]) == 9
     assert result["report"]["sections"][0]["key"] == "calculation_summary"
     guidance = next(section for section in result["report"]["sections"] if section["key"] == "devotional_guidance")
     assert guidance["citations"][0]["title"] == "Bhagavad-gita 9.22"

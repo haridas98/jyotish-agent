@@ -215,6 +215,7 @@ def _dasha_facts(
         "ends_at": first.get("ends_at") if isinstance(first, dict) else None,
         "current_mahadasha": active["mahadasha"],
         "current_antardasha": active["antardasha"],
+        "current_mahadasha_antardashas": active.get("mahadasha_antardashas", []),
         "as_of": active["as_of"],
     }
 

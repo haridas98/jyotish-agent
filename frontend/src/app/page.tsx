@@ -219,6 +219,30 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
             </div>
           ))}
         </div>
+        {summary.dasha.current_mahadasha_antardashas.length ? (
+          <div className="antardasha-panel">
+            <div>
+              <h3>Current Mahadasha Antardashas</h3>
+              <span>{summary.dasha.current_mahadasha?.lord ?? "Pending"} mahadasha</span>
+            </div>
+            <div className="antardasha-strip">
+              {summary.dasha.current_mahadasha_antardashas.map((period) => {
+                const isActive =
+                  period.lord === summary.dasha.current_antardasha?.lord &&
+                  period.parent_lord === summary.dasha.current_antardasha?.parent_lord;
+                return (
+                  <div className={isActive ? "antardasha-item active" : "antardasha-item"} key={`${period.parent_lord}-${period.lord}-${period.starts_at}`}>
+                    <strong>{period.lord}</strong>
+                    <span>{period.duration_years.toFixed(2)}Y</span>
+                    <small>
+                      {formatDate(period.starts_at)} - {formatDate(period.ends_at)}
+                    </small>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );
