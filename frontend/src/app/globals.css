@@ -270,6 +270,31 @@ select {
   overflow-wrap: anywhere;
 }
 
+.manual-place-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.manual-place-panel > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.manual-place-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.manual-place-grid label {
+  font-size: 13px;
+}
+
+.manual-place-grid input {
+  min-height: 42px;
+  padding: 0 10px;
+}
+
 .place-match-list {
   display: grid;
   gap: 6px;
@@ -903,6 +928,10 @@ select {
   }
 
   .place-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .manual-place-grid {
     grid-template-columns: 1fr;
   }
 

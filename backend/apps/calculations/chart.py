@@ -4,7 +4,7 @@ from datetime import date, datetime, time
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from apps.places.catalog import PlaceNotFound, resolve_place
+from apps.places.catalog import PlaceCandidate, PlaceNotFound, resolve_place
 
 from .constants import GRAHAS
 from .ephemeris import BodyPosition, CalculationSettings, EphemerisProvider, SwissEphemerisProvider
@@ -25,10 +25,7 @@ def build_birth_chart(
     birth_date = _required_date(data, "birth_date")
     birth_time = _required_time(data, "birth_time")
     place_name = _required_string(data, "place_name")
-    try:
-        place = resolve_place(place_name)
-    except PlaceNotFound as exc:
-        raise ChartInputError(str(exc)) from exc
+    place = _resolve_place_or_custom(data, place_name)
 
     timezone_name = str(data.get("timezone") or place.timezone).strip()
     latitude = _optional_float(data, "latitude", default=place.latitude, minimum=-90, maximum=90)
@@ -89,6 +86,28 @@ def build_birth_chart(
             local_moment,
         )
     return payload
+
+
+def _resolve_place_or_custom(data: dict[str, Any], place_name: str) -> PlaceCandidate:
+    try:
+        return resolve_place(place_name)
+    except PlaceNotFound as exc:
+        if not _has_custom_place_data(data):
+            raise ChartInputError(str(exc)) from exc
+
+    return PlaceCandidate(
+        id="custom",
+        name=place_name,
+        admin_name="",
+        country_code="",
+        latitude=_optional_float(data, "latitude", default=0, minimum=-90, maximum=90),
+        longitude=_optional_float(data, "longitude", default=0, minimum=-180, maximum=180),
+        timezone=str(data["timezone"]).strip(),
+    )
+
+
+def _has_custom_place_data(data: dict[str, Any]) -> bool:
+    return all(data.get(field) not in {None, ""} for field in ("timezone", "latitude", "longitude"))
 
 
 def _calculate_ascendant(

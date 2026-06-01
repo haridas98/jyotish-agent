@@ -68,6 +68,48 @@ def test_build_birth_chart_uses_local_timezone_and_provider():
     assert result["grahas"][0]["nakshatra"] == "Krittika"
 
 
+def test_build_birth_chart_accepts_custom_place_with_coordinates():
+    from apps.calculations.chart import build_birth_chart
+
+    class ProviderWithAscendant(FakeProvider):
+        def __init__(self):
+            super().__init__()
+            self.ascendant_args = None
+
+        def ascendant_position(self, moment, latitude, longitude, settings):
+            self.ascendant_args = (moment, latitude, longitude, settings)
+            return BodyPosition(
+                body="Lagna",
+                longitude=90.0,
+                latitude=None,
+                distance_au=None,
+                speed_longitude=None,
+                placement=zodiac_placement(90.0),
+            )
+
+    provider = ProviderWithAscendant()
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Тестовый город",
+            "timezone": "Asia/Yekaterinburg",
+            "latitude": 56.8389,
+            "longitude": 60.6057,
+        },
+        provider=provider,
+    )
+
+    assert provider.moment == datetime(2000, 1, 1, 15, 30, tzinfo=ZoneInfo("Asia/Yekaterinburg"))
+    assert provider.ascendant_args[1:3] == (56.8389, 60.6057)
+    assert result["place"]["id"] == "custom"
+    assert result["place"]["name"] == "Тестовый город"
+    assert result["place"]["label"] == "Тестовый город"
+    assert result["place"]["latitude"] == 56.8389
+    assert result["place"]["longitude"] == 60.6057
+
+
 def test_build_birth_chart_rejects_missing_time():
     from apps.calculations.chart import ChartInputError, build_birth_chart
 

@@ -20,7 +20,7 @@ class PlaceCandidate:
 
     @property
     def label(self) -> str:
-        return f"{self.name}, {self.admin_name}, {self.country_code}"
+        return ", ".join(part for part in (self.name, self.admin_name, self.country_code) if part)
 
     def as_dict(self) -> dict[str, object]:
         return {

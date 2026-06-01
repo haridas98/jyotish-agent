@@ -321,6 +321,9 @@ export default function Home() {
   const [placeName, setPlaceName] = useState("Вриндаван");
   const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
+  const [manualTimezone, setManualTimezone] = useState("Asia/Yekaterinburg");
+  const [manualLatitude, setManualLatitude] = useState("");
+  const [manualLongitude, setManualLongitude] = useState("");
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState<"D1" | "D9">("D1");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
@@ -385,6 +388,14 @@ export default function Home() {
     event.preventDefault();
     setStatus("Формирую отчёт с приоритетом цитат...");
     try {
+      const manualLat = Number(manualLatitude.replace(",", "."));
+      const manualLon = Number(manualLongitude.replace(",", "."));
+      const hasManualPlace = !selectedPlace && Boolean(manualTimezone.trim() && manualLatitude.trim() && manualLongitude.trim());
+      if (hasManualPlace && (!Number.isFinite(manualLat) || !Number.isFinite(manualLon))) {
+        setStatus("Для ручного места широта и долгота должны быть числами");
+        return;
+      }
+
       const result = await generateBirthReport({
         birth_date: birthDate,
         birth_time: birthTime,
@@ -395,7 +406,13 @@ export default function Home() {
               latitude: selectedPlace.latitude,
               longitude: selectedPlace.longitude,
             }
-          : {}),
+          : hasManualPlace
+            ? {
+                timezone: manualTimezone.trim(),
+                latitude: manualLat,
+                longitude: manualLon,
+              }
+            : {}),
       });
       setChart(result.chart);
       setBirthReport(result.report);
@@ -498,7 +515,37 @@ export default function Home() {
                     </div>
                   </>
                 ) : (
-                  <span>Место будет сопоставлено с каталогом на бэкенде.</span>
+                  <div className="manual-place-panel">
+                    <span>Каталог не нашёл точное место. Можно рассчитать вручную по IANA timezone и координатам.</span>
+                    <div className="manual-place-grid">
+                      <label>
+                        Часовой пояс
+                        <input
+                          value={manualTimezone}
+                          onChange={(event) => setManualTimezone(event.target.value)}
+                          placeholder="Asia/Yekaterinburg"
+                        />
+                      </label>
+                      <label>
+                        Широта
+                        <input
+                          inputMode="decimal"
+                          value={manualLatitude}
+                          onChange={(event) => setManualLatitude(event.target.value)}
+                          placeholder="56.8389"
+                        />
+                      </label>
+                      <label>
+                        Долгота
+                        <input
+                          inputMode="decimal"
+                          value={manualLongitude}
+                          onChange={(event) => setManualLongitude(event.target.value)}
+                          placeholder="60.6057"
+                        />
+                      </label>
+                    </div>
+                  </div>
                 )}
               </div>
               {alternatePlaceMatches.length ? (
