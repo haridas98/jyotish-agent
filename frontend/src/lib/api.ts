@@ -25,6 +25,8 @@ export type BirthChartRequest = {
   birth_date: string;
   birth_time: string;
   place_name: string;
+  place_id?: string;
+  country_code?: string;
   timezone?: string;
   latitude?: number;
   longitude?: number;
@@ -200,6 +202,54 @@ export type PlaceCandidate = {
   timezone: string;
 };
 
+export type User = {
+  id: number;
+  username: string;
+  email: string;
+};
+
+export type ChartProfile = {
+  id: number;
+  display_name: string;
+  birth_date: string;
+  birth_time: string | null;
+  birth_time_accuracy: string;
+  timezone: string;
+  place: {
+    id: number;
+    external_id: string;
+    name: string;
+    label: string;
+    country_code: string;
+    latitude: number;
+    longitude: number;
+    timezone: string;
+  };
+  latest_calculation: null | {
+    id: number;
+    status: string;
+    calculation_version: string;
+    graha_count: number;
+    created_at: string;
+    updated_at: string;
+  };
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChartCalculationRecord = {
+  id: number;
+  profile_id: number;
+  calculation_version: string;
+  ayanamsa: string;
+  house_system: string;
+  status: string;
+  error: string;
+  result: BirthChart;
+  created_at: string;
+  updated_at: string;
+};
+
 export type VLSearchResult = {
   id: number;
   unit_id: number | null;
@@ -216,9 +266,39 @@ export type VLSearchResult = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8100";
 
+function csrfToken() {
+  if (typeof document === "undefined") return "";
+  return document.cookie
+    .split("; ")
+    .find((cookie) => cookie.startsWith("csrftoken="))
+    ?.split("=")[1] ?? "";
+}
+
+async function ensureCsrf(force = false) {
+  if (!force && csrfToken()) return;
+  await fetch(`${API_BASE_URL}/api/auth/csrf`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+}
+
+async function apiFetch(path: string, init: RequestInit = {}) {
+  const method = init.method?.toUpperCase() ?? "GET";
+  const headers = new Headers(init.headers);
+  if (method !== "GET" && method !== "HEAD") {
+    await ensureCsrf();
+    headers.set("X-CSRFToken", csrfToken());
+  }
+  return fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    credentials: "include",
+    headers,
+  });
+}
+
 export async function fetchZodiacPlacement(longitude: number): Promise<ZodiacPlacement> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/calculations/zodiac-placement?longitude=${encodeURIComponent(longitude)}`,
+  const response = await apiFetch(
+    `/api/calculations/zodiac-placement?longitude=${encodeURIComponent(longitude)}`,
     { cache: "no-store" },
   );
 
@@ -230,7 +310,7 @@ export async function fetchZodiacPlacement(longitude: number): Promise<ZodiacPla
 }
 
 export async function fetchEphemerisStatus(): Promise<EphemerisStatus> {
-  const response = await fetch(`${API_BASE_URL}/api/calculations/ephemeris/status`, {
+  const response = await apiFetch("/api/calculations/ephemeris/status", {
     cache: "no-store",
   });
 
@@ -242,7 +322,7 @@ export async function fetchEphemerisStatus(): Promise<EphemerisStatus> {
 }
 
 export async function calculateBirthChart(payload: BirthChartRequest): Promise<BirthChart> {
-  const response = await fetch(`${API_BASE_URL}/api/calculations/birth-chart`, {
+  const response = await apiFetch("/api/calculations/birth-chart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -257,7 +337,7 @@ export async function calculateBirthChart(payload: BirthChartRequest): Promise<B
 }
 
 export async function generateBirthReport(payload: BirthChartRequest): Promise<BirthReport> {
-  const response = await fetch(`${API_BASE_URL}/api/reports/birth-chart`, {
+  const response = await apiFetch("/api/reports/birth-chart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -273,7 +353,7 @@ export async function generateBirthReport(payload: BirthChartRequest): Promise<B
 
 export async function searchPlaces(query: string): Promise<PlaceCandidate[]> {
   if (!query.trim()) return [];
-  const response = await fetch(`${API_BASE_URL}/api/places/search?q=${encodeURIComponent(query)}`, {
+  const response = await apiFetch(`/api/places/search?q=${encodeURIComponent(query)}`, {
     cache: "no-store",
   });
 
@@ -287,7 +367,7 @@ export async function searchPlaces(query: string): Promise<PlaceCandidate[]> {
 
 export async function searchVLSources(query: string): Promise<VLSearchResult[]> {
   if (!query.trim()) return [];
-  const response = await fetch(`${API_BASE_URL}/api/sources/vl/search?q=${encodeURIComponent(query)}`, {
+  const response = await apiFetch(`/api/sources/vl/search?q=${encodeURIComponent(query)}`, {
     cache: "no-store",
   });
 
@@ -297,4 +377,87 @@ export async function searchVLSources(query: string): Promise<VLSearchResult[]> 
   }
 
   return data.items ?? [];
+}
+
+export async function fetchCurrentUser(): Promise<User | null> {
+  const response = await apiFetch("/api/auth/me", { cache: "no-store" });
+  const data = await response.json();
+  if (response.status === 401) return null;
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.user ?? null;
+}
+
+export async function loginUser(username: string, password: string): Promise<User> {
+  const response = await apiFetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  await ensureCsrf(true);
+  return data.user;
+}
+
+export async function registerUser(username: string, password: string): Promise<User> {
+  const response = await apiFetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  await ensureCsrf(true);
+  return data.user;
+}
+
+export async function logoutUser(): Promise<void> {
+  const response = await apiFetch("/api/auth/logout", { method: "POST" });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  await ensureCsrf(true);
+}
+
+export async function listChartProfiles(): Promise<ChartProfile[]> {
+  const response = await apiFetch("/api/charts/profiles", { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.profiles ?? [];
+}
+
+export async function createChartProfile(payload: BirthChartRequest & { display_name: string }): Promise<ChartProfile> {
+  const response = await apiFetch("/api/charts/profiles", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...payload,
+      birth_time_accuracy: "exact",
+    }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.profile;
+}
+
+export async function calculateSavedProfile(profileId: number): Promise<ChartCalculationRecord> {
+  const response = await apiFetch(`/api/charts/profiles/${profileId}/calculate`, {
+    method: "POST",
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? data.calculation?.error ?? `API returned ${response.status}`);
+  }
+  return data.calculation;
 }

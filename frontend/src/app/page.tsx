@@ -2,15 +2,25 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  calculateSavedProfile,
+  createChartProfile,
+  fetchCurrentUser,
   generateBirthReport,
+  listChartProfiles,
+  loginUser,
+  logoutUser,
+  registerUser,
   searchPlaces,
   searchVLSources,
   type BirthReport,
   type BirthChart,
+  type BirthChartRequest,
+  type ChartProfile,
   type DashaPeriod,
   type GrahaPosition,
   type PersonSummary,
   type PlaceCandidate,
+  type User,
   type VargaPlacement,
   type VLSearchResult,
 } from "@/lib/api";
@@ -319,6 +329,7 @@ export default function Home() {
   const [birthDate, setBirthDate] = useState("1990-08-15");
   const [birthTime, setBirthTime] = useState("10:24");
   const [placeName, setPlaceName] = useState("Вриндаван");
+  const [profileName, setProfileName] = useState("Моя карта");
   const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
   const [manualTimezone, setManualTimezone] = useState("Asia/Yekaterinburg");
@@ -333,6 +344,12 @@ export default function Home() {
   const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
   const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
   const [sourceStatus, setSourceStatus] = useState("Поиск по VL не запускался");
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authUsername, setAuthUsername] = useState("haridas");
+  const [authPassword, setAuthPassword] = useState("strong-pass-108");
+  const [authStatus, setAuthStatus] = useState("Войдите, чтобы сохранять карты");
+  const [profiles, setProfiles] = useState<ChartProfile[]>([]);
+  const [profileStatus, setProfileStatus] = useState("Сохранённые карты не загружены");
 
   const calculatedLabel = useMemo(() => {
     if (!chart) return "Карта останется пустой до расчёта эфемеридных позиций.";
@@ -389,42 +406,130 @@ export default function Home() {
     };
   }, [placeName]);
 
+  useEffect(() => {
+    fetchCurrentUser()
+      .then((user) => {
+        setCurrentUser(user);
+        setAuthStatus(user ? `Вход: ${user.username}` : "Войдите, чтобы сохранять карты");
+        if (user) {
+          refreshProfiles();
+        }
+      })
+      .catch(() => setAuthStatus("Auth API недоступен"));
+  }, []);
+
   function selectPlace(place: PlaceCandidate) {
     setSelectedPlace(place);
     setPlaceName(place.label);
     setShowPlaceSuggestions(false);
   }
 
+  function buildBirthPayload(): BirthChartRequest | null {
+    const manualLat = Number(manualLatitude.replace(",", "."));
+    const manualLon = Number(manualLongitude.replace(",", "."));
+    const hasManualPlace = !selectedPlace && Boolean(manualTimezone.trim() && manualLatitude.trim() && manualLongitude.trim());
+    if (hasManualPlace && (!Number.isFinite(manualLat) || !Number.isFinite(manualLon))) {
+      setStatus("Для ручного места широта и долгота должны быть числами");
+      return null;
+    }
+
+    return {
+      birth_date: birthDate,
+      birth_time: birthTime,
+      place_name: selectedPlace?.label ?? placeName,
+      ...(selectedPlace
+        ? {
+            place_id: selectedPlace.id,
+            country_code: selectedPlace.country_code,
+            timezone: selectedPlace.timezone,
+            latitude: selectedPlace.latitude,
+            longitude: selectedPlace.longitude,
+          }
+        : hasManualPlace
+          ? {
+              timezone: manualTimezone.trim(),
+              latitude: manualLat,
+              longitude: manualLon,
+            }
+          : {}),
+    };
+  }
+
+  async function refreshProfiles() {
+    try {
+      const items = await listChartProfiles();
+      setProfiles(items);
+      setProfileStatus(items.length ? `${items.length} сохранённых карт` : "Сохранённых карт пока нет");
+    } catch (error) {
+      setProfiles([]);
+      setProfileStatus(error instanceof Error ? error.message : "Не удалось загрузить профили");
+    }
+  }
+
+  async function handleAuth(mode: "login" | "register") {
+    setAuthStatus(mode === "login" ? "Вхожу..." : "Создаю пользователя...");
+    try {
+      const user =
+        mode === "login"
+          ? await loginUser(authUsername, authPassword)
+          : await registerUser(authUsername, authPassword);
+      setCurrentUser(user);
+      setAuthStatus(`Вход: ${user.username}`);
+      await refreshProfiles();
+    } catch (error) {
+      setCurrentUser(null);
+      setProfiles([]);
+      setAuthStatus(error instanceof Error ? error.message : "Ошибка авторизации");
+    }
+  }
+
+  async function handleLogout() {
+    await logoutUser();
+    setCurrentUser(null);
+    setProfiles([]);
+    setAuthStatus("Вы вышли");
+    setProfileStatus("Сохранённые карты не загружены");
+  }
+
+  async function handleSaveProfile() {
+    if (!currentUser) {
+      setProfileStatus("Сначала войдите или зарегистрируйтесь");
+      return;
+    }
+    const payload = buildBirthPayload();
+    if (!payload) return;
+    setProfileStatus("Сохраняю карту...");
+    try {
+      await createChartProfile({
+        ...payload,
+        display_name: profileName.trim() || "Моя карта",
+      });
+      await refreshProfiles();
+    } catch (error) {
+      setProfileStatus(error instanceof Error ? error.message : "Не удалось сохранить карту");
+    }
+  }
+
+  async function handleCalculateProfile(profile: ChartProfile) {
+    setProfileStatus(`Рассчитываю: ${profile.display_name}`);
+    try {
+      const calculation = await calculateSavedProfile(profile.id);
+      setChart(calculation.result);
+      setBirthReport(null);
+      setStatus("Сохранённая карта рассчитана");
+      await refreshProfiles();
+    } catch (error) {
+      setProfileStatus(error instanceof Error ? error.message : "Не удалось рассчитать профиль");
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("Формирую отчёт с приоритетом цитат...");
     try {
-      const manualLat = Number(manualLatitude.replace(",", "."));
-      const manualLon = Number(manualLongitude.replace(",", "."));
-      const hasManualPlace = !selectedPlace && Boolean(manualTimezone.trim() && manualLatitude.trim() && manualLongitude.trim());
-      if (hasManualPlace && (!Number.isFinite(manualLat) || !Number.isFinite(manualLon))) {
-        setStatus("Для ручного места широта и долгота должны быть числами");
-        return;
-      }
-
-      const result = await generateBirthReport({
-        birth_date: birthDate,
-        birth_time: birthTime,
-        place_name: selectedPlace?.label ?? placeName,
-        ...(selectedPlace
-          ? {
-              timezone: selectedPlace.timezone,
-              latitude: selectedPlace.latitude,
-              longitude: selectedPlace.longitude,
-            }
-          : hasManualPlace
-            ? {
-                timezone: manualTimezone.trim(),
-                latitude: manualLat,
-                longitude: manualLon,
-              }
-            : {}),
-      });
+      const payload = buildBirthPayload();
+      if (!payload) return;
+      const result = await generateBirthReport(payload);
       setChart(result.chart);
       setBirthReport(result.report);
       setStatus("Отчёт построен");
@@ -597,6 +702,71 @@ export default function Home() {
               <button className="primary-button" type="submit">Рассчитать карту</button>
               <p className="status-line">{status}</p>
             </form>
+            <div className="account-block">
+              <div className="block-heading">
+                <h3>Аккаунт и сохранение</h3>
+                <span>{authStatus}</span>
+              </div>
+              {currentUser ? (
+                <div className="account-row">
+                  <strong>{currentUser.username}</strong>
+                  <button type="button" className="secondary-button" onClick={handleLogout}>Выйти</button>
+                </div>
+              ) : (
+                <div className="auth-grid">
+                  <label>
+                    Логин
+                    <input value={authUsername} onChange={(event) => setAuthUsername(event.target.value)} />
+                  </label>
+                  <label>
+                    Пароль
+                    <input
+                      type="password"
+                      value={authPassword}
+                      onChange={(event) => setAuthPassword(event.target.value)}
+                    />
+                  </label>
+                  <div className="auth-actions">
+                    <button type="button" className="secondary-button" onClick={() => handleAuth("login")}>Войти</button>
+                    <button type="button" className="secondary-button" onClick={() => handleAuth("register")}>Регистрация</button>
+                  </div>
+                </div>
+              )}
+              <label>
+                Название карты
+                <input value={profileName} onChange={(event) => setProfileName(event.target.value)} />
+              </label>
+              <button type="button" className="secondary-button save-profile-button" onClick={handleSaveProfile}>
+                Сохранить профиль рождения
+              </button>
+            </div>
+            <div className="profile-block">
+              <div className="block-heading">
+                <h3>Сохранённые карты</h3>
+                <button type="button" className="secondary-button" onClick={refreshProfiles}>Обновить</button>
+              </div>
+              <p>{profileStatus}</p>
+              {profiles.length ? (
+                <div className="profile-list">
+                  {profiles.map((profile) => (
+                    <div className="profile-row" key={profile.id}>
+                      <div>
+                        <strong>{profile.display_name}</strong>
+                        <span>{profile.birth_date} · {profile.place.label}</span>
+                        <small>
+                          {profile.latest_calculation
+                            ? `${profile.latest_calculation.status}, ${profile.latest_calculation.graha_count} грах`
+                            : "Расчёт ещё не сохранён"}
+                        </small>
+                      </div>
+                      <button type="button" className="secondary-button" onClick={() => handleCalculateProfile(profile)}>
+                        Рассчитать
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </section>
 
           <section className="main-stack">

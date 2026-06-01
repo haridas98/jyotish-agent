@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.db import IntegrityError
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -71,3 +73,11 @@ class MeView(APIView):
             return Response({"user": None}, status=401)
         return Response({"user": user_payload(request.user)})
 
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CsrfView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        return Response({"status": "ok"})

@@ -36,3 +36,13 @@ def test_login_rejects_wrong_password():
 
     assert response.status_code == 401
 
+
+@pytest.mark.django_db
+def test_csrf_endpoint_sets_csrf_cookie():
+    client = APIClient()
+
+    response = client.get(reverse("auth-csrf"))
+
+    assert response.status_code == 200
+    assert response.data == {"status": "ok"}
+    assert "csrftoken" in response.cookies

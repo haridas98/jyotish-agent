@@ -393,6 +393,91 @@ select {
   text-align: center;
 }
 
+.account-block,
+.profile-block {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.block-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.block-heading h3 {
+  color: var(--green);
+  font-size: 17px;
+  margin: 0;
+}
+
+.block-heading span,
+.profile-block p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.auth-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-actions,
+.account-row {
+  display: flex;
+  gap: 8px;
+}
+
+.account-row {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.save-profile-button {
+  min-height: 46px;
+}
+
+.profile-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  overflow: hidden;
+}
+
+.profile-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 11px;
+}
+
+.profile-row:first-child {
+  border-top: 0;
+}
+
+.profile-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.profile-row strong {
+  color: var(--green);
+}
+
+.profile-row span,
+.profile-row small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 .main-stack {
   display: grid;
   gap: 16px;

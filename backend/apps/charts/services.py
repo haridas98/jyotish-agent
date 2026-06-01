@@ -29,10 +29,7 @@ def create_birth_profile(user: AbstractBaseUser, data: dict[str, Any]) -> BirthP
         raise ChartProfileInputError("birth_time_accuracy is invalid")
 
     place_name = _required_string(data, "place_name")
-    try:
-        catalog_place = resolve_place(place_name)
-    except PlaceNotFound as exc:
-        raise ChartProfileInputError(str(exc)) from exc
+    catalog_place = _resolve_profile_place(data, place_name)
 
     place = sync_catalog_place(catalog_place)
     return BirthProfile.objects.create(
@@ -100,6 +97,7 @@ def calculate_profile_chart(
 
 
 def profile_payload(profile: BirthProfile) -> dict[str, Any]:
+    latest_calculation = profile.calculations.order_by("-created_at").first()
     return {
         "id": profile.id,
         "display_name": profile.display_name,
@@ -108,6 +106,9 @@ def profile_payload(profile: BirthProfile) -> dict[str, Any]:
         "birth_time_accuracy": profile.birth_time_accuracy,
         "timezone": profile.timezone_name,
         "place": place_payload(profile.place),
+        "latest_calculation": latest_calculation_summary(latest_calculation)
+        if latest_calculation
+        else None,
         "created_at": profile.created_at.isoformat(),
         "updated_at": profile.updated_at.isoformat(),
     }
@@ -139,6 +140,45 @@ def calculation_payload(calculation: ChartCalculation) -> dict[str, Any]:
         "created_at": calculation.created_at.isoformat(),
         "updated_at": calculation.updated_at.isoformat(),
     }
+
+
+def latest_calculation_summary(calculation: ChartCalculation) -> dict[str, Any]:
+    result = calculation.result or {}
+    return {
+        "id": calculation.id,
+        "status": calculation.status,
+        "calculation_version": calculation.calculation_version,
+        "graha_count": len(result.get("grahas", [])) if isinstance(result, dict) else 0,
+        "created_at": calculation.created_at.isoformat(),
+        "updated_at": calculation.updated_at.isoformat(),
+    }
+
+
+def _resolve_profile_place(data: dict[str, Any], place_name: str) -> PlaceCandidate:
+    try:
+        return resolve_place(place_name)
+    except PlaceNotFound as exc:
+        if not all(data.get(field) not in {None, ""} for field in ("timezone", "latitude", "longitude")):
+            raise ChartProfileInputError(str(exc)) from exc
+
+    name, admin_name, country_code = _parse_place_label(place_name)
+    return PlaceCandidate(
+        id=str(data.get("place_id") or f"custom:{place_name}").strip(),
+        name=name,
+        admin_name=str(data.get("admin_name") or admin_name).strip(),
+        country_code=str(data.get("country_code") or country_code).strip().upper(),
+        latitude=_float_in_range(data, "latitude", -90, 90),
+        longitude=_float_in_range(data, "longitude", -180, 180),
+        timezone=str(data["timezone"]).strip(),
+    )
+
+
+def _parse_place_label(label: str) -> tuple[str, str, str]:
+    parts = [part.strip() for part in label.split(",") if part.strip()]
+    name = parts[0] if parts else label
+    country_code = parts[-1].upper() if len(parts) >= 2 and len(parts[-1]) == 2 else ""
+    admin_name = parts[1] if len(parts) >= 3 else ""
+    return name, admin_name, country_code
 
 
 def _profile_input(profile: BirthProfile) -> dict[str, Any]:
@@ -230,3 +270,13 @@ def _optional_decimal(value: object) -> Decimal | None:
     if value is None:
         return None
     return _decimal(value)
+
+
+def _float_in_range(data: dict[str, Any], field: str, minimum: float, maximum: float) -> float:
+    try:
+        value = float(data[field])
+    except (TypeError, ValueError) as exc:
+        raise ChartProfileInputError(f"{field} must be a number") from exc
+    if value < minimum or value > maximum:
+        raise ChartProfileInputError(f"{field} must be between {minimum} and {maximum}")
+    return value
