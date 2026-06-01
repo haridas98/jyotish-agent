@@ -745,6 +745,59 @@ select {
   color: var(--green);
 }
 
+.detailed-positions {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.detailed-positions > div:first-child {
+  align-items: center;
+  background: #faf8f1;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.detailed-positions h3 {
+  color: var(--green);
+  font-size: 15px;
+  margin: 0;
+}
+
+.detailed-positions span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.detailed-table {
+  overflow-x: auto;
+}
+
+.detailed-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  font-size: 13px;
+  gap: 10px;
+  grid-template-columns: 96px 64px 86px 88px 88px minmax(120px, 1fr) 48px 64px 104px;
+  min-width: 900px;
+  padding: 9px 12px;
+}
+
+.detailed-row:first-child {
+  border-top: 0;
+}
+
+.detailed-head {
+  background: #faf8f1;
+  color: var(--muted);
+}
+
+.detailed-row strong {
+  color: var(--green);
+}
+
 .house-overview {
   border: 1px solid var(--line);
   border-radius: 8px;

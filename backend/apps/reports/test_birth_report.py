@@ -68,6 +68,9 @@ def test_compose_birth_report_uses_chart_facts_citations_and_vaishnava_guard():
     assert result["report"]["person_summary"]["core_factors"][0]["value"] == "Karka"
     assert result["report"]["person_summary"]["graha_houses"][1]["body"] == "Chandra"
     assert result["report"]["person_summary"]["graha_houses"][1]["house"] == 2
+    assert result["report"]["person_summary"]["detailed_positions"][0]["body"] == "Surya"
+    assert result["report"]["person_summary"]["detailed_positions"][0]["sign_degrees_dms"]
+    assert result["report"]["person_summary"]["detailed_positions"][0]["rashi_lord"] == "Surya"
     assert result["report"]["person_summary"]["dasha"]["birth_mahadasha_lord"] == "Ketu"
     assert result["report"]["person_summary"]["dasha"]["current_mahadasha"]["lord"] == "Surya"
     assert result["report"]["person_summary"]["dasha"]["current_antardasha"]["parent_lord"] == "Surya"

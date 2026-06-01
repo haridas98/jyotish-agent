@@ -277,6 +277,45 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
             </div>
           ))}
         </div>
+        {summary.detailed_positions?.length ? (
+          <div className="detailed-positions">
+            <div>
+              <h3>Подробные положения</h3>
+              <span>D1, D9, накшатра, достоинство</span>
+            </div>
+            <div className="detailed-table">
+              <div className="detailed-row detailed-head">
+                <span>Граха</span>
+                <span>Карака</span>
+                <span>Градусы</span>
+                <span>Раши</span>
+                <span>D9</span>
+                <span>Накшатра</span>
+                <span>Дом</span>
+                <span>Упр.</span>
+                <span>Сила</span>
+              </div>
+              {summary.detailed_positions.map((row) => (
+                <div className="detailed-row" key={row.body}>
+                  <strong>
+                    {labelRu(row.body)}
+                    {row.retrograde ? " R" : ""}
+                  </strong>
+                  <span>{row.chara_karaka ?? "-"}</span>
+                  <span>{row.sign_degrees_dms}</span>
+                  <span>{row.rashi}</span>
+                  <span>{row.navamsa}</span>
+                  <span>
+                    {row.nakshatra} {row.pada ?? ""}
+                  </span>
+                  <span>{row.house ?? "-"}</span>
+                  <span>{row.ruled_houses.length ? row.ruled_houses.join(", ") : "-"}</span>
+                  <span>{row.dignity}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {summary.houses.length ? (
           <div className="house-overview">
             <div>

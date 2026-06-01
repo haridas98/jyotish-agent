@@ -156,6 +156,22 @@ export type GrahaHouseSummary = {
   navamsa: string;
 };
 
+export type DetailedPositionSummary = {
+  body: string;
+  chara_karaka: string | null;
+  longitude: number | null;
+  sign_degrees_dms: string;
+  rashi: string;
+  rashi_lord: string | null;
+  navamsa: string;
+  nakshatra: string;
+  pada: number | null;
+  house: number | null;
+  ruled_houses: number[];
+  dignity: string;
+  retrograde: boolean;
+};
+
 export type HouseSummary = {
   house: number;
   rashi: string;
@@ -166,6 +182,7 @@ export type PersonSummary = {
   birth_context: SummaryItem[];
   core_factors: SummaryItem[];
   graha_houses: GrahaHouseSummary[];
+  detailed_positions: DetailedPositionSummary[];
   houses: HouseSummary[];
   panchanga: SummaryItem[];
   dasha: {

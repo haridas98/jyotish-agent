@@ -125,6 +125,7 @@ def _person_summary(
         "birth_context": _birth_context(chart),
         "core_factors": _core_factors(chart, chart_facts),
         "graha_houses": _graha_house_rows(chart_facts),
+        "detailed_positions": chart_facts.get("detailed_positions", []),
         "houses": _house_rows(chart, chart_facts),
         "panchanga": _panchanga_rows(chart),
         "dasha": _dasha_facts(data, chart, chart_facts),
