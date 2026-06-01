@@ -44,7 +44,14 @@ PLACES = (
         latitude=27.565,
         longitude=77.6593,
         timezone="Asia/Kolkata",
-        aliases=("vrindavan", "vrindavana", "vrindavan india", "vrindavan up"),
+        aliases=(
+            "vrindavan",
+            "vrindavana",
+            "vrindavan india",
+            "vrindavan up",
+            "вриндаван",
+            "вриндавана",
+        ),
     ),
     PlaceCandidate(
         id="in-mayapur",
@@ -54,7 +61,16 @@ PLACES = (
         latitude=23.4241,
         longitude=88.3883,
         timezone="Asia/Kolkata",
-        aliases=("mayapur", "sri mayapur", "sridham mayapur", "navadvipa"),
+        aliases=(
+            "mayapur",
+            "sri mayapur",
+            "sridham mayapur",
+            "navadvipa",
+            "маяпур",
+            "майапур",
+            "шри маяпур",
+            "навадвипа",
+        ),
     ),
     PlaceCandidate(
         id="ru-yekaterinburg",

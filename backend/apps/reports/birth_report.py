@@ -33,7 +33,7 @@ def compose_birth_report(
         *interpretation_provider(chart),
         {
             "key": "devotional_guidance",
-            "title": "Devotional Guidance",
+            "title": "Вайшнавские рекомендации",
             "body": str(remedy["public_advice"]),
             "review_status": "draft" if guidance_citations else "needs_citation",
             "calculation_only": False,
@@ -63,10 +63,11 @@ def _calculation_summary(chart: dict[str, Any]) -> dict[str, Any]:
     grahas = chart.get("grahas", [])
     return {
         "key": "calculation_summary",
-        "title": "Calculation Summary",
+        "title": "Расчётная сводка",
         "body": (
-            f"Birth data resolved to {chart['place']['label']} at {chart['birth']['local_datetime']}. "
-            f"Lagna is {ascendant.get('rashi', 'pending')}; {len(grahas)} grahas were calculated."
+            f"Место рождения сопоставлено: {chart['place']['label']}; "
+            f"местное время: {chart['birth']['local_datetime']}. "
+            f"Лагна: {ascendant.get('rashi', 'ожидает')}; рассчитано грах: {len(grahas)}."
         ),
         "review_status": "calculation_only",
         "calculation_only": True,
@@ -86,11 +87,11 @@ def _panchanga_summary(chart: dict[str, Any]) -> dict[str, Any]:
     karana = panchanga.get("karana", {})
     return {
         "key": "panchanga",
-        "title": "Panchanga",
+        "title": "Панчанга",
         "body": (
-            f"Tithi: {tithi.get('paksha', 'pending')} {tithi.get('name', 'pending')}; "
-            f"vara: {vara.get('name', 'pending')}; yoga: {yoga.get('name', 'pending')}; "
-            f"karana: {karana.get('name', 'pending')}."
+            f"Титхи: {tithi.get('paksha', 'ожидает')} {tithi.get('name', 'ожидает')}; "
+            f"вара: {vara.get('name', 'ожидает')}; йога: {yoga.get('name', 'ожидает')}; "
+            f"карана: {karana.get('name', 'ожидает')}."
         ),
         "review_status": "calculation_only",
         "calculation_only": True,
@@ -103,10 +104,10 @@ def _dasha_summary(chart: dict[str, Any]) -> dict[str, Any]:
     first = periods[0] if periods else {}
     return {
         "key": "vimshottari",
-        "title": "Vimshottari",
+        "title": "Вимшоттари",
         "body": (
-            f"Birth mahadasha starts with {first.get('lord', 'pending')}. "
-            "This MVP dasha layer remains draft until JHora parity is verified."
+            f"При рождении махадаша начинается с {first.get('lord', 'ожидает')}. "
+            "Этот слой даши остаётся черновым до проверки паритета с JHora."
         ),
         "review_status": "calculation_only",
         "calculation_only": True,
@@ -273,7 +274,7 @@ def _rashi_house_value(placement: dict[str, object]) -> str:
     rashi = str(placement.get("rashi") or "")
     house = placement.get("house")
     if isinstance(house, int):
-        return f"{rashi}, house {house}"
+        return f"{rashi}, дом {house}"
     return rashi
 
 
@@ -282,7 +283,7 @@ def _placement_detail(placement: dict[str, object]) -> str:
     nakshatra = placement.get("nakshatra")
     pada = placement.get("pada")
     if nakshatra:
-        pieces.append(f"{nakshatra} pada {pada}" if pada else str(nakshatra))
+        pieces.append(f"{nakshatra}, пада {pada}" if pada else str(nakshatra))
     navamsa = placement.get("navamsa")
     if navamsa:
         pieces.append(f"D9 {navamsa}")

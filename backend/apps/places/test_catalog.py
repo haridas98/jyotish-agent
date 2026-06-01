@@ -21,6 +21,13 @@ def test_search_places_matches_mayapur():
     assert results[0].timezone == "Asia/Kolkata"
 
 
+def test_search_places_matches_cyrillic_aliases():
+    assert search_places("Екатеринбург")[0].name == "Yekaterinburg"
+    assert search_places("Москва")[0].name == "Moscow"
+    assert search_places("Вриндаван")[0].name == "Vrindavan"
+    assert search_places("Маяпур")[0].name == "Mayapur"
+
+
 def test_resolve_place_raises_for_unknown_place():
     try:
         resolve_place("Unknown test place")

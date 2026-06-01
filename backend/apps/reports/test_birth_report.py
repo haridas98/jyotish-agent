@@ -79,9 +79,17 @@ def test_compose_birth_report_uses_chart_facts_citations_and_vaishnava_guard():
     assert houses[0]["grahas"] == []
     assert houses[1]["grahas"] == ["Surya", "Chandra"]
     assert result["report"]["sections"][0]["key"] == "calculation_summary"
+    assert result["report"]["sections"][0]["title"] == "Расчётная сводка"
+    assert "Место рождения сопоставлено" in result["report"]["sections"][0]["body"]
+    assert result["report"]["sections"][1]["title"] == "Панчанга"
+    assert "Титхи:" in result["report"]["sections"][1]["body"]
+    assert result["report"]["sections"][2]["title"] == "Вимшоттари"
+    assert "махадаша" in result["report"]["sections"][2]["body"]
     guidance = next(section for section in result["report"]["sections"] if section["key"] == "devotional_guidance")
+    assert guidance["title"] == "Вайшнавские рекомендации"
     assert guidance["citations"][0]["title"] == "Bhagavad-gita 9.22"
-    assert "Krishna" in guidance["body"]
+    assert "Кришн" in guidance["body"]
+    assert "Харе Кришна" in guidance["body"]
     assert "Worship Shani" not in guidance["body"]
 
 

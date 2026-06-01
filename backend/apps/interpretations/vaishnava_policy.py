@@ -16,10 +16,10 @@ BLOCKED_REMEDY_TERMS = {
 }
 
 KRISHNA_CENTERED_REMEDY = (
-    "For a public ISKCON-aligned report, remedial guidance must be framed as taking shelter "
-    "of Krishna: chant the Hare Krishna maha-mantra, study Bhagavad-gita and "
-    "Srimad-Bhagavatam, serve Vaishnavas, and offer any vrata, charity, or worship only as "
-    "service connected to Krishna and guru-parampara."
+    "Для публичного отчёта в духе ИСККОН рекомендации должны быть сформулированы как "
+    "прибежище у Кришны: повторять маха-мантру Харе Кришна, изучать Бхагавад-гиту и "
+    "Шримад-Бхагаватам, служить вайшнавам, а любые vrata, пожертвования или поклонение "
+    "предлагать только как служение Кришне и гуру-парампаре."
 )
 
 

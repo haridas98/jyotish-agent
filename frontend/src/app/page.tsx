@@ -16,15 +16,64 @@ import {
 } from "@/lib/api";
 
 const sourceRows = [
-  ["Ayanamsa", "Lahiri", "Review required", "draft"],
-  ["Chart system", "Parashara siddhanta", "Source mapping pending", "draft"],
-  ["VL corpus", "Srila Prabhupada database", "Read-only link planned", "ready"],
+  ["Айанамша", "Lahiri", "Нужна проверка", "draft"],
+  ["Система карты", "Парашара-сиддханта", "Сопоставление источников в работе", "draft"],
+  ["Корпус VL", "База Шрилы Прабхупады", "Поиск подключён", "ready"],
 ];
+
+const stateLabels: Record<string, string> = {
+  draft: "черновик",
+  ready: "готово",
+};
+
+const bodyLabelsRu: Record<string, string> = {
+  Ascendant: "Асцендент",
+  Lagna: "Лагна",
+  Surya: "Сурья",
+  Chandra: "Чандра",
+  Mangala: "Мангала",
+  Budha: "Будха",
+  Guru: "Гуру",
+  Shukra: "Шукра",
+  Shani: "Шани",
+  Rahu: "Раху",
+  Ketu: "Кету",
+  Moon: "Луна",
+  Sun: "Солнце",
+};
+
+const summaryLabelsRu: Record<string, string> = {
+  Ayanamsa: "Айанамша",
+  Birth: "Рождение",
+  Ephemeris: "Эфемериды",
+  Karana: "Карана",
+  Lagna: "Лагна",
+  Moon: "Луна",
+  Panchanga: "Панчанга",
+  Place: "Место",
+  Sun: "Солнце",
+  Tithi: "Титхи",
+  Vara: "Вара",
+  Yoga: "Йога",
+};
+
+function labelRu(value: string) {
+  return summaryLabelsRu[value] ?? bodyLabelsRu[value] ?? value;
+}
+
+function valueRu(value: string | number | null | undefined) {
+  if (value === null || value === undefined || value === "") return "Ожидает";
+  return String(value).replace(/house (\d+)/g, "дом $1");
+}
+
+function formatCoordinate(value: number) {
+  return value.toFixed(4);
+}
 
 function ChartPreview() {
   return (
-    <div className="chart-box" aria-label="Rashi chart preview">
-      <svg viewBox="0 0 600 600" role="img" aria-label="North Indian chart grid">
+    <div className="chart-box" aria-label="Предпросмотр карты раши">
+      <svg viewBox="0 0 600 600" role="img" aria-label="Североиндийская сетка карты">
         <rect x="2" y="2" width="596" height="596" fill="white" stroke="#b88a2f" strokeWidth="2" />
         <path d="M2 2 L598 598 M598 2 L2 598" stroke="#c99a43" strokeWidth="1.35" />
         <path d="M300 2 L598 300 L300 598 L2 300 Z" fill="none" stroke="#c99a43" strokeWidth="1.35" />
@@ -34,11 +83,11 @@ function ChartPreview() {
 }
 
 function formatDegrees(value: number) {
-  return `${value.toFixed(4)} deg`;
+  return `${value.toFixed(4)}°`;
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -49,8 +98,8 @@ function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
   if (grahas.length === 0) {
     return (
       <div className="readiness-panel">
-        <strong>No calculated grahas yet</strong>
-        <p>The chart stays empty until the backend returns real ephemeris positions.</p>
+        <strong>Грахи ещё не рассчитаны</strong>
+        <p>Карта заполнится после ответа бэкенда с эфемеридными позициями.</p>
       </div>
     );
   }
@@ -58,15 +107,15 @@ function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
   return (
     <div className="planet-table">
       <div className="table-row table-head">
-        <span>Graha</span>
-        <span>Longitude</span>
-        <span>Rashi</span>
-        <span>Nakshatra</span>
+        <span>Граха</span>
+        <span>Долгота</span>
+        <span>Раши</span>
+        <span>Накшатра</span>
         <span>D9</span>
       </div>
       {grahas.map((graha) => (
         <div className="table-row" key={graha.body}>
-          <strong>{graha.body}</strong>
+          <strong>{labelRu(graha.body)}</strong>
           <span>{formatDegrees(graha.longitude)}</span>
           <span>{graha.rashi}</span>
           <span>
@@ -83,8 +132,8 @@ function VargaTable({ placements }: { placements: VargaPlacement[] }) {
   if (placements.length === 0) {
     return (
       <div className="readiness-panel">
-        <strong>No D9 placements yet</strong>
-        <p>Navamsa appears after grahas and Lagna are calculated.</p>
+        <strong>Положения D9 ещё не рассчитаны</strong>
+        <p>Навамша появится после расчёта грах и лагны.</p>
       </div>
     );
   }
@@ -92,12 +141,12 @@ function VargaTable({ placements }: { placements: VargaPlacement[] }) {
   return (
     <div className="planet-table compact-table">
       <div className="table-row table-head">
-        <span>Point</span>
-        <span>D9 Rashi</span>
+        <span>Точка</span>
+        <span>Раши D9</span>
       </div>
       {placements.map((placement) => (
         <div className="table-row" key={placement.body}>
-          <strong>{placement.body}</strong>
+          <strong>{labelRu(placement.body)}</strong>
           <span>{placement.rashi}</span>
         </div>
       ))}
@@ -109,8 +158,7 @@ function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
   if (periods.length === 0) {
     return (
       <div className="pending-strip">
-        Real dasha periods will appear here after Moon longitude and the Vimshottari engine are
-        connected.
+        Периоды даш появятся здесь после расчёта долготы Луны и движка Вимшоттари.
       </div>
     );
   }
@@ -119,8 +167,8 @@ function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
     <div className="dasha-timeline">
       {periods.map((period) => (
         <div className="dasha-period" key={`${period.lord}-${period.starts_at}`}>
-          <strong>{period.lord}</strong>
-          <span>{period.duration_years.toFixed(2)}Y</span>
+          <strong>{labelRu(period.lord)}</strong>
+          <span>{period.duration_years.toFixed(2)} г.</span>
           <small>
             {formatDate(period.starts_at)} - {formatDate(period.ends_at)}
           </small>
@@ -135,10 +183,10 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
     return (
       <section className="panel person-summary-panel">
         <div className="panel-heading">
-          <h2>Person Summary</h2>
-          <span>Pending calculation</span>
+          <h2>Сводка по человеку</h2>
+          <span>Ожидает расчёт</span>
         </div>
-        <div className="pending-strip">Core birth facts appear after calculation.</div>
+        <div className="pending-strip">Основные факты рождения появятся после расчёта.</div>
       </section>
     );
   }
@@ -146,70 +194,70 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
   return (
     <section className="panel person-summary-panel">
       <div className="panel-heading">
-        <h2>Person Summary</h2>
-        <span>Calculation facts only</span>
+        <h2>Сводка по человеку</h2>
+        <span>Пока только расчётные факты</span>
       </div>
       <div className="summary-content">
         <div className="summary-grid">
           {summary.core_factors.map((item) => (
             <div className="summary-card" key={item.label}>
-              <span>{item.label}</span>
-              <strong>{item.value}</strong>
-              {item.detail ? <small>{item.detail}</small> : null}
+              <span>{labelRu(item.label)}</span>
+              <strong>{valueRu(item.value)}</strong>
+              {item.detail ? <small>{valueRu(item.detail)}</small> : null}
             </div>
           ))}
         </div>
         <div className="summary-columns">
           <div className="summary-list">
-            <h3>Birth Context</h3>
+            <h3>Контекст рождения</h3>
             {summary.birth_context.map((item) => (
               <div key={item.label}>
-                <span>{item.label}</span>
-                <strong>{item.value || "Pending"}</strong>
+                <span>{labelRu(item.label)}</span>
+                <strong>{valueRu(item.value)}</strong>
               </div>
             ))}
           </div>
           <div className="summary-list">
-            <h3>Panchanga</h3>
+            <h3>Панчанга</h3>
             {summary.panchanga.map((item) => (
               <div key={item.label}>
-                <span>{item.label}</span>
-                <strong>{item.value || "Pending"}</strong>
+                <span>{labelRu(item.label)}</span>
+                <strong>{valueRu(item.value)}</strong>
               </div>
             ))}
             <div>
-              <span>Birth Dasha</span>
-              <strong>{summary.dasha.birth_mahadasha_lord ?? "Pending"}</strong>
+              <span>Даша при рождении</span>
+              <strong>{summary.dasha.birth_mahadasha_lord ? labelRu(summary.dasha.birth_mahadasha_lord) : "Ожидает"}</strong>
             </div>
             <div>
-              <span>Current MD</span>
-              <strong>{summary.dasha.current_mahadasha?.lord ?? "Pending"}</strong>
+              <span>Текущая махадаша</span>
+              <strong>{summary.dasha.current_mahadasha ? labelRu(summary.dasha.current_mahadasha.lord) : "Ожидает"}</strong>
             </div>
             <div>
-              <span>Current AD</span>
+              <span>Текущая антардаша</span>
               <strong>
                 {summary.dasha.current_antardasha
-                  ? `${summary.dasha.current_antardasha.parent_lord ?? ""}/${summary.dasha.current_antardasha.lord}`
-                  : "Pending"}
+                  ? `${labelRu(summary.dasha.current_antardasha.parent_lord ?? "")}/${labelRu(summary.dasha.current_antardasha.lord)}`
+                  : "Ожидает"}
               </strong>
             </div>
             <div>
-              <span>As Of</span>
-              <strong>{summary.dasha.as_of ? formatDate(summary.dasha.as_of) : "Pending"}</strong>
+              <span>На дату</span>
+              <strong>{summary.dasha.as_of ? formatDate(summary.dasha.as_of) : "Ожидает"}</strong>
             </div>
           </div>
         </div>
         <div className="summary-table">
           <div className="summary-row summary-head">
-            <span>Graha</span>
-            <span>Rashi</span>
-            <span>House</span>
-            <span>Nakshatra</span>
+            <span>Граха</span>
+            <span>Раши</span>
+            <span>Дом</span>
+            <span>Накшатра</span>
             <span>D9</span>
           </div>
           {summary.graha_houses.map((row) => (
             <div className="summary-row" key={row.body}>
-              <strong>{row.body}</strong>
+              <strong>{labelRu(row.body)}</strong>
               <span>{row.rashi}</span>
               <span>{row.house ?? "-"}</span>
               <span>
@@ -222,15 +270,15 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
         {summary.houses.length ? (
           <div className="house-overview">
             <div>
-              <h3>House Overview</h3>
-              <span>Whole-sign houses</span>
+              <h3>Обзор домов</h3>
+              <span>Цельнознаковые дома</span>
             </div>
             <div className="house-grid">
               {summary.houses.map((house) => (
                 <div className="house-card" key={house.house}>
-                  <span>House {house.house}</span>
+                  <span>Дом {house.house}</span>
                   <strong>{house.rashi}</strong>
-                  <small>{house.grahas.length ? house.grahas.join(", ") : "Empty"}</small>
+                  <small>{house.grahas.length ? house.grahas.map(labelRu).join(", ") : "Пусто"}</small>
                 </div>
               ))}
             </div>
@@ -239,8 +287,10 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
         {summary.dasha.current_mahadasha_antardashas.length ? (
           <div className="antardasha-panel">
             <div>
-              <h3>Current Mahadasha Antardashas</h3>
-              <span>{summary.dasha.current_mahadasha?.lord ?? "Pending"} mahadasha</span>
+              <h3>Антардаши текущей махадаши</h3>
+              <span>
+                {summary.dasha.current_mahadasha ? labelRu(summary.dasha.current_mahadasha.lord) : "Ожидает"} махадаша
+              </span>
             </div>
             <div className="antardasha-strip">
               {summary.dasha.current_mahadasha_antardashas.map((period) => {
@@ -249,8 +299,8 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
                   period.parent_lord === summary.dasha.current_antardasha?.parent_lord;
                 return (
                   <div className={isActive ? "antardasha-item active" : "antardasha-item"} key={`${period.parent_lord}-${period.lord}-${period.starts_at}`}>
-                    <strong>{period.lord}</strong>
-                    <span>{period.duration_years.toFixed(2)}Y</span>
+                    <strong>{labelRu(period.lord)}</strong>
+                    <span>{period.duration_years.toFixed(2)} г.</span>
                     <small>
                       {formatDate(period.starts_at)} - {formatDate(period.ends_at)}
                     </small>
@@ -268,32 +318,36 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
 export default function Home() {
   const [birthDate, setBirthDate] = useState("1990-08-15");
   const [birthTime, setBirthTime] = useState("10:24");
-  const [placeName, setPlaceName] = useState("Vrindavan, Uttar Pradesh, India");
+  const [placeName, setPlaceName] = useState("Вриндаван");
   const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState<"D1" | "D9">("D1");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
-  const [status, setStatus] = useState("Calculation not started");
+  const [status, setStatus] = useState("Расчёт не запускался");
   const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
   const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
-  const [sourceStatus, setSourceStatus] = useState("VL search not started");
+  const [sourceStatus, setSourceStatus] = useState("Поиск по VL не запускался");
 
   const calculatedLabel = useMemo(() => {
-    if (!chart) return "Chart will stay empty until real ephemeris positions are available.";
-    return `${chart.grahas.length} grahas calculated for ${chart.place.label ?? chart.place.name}.`;
+    if (!chart) return "Карта останется пустой до расчёта эфемеридных позиций.";
+    return `${chart.grahas.length} грах рассчитано для ${chart.place.label ?? chart.place.name}.`;
   }, [chart]);
   const vimshottariPeriods = chart?.dashas?.vimshottari?.mahadashas ?? [];
   const d9Placements = chart?.vargas?.D9?.placements ?? [];
   const personSummary = birthReport?.person_summary ?? null;
+  const alternatePlaceMatches = useMemo(
+    () => placeMatches.filter((place) => place.id !== selectedPlace?.id).slice(0, 4),
+    [placeMatches, selectedPlace],
+  );
   const chartFacts = useMemo(() => {
     if (!chart) return [];
     return [
-      ["Lagna", chart.ascendant?.rashi ?? "Pending"],
-      ["Tithi", chart.panchanga.tithi ? `${chart.panchanga.tithi.paksha} ${chart.panchanga.tithi.name}` : "Pending"],
-      ["Vara", chart.panchanga.vara?.name ?? "Pending"],
-      ["Yoga", chart.panchanga.yoga?.name ?? "Pending"],
-      ["Karana", chart.panchanga.karana?.name ?? "Pending"],
+      ["Лагна", chart.ascendant?.rashi ?? "Ожидает"],
+      ["Титхи", chart.panchanga.tithi ? `${chart.panchanga.tithi.paksha} ${chart.panchanga.tithi.name}` : "Ожидает"],
+      ["Вара", chart.panchanga.vara?.name ?? "Ожидает"],
+      ["Йога", chart.panchanga.yoga?.name ?? "Ожидает"],
+      ["Карана", chart.panchanga.karana?.name ?? "Ожидает"],
     ];
   }, [chart]);
 
@@ -322,51 +376,63 @@ export default function Home() {
     };
   }, [placeName]);
 
+  function selectPlace(place: PlaceCandidate) {
+    setSelectedPlace(place);
+    setPlaceName(place.label);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStatus("Generating citation-first report...");
+    setStatus("Формирую отчёт с приоритетом цитат...");
     try {
       const result = await generateBirthReport({
         birth_date: birthDate,
         birth_time: birthTime,
-        place_name: placeName,
+        place_name: selectedPlace?.label ?? placeName,
+        ...(selectedPlace
+          ? {
+              timezone: selectedPlace.timezone,
+              latitude: selectedPlace.latitude,
+              longitude: selectedPlace.longitude,
+            }
+          : {}),
       });
       setChart(result.chart);
       setBirthReport(result.report);
-      setStatus("Report generated");
+      setStatus("Отчёт построен");
     } catch (error) {
       setChart(null);
       setBirthReport(null);
-      setStatus(error instanceof Error ? error.message : "API check failed");
+      setStatus(error instanceof Error ? error.message : "Ошибка API");
     }
   }
 
   async function handleSourceSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSourceStatus("Searching VL...");
+    setSourceStatus("Ищу в VL...");
     try {
       const results = await searchVLSources(sourceQuery);
       setSourceResults(results);
-      setSourceStatus(results.length ? `${results.length} source results` : "No VL results");
+      setSourceStatus(results.length ? `${results.length} результатов` : "В VL ничего не найдено");
     } catch (error) {
       setSourceResults([]);
-      setSourceStatus(error instanceof Error ? error.message : "VL search failed");
+      setSourceStatus(error instanceof Error ? error.message : "Ошибка поиска VL");
     }
   }
 
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <div className="mark">Om</div>
+        <div className="mark">Ом</div>
         <div>
           <h1>Jyotish Agent</h1>
-          <p>Gaudiya Siddhanta Jyotish</p>
+          <p>Гаудия-сиддханта джйотиш</p>
         </div>
-        <nav aria-label="Primary">
-          <a className="active" href="#chart">Charts</a>
-          <a href="#reports">Reports</a>
-          <a href="#sources">Sources</a>
-          <a href="#accuracy">Accuracy</a>
+        <nav aria-label="Основная навигация">
+          <a className="active" href="#chart">Карты</a>
+          <a href="#reports">Отчёт</a>
+          <a href="#sources">Источники</a>
+          <a href="#accuracy">Точность</a>
         </nav>
         <blockquote>
           yatha shastram
@@ -376,8 +442,8 @@ export default function Home() {
           tatha siddhantah
         </blockquote>
         <div className="operator">
-          <strong>Review mode</strong>
-          <span>Draft rules only</span>
+          <strong>Режим проверки</strong>
+          <span>Только draft-правила</span>
         </div>
       </aside>
 
@@ -385,52 +451,71 @@ export default function Home() {
         <header className="topbar">
           <div className="mantra">Hare Krishna Hare Krishna Krishna Krishna Hare Hare</div>
           <div className="top-actions">
-            <button type="button">Sources</button>
-            <button type="button">Settings</button>
+            <button type="button">Источники</button>
+            <button type="button">Настройки</button>
           </div>
         </header>
 
         <div className="content-grid">
           <section className="panel birth-panel" id="chart">
             <div className="panel-heading">
-              <h2>Birth Data</h2>
-              <button type="button" className="secondary-button">Load example</button>
+              <h2>Данные рождения</h2>
+              <button type="button" className="secondary-button">Пример</button>
             </div>
             <form onSubmit={handleSubmit} className="birth-form">
               <label>
-                Date of Birth
+                Дата рождения
                 <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
               </label>
               <label>
-                Time of Birth
+                Время рождения
                 <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
               </label>
               <label>
-                Place of Birth
-                <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
+                Место рождения
+                <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} placeholder="Город или святое место" />
               </label>
-              <div className="place-hints">
+              <div className="place-resolution" aria-live="polite">
                 {selectedPlace ? (
-                  <button type="button" onClick={() => setPlaceName(selectedPlace.label)}>
-                    {selectedPlace.label} - {selectedPlace.timezone}
-                  </button>
+                  <>
+                    <div className="place-resolution-head">
+                      <span>Выбранное место</span>
+                      <strong>{selectedPlace.label}</strong>
+                    </div>
+                    <div className="place-detail-grid">
+                      <div className="place-detail-item">
+                        <span>Часовой пояс</span>
+                        <strong>{selectedPlace.timezone}</strong>
+                      </div>
+                      <div className="place-detail-item">
+                        <span>Широта</span>
+                        <strong>{formatCoordinate(selectedPlace.latitude)}</strong>
+                      </div>
+                      <div className="place-detail-item">
+                        <span>Долгота</span>
+                        <strong>{formatCoordinate(selectedPlace.longitude)}</strong>
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <span>Place will be resolved on the backend.</span>
+                  <span>Место будет сопоставлено с каталогом на бэкенде.</span>
                 )}
               </div>
-              {placeMatches.length > 1 ? (
+              {alternatePlaceMatches.length ? (
                 <div className="place-match-list">
-                  {placeMatches.slice(1, 4).map((place) => (
-                    <button type="button" key={place.id} onClick={() => setPlaceName(place.label)}>
-                      {place.label} - {place.timezone}
+                  <span>Другие совпадения</span>
+                  {alternatePlaceMatches.map((place) => (
+                    <button type="button" key={place.id} onClick={() => selectPlace(place)}>
+                      <strong>{place.label}</strong>
+                      <small>{place.timezone} · {formatCoordinate(place.latitude)}, {formatCoordinate(place.longitude)}</small>
                     </button>
                   ))}
                 </div>
               ) : null}
               <div className="notice">
-                MVP calculation policy: Lahiri ayanamsa target, Parashara framing, citations required.
+                Политика MVP: айанамша Lahiri, рамка Парашары, обязательные ссылки на источники.
               </div>
-              <button className="primary-button" type="submit">Calculate chart</button>
+              <button className="primary-button" type="submit">Рассчитать карту</button>
               <p className="status-line">{status}</p>
             </form>
           </section>
@@ -438,13 +523,13 @@ export default function Home() {
           <section className="main-stack">
             <section className="panel chart-panel">
               <div className="panel-heading">
-                <h2>{chartMode === "D1" ? "Rashi Chart" : "Navamsa Chart"}</h2>
+                <h2>{chartMode === "D1" ? "Карта раши" : "Карта навамши"}</h2>
                 <select
                   value={chartMode}
                   onChange={(event) => setChartMode(event.target.value as "D1" | "D9")}
                 >
-                  <option value="D1">D1 Rashi</option>
-                  <option value="D9">D9 Navamsa</option>
+                  <option value="D1">D1 Раши</option>
+                  <option value="D9">D9 Навамша</option>
                 </select>
               </div>
               <div className="chart-layout">
@@ -474,16 +559,16 @@ export default function Home() {
 
             <section className="panel" id="reports">
               <div className="panel-heading">
-                <h2>Vimshottari Dasha Timeline</h2>
-                <span>{vimshottariPeriods.length ? "Mahadasha level, MVP engine" : "Pending Moon longitude"}</span>
+                <h2>Линия Вимшоттари-даши</h2>
+                <span>{vimshottariPeriods.length ? "Уровень махадаши, MVP-движок" : "Ожидает долготу Луны"}</span>
               </div>
               <DashaTimeline periods={vimshottariPeriods} />
             </section>
 
             <section className="panel report-preview">
               <div className="panel-heading">
-                <h2>Report Preview</h2>
-                <span>{birthReport ? birthReport.review_status : "Pending report"}</span>
+                <h2>Предпросмотр отчёта</h2>
+                <span>{birthReport ? birthReport.review_status : "Отчёт ожидает расчёт"}</span>
               </div>
               {birthReport ? (
                 <div className="report-sections">
@@ -507,18 +592,18 @@ export default function Home() {
                   ))}
                 </div>
               ) : (
-                <div className="pending-strip">The report appears after chart calculation.</div>
+                <div className="pending-strip">Отчёт появится после расчёта карты.</div>
               )}
             </section>
 
             <section className="panel" id="sources">
               <div className="panel-heading">
-                <h2>Citation & Source Status</h2>
-                <button type="button" className="secondary-button">View all sources</button>
+                <h2>Цитаты и статус источников</h2>
+                <button type="button" className="secondary-button">Все источники</button>
               </div>
               <form className="source-search" onSubmit={handleSourceSearch}>
                 <input value={sourceQuery} onChange={(event) => setSourceQuery(event.target.value)} />
-                <button type="submit" className="secondary-button">Search VL</button>
+                <button type="submit" className="secondary-button">Искать в VL</button>
                 <span>{sourceStatus}</span>
               </form>
               {sourceResults.length ? (
@@ -538,7 +623,7 @@ export default function Home() {
                     <strong>{component}</strong>
                     <span>{source}</span>
                     <span>{citation}</span>
-                    <em className={state}>{state}</em>
+                    <em className={state}>{stateLabels[state] ?? state}</em>
                   </div>
                 ))}
               </div>

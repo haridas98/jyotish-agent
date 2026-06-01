@@ -6,8 +6,8 @@ def test_reframe_remedial_advice_blocks_independent_graha_worship():
 
     assert result["blocked_original"] is True
     assert "shani" in result["blocked_terms"]
-    assert "Krishna" in result["public_advice"]
-    assert "Hare Krishna" in result["public_advice"]
+    assert "Кришн" in result["public_advice"]
+    assert "Харе Кришна" in result["public_advice"]
     assert "Worship Shani" not in result["public_advice"]
 
 
