@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
+from datetime import timezone as datetime_timezone
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -54,8 +55,9 @@ def build_birth_chart(
             "date": birth_date.isoformat(),
             "time": birth_time.isoformat(timespec="minutes"),
             "timezone": timezone_name,
+            "utc_offset": _utc_offset(local_moment),
             "local_datetime": local_moment.isoformat(),
-            "utc_datetime": local_moment.astimezone(ZoneInfo("UTC")).isoformat(),
+            "utc_datetime": local_moment.astimezone(datetime_timezone.utc).isoformat(),
         },
         "place": {
             "id": place.id,
@@ -108,6 +110,17 @@ def _resolve_place_or_custom(data: dict[str, Any], place_name: str) -> PlaceCand
 
 def _has_custom_place_data(data: dict[str, Any]) -> bool:
     return all(data.get(field) not in {None, ""} for field in ("timezone", "latitude", "longitude"))
+
+
+def _utc_offset(moment: datetime) -> str:
+    offset = moment.utcoffset()
+    if offset is None:
+        return ""
+    total_minutes = int(offset.total_seconds() // 60)
+    sign = "+" if total_minutes >= 0 else "-"
+    total_minutes = abs(total_minutes)
+    hours, minutes = divmod(total_minutes, 60)
+    return f"{sign}{hours:02d}:{minutes:02d}"
 
 
 def _calculate_ascendant(

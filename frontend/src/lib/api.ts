@@ -94,6 +94,7 @@ export type BirthChart = {
     date: string;
     time: string;
     timezone: string;
+    utc_offset?: string;
     local_datetime: string;
     utc_datetime: string;
   };

@@ -230,6 +230,54 @@ select {
   padding: 12px;
 }
 
+.place-suggestions {
+  display: grid;
+  gap: 7px;
+  margin-top: -8px;
+}
+
+.place-suggestions > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.place-suggestion-list {
+  border: 1px solid #c9ddcf;
+  border-radius: 7px;
+  display: grid;
+  max-height: 256px;
+  overflow: auto;
+}
+
+.place-suggestion-list button {
+  background: #ffffff;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  display: grid;
+  gap: 3px;
+  line-height: 1.35;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.place-suggestion-list button:first-child {
+  border-top: 0;
+}
+
+.place-suggestion-list button:hover {
+  background: #f7fbf8;
+}
+
+.place-suggestion-list strong {
+  color: var(--green);
+  font-size: 14px;
+}
+
+.place-suggestion-list small {
+  color: var(--muted);
+}
+
 .place-resolution > span,
 .place-resolution-head span,
 .place-detail-item span,
@@ -425,7 +473,7 @@ select {
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
-  grid-template-columns: repeat(5, minmax(96px, 1fr));
+  grid-template-columns: repeat(6, minmax(96px, 1fr));
   overflow: hidden;
 }
 

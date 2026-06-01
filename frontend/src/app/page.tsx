@@ -324,6 +324,8 @@ export default function Home() {
   const [manualTimezone, setManualTimezone] = useState("Asia/Yekaterinburg");
   const [manualLatitude, setManualLatitude] = useState("");
   const [manualLongitude, setManualLongitude] = useState("");
+  const [showPlaceSuggestions, setShowPlaceSuggestions] = useState(false);
+  const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState<"D1" | "D9">("D1");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
@@ -351,6 +353,7 @@ export default function Home() {
       ["Вара", chart.panchanga.vara?.name ?? "Ожидает"],
       ["Йога", chart.panchanga.yoga?.name ?? "Ожидает"],
       ["Карана", chart.panchanga.karana?.name ?? "Ожидает"],
+      ["UTC-смещение", chart.birth.utc_offset ?? "Ожидает"],
     ];
   }, [chart]);
 
@@ -359,29 +362,37 @@ export default function Home() {
     if (placeName.trim().length < 2) {
       setPlaceMatches([]);
       setSelectedPlace(null);
+      setPlaceSearchStatus("Введите город, чтобы увидеть подсказки");
       return;
     }
 
-    searchPlaces(placeName)
-      .then((items) => {
-        if (cancelled) return;
-        setPlaceMatches(items);
-        setSelectedPlace(items[0] ?? null);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setPlaceMatches([]);
-        setSelectedPlace(null);
-      });
+    setPlaceSearchStatus("Ищу город и часовой пояс...");
+    const searchTimeout = window.setTimeout(() => {
+      searchPlaces(placeName)
+        .then((items) => {
+          if (cancelled) return;
+          setPlaceMatches(items);
+          setSelectedPlace(items[0] ?? null);
+          setPlaceSearchStatus(items.length ? `${items.length} подсказок найдено` : "Подсказок нет, можно ввести координаты вручную");
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPlaceMatches([]);
+          setSelectedPlace(null);
+          setPlaceSearchStatus("Не удалось получить подсказки, можно ввести координаты вручную");
+        });
+    }, 350);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(searchTimeout);
     };
   }, [placeName]);
 
   function selectPlace(place: PlaceCandidate) {
     setSelectedPlace(place);
     setPlaceName(place.label);
+    setShowPlaceSuggestions(false);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -490,8 +501,29 @@ export default function Home() {
               </label>
               <label>
                 Место рождения
-                <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} placeholder="Город или святое место" />
+                <input
+                  value={placeName}
+                  onChange={(event) => {
+                    setPlaceName(event.target.value);
+                    setShowPlaceSuggestions(true);
+                  }}
+                  onFocus={() => setShowPlaceSuggestions(true)}
+                  placeholder="Город или святое место"
+                />
               </label>
+              <div className="place-suggestions">
+                <span>{placeSearchStatus}</span>
+                {showPlaceSuggestions && placeMatches.length ? (
+                  <div className="place-suggestion-list">
+                    {placeMatches.slice(0, 6).map((place) => (
+                      <button type="button" key={place.id} onClick={() => selectPlace(place)}>
+                        <strong>{place.label}</strong>
+                        <small>{place.timezone} · {formatCoordinate(place.latitude)}, {formatCoordinate(place.longitude)}</small>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <div className="place-resolution" aria-live="polite">
                 {selectedPlace ? (
                   <>

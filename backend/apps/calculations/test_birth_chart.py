@@ -110,6 +110,26 @@ def test_build_birth_chart_accepts_custom_place_with_coordinates():
     assert result["place"]["longitude"] == 60.6057
 
 
+def test_build_birth_chart_reports_historical_utc_offset():
+    from apps.calculations.chart import build_birth_chart
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2012-01-01",
+            "birth_time": "12:00",
+            "place_name": "Тестовая Москва",
+            "timezone": "Europe/Moscow",
+            "latitude": 55.7558,
+            "longitude": 37.6173,
+        },
+        provider=FakeProvider(),
+    )
+
+    assert result["birth"]["timezone"] == "Europe/Moscow"
+    assert result["birth"]["utc_offset"] == "+04:00"
+    assert result["birth"]["utc_datetime"].endswith("08:00:00+00:00")
+
+
 def test_build_birth_chart_rejects_missing_time():
     from apps.calculations.chart import ChartInputError, build_birth_chart
 

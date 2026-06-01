@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .catalog import search_places
+from .geocoding import geocode_places
 
 
 class PlacesSearchView(APIView):
@@ -12,5 +13,10 @@ class PlacesSearchView(APIView):
 
     def get(self, request):
         query = request.query_params.get("q", "")
-        return Response({"items": [place.as_dict() for place in search_places(query)]})
-
+        places = search_places(query)
+        if not places:
+            try:
+                places = geocode_places(query)
+            except Exception:
+                places = []
+        return Response({"items": [place.as_dict() for place in places]})
