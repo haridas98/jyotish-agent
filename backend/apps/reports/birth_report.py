@@ -50,6 +50,7 @@ def compose_birth_report(
             "calculation_version": chart["calculation_version"],
             "source_policy": "citation_first",
             "chart_facts": chart_facts,
+            "person_summary": _person_summary(chart, chart_facts),
             "sections": sections,
         },
     }
@@ -110,6 +111,118 @@ def _dasha_summary(chart: dict[str, Any]) -> dict[str, Any]:
         "citations": [],
         "facts": {"first_lord": first.get("lord")},
     }
+
+
+def _person_summary(chart: dict[str, Any], chart_facts: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "birth_context": _birth_context(chart),
+        "core_factors": _core_factors(chart, chart_facts),
+        "graha_houses": _graha_house_rows(chart_facts),
+        "panchanga": _panchanga_rows(chart),
+        "dasha": _dasha_facts(chart, chart_facts),
+    }
+
+
+def _birth_context(chart: dict[str, Any]) -> list[dict[str, object]]:
+    birth = chart.get("birth", {})
+    place = chart.get("place", {})
+    settings = chart.get("settings", {})
+    return [
+        {"label": "Birth", "value": birth.get("local_datetime", "")},
+        {"label": "Place", "value": place.get("label") or place.get("name", "")},
+        {"label": "Ayanamsa", "value": settings.get("ayanamsa", "")},
+        {"label": "Ephemeris", "value": settings.get("ephemeris", "")},
+    ]
+
+
+def _core_factors(chart: dict[str, Any], chart_facts: dict[str, Any]) -> list[dict[str, object]]:
+    factors = []
+    lagna = chart_facts.get("lagna")
+    if isinstance(lagna, dict):
+        factors.append(
+            {
+                "label": "Lagna",
+                "value": lagna.get("rashi", ""),
+                "detail": _placement_detail(lagna),
+            }
+        )
+    grahas = chart_facts.get("grahas", {})
+    if isinstance(grahas, dict):
+        for label, body in [("Moon", "Chandra"), ("Sun", "Surya")]:
+            placement = grahas.get(body)
+            if isinstance(placement, dict):
+                factors.append(
+                    {
+                        "label": label,
+                        "value": _rashi_house_value(placement),
+                        "detail": _placement_detail(placement),
+                    }
+                )
+    return factors
+
+
+def _graha_house_rows(chart_facts: dict[str, Any]) -> list[dict[str, object]]:
+    placements = chart_facts.get("placements", [])
+    if not isinstance(placements, list):
+        return []
+    return [
+        {
+            "body": placement.get("body"),
+            "rashi": placement.get("rashi"),
+            "house": placement.get("house"),
+            "nakshatra": placement.get("nakshatra"),
+            "pada": placement.get("pada"),
+            "navamsa": placement.get("navamsa"),
+        }
+        for placement in placements
+        if isinstance(placement, dict)
+    ]
+
+
+def _panchanga_rows(chart: dict[str, Any]) -> list[dict[str, object]]:
+    panchanga = chart.get("panchanga", {})
+    rows = []
+    tithi = panchanga.get("tithi", {})
+    if tithi:
+        rows.append({"label": "Tithi", "value": f"{tithi.get('paksha', '')} {tithi.get('name', '')}".strip()})
+    for key, label in [("vara", "Vara"), ("yoga", "Yoga"), ("karana", "Karana")]:
+        item = panchanga.get(key, {})
+        if item:
+            rows.append({"label": label, "value": item.get("name", "")})
+    return rows
+
+
+def _dasha_facts(chart: dict[str, Any], chart_facts: dict[str, Any]) -> dict[str, object]:
+    periods = chart.get("dashas", {}).get("vimshottari", {}).get("mahadashas", [])
+    first = periods[0] if periods else {}
+    vimshottari = chart_facts.get("vimshottari", {})
+    return {
+        "birth_mahadasha_lord": vimshottari.get("birth_mahadasha_lord")
+        if isinstance(vimshottari, dict)
+        else None,
+        "starts_at": first.get("starts_at") if isinstance(first, dict) else None,
+        "ends_at": first.get("ends_at") if isinstance(first, dict) else None,
+    }
+
+
+def _rashi_house_value(placement: dict[str, object]) -> str:
+    rashi = str(placement.get("rashi") or "")
+    house = placement.get("house")
+    if isinstance(house, int):
+        return f"{rashi}, house {house}"
+    return rashi
+
+
+def _placement_detail(placement: dict[str, object]) -> str:
+    pieces = []
+    nakshatra = placement.get("nakshatra")
+    pada = placement.get("pada")
+    if nakshatra:
+        pieces.append(f"{nakshatra} pada {pada}" if pada else str(nakshatra))
+    navamsa = placement.get("navamsa")
+    if navamsa:
+        pieces.append(f"D9 {navamsa}")
+    return "; ".join(pieces)
 
 
 def _citation_payloads(results: list[dict[str, object]]) -> list[dict[str, object]]:

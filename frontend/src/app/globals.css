@@ -434,6 +434,122 @@ select {
   line-height: 1.35;
 }
 
+.person-summary-panel {
+  overflow: hidden;
+}
+
+.person-summary-panel .panel-heading {
+  margin: 0;
+  padding: 18px;
+}
+
+.summary-content {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+}
+
+.summary-card {
+  background: #faf8f1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  min-height: 104px;
+  padding: 14px;
+}
+
+.summary-card span,
+.summary-list span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.summary-card strong {
+  color: var(--green);
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.summary-card small {
+  color: var(--saffron);
+  line-height: 1.35;
+}
+
+.summary-columns {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.summary-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  overflow: hidden;
+}
+
+.summary-list h3 {
+  background: #faf8f1;
+  color: var(--green);
+  font-size: 15px;
+  margin: 0;
+  padding: 11px 13px;
+}
+
+.summary-list div {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 9px 13px;
+}
+
+.summary-list strong {
+  font-size: 14px;
+  text-align: right;
+}
+
+.summary-table {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.summary-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  font-size: 14px;
+  gap: 10px;
+  grid-template-columns: 96px 110px 70px minmax(140px, 1fr) 100px;
+  min-height: 42px;
+  padding: 9px 12px;
+}
+
+.summary-row:first-child {
+  border-top: 0;
+}
+
+.summary-head {
+  background: #faf8f1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.summary-row strong {
+  color: var(--green);
+}
+
 .report-sections {
   border-top: 1px solid var(--line);
   display: grid;
@@ -612,6 +728,19 @@ select {
 
   .source-search {
     grid-template-columns: 1fr;
+  }
+
+  .summary-grid,
+  .summary-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .summary-head {
+    display: none;
   }
 
   .fact-grid {

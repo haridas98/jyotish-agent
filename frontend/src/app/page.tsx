@@ -9,6 +9,7 @@ import {
   type BirthChart,
   type DashaPeriod,
   type GrahaPosition,
+  type PersonSummary,
   type PlaceCandidate,
   type VargaPlacement,
   type VLSearchResult,
@@ -129,6 +130,84 @@ function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
   );
 }
 
+function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
+  if (!summary) {
+    return (
+      <section className="panel person-summary-panel">
+        <div className="panel-heading">
+          <h2>Person Summary</h2>
+          <span>Pending calculation</span>
+        </div>
+        <div className="pending-strip">Core birth facts appear after calculation.</div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel person-summary-panel">
+      <div className="panel-heading">
+        <h2>Person Summary</h2>
+        <span>Calculation facts only</span>
+      </div>
+      <div className="summary-content">
+        <div className="summary-grid">
+          {summary.core_factors.map((item) => (
+            <div className="summary-card" key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+              {item.detail ? <small>{item.detail}</small> : null}
+            </div>
+          ))}
+        </div>
+        <div className="summary-columns">
+          <div className="summary-list">
+            <h3>Birth Context</h3>
+            {summary.birth_context.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value || "Pending"}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="summary-list">
+            <h3>Panchanga</h3>
+            {summary.panchanga.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value || "Pending"}</strong>
+              </div>
+            ))}
+            <div>
+              <span>Birth Dasha</span>
+              <strong>{summary.dasha.birth_mahadasha_lord ?? "Pending"}</strong>
+            </div>
+          </div>
+        </div>
+        <div className="summary-table">
+          <div className="summary-row summary-head">
+            <span>Graha</span>
+            <span>Rashi</span>
+            <span>House</span>
+            <span>Nakshatra</span>
+            <span>D9</span>
+          </div>
+          {summary.graha_houses.map((row) => (
+            <div className="summary-row" key={row.body}>
+              <strong>{row.body}</strong>
+              <span>{row.rashi}</span>
+              <span>{row.house ?? "-"}</span>
+              <span>
+                {row.nakshatra} {row.pada ?? ""}
+              </span>
+              <span>{row.navamsa}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const [birthDate, setBirthDate] = useState("1990-08-15");
   const [birthTime, setBirthTime] = useState("10:24");
@@ -149,6 +228,7 @@ export default function Home() {
   }, [chart]);
   const vimshottariPeriods = chart?.dashas?.vimshottari?.mahadashas ?? [];
   const d9Placements = chart?.vargas?.D9?.placements ?? [];
+  const personSummary = birthReport?.person_summary ?? null;
   const chartFacts = useMemo(() => {
     if (!chart) return [];
     return [
@@ -332,6 +412,8 @@ export default function Home() {
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
             </section>
+
+            <PersonSummaryPanel summary={personSummary} />
 
             <section className="panel" id="reports">
               <div className="panel-heading">

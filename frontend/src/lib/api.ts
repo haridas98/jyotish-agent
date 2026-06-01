@@ -137,6 +137,33 @@ export type ReportSection = {
   citations: ReportCitation[];
 };
 
+export type SummaryItem = {
+  label: string;
+  value: string;
+  detail?: string;
+};
+
+export type GrahaHouseSummary = {
+  body: string;
+  rashi: string;
+  house: number | null;
+  nakshatra: string;
+  pada: number | null;
+  navamsa: string;
+};
+
+export type PersonSummary = {
+  birth_context: SummaryItem[];
+  core_factors: SummaryItem[];
+  graha_houses: GrahaHouseSummary[];
+  panchanga: SummaryItem[];
+  dasha: {
+    birth_mahadasha_lord: string | null;
+    starts_at: string | null;
+    ends_at: string | null;
+  };
+};
+
 export type BirthReport = {
   chart: BirthChart;
   report: {
@@ -144,6 +171,7 @@ export type BirthReport = {
     calculation_version: string;
     source_policy: string;
     chart_facts?: Record<string, unknown>;
+    person_summary?: PersonSummary;
     sections: ReportSection[];
   };
 };
