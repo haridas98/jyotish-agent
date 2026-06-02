@@ -29,6 +29,15 @@ The backend now has a first fixture comparison layer in `apps.calculations.accur
 
 This is a harness only. A case is not authoritative until the expected values come from a recorded JHora export or another reviewed source.
 
+JHora `.jhd` sample inputs can be converted into draft fixtures:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py import_jhora_jhd_inputs `
+  "C:\Program Files (x86)\Jagannatha Hora\data" `
+  --output-dir .tmp\jhora-input-fixtures
+```
+
 ## Required Metadata
 
 Each fixture must include:

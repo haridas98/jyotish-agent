@@ -16,6 +16,7 @@ Jyotish Agent is a Gaudiya Vaishnava astrology service. The goal is accurate jyo
 - Vimshottari mahadasha MVP engine from Moon longitude, marked draft until JHora parity.
 - Codex-ready analysis packet API and CLI for draft chart interpretation generation.
 - Accuracy fixture runner for JHora-style parity cases.
+- JHora `.jhd` input importer for draft parity fixtures.
 - Policy docs for sources, JHora parity, and Vaishnava interpretation.
 
 ## Local Start
