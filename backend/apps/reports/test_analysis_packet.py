@@ -121,6 +121,52 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert "independent demigod" in packet["prompt_markdown"]
 
 
+def test_build_compatibility_analysis_packet_contains_two_chart_context_and_perspective_requests():
+    try:
+        from apps.reports.analysis_packet import build_compatibility_analysis_packet
+    except ImportError:
+        pytest.fail("compatibility analysis packet service is not implemented yet")
+
+    packet = build_compatibility_analysis_packet(
+        {
+            "person_a": {
+                "birth_date": "2000-01-01",
+                "birth_time": "15:30",
+                "place_name": "Vrindavan",
+            },
+            "person_b": {
+                "birth_date": "2001-02-03",
+                "birth_time": "09:10",
+                "place_name": "Mayapur",
+            },
+        },
+        provider=AnalysisProvider(),
+        citation_search=lambda query: [
+            {
+                "title": "Vivaha source anchor",
+                "work_title": "Muhurta Chintamani",
+                "body": "Marriage compatibility requires more than one factor.",
+                "public_url": "http://127.0.0.1:3100/vivaha/source",
+            }
+        ],
+    )
+
+    assert packet["schema_version"] == "jyotish-compatibility-analysis-packet-v1"
+    assert packet["status"] == "needs_citation_review"
+    assert packet["generator_policy"]["required_behaviors"][0] == "compare_both_charts_from_multiple_angles"
+    assert packet["context"]["compatibility"]["coverage"]["system"] == "ashtakuta_plus_chart_analysis"
+    assert packet["context"]["person_a"]["chart"]["birth"]["date"] == "2000-01-01"
+    assert packet["context"]["person_b"]["chart"]["birth"]["date"] == "2001-02-03"
+    assert packet["context"]["compatibility"]["analysis"]["perspectives"]
+    assert any(request["kind"] == "compatibility_perspective" for request in packet["citation_requests"])
+    assert all(request["required_for_public_text"] for request in packet["citation_requests"])
+    assert packet["citations"][0]["title"] == "Vivaha source anchor"
+    assert "compatibility" in packet["prompt_markdown"]
+    assert "person_a" in packet["prompt_markdown"]
+    assert "person_b" in packet["prompt_markdown"]
+    assert "independent demigod" in packet["prompt_markdown"]
+
+
 @pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_analysis_packet_api_returns_packet(monkeypatch):
@@ -145,6 +191,39 @@ def test_analysis_packet_api_returns_packet(monkeypatch):
 
     assert response.status_code == 200
     assert response.data["schema_version"] == "jyotish-analysis-packet-v1"
+
+
+@pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="")
+def test_compatibility_analysis_packet_api_returns_packet(monkeypatch):
+    monkeypatch.setattr(
+        "apps.reports.views.build_compatibility_analysis_packet",
+        lambda data, citation_search=None: {
+            "schema_version": "jyotish-compatibility-analysis-packet-v1",
+            "status": "needs_citation_review",
+            "prompt_markdown": "prompt",
+        },
+    )
+
+    response = APIClient().post(
+        "/api/reports/compatibility/analysis-packet",
+        {
+            "person_a": {
+                "birth_date": "2000-01-01",
+                "birth_time": "15:30",
+                "place_name": "Vrindavan",
+            },
+            "person_b": {
+                "birth_date": "2001-02-03",
+                "birth_time": "09:10",
+                "place_name": "Mayapur",
+            },
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["schema_version"] == "jyotish-compatibility-analysis-packet-v1"
 
 
 def test_build_analysis_packet_command_writes_json_and_prompt(monkeypatch, tmp_path):

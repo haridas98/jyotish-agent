@@ -9,6 +9,7 @@ import {
   createChartProfile,
   fetchCurrentUser,
   generateBirthReport,
+  generateCompatibilityAnalysisPacket,
   listChartProfiles,
   loginUser,
   logoutUser,
@@ -932,7 +933,10 @@ type CompatibilityPanelProps = {
   partnerPlaceSearchStatus: string;
   onSelectPartnerPlace: (place: PlaceCandidate) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onGeneratePacket: () => void;
   disabled: boolean;
+  packetDisabled: boolean;
+  packetStatus: string;
 };
 
 function CompatibilityPanel({
@@ -951,7 +955,10 @@ function CompatibilityPanel({
   partnerPlaceSearchStatus,
   onSelectPartnerPlace,
   onSubmit,
+  onGeneratePacket,
   disabled,
+  packetDisabled,
+  packetStatus,
 }: CompatibilityPanelProps) {
   const rows = report?.kuta_rows ?? [];
   const perspectives = report?.analysis?.perspectives ?? [];
@@ -1013,6 +1020,15 @@ function CompatibilityPanel({
           Рассчитать совместимость
         </button>
       </form>
+      <button
+        className="secondary-button compatibility-button"
+        type="button"
+        onClick={onGeneratePacket}
+        disabled={packetDisabled}
+      >
+        Codex-пакет
+      </button>
+      <p className="compatibility-packet-status">{packetStatus}</p>
 
       {report ? (
         <div className="compatibility-result">
@@ -1130,6 +1146,7 @@ export default function Home() {
   const [status, setStatus] = useState("Расчёт не запускался");
   const [workflowStatus, setWorkflowStatus] = useState("Ожидает расчёт карты");
   const [compatibilityStatus, setCompatibilityStatus] = useState("Ожидает основную карту");
+  const [compatibilityPacketStatus, setCompatibilityPacketStatus] = useState("Codex-пакет ещё не сформирован");
   const [partnerBirthDate, setPartnerBirthDate] = useState("1991-01-01");
   const [partnerBirthTime, setPartnerBirthTime] = useState("09:00");
   const [partnerPlaceName, setPartnerPlaceName] = useState("Вриндаван");
@@ -1417,10 +1434,47 @@ export default function Home() {
         person_b: personB,
       });
       setCompatibilityReport(result);
+      setCompatibilityPacketStatus("Можно сформировать Codex-пакет по этому расчёту");
       setCompatibilityStatus("рассчитано");
     } catch (error) {
       setCompatibilityReport(null);
+      setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
       setCompatibilityStatus(error instanceof Error ? error.message : "Ошибка API совместимости");
+    }
+  }
+
+  async function handleCompatibilityPacket() {
+    const personA = lastBirthPayload ?? buildBirthPayload();
+    const personB = buildPartnerPayload();
+    if (!personA || !personB) return;
+
+    setCompatibilityPacketStatus("Формирую Codex-пакет...");
+    try {
+      const packet = await generateCompatibilityAnalysisPacket({
+        person_a: personA,
+        person_b: personB,
+      });
+      const compatibility = packet.context.compatibility as CompatibilityReport | undefined;
+      if (compatibility) {
+        setCompatibilityReport(compatibility);
+        setCompatibilityStatus("пакет сформирован");
+      }
+      const perspectiveCount = compatibility?.analysis?.perspectives.length ?? 0;
+      const requestCount = packet.citation_requests.length;
+      let copied = false;
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(packet.prompt_markdown);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+      setCompatibilityPacketStatus(
+        `Пакет: ${perspectiveCount} ракурсов, ${requestCount} запросов цитат${copied ? ", prompt скопирован" : ""}`,
+      );
+    } catch (error) {
+      setCompatibilityPacketStatus(error instanceof Error ? error.message : "Ошибка Codex-пакета");
     }
   }
 
@@ -1786,7 +1840,10 @@ export default function Home() {
                       partnerPlaceSearchStatus={partnerPlaceSearchStatus}
                       onSelectPartnerPlace={selectPartnerPlace}
                       onSubmit={handleCompatibilitySubmit}
+                      onGeneratePacket={handleCompatibilityPacket}
                       disabled={!chart}
+                      packetDisabled={!chart}
+                      packetStatus={compatibilityPacketStatus}
                     />
                   </div>
                 ) : null}

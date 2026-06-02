@@ -1077,6 +1077,13 @@ select {
   opacity: 0.55;
 }
 
+.compatibility-packet-status {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin: -2px 0 0;
+}
+
 .compatibility-result {
   display: grid;
   gap: 12px;

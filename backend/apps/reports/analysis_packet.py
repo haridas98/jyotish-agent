@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from apps.calculations.chart import build_birth_chart
 from apps.calculations.ephemeris import EphemerisProvider
+from apps.calculations.workflows import build_compatibility_report
 from apps.interpretations.citation_requests import build_citation_requests
 from apps.interpretations.shastra_catalog import explanation_schedule
 from apps.interpretations.yoga_catalog import yoga_catalog_overview
@@ -12,6 +14,7 @@ from apps.interpretations.yoga_source_map import detected_yoga_source_map
 from .birth_report import CitationSearch, InterpretationProvider, compose_birth_report
 
 SCHEMA_VERSION = "jyotish-analysis-packet-v1"
+COMPATIBILITY_SCHEMA_VERSION = "jyotish-compatibility-analysis-packet-v1"
 
 
 def build_analysis_packet(
@@ -64,6 +67,50 @@ def build_analysis_packet(
     return packet
 
 
+def build_compatibility_analysis_packet(
+    data: dict[str, Any],
+    provider: EphemerisProvider | None = None,
+    citation_search: CitationSearch | None = None,
+) -> dict[str, Any]:
+    citation_search = citation_search or (lambda query: [])
+    person_a_input = _required_mapping(data, "person_a")
+    person_b_input = _required_mapping(data, "person_b")
+    person_a_chart = build_birth_chart(person_a_input, provider=provider)
+    person_b_chart = build_birth_chart(person_b_input, provider=provider)
+    compatibility = build_compatibility_report(data, provider=provider)
+    citation_requests = _compatibility_citation_requests(compatibility)
+    citations = _citation_payloads_from_results(
+        citation_search(_compatibility_seed_query(compatibility))
+    )
+
+    packet = {
+        "schema_version": COMPATIBILITY_SCHEMA_VERSION,
+        "status": "needs_citation_review",
+        "generator_policy": _compatibility_generator_policy(),
+        "citation_requests": citation_requests,
+        "context": {
+            "person_a": {
+                "input": person_a_input,
+                "chart": person_a_chart,
+            },
+            "person_b": {
+                "input": person_b_input,
+                "chart": person_b_chart,
+            },
+            "compatibility": compatibility,
+            "source_review_status": "exact_shastra_citations_required_before_public_marriage_guidance",
+        },
+        "report": {
+            "review_status": "needs_citation_review",
+            "source_policy": "citation_first",
+            "calculation_version": person_a_chart.get("calculation_version", ""),
+        },
+        "citations": citations,
+    }
+    packet["prompt_markdown"] = render_compatibility_analysis_prompt(packet)
+    return packet
+
+
 def render_analysis_prompt(packet: dict[str, Any]) -> str:
     packet_for_prompt = {key: value for key, value in packet.items() if key != "prompt_markdown"}
     return (
@@ -96,6 +143,39 @@ def render_analysis_prompt(packet: dict[str, Any]) -> str:
     )
 
 
+def render_compatibility_analysis_prompt(packet: dict[str, Any]) -> str:
+    packet_for_prompt = {key: value for key, value in packet.items() if key != "prompt_markdown"}
+    return (
+        "Ты готовишь черновик русскоязычного jyotish-разбора совместимости для Gaudiya Vaishnava сервиса.\n\n"
+        "Правила:\n"
+        "- сравни обе карты с разных ракурсов, а не только по аштакуте;\n"
+        "- используй расчеты как технические факты, не как фатальный приговор;\n"
+        "- не выдумывай шастра-цитаты, номера глав, стихов или ссылки;\n"
+        "- используй только citations из пакета;\n"
+        "- если цитат не хватает, явно пометь место как needing citation review;\n"
+        "- не советуй independent demigod worship;\n"
+        "- любые remedial выводы формулируй через прибежище у Кришны, садхану, служение вайшнавам и наставления Шрилы Прабхупады;\n"
+        "- оставляй review_status=draft, пока человек не проверит текст.\n\n"
+        "OUTPUT JSON schema:\n"
+        "{\n"
+        '  "review_status": "draft",\n'
+        '  "language": "ru",\n'
+        '  "sections": [\n'
+        "    {\n"
+        '      "title": "string",\n'
+        '      "body": "string",\n'
+        '      "citation_titles": ["string"],\n'
+        '      "review_notes": ["string"]\n'
+        "    }\n"
+        "  ]\n"
+        "}\n\n"
+        "COMPATIBILITY ANALYSIS PACKET JSON:\n"
+        "```json\n"
+        f"{json.dumps(packet_for_prompt, ensure_ascii=False, indent=2)}\n"
+        "```\n"
+    )
+
+
 def _generator_policy() -> dict[str, Any]:
     return {
         "language": "ru",
@@ -116,10 +196,64 @@ def _generator_policy() -> dict[str, Any]:
     }
 
 
+def _compatibility_generator_policy() -> dict[str, Any]:
+    policy = _generator_policy()
+    policy["required_behaviors"] = [
+        "compare_both_charts_from_multiple_angles",
+        *policy["required_behaviors"],
+        "keep_final_marriage_guidance_under_human_review",
+    ]
+    policy["forbidden_outputs"] = [
+        *policy["forbidden_outputs"],
+        "final_marriage_verdict_without_human_review",
+        "ashtakuta_only_verdict",
+    ]
+    return policy
+
+
 def _packet_status(report: dict[str, Any], citations: list[dict[str, object]]) -> str:
     if report.get("review_status") == "needs_citation" or not citations:
         return "needs_citation_review"
     return "ready_for_generation"
+
+
+def _compatibility_citation_requests(compatibility: dict[str, Any]) -> list[dict[str, Any]]:
+    analysis = compatibility.get("analysis", {})
+    source_anchors = _string_list(analysis.get("source_anchors"))
+    perspectives = analysis.get("perspectives", [])
+    if not isinstance(perspectives, list):
+        return []
+    rows = []
+    for perspective in perspectives:
+        if not isinstance(perspective, dict):
+            continue
+        key = str(perspective.get("key") or "")
+        title = str(perspective.get("title") or key)
+        basis = str(perspective.get("source_basis") or "")
+        rows.append(
+            {
+                "kind": "compatibility_perspective",
+                "key": key,
+                "title": title,
+                "source_basis": basis,
+                "source_priority": source_anchors,
+                "required_for_public_text": True,
+                "citation_coverage_status": "needs_approved_passage",
+                "search_queries": [
+                    query
+                    for source in source_anchors
+                    for query in (f"{title} {source}", f"{basis} {source}")
+                    if query.strip()
+                ],
+            }
+        )
+    return rows
+
+
+def _compatibility_seed_query(compatibility: dict[str, Any]) -> str:
+    analysis = compatibility.get("analysis", {})
+    anchors = " ".join(_string_list(analysis.get("source_anchors")))
+    return f"vivaha compatibility ashtakuta lagna moon seventh house {anchors}".strip()
 
 
 def _dedupe_citations(sections: list[dict[str, Any]]) -> list[dict[str, object]]:
@@ -144,3 +278,29 @@ def _dedupe_citations(sections: list[dict[str, Any]]) -> list[dict[str, object]]
                 }
             )
     return citations
+
+
+def _citation_payloads_from_results(results: list[dict[str, object]]) -> list[dict[str, object]]:
+    return [
+        {
+            "title": str(result.get("title") or result.get("work_title") or ""),
+            "work_title": str(result.get("work_title") or ""),
+            "snippet": str(result.get("snippet") or result.get("body") or ""),
+            "public_url": str(result.get("public_url") or ""),
+        }
+        for result in results[:5]
+        if result.get("title") or result.get("work_title")
+    ]
+
+
+def _required_mapping(data: dict[str, Any], key: str) -> dict[str, Any]:
+    value = data.get(key)
+    if not isinstance(value, dict):
+        raise ValueError(f"{key} must be an object")
+    return value
+
+
+def _string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if str(item)]

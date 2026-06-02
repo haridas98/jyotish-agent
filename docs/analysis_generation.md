@@ -7,6 +7,14 @@ Technical generation is split into two reviewed steps.
 
 The packet is citation-first. A generator may use only citations listed in the packet and must keep the output as `draft` until human review.
 
+For marriage compatibility, use the API packet instead of treating ashtakuta as the whole verdict:
+
+```http
+POST /api/reports/compatibility/analysis-packet
+```
+
+The compatibility packet includes both birth charts, ashtakuta, Lagna/Moon/7th-house/Shukra-Mangala/Guru-Shukra/dasha perspectives, citation requests for each perspective, and a Codex-ready prompt.
+
 ```powershell
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py seed_shastra_catalog

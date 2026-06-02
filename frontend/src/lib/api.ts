@@ -409,6 +409,23 @@ export type BirthReport = {
   };
 };
 
+export type AnalysisPacket = {
+  schema_version: string;
+  status: string;
+  prompt_markdown: string;
+  generator_policy: Record<string, unknown>;
+  citation_requests: {
+    kind: string;
+    key: string;
+    title?: string;
+    required_for_public_text?: boolean;
+    citation_coverage_status?: string;
+  }[];
+  citations: ReportCitation[];
+  context: Record<string, unknown>;
+  report: Record<string, unknown>;
+};
+
 export type TransitRow = {
   body: string;
   longitude: number;
@@ -677,6 +694,21 @@ export async function calculateBirthChart(payload: BirthChartRequest): Promise<B
 
 export async function generateBirthReport(payload: BirthChartRequest): Promise<BirthReport> {
   const response = await apiFetch("/api/reports/birth-chart", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function generateCompatibilityAnalysisPacket(payload: CompatibilityRequest): Promise<AnalysisPacket> {
+  const response = await apiFetch("/api/reports/compatibility/analysis-packet", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

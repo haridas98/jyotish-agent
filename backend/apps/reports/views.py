@@ -9,7 +9,7 @@ from apps.calculations.ephemeris import EphemerisUnavailable
 from apps.interpretations.engine import public_interpretation_sections_for_chart
 from apps.sources.citations import combined_citation_search
 
-from .analysis_packet import build_analysis_packet
+from .analysis_packet import build_analysis_packet, build_compatibility_analysis_packet
 from .birth_report import compose_birth_report
 
 
@@ -46,6 +46,24 @@ class BirthAnalysisPacketView(APIView):
                 )
             )
         except ChartInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class CompatibilityAnalysisPacketView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def post(self, request):
+        try:
+            return Response(
+                build_compatibility_analysis_packet(
+                    request.data,
+                    citation_search=vl_citation_search,
+                )
+            )
+        except (ChartInputError, ValueError) as exc:
             return Response({"error": str(exc)}, status=400)
         except EphemerisUnavailable as exc:
             return Response({"error": str(exc)}, status=503)
