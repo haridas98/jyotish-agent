@@ -346,11 +346,16 @@ def ashtakavarga(chart: dict[str, Any]) -> dict[str, object]:
             "scores": scores,
             "total": sum(scores),
         }
-    status = "partial_calculated_needs_jhora_audit" if missing_sources else "calculated_needs_jhora_audit"
+    status = (
+        "partial_calculated_needs_jhora_profile_audit"
+        if missing_sources
+        else "calculated_source_backed_needs_jhora_profile_audit"
+    )
     return {
         "status": status,
-        "method": "Bhinna/Sarva Ashtakavarga bindu tables; pending JHora fixture parity.",
-        "audit_status": "needs_jhora_fixture",
+        "method": "Bhinna/Sarva Ashtakavarga bindu tables using standard benefic-place constants.",
+        "source_basis": "Brihat Jataka chapter IX Ashtakavarga rules; B.V. Raman-style 337 bindu constants.",
+        "audit_status": "jhora_profile_diff_open",
         "missing_sources": missing_sources,
         "bhinna": bhinna,
         "sarva": {

@@ -234,6 +234,12 @@ def build_compatibility_report(
     return {
         "status": "calculated_needs_tradition_review",
         "method": "Ashtakuta from Moon rashi/nakshatra; final reading still needs tradition review and context.",
+        "coverage": {
+            "system": "ashtakuta",
+            "calculated_kutas": len(kuta_rows),
+            "total_kutas": len(KUTA_ORDER),
+            "status": "complete_baseline_needs_jhora_audit",
+        },
         "score": {
             "total": total_score,
             "max": max_score,

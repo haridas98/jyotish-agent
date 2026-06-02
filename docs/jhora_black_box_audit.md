@@ -70,6 +70,8 @@ First parity run:
 - Swiss Lahiri for the fixture date is about `23-07-31.62`, while the JHora export says `23-06-37.20`, a gap of about 54.42 arcseconds;
 - the current highest-priority audit item is JHora's exact Lahiri/profile setting, not a blind formula rewrite;
 - JHora weekday/tithi naming and sunrise-day handling need a separate normalization check.
+- captured Ashtakavarga is now compared in the fixture harness: 78 of 84 Sun-through-Saturn BAV cells match; 6 Moon/Venus cells differ from the standard Brihat Jataka/B.V. Raman-style table and need JHora preference/profile review before changing formulas.
+- captured Shadbala is now compared in the fixture harness; current partial Shadbala intentionally fails against full JHora totals until the remaining components are implemented.
 
 ## Next Manual Pass
 

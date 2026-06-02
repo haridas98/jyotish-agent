@@ -165,12 +165,13 @@ def test_ashtakavarga_generates_bav_and_sav_constants():
 
     result = ashtakavarga(chart)
 
-    assert result["status"] == "calculated_needs_jhora_audit"
+    assert result["status"] == "calculated_source_backed_needs_jhora_profile_audit"
     assert result["bhinna"]["Surya"]["total"] == 48
     assert result["bhinna"]["Surya"]["scores"][0] == 3
     assert result["bhinna"]["Chandra"]["total"] == 49
     assert result["sarva"]["total"] == 337
-    assert result["audit_status"] == "needs_jhora_fixture"
+    assert result["audit_status"] == "jhora_profile_diff_open"
+    assert "Brihat Jataka" in result["source_basis"]
 
 
 def test_shadbala_summary_adds_natural_exaltation_and_directional_components():

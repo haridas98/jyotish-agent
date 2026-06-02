@@ -4,7 +4,28 @@ from dataclasses import dataclass, field as dataclass_field
 from statistics import mean, median, pstdev
 from typing import Any
 
+from .constants import RASHIS
 from .primitives import normalize_degrees
+
+JHORA_ASHTAKAVARGA_BODY_MAP = {
+    "Su": "Surya",
+    "Mo": "Chandra",
+    "Ma": "Mangala",
+    "Me": "Budha",
+    "Ju": "Guru",
+    "Ve": "Shukra",
+    "Sa": "Shani",
+}
+
+JHORA_SHADBALA_BODY_MAP = {
+    "Sun": "Surya",
+    "Moon": "Chandra",
+    "Mars": "Mangala",
+    "Mercury": "Budha",
+    "Jupiter": "Guru",
+    "Venus": "Shukra",
+    "Saturn": "Shani",
+}
 
 
 @dataclass(frozen=True)
@@ -124,6 +145,16 @@ def compare_chart_to_fixture(chart: dict[str, Any], fixture: dict[str, Any]) -> 
 
     _compare_panchanga(chart, expected, exact_matches, missing_fields)
     _compare_vargas(chart, expected, exact_matches, missing_fields)
+    diagnostics = _diagnostics(comparisons)
+    jhora_layer_diagnostics = _compare_jhora_layers(
+        chart,
+        fixture.get("jhora_expected", {}),
+        tolerances,
+        exact_matches,
+        missing_fields,
+    )
+    if jhora_layer_diagnostics:
+        diagnostics["jhora_layers"] = jhora_layer_diagnostics
     passed = (
         not missing_fields
         and all(comparison.passed for comparison in comparisons)
@@ -134,7 +165,7 @@ def compare_chart_to_fixture(chart: dict[str, Any], fixture: dict[str, Any]) -> 
         longitude_comparisons=comparisons,
         exact_matches=exact_matches,
         missing_fields=missing_fields,
-        diagnostics=_diagnostics(comparisons),
+        diagnostics=diagnostics,
         passed=passed,
     )
 
@@ -153,6 +184,113 @@ def _diagnostics(comparisons: list[LongitudeComparison]) -> dict[str, Any]:
         "systematic_offset_suspected": len(comparisons) >= 3
         and median(absolute) >= 10.0
         and signed_stddev <= 2.0,
+    }
+
+
+def _compare_jhora_layers(
+    chart: dict[str, Any],
+    expected: Any,
+    tolerances: dict[str, Any],
+    exact_matches: dict[str, bool],
+    missing_fields: list[str],
+) -> dict[str, Any]:
+    if not isinstance(expected, dict):
+        return {}
+    diagnostics: dict[str, Any] = {}
+    ashtakavarga = _compare_jhora_ashtakavarga(chart, expected, exact_matches, missing_fields)
+    if ashtakavarga["checked"]:
+        diagnostics["ashtakavarga"] = ashtakavarga
+    shadbala = _compare_jhora_shadbala(chart, expected, tolerances, exact_matches, missing_fields)
+    if shadbala["checked"]:
+        diagnostics["shadbala"] = shadbala
+    return diagnostics
+
+
+def _compare_jhora_ashtakavarga(
+    chart: dict[str, Any],
+    expected: dict[str, Any],
+    exact_matches: dict[str, bool],
+    missing_fields: list[str],
+) -> dict[str, int]:
+    expected_ashtakavarga = expected.get("ashtakavarga")
+    if not isinstance(expected_ashtakavarga, dict):
+        return {"checked": 0, "matched": 0, "failed": 0, "missing": 0, "skipped": 0}
+    actual_bhinna = (((chart.get("classical") or {}).get("ashtakavarga") or {}).get("bhinna") or {})
+    checked = matched = failed = missing = skipped = 0
+    for jhora_body, expected_row in expected_ashtakavarga.items():
+        body = JHORA_ASHTAKAVARGA_BODY_MAP.get(str(jhora_body))
+        if body is None or not isinstance(expected_row, dict):
+            skipped += 1
+            continue
+        actual_row = actual_bhinna.get(body)
+        scores = actual_row.get("scores") if isinstance(actual_row, dict) else None
+        if not isinstance(scores, list) or len(scores) < len(RASHIS):
+            missing += 1
+            missing_fields.append(f"jhora.ashtakavarga.{jhora_body}")
+            continue
+        for index, rashi in enumerate(RASHIS):
+            if rashi not in expected_row:
+                continue
+            checked += 1
+            key = f"jhora.ashtakavarga.{jhora_body}.{rashi}"
+            exact_matches[key] = int(scores[index]) == int(expected_row[rashi])
+            if exact_matches[key]:
+                matched += 1
+            else:
+                failed += 1
+    return {
+        "checked": checked,
+        "matched": matched,
+        "failed": failed,
+        "missing": missing,
+        "skipped": skipped,
+    }
+
+
+def _compare_jhora_shadbala(
+    chart: dict[str, Any],
+    expected: dict[str, Any],
+    tolerances: dict[str, Any],
+    exact_matches: dict[str, bool],
+    missing_fields: list[str],
+) -> dict[str, float | int]:
+    expected_shadbala = expected.get("shadbala")
+    if not isinstance(expected_shadbala, dict):
+        return {"checked": 0, "matched": 0, "failed": 0, "missing": 0, "max_abs_delta": 0.0}
+    tolerance = float(tolerances.get("shadbala_virupas", 0.01))
+    actual_items = {
+        row.get("body"): row
+        for row in (((chart.get("classical") or {}).get("shadbala") or {}).get("items") or [])
+        if isinstance(row, dict) and row.get("body")
+    }
+    checked = matched = failed = missing = 0
+    max_abs_delta = 0.0
+    for jhora_body, expected_row in expected_shadbala.items():
+        body = JHORA_SHADBALA_BODY_MAP.get(str(jhora_body))
+        if body is None or not isinstance(expected_row, dict) or "shadbala" not in expected_row:
+            continue
+        actual_row = actual_items.get(body)
+        if not isinstance(actual_row, dict) or "known_total" not in actual_row:
+            missing += 1
+            missing_fields.append(f"jhora.shadbala.{jhora_body}")
+            continue
+        checked += 1
+        expected_value = float(expected_row["shadbala"])
+        actual_value = float(actual_row["known_total"])
+        delta = abs(actual_value - expected_value)
+        max_abs_delta = max(max_abs_delta, delta)
+        key = f"jhora.shadbala.{jhora_body}.shadbala"
+        exact_matches[key] = delta <= tolerance
+        if exact_matches[key]:
+            matched += 1
+        else:
+            failed += 1
+    return {
+        "checked": checked,
+        "matched": matched,
+        "failed": failed,
+        "missing": missing,
+        "max_abs_delta": round(max_abs_delta, 6),
     }
 
 

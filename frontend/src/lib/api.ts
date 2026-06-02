@@ -410,6 +410,12 @@ export type MuhurtaReport = {
 export type CompatibilityReport = {
   status: string;
   method: string;
+  coverage: {
+    system: string;
+    calculated_kutas: number;
+    total_kutas: number;
+    status: string;
+  };
   score: {
     total: number;
     max: number;

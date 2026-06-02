@@ -139,3 +139,58 @@ def test_compare_chart_to_fixture_checks_varga_placements():
     assert report.exact_matches["D9.Surya.rashi"] is True
     assert report.exact_matches["D60.Surya.rashi"] is False
     assert report.passed is False
+
+
+def test_compare_chart_to_fixture_checks_jhora_classical_layers():
+    report = compare_chart_to_fixture(
+        {
+            "classical": {
+                "ashtakavarga": {
+                    "bhinna": {
+                        "Surya": {
+                            "scores": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                        }
+                    }
+                },
+                "shadbala": {
+                    "items": [
+                        {"body": "Surya", "known_total": 343.31},
+                        {"body": "Chandra", "known_total": 400.0},
+                    ]
+                },
+            }
+        },
+        {
+            "id": "jhora-classical-case",
+            "jhora_expected": {
+                "ashtakavarga": {
+                    "Su": {
+                        "Mesha": 1,
+                        "Vrishabha": 2,
+                        "Mithuna": 3,
+                        "Karka": 4,
+                        "Simha": 5,
+                        "Kanya": 6,
+                        "Tula": 7,
+                        "Vrischika": 8,
+                        "Dhanu": 9,
+                        "Makara": 10,
+                        "Kumbha": 11,
+                        "Meena": 12,
+                    }
+                },
+                "shadbala": {
+                    "Sun": {"shadbala": 343.31},
+                    "Moon": {"shadbala": 443.61},
+                },
+            },
+        },
+    )
+
+    assert report.exact_matches["jhora.ashtakavarga.Su.Mesha"] is True
+    assert report.exact_matches["jhora.ashtakavarga.Su.Meena"] is True
+    assert report.exact_matches["jhora.shadbala.Sun.shadbala"] is True
+    assert report.exact_matches["jhora.shadbala.Moon.shadbala"] is False
+    assert report.diagnostics["jhora_layers"]["ashtakavarga"]["matched"] == 12
+    assert report.diagnostics["jhora_layers"]["shadbala"]["matched"] == 1
+    assert report.passed is False

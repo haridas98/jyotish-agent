@@ -108,6 +108,12 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
     )
 
     assert result["status"] == "calculated_needs_tradition_review"
+    assert result["coverage"] == {
+        "system": "ashtakuta",
+        "calculated_kutas": 8,
+        "total_kutas": 8,
+        "status": "complete_baseline_needs_jhora_audit",
+    }
     assert result["score"] == {
         "total": 14.5,
         "max": 36.0,
@@ -153,6 +159,7 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
     assert result["assessment"]["level"] == "caution"
     assert result["assessment"]["caution_count"] == 2
     assert "садху-сангу" in result["assessment"]["note"]
+    assert "Кришне" in result["vaishnava_note"]
 
 
 def test_build_muhurta_report_ranks_candidates_by_panchanga_rules():

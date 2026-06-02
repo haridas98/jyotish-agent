@@ -62,15 +62,18 @@ const calculationStatusLabelsRu: Record<string, string> = {
   draft_needs_jhora_audit: "нужна сверка JHora",
   calculated_needs_citation: "рассчитано, нужны цитаты",
   calculated_needs_jhora_audit: "рассчитано, нужна сверка JHora",
+  calculated_source_backed_needs_jhora_profile_audit: "рассчитано по шастре, открыт JHora profile diff",
   calculated_needs_tradition_review: "рассчитано, нужна традиционная проверка",
   calculated_needs_task_review: "рассчитано, нужна проверка задачи",
   partial_calculated_needs_citation: "частично рассчитано, нужны цитаты",
   partial_calculated_needs_jhora_audit: "частично рассчитано, нужна сверка JHora",
+  partial_calculated_needs_jhora_profile_audit: "частично рассчитано, открыт JHora profile diff",
   calculated_needs_source_audit: "рассчитано, нужен аудит источника",
   pending_source_mapping: "нужна привязка источника",
   pending_jhora_audit: "ждёт сверку JHora",
   pending_endpoint: "ждёт API",
   api_available: "API готов",
+  complete_baseline_needs_jhora_audit: "8/8, нужна сверка JHora",
   pending_separate_chart_pair: "нужны две карты",
   pending_separate_workflow: "отдельный режим",
   signature_only: "только признак",
@@ -821,6 +824,11 @@ function CompatibilityPanel({
               <span>Луна A/B</span>
               <strong>{report.moon.person_a.nakshatra} / {report.moon.person_b.nakshatra}</strong>
               <small>{report.moon.person_a.rashi} / {report.moon.person_b.rashi}</small>
+            </div>
+            <div>
+              <span>Покрытие</span>
+              <strong>{report.coverage.calculated_kutas}/{report.coverage.total_kutas}</strong>
+              <small>{statusRu(report.coverage.status)}</small>
             </div>
           </div>
           <div className="kuta-table">

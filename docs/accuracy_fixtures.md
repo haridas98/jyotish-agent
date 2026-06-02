@@ -60,12 +60,21 @@ The fixture harness now also checks exact varga placements. Add reviewed JHora v
 
 Use `rashi_index` too when the source export gives it.
 
+## Classical Layer Checks
+
+The fixture harness also compares captured JHora classical layers when they are present under `jhora_expected`:
+
+- Bhinna Ashtakavarga rows for Sun through Saturn;
+- Shadbala total virupas against the current calculated `known_total`.
+
+The Lagna/Ascendant Ashtakavarga row is currently parsed but skipped until the app implements that row explicitly.
+
 ## Draft Classical Layers To Audit
 
 The app now calculates draft layers that must receive fixture coverage before they can be marked authoritative:
 
-- Bhinna/Sarva Ashtakavarga scores;
-- Shadbala components beyond the current naisargika/uccha/dig subset;
+- Bhinna/Sarva Ashtakavarga scores across more reviewed JHora/profile fixtures;
+- Shadbala components beyond the current partial subset;
 - Gulika/Mandi exact longitude now uses real sunrise/sunset segmentation but still needs JHora parity fixtures;
 - full ashtakuta compatibility tables;
 - task-specific muhurta scoring.

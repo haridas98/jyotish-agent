@@ -12,13 +12,13 @@
 | Yogas | partial | Phase 2 | Simple signatures only: Gaja Kesari, Budha Aditya, Chandra Mangala. Interpretations require citations. |
 | Avasthas | partial | Phase 2 | Baladi avastha calculated; other avasthas pending source review. |
 | Vimshopaka bala | draft | Phase 2 | Temporary varga own/exaltation support count; not final bala. |
-| Shadbala | draft | Phase 2 | Naisargika, uccha, and whole-sign dig bala exposed; remaining components pending audit. |
-| Ashtakavarga | draft | Phase 2 | BAV/SAV bindu tables exposed with 337 SAV total; JHora fixtures still required. |
+| Shadbala | draft | Phase 2 | Partial virupa total exposed and compared against captured JHora totals; full sixfold Shadbala still pending. |
+| Ashtakavarga | partial | Phase 2 | BAV/SAV bindu tables exposed with 337 SAV total; first JHora fixture checks 84 cells with 78 matches, 6 JHora-profile differences open. |
 | Argala | partial | Phase 2 | Primary Lagna argala 2/4/11 with obstruction 12/10/3. |
 | Special points | partial | Phase 2 | Arabic lots plus Gulika/Mandi from actual sunrise/sunset segment timing; Vedic points pending fixture audit. |
 | Transits | partial | Phase 2 | `/api/calculations/transits` compares current/as-of grahas to natal Lagna and Moon. |
 | Annual charts | no | Phase 3 | After core parity. |
-| Compatibility | partial | Phase 3 | `/api/calculations/compatibility` exposes 8-kuta baseline, UI form for second person, score rows, and Vaishnava caution text. |
+| Compatibility | partial | Phase 3 | `/api/calculations/compatibility` exposes complete 8/8 ashtakuta baseline, UI form for second person, score rows, coverage metadata, and Vaishnava caution text. |
 | Muhurta | partial | Phase 3 | `/api/calculations/muhurta` ranks date candidates by panchanga rules, Vaishnava priority, and sunrise-based Rahu/Yamaganda/Gulika avoidance. |
 | Prashna | no | Phase 3 | Separate input model. |
 | Reports | partial | MVP | Citation-first, no free hallucination. |
