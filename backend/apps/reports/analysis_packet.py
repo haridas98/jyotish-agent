@@ -15,12 +15,14 @@ from .birth_report import CitationSearch, InterpretationProvider, compose_birth_
 
 SCHEMA_VERSION = "jyotish-analysis-packet-v1"
 COMPATIBILITY_SCHEMA_VERSION = "jyotish-compatibility-analysis-packet-v1"
+ResearchSearch = CitationSearch
 
 
 def build_analysis_packet(
     data: dict[str, Any],
     provider: EphemerisProvider | None = None,
     citation_search: CitationSearch | None = None,
+    research_search: ResearchSearch | None = None,
     interpretation_provider: InterpretationProvider | None = None,
 ) -> dict[str, Any]:
     composed = compose_birth_report(
@@ -38,6 +40,7 @@ def build_analysis_packet(
         explanation_schedule=schedule,
         detected_yoga_source_map=yoga_source_map,
     )
+    research_context = _research_context(citation_requests, research_search)
 
     packet = {
         "schema_version": SCHEMA_VERSION,
@@ -62,6 +65,7 @@ def build_analysis_packet(
             "calculation_version": report.get("calculation_version", ""),
         },
         "citations": citations,
+        "research_context": research_context,
     }
     packet["prompt_markdown"] = render_analysis_prompt(packet)
     return packet
@@ -71,6 +75,7 @@ def build_compatibility_analysis_packet(
     data: dict[str, Any],
     provider: EphemerisProvider | None = None,
     citation_search: CitationSearch | None = None,
+    research_search: ResearchSearch | None = None,
 ) -> dict[str, Any]:
     citation_search = citation_search or (lambda query: [])
     person_a_input = _required_mapping(data, "person_a")
@@ -82,6 +87,7 @@ def build_compatibility_analysis_packet(
     citations = _citation_payloads_from_results(
         citation_search(_compatibility_seed_query(compatibility))
     )
+    research_context = _research_context(citation_requests, research_search)
 
     packet = {
         "schema_version": COMPATIBILITY_SCHEMA_VERSION,
@@ -106,6 +112,7 @@ def build_compatibility_analysis_packet(
             "calculation_version": person_a_chart.get("calculation_version", ""),
         },
         "citations": citations,
+        "research_context": research_context,
     }
     packet["prompt_markdown"] = render_compatibility_analysis_prompt(packet)
     return packet
@@ -187,6 +194,7 @@ def _generator_policy() -> dict[str, Any]:
             "independent_demigod_worship",
             "uncited_scriptural_claims",
             "public_quotation_from_unreviewed_translation",
+            "citation_titles_from_research_context",
             "fatalistic_guarantees",
             "medical_legal_financial_directives",
         ],
@@ -208,7 +216,56 @@ def _translation_review_rules() -> str:
         "- cite_exact_edition_translator_and_reference: every shastra quote must name work, chapter/verse if known, edition and translator;\n"
         "- flag_translation_conflicts: if translations disagree, say it is a translation/edition issue and keep the conclusion draft;\n"
         "- do not quote copyright_review_required or private_research_only passages in public text until approved.\n"
+        "- research_context is private evidence only; do not copy it into citation_titles.\n"
     )
+
+
+def _research_context(
+    citation_requests: list[dict[str, Any]],
+    research_search: ResearchSearch | None,
+) -> dict[str, Any]:
+    if research_search is None:
+        return {
+            "status": "not_configured",
+            "items": [],
+            "public_quote_policy": "not_public_citations",
+        }
+    items: list[dict[str, object]] = []
+    seen: set[tuple[str, str]] = set()
+    for query in _research_queries(citation_requests):
+        for raw_item in research_search(query):
+            item = dict(raw_item)
+            item["is_public_citation"] = False
+            item.setdefault("public_quote_policy", "blocked_until_approved")
+            key = (str(item.get("work_title") or ""), str(item.get("title") or ""))
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append(item)
+            if len(items) >= 12:
+                return _research_context_payload(items)
+    return _research_context_payload(items)
+
+
+def _research_context_payload(items: list[dict[str, object]]) -> dict[str, Any]:
+    return {
+        "status": "private_research_not_public_citation",
+        "items": items,
+        "public_quote_policy": "not_public_citations_until_passage_approved",
+    }
+
+
+def _research_queries(citation_requests: list[dict[str, Any]]) -> list[str]:
+    queries: list[str] = []
+    for request in citation_requests:
+        search_queries = request.get("search_queries", [])
+        if isinstance(search_queries, list):
+            queries.extend(str(query) for query in search_queries if str(query).strip())
+        elif request.get("title"):
+            queries.append(str(request["title"]))
+        if len(queries) >= 8:
+            break
+    return queries
 
 
 def _compatibility_generator_policy() -> dict[str, Any]:

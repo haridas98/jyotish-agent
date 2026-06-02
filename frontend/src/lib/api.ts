@@ -634,6 +634,18 @@ export type VLSearchResult = {
   public_url: string;
 };
 
+export type ResearchSearchResult = {
+  title: string;
+  work_title: string;
+  body: string;
+  source_url: string;
+  review_status: string;
+  work_review_status: string;
+  rights_status: string;
+  public_quote_policy: string;
+  is_public_citation: boolean;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8100";
 
 function csrfToken() {
@@ -813,6 +825,20 @@ export async function searchPlaces(query: string): Promise<PlaceCandidate[]> {
 export async function searchVLSources(query: string): Promise<VLSearchResult[]> {
   if (!query.trim()) return [];
   const response = await apiFetch(`/api/sources/vl/search?q=${encodeURIComponent(query)}`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data.items ?? [];
+}
+
+export async function searchResearchSources(query: string): Promise<ResearchSearchResult[]> {
+  if (!query.trim()) return [];
+  const response = await apiFetch(`/api/sources/research/search?q=${encodeURIComponent(query)}`, {
     cache: "no-store",
   });
 

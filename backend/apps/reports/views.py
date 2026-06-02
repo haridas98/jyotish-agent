@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from apps.calculations.chart import ChartInputError
 from apps.calculations.ephemeris import EphemerisUnavailable
 from apps.interpretations.engine import public_interpretation_sections_for_chart
-from apps.sources.citations import combined_citation_search
+from apps.sources.citations import combined_citation_search, local_research_corpus_search
 
 from .analysis_packet import build_analysis_packet, build_compatibility_analysis_packet
 from .birth_report import compose_birth_report
@@ -43,6 +43,7 @@ class BirthAnalysisPacketView(APIView):
                 build_analysis_packet(
                     request.data,
                     citation_search=vl_citation_search,
+                    research_search=local_research_corpus_search,
                     interpretation_provider=public_interpretation_sections_for_chart,
                 )
             )
@@ -81,6 +82,7 @@ class CompatibilityAnalysisPacketView(APIView):
                 build_compatibility_analysis_packet(
                     request.data,
                     citation_search=vl_citation_search,
+                    research_search=local_research_corpus_search,
                 )
             )
         except (ChartInputError, ValueError) as exc:

@@ -23,6 +23,7 @@ def generate_birth_chart_draft_analysis(
     data: dict[str, Any],
     provider: EphemerisProvider | None = None,
     citation_search: CitationSearch | None = None,
+    research_search: CitationSearch | None = None,
     interpretation_provider: InterpretationProvider | None = None,
     llm_client: LLMClient | None = None,
 ) -> dict[str, Any]:
@@ -30,6 +31,7 @@ def generate_birth_chart_draft_analysis(
         data,
         provider=provider,
         citation_search=citation_search,
+        research_search=research_search,
         interpretation_provider=interpretation_provider,
     )
     return generate_draft_analysis_for_packet(

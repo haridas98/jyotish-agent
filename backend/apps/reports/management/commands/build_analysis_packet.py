@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from apps.interpretations.engine import public_interpretation_sections_for_chart
-from apps.sources.citations import combined_citation_search
+from apps.sources.citations import combined_citation_search, local_research_corpus_search
 
 from ...analysis_packet import build_analysis_packet
 
@@ -32,6 +32,7 @@ class Command(BaseCommand):
         packet = build_analysis_packet(
             _birth_data(options),
             citation_search=_vl_citation_search,
+            research_search=local_research_corpus_search,
             interpretation_provider=public_interpretation_sections_for_chart,
         )
         output_path = Path(options["output"])

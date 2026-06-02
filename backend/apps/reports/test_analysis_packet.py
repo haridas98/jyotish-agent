@@ -88,6 +88,16 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
                 ],
             }
         ],
+        research_search=lambda query: [
+            {
+                "title": "private full text chunk 0001",
+                "work_title": "Phaladipika",
+                "body": "Research-only yoga wording from private OCR.",
+                "review_status": "research_only",
+                "is_public_citation": False,
+                "public_quote_policy": "blocked_until_approved",
+            }
+        ],
     )
 
     assert packet["schema_version"] == "jyotish-analysis-packet-v1"
@@ -115,10 +125,14 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
         "Srimad-Bhagavatam 1.2.6",
         "Bhagavad-gita 9.22",
     }
+    assert packet["research_context"]["status"] == "private_research_not_public_citation"
+    assert packet["research_context"]["items"][0]["work_title"] == "Phaladipika"
+    assert packet["research_context"]["items"][0]["is_public_citation"] is False
     assert "OUTPUT JSON schema" in packet["prompt_markdown"]
     assert "explanation_schedule" in packet["prompt_markdown"]
     assert "detected_yoga_source_map" in packet["prompt_markdown"]
     assert "citation_requests" in packet["prompt_markdown"]
+    assert "research_context" in packet["prompt_markdown"]
     assert "compare_multiple_translation_variants" in packet["prompt_markdown"]
     assert "cite_exact_edition_translator_and_reference" in packet["prompt_markdown"]
     assert "flag_translation_conflicts" in packet["prompt_markdown"]
@@ -179,7 +193,7 @@ def test_build_compatibility_analysis_packet_contains_two_chart_context_and_pers
 def test_analysis_packet_api_returns_packet(monkeypatch):
     monkeypatch.setattr(
         "apps.reports.views.build_analysis_packet",
-        lambda data, citation_search=None, interpretation_provider=None: {
+        lambda data, citation_search=None, research_search=None, interpretation_provider=None: {
             "schema_version": "jyotish-analysis-packet-v1",
             "status": "ready_for_generation",
             "prompt_markdown": "prompt",
@@ -205,7 +219,7 @@ def test_analysis_packet_api_returns_packet(monkeypatch):
 def test_compatibility_analysis_packet_api_returns_packet(monkeypatch):
     monkeypatch.setattr(
         "apps.reports.views.build_compatibility_analysis_packet",
-        lambda data, citation_search=None: {
+        lambda data, citation_search=None, research_search=None: {
             "schema_version": "jyotish-compatibility-analysis-packet-v1",
             "status": "needs_citation_review",
             "prompt_markdown": "prompt",
@@ -240,7 +254,7 @@ def test_build_analysis_packet_command_writes_json_and_prompt(monkeypatch, tmp_p
 
     monkeypatch.setattr(
         "apps.reports.management.commands.build_analysis_packet.build_analysis_packet",
-        lambda data, citation_search=None, interpretation_provider=None: {
+        lambda data, citation_search=None, research_search=None, interpretation_provider=None: {
             "schema_version": "jyotish-analysis-packet-v1",
             "status": "ready_for_generation",
             "citation_requests": [{"key": "gaja_kesari", "kind": "detected_yoga"}],

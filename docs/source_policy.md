@@ -22,6 +22,8 @@ The shastra catalog may store source URLs and short review anchors immediately. 
 
 Local private full-text files may be imported from `.private_corpus/` for research-only comparison. These chunks must stay out of git, keep `review_status=research_only`, and cannot be quoted in public reports until a passage is manually approved.
 
+When OCR quality is poor, mark the passage as research-only and use it only to locate the exact source area. A reviewed passage must be rechecked against the scan/PDF page and edition before approval.
+
 ## Citation Requirement
 
 Every interpretive claim must have one of these:

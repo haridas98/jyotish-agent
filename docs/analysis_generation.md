@@ -51,6 +51,8 @@ Rules for generated text:
 
 - do not invent shastra citations;
 - use `citation_requests` as the checklist for missing shastra evidence;
+- use `research_context` only for internal comparison and source discovery;
+- never copy `research_context` text into public `citation_titles` or final quoted passages;
 - compare multiple translation variants when they are present in the packet;
 - cite exact work, chapter/verse if known, edition and translator for every shastra quote;
 - flag translation or edition conflicts instead of hiding them;

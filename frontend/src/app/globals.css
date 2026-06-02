@@ -1503,7 +1503,7 @@ select {
   border-top: 1px solid var(--line);
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(180px, 1fr) auto;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
   padding: 16px 18px;
 }
 
@@ -1527,7 +1527,15 @@ select {
   text-decoration: none;
 }
 
-.source-results a + a {
+.source-results div {
+  color: inherit;
+  display: grid;
+  gap: 5px;
+  padding: 14px 18px;
+}
+
+.source-results a + a,
+.source-results div + div {
   border-top: 1px solid var(--line);
 }
 
@@ -1536,7 +1544,8 @@ select {
 }
 
 .source-results span,
-.source-results p {
+.source-results p,
+.source-results small {
   color: var(--muted);
   font-size: 13px;
   margin: 0;

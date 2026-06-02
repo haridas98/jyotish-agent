@@ -57,7 +57,7 @@ def test_generate_draft_analysis_for_packet_keeps_review_status_draft_and_saves_
 def test_birth_draft_analysis_api_returns_saved_draft(monkeypatch):
     monkeypatch.setattr(
         "apps.reports.views.generate_birth_chart_draft_analysis",
-        lambda data, citation_search=None, interpretation_provider=None: {
+        lambda data, citation_search=None, research_search=None, interpretation_provider=None: {
             "id": 7,
             "kind": "birth_chart",
             "review_status": "draft",

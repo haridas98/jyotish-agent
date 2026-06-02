@@ -9,6 +9,14 @@ cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py import_private_corpus ..\.private_corpus\jyotish-private-manifest.json
 ```
 
+Search imported research chunks:
+
+```http
+GET /api/sources/research/search?q=gaja%20kesari
+```
+
+The birth-chart and compatibility analysis packets include matching private chunks in `research_context`. These items are not `citations`; they are evidence for internal comparison only.
+
 Digital source candidates:
 
 | Work | Digital source | Import status |

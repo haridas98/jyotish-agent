@@ -44,6 +44,24 @@ def local_approved_citation_search(query: str, limit: int = 3) -> list[dict[str,
     return [_citation_payload(passage) for passage in selected]
 
 
+def local_research_corpus_search(query: str, limit: int = 5) -> list[dict[str, object]]:
+    passages = (
+        SourcePassage.objects.select_related("work")
+        .filter(
+            review_status=ReviewStatus.RESEARCH_ONLY,
+            work__review_status=ReviewStatus.RESEARCH_ONLY,
+        )
+        .order_by("id")
+    )
+    private_chunks = passages.filter(metadata__import_kind="private_full_text_chunk")
+    matched = list(_matching_passages(private_chunks, query)[:limit])
+    if len(matched) < limit:
+        private_ids = [passage.id for passage in matched]
+        other_passages = passages.exclude(id__in=private_ids)
+        matched.extend(list(_matching_passages(other_passages, query)[: limit - len(matched)]))
+    return [_research_payload(passage) for passage in matched]
+
+
 def _matching_passages(passages, query: str):
     terms = [term.strip() for term in query.split() if len(term.strip()) >= 3][:6]
     if not terms:
@@ -68,4 +86,20 @@ def _citation_payload(passage: SourcePassage) -> dict[str, object]:
         "work_title": passage.work.title,
         "body": passage.body[:600],
         "public_url": public_url or passage.work.source_url,
+    }
+
+
+def _research_payload(passage: SourcePassage) -> dict[str, object]:
+    metadata = passage.metadata if isinstance(passage.metadata, dict) else {}
+    work_metadata = passage.work.metadata if isinstance(passage.work.metadata, dict) else {}
+    return {
+        "title": passage.reference,
+        "work_title": passage.work.title,
+        "body": passage.body[:1200],
+        "source_url": passage.work.source_url,
+        "review_status": passage.review_status,
+        "work_review_status": passage.work.review_status,
+        "rights_status": metadata.get("rights_status") or work_metadata.get("rights_status") or "",
+        "public_quote_policy": metadata.get("public_quote_policy") or "blocked_until_approved",
+        "is_public_citation": False,
     }

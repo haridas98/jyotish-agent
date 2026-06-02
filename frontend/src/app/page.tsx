@@ -16,6 +16,7 @@ import {
   logoutUser,
   registerUser,
   searchPlaces,
+  searchResearchSources,
   searchVLSources,
   type BirthReport,
   type BirthChart,
@@ -29,6 +30,7 @@ import {
   type MuhurtaReport,
   type PersonSummary,
   type PlaceCandidate,
+  type ResearchSearchResult,
   type TransitReport,
   type User,
   type VargaPlacement,
@@ -1205,6 +1207,8 @@ export default function Home() {
   const [partnerPlaceSearchStatus, setPartnerPlaceSearchStatus] = useState("Введите город второго человека");
   const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
   const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
+  const [researchResults, setResearchResults] = useState<ResearchSearchResult[]>([]);
+  const [researchStatus, setResearchStatus] = useState("Private corpus not searched");
   const [sourceStatus, setSourceStatus] = useState("Поиск по VL не запускался");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authUsername, setAuthUsername] = useState("haridas");
@@ -1613,6 +1617,18 @@ export default function Home() {
     }
   }
 
+  async function handleResearchSearch() {
+    setResearchStatus("Searching private corpus...");
+    try {
+      const results = await searchResearchSources(sourceQuery);
+      setResearchResults(results);
+      setResearchStatus(results.length ? `${results.length} research-only fragments` : "No private corpus matches");
+    } catch (error) {
+      setResearchResults([]);
+      setResearchStatus(error instanceof Error ? error.message : "Private corpus search error");
+    }
+  }
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -1933,7 +1949,9 @@ export default function Home() {
                     <form className="source-search" onSubmit={handleSourceSearch}>
                       <input value={sourceQuery} onChange={(event) => setSourceQuery(event.target.value)} />
                       <button type="submit" className="secondary-button">Искать в VL</button>
+                      <button type="button" className="secondary-button" onClick={handleResearchSearch}>Private corpus</button>
                       <span>{sourceStatus}</span>
+                      <span>{researchStatus}</span>
                     </form>
                     {sourceResults.length ? (
                       <div className="source-results">
@@ -1943,6 +1961,18 @@ export default function Home() {
                             <span>{result.work_title}</span>
                             <p>{result.body}</p>
                           </a>
+                        ))}
+                      </div>
+                    ) : null}
+                    {researchResults.length ? (
+                      <div className="source-results research-results">
+                        {researchResults.map((result) => (
+                          <div key={`${result.work_title}-${result.title}`}>
+                            <strong>{result.title}</strong>
+                            <span>{result.work_title} / {result.review_status}</span>
+                            <p>{result.body}</p>
+                            <small>{result.public_quote_policy}</small>
+                          </div>
                         ))}
                       </div>
                     ) : null}
