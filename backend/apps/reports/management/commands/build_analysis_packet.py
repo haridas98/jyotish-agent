@@ -26,6 +26,7 @@ class Command(BaseCommand):
         parser.add_argument("--as-of-date")
         parser.add_argument("--output", required=True)
         parser.add_argument("--prompt-output")
+        parser.add_argument("--citation-requests-output")
 
     def handle(self, *args, **options):
         packet = build_analysis_packet(
@@ -41,6 +42,14 @@ class Command(BaseCommand):
             prompt_path = Path(options["prompt_output"])
             prompt_path.parent.mkdir(parents=True, exist_ok=True)
             prompt_path.write_text(str(packet["prompt_markdown"]), encoding="utf-8")
+
+        if options.get("citation_requests_output"):
+            requests_path = Path(options["citation_requests_output"])
+            requests_path.parent.mkdir(parents=True, exist_ok=True)
+            requests_path.write_text(
+                json.dumps(packet.get("citation_requests", []), ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
 
         self.stdout.write(self.style.SUCCESS(f"Wrote analysis packet: {output_path}"))
 

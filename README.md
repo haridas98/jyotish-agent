@@ -42,7 +42,8 @@ cd backend
   --birth-time 13:45 `
   --place-name "Ishimbay" `
   --output .tmp\analysis-packet.json `
-  --prompt-output .tmp\analysis-prompt.md
+  --prompt-output .tmp\analysis-prompt.md `
+  --citation-requests-output .tmp\citation-requests.json
 ```
 
 Frontend:

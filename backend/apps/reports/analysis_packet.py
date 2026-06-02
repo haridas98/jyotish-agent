@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from apps.calculations.ephemeris import EphemerisProvider
+from apps.interpretations.citation_requests import build_citation_requests
 from apps.interpretations.shastra_catalog import explanation_schedule
 from apps.interpretations.yoga_catalog import yoga_catalog_overview
 from apps.interpretations.yoga_source_map import detected_yoga_source_map
@@ -28,19 +29,26 @@ def build_analysis_packet(
     chart = composed["chart"]
     report = composed["report"]
     citations = _dedupe_citations(report.get("sections", []))
+    schedule = explanation_schedule()
+    yoga_source_map = detected_yoga_source_map(chart)
+    citation_requests = build_citation_requests(
+        explanation_schedule=schedule,
+        detected_yoga_source_map=yoga_source_map,
+    )
 
     packet = {
         "schema_version": SCHEMA_VERSION,
         "status": _packet_status(report, citations),
         "generator_policy": _generator_policy(),
+        "citation_requests": citation_requests,
         "context": {
             "birth": chart.get("birth", {}),
             "place": chart.get("place", {}),
             "settings": chart.get("settings", {}),
             "chart": chart,
-            "explanation_schedule": explanation_schedule(),
+            "explanation_schedule": schedule,
             "yoga_catalog_overview": yoga_catalog_overview(),
-            "detected_yoga_source_map": detected_yoga_source_map(chart),
+            "detected_yoga_source_map": yoga_source_map,
             "chart_facts": report.get("chart_facts", {}),
             "person_summary": report.get("person_summary", {}),
             "sections": report.get("sections", []),

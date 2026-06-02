@@ -104,6 +104,10 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert yoga_map
     assert all(row["citation_policy"] == "required_for_public_interpretation" for row in yoga_map)
     assert any(row["source_mapping_status"] == "mapped_research_only" for row in yoga_map)
+    citation_requests = packet["citation_requests"]
+    assert citation_requests
+    assert any(request["kind"] == "detected_yoga" for request in citation_requests)
+    assert all(request["required_for_public_text"] for request in citation_requests)
     assert packet["context"]["chart_facts"]["grahas"]["Chandra"]["house"] == 2
     assert {citation["title"] for citation in packet["citations"]} == {
         "Srimad-Bhagavatam 1.2.6",
@@ -112,6 +116,7 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert "OUTPUT JSON schema" in packet["prompt_markdown"]
     assert "explanation_schedule" in packet["prompt_markdown"]
     assert "detected_yoga_source_map" in packet["prompt_markdown"]
+    assert "citation_requests" in packet["prompt_markdown"]
     assert "не выдумывай цитаты" in packet["prompt_markdown"]
     assert "independent demigod" in packet["prompt_markdown"]
 
@@ -145,12 +150,14 @@ def test_analysis_packet_api_returns_packet(monkeypatch):
 def test_build_analysis_packet_command_writes_json_and_prompt(monkeypatch, tmp_path):
     json_path = tmp_path / "packet.json"
     prompt_path = tmp_path / "packet.prompt.md"
+    citation_requests_path = tmp_path / "citation-requests.json"
 
     monkeypatch.setattr(
         "apps.reports.management.commands.build_analysis_packet.build_analysis_packet",
         lambda data, citation_search=None, interpretation_provider=None: {
             "schema_version": "jyotish-analysis-packet-v1",
             "status": "ready_for_generation",
+            "citation_requests": [{"key": "gaja_kesari", "kind": "detected_yoga"}],
             "prompt_markdown": "# Prompt\nUse packet.",
         },
     )
@@ -167,7 +174,10 @@ def test_build_analysis_packet_command_writes_json_and_prompt(monkeypatch, tmp_p
         str(json_path),
         "--prompt-output",
         str(prompt_path),
+        "--citation-requests-output",
+        str(citation_requests_path),
     )
 
     assert '"schema_version": "jyotish-analysis-packet-v1"' in Path(json_path).read_text(encoding="utf-8")
     assert Path(prompt_path).read_text(encoding="utf-8") == "# Prompt\nUse packet."
+    assert '"gaja_kesari"' in Path(citation_requests_path).read_text(encoding="utf-8")

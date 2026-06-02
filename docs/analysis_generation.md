@@ -20,12 +20,14 @@ cd C:\Projects\jyotish-agent\backend
   --latitude 53.4546 `
   --longitude 56.0439 `
   --output .tmp\analysis-packet.json `
-  --prompt-output .tmp\analysis-prompt.md
+  --prompt-output .tmp\analysis-prompt.md `
+  --citation-requests-output .tmp\citation-requests.json
 ```
 
 Rules for generated text:
 
 - do not invent shastra citations;
+- use `citation_requests` as the checklist for missing shastra evidence;
 - do not present calculation drafts as final doctrine;
 - do not recommend independent demigod worship;
 - reframe remedies through Krishna, sadhu-sanga, sadhana, service, and Srila Prabhupada.
