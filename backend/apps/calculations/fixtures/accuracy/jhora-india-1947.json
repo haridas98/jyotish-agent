@@ -2,14 +2,17 @@
   "id": "jhora-india-1947",
   "source": "jhora_complete_calculations_clipboard",
   "review_status": "draft",
-  "notes": "Expected values copied from JHora 8.0 complete calculations. Keep draft until calculation preferences are fully recorded.",
+  "notes": "Expected values copied from JHora 8.0 complete calculations. Node type inferred as mean from Rahu/Ketu parity. Keep draft until all calculation preferences are fully recorded.",
   "input": {
     "birth_date": "1947-08-15",
-    "birth_time": "00:00",
+    "birth_time": "00:00:01",
     "place_name": "Delhi",
     "timezone": "Asia/Kolkata",
     "latitude": 28.666667,
-    "longitude": 77.216667
+    "longitude": 77.216667,
+    "node_type": "mean",
+    "ayanamsa": "lahiri",
+    "ephemeris": "swiss"
   },
   "jhora_metadata": {
     "version_required": "8.0",
@@ -17,7 +20,8 @@
     "timezone_offset_hours": 5.5,
     "timezone_compact": -5.3,
     "raw_line_count": 14,
-    "ayanamsa": "23-06-37.20"
+    "ayanamsa": "23-06-37.20",
+    "node_type": "mean"
   },
   "expected": {
     "ascendant": {

@@ -89,10 +89,11 @@ def _compact_time_to_decimal_hours(value: float) -> float:
 
 
 def _decimal_hours_to_hhmm(value: float) -> str:
-    total_minutes = int(round((value % 24.0) * 60.0))
-    total_minutes %= 24 * 60
-    hours, minutes = divmod(total_minutes, 60)
-    return f"{hours:02d}:{minutes:02d}"
+    total_seconds = int(round((value % 24.0) * 3600.0))
+    total_seconds %= 24 * 3600
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
 def _timezone_guess(country: str, offset_hours: float) -> str:

@@ -70,6 +70,63 @@ def test_build_birth_chart_uses_local_timezone_and_provider():
     assert result["classical"]["ashtakavarga"]["status"] == "partial_calculated_needs_jhora_audit"
 
 
+def test_build_birth_chart_accepts_explicit_calculation_settings():
+    from apps.calculations.chart import build_birth_chart
+
+    provider = FakeProvider()
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+            "node_type": "mean",
+            "ayanamsa": "lahiri",
+            "ephemeris": "swiss",
+        },
+        provider=provider,
+    )
+
+    assert provider.settings == CalculationSettings(node_type="mean")
+    assert result["settings"]["node_type"] == "mean"
+    assert result["settings"]["ayanamsa"] == "lahiri"
+    assert result["settings"]["ephemeris"] == "swiss"
+
+
+def test_build_birth_chart_preserves_birth_time_seconds_for_precision():
+    from apps.calculations.chart import build_birth_chart
+
+    provider = FakeProvider()
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30:45",
+            "place_name": "Vrindavan",
+        },
+        provider=provider,
+    )
+
+    assert provider.moment == datetime(2000, 1, 1, 15, 30, 45, tzinfo=ZoneInfo("Asia/Kolkata"))
+    assert result["birth"]["time"] == "15:30:45"
+    assert result["birth"]["local_datetime"] == "2000-01-01T15:30:45+05:30"
+
+
+def test_build_birth_chart_rejects_invalid_calculation_settings():
+    from apps.calculations.chart import ChartInputError, build_birth_chart
+
+    with pytest.raises(ChartInputError, match="node_type"):
+        build_birth_chart(
+            {
+                "birth_date": "2000-01-01",
+                "birth_time": "15:30",
+                "place_name": "Vrindavan",
+                "node_type": "dragon",
+            },
+            provider=FakeProvider(),
+        )
+
+
 def test_build_birth_chart_accepts_custom_place_with_coordinates():
     from apps.calculations.chart import build_birth_chart
 

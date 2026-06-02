@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
+from statistics import mean, median, pstdev
 from typing import Any
 
 from .primitives import normalize_degrees
@@ -11,6 +12,7 @@ class LongitudeComparison:
     body: str
     expected_degrees: float
     actual_degrees: float
+    signed_delta_arcseconds: float
     delta_arcseconds: float
     tolerance_arcseconds: float
     passed: bool
@@ -23,6 +25,7 @@ class ChartAccuracyReport:
     exact_matches: dict[str, bool]
     missing_fields: list[str]
     passed: bool
+    diagnostics: dict[str, Any] = dataclass_field(default_factory=dict)
 
 
 def angular_delta_arcseconds(left_degrees: float, right_degrees: float) -> float:
@@ -31,6 +34,13 @@ def angular_delta_arcseconds(left_degrees: float, right_degrees: float) -> float
     delta_degrees = abs(left - right)
     shortest_delta = min(delta_degrees, 360.0 - delta_degrees)
     return round(shortest_delta * 3600.0, 6)
+
+
+def signed_angular_delta_arcseconds(expected_degrees: float, actual_degrees: float) -> float:
+    expected = normalize_degrees(expected_degrees)
+    actual = normalize_degrees(actual_degrees)
+    delta = (actual - expected + 180.0) % 360.0 - 180.0
+    return round(delta * 3600.0, 6)
 
 
 def compare_longitude(
@@ -44,6 +54,7 @@ def compare_longitude(
         body=body,
         expected_degrees=normalize_degrees(expected_degrees),
         actual_degrees=normalize_degrees(actual_degrees),
+        signed_delta_arcseconds=signed_angular_delta_arcseconds(expected_degrees, actual_degrees),
         delta_arcseconds=delta,
         tolerance_arcseconds=tolerance_arcseconds,
         passed=delta <= tolerance_arcseconds,
@@ -123,8 +134,26 @@ def compare_chart_to_fixture(chart: dict[str, Any], fixture: dict[str, Any]) -> 
         longitude_comparisons=comparisons,
         exact_matches=exact_matches,
         missing_fields=missing_fields,
+        diagnostics=_diagnostics(comparisons),
         passed=passed,
     )
+
+
+def _diagnostics(comparisons: list[LongitudeComparison]) -> dict[str, Any]:
+    if not comparisons:
+        return {}
+    signed = [comparison.signed_delta_arcseconds for comparison in comparisons]
+    absolute = [comparison.delta_arcseconds for comparison in comparisons]
+    signed_stddev = round(pstdev(signed), 6)
+    return {
+        "mean_signed_delta_arcseconds": round(mean(signed), 6),
+        "median_abs_delta_arcseconds": round(median(absolute), 6),
+        "max_abs_delta_arcseconds": round(max(absolute), 6),
+        "signed_delta_stddev_arcseconds": signed_stddev,
+        "systematic_offset_suspected": len(comparisons) >= 3
+        and median(absolute) >= 10.0
+        and signed_stddev <= 2.0,
+    }
 
 
 def _compare_exact(

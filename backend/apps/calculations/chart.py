@@ -41,7 +41,7 @@ def build_birth_chart(
         raise ChartInputError(f"Unknown timezone: {timezone_name}") from exc
 
     local_moment = datetime.combine(birth_date, birth_time, tzinfo=tz)
-    settings = CalculationSettings()
+    settings = _calculation_settings(data)
     ephemeris = provider or SwissEphemerisProvider()
     positions = ephemeris.planet_positions(local_moment, GRAHAS, settings)
     ascendant = _calculate_ascendant(ephemeris, local_moment, latitude, longitude, settings)
@@ -58,7 +58,7 @@ def build_birth_chart(
         },
         "birth": {
             "date": birth_date.isoformat(),
-            "time": birth_time.isoformat(timespec="minutes"),
+            "time": _time_isoformat(birth_time),
             "timezone": timezone_name,
             "utc_offset": _utc_offset(local_moment),
             "local_datetime": local_moment.isoformat(),
@@ -116,6 +116,17 @@ def _resolve_place_or_custom(data: dict[str, Any], place_name: str) -> PlaceCand
 
 def _has_custom_place_data(data: dict[str, Any]) -> bool:
     return all(data.get(field) not in {None, ""} for field in ("timezone", "latitude", "longitude"))
+
+
+def _calculation_settings(data: dict[str, Any]) -> CalculationSettings:
+    try:
+        return CalculationSettings(
+            ayanamsa=str(data.get("ayanamsa") or "lahiri").strip().lower(),
+            node_type=str(data.get("node_type") or "true").strip().lower(),
+            ephemeris=str(data.get("ephemeris") or "swiss").strip().lower(),
+        )
+    except ValueError as exc:
+        raise ChartInputError(str(exc)) from exc
 
 
 def _utc_offset(moment: datetime) -> str:
@@ -220,7 +231,12 @@ def _required_time(data: dict[str, Any], field: str) -> time:
         parsed = time.fromisoformat(value)
     except ValueError as exc:
         raise ChartInputError(f"{field} must be HH:MM") from exc
-    return parsed.replace(second=0, microsecond=0)
+    return parsed.replace(microsecond=0)
+
+
+def _time_isoformat(value: time) -> str:
+    timespec = "seconds" if value.second else "minutes"
+    return value.isoformat(timespec=timespec)
 
 
 def _optional_float(

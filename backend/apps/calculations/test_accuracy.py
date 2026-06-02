@@ -33,6 +33,33 @@ def test_compare_longitude_marks_fail_when_outside_tolerance():
     assert result.delta_arcseconds == 36
 
 
+def test_compare_chart_to_fixture_reports_systematic_longitude_offset():
+    report = compare_chart_to_fixture(
+        {
+            "grahas": [
+                {"body": "Surya", "longitude": 9.99, "rashi": "Mesha"},
+                {"body": "Chandra", "longitude": 39.99, "rashi": "Vrishabha"},
+            ],
+            "ascendant": {"longitude": 69.99, "rashi": "Mithuna"},
+        },
+        {
+            "id": "offset-case",
+            "expected": {
+                "grahas": {
+                    "Surya": {"longitude": 10.0, "rashi": "Mesha"},
+                    "Chandra": {"longitude": 40.0, "rashi": "Vrishabha"},
+                },
+                "ascendant": {"longitude": 70.0, "rashi": "Mithuna"},
+            },
+        },
+    )
+
+    assert report.diagnostics["mean_signed_delta_arcseconds"] == -36.0
+    assert report.diagnostics["median_abs_delta_arcseconds"] == 36.0
+    assert report.diagnostics["max_abs_delta_arcseconds"] == 36.0
+    assert report.diagnostics["systematic_offset_suspected"] is True
+
+
 def test_compare_chart_to_fixture_reports_longitude_and_exact_matches():
     chart = {
         "grahas": [

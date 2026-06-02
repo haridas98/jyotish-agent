@@ -18,6 +18,15 @@ def test_calculation_settings_defaults_match_mvp_policy():
     assert settings.ephemeris == "swiss"
 
 
+def test_calculation_settings_accepts_jpl_ephemeris():
+    assert CalculationSettings(ephemeris="jpl").ephemeris == "jpl"
+
+
+def test_calculation_settings_rejects_unknown_ephemeris():
+    with pytest.raises(ValueError, match="ephemeris"):
+        CalculationSettings(ephemeris="toy")
+
+
 def test_swiss_provider_reports_optional_dependency_when_missing(monkeypatch):
     def fail_import(name: str):
         if name == "swisseph":
@@ -73,6 +82,76 @@ def test_swiss_provider_maps_positions_and_derives_ketu(monkeypatch):
     assert positions["Rahu"].longitude == 210
     assert positions["Ketu"].longitude == 30
     assert positions["Ketu"].latitude == pytest.approx(0.4)
+
+
+def test_swiss_provider_uses_jpl_flag_when_requested(monkeypatch):
+    class FakeSwe:
+        FLG_SWIEPH = 2
+        FLG_JPLEPH = 1
+        FLG_SPEED = 256
+        FLG_SIDEREAL = 65536
+        SIDM_LAHIRI = 1
+        SUN = 0
+
+        jpl_file = None
+        ephe_path = None
+        calls = []
+
+        @classmethod
+        def set_sid_mode(cls, sid_mode):
+            cls.sid_mode = sid_mode
+
+        @classmethod
+        def set_ephe_path(cls, path):
+            cls.ephe_path = path
+
+        @classmethod
+        def set_jpl_file(cls, path):
+            cls.jpl_file = path
+
+        @classmethod
+        def calc_ut(cls, jd, body_id, flags):
+            cls.calls.append((round(jd, 1), body_id, flags))
+            return (30.0, 0.0, 1.0, 0.1), flags
+
+    monkeypatch.setenv("SWISSEPH_EPHE_PATH", r"C:\ephe")
+    monkeypatch.setenv("SWISSEPH_JPL_FILE", "de441.eph")
+    monkeypatch.setattr("apps.calculations.ephemeris.import_module", lambda name: FakeSwe)
+
+    SwissEphemerisProvider().planet_positions(
+        datetime(2000, 1, 1, 12, tzinfo=timezone.utc),
+        ["Surya"],
+        CalculationSettings(ephemeris="jpl"),
+    )
+
+    assert FakeSwe.ephe_path == r"C:\ephe"
+    assert FakeSwe.jpl_file == "de441.eph"
+    assert FakeSwe.calls[0][2] & FakeSwe.FLG_JPLEPH
+    assert not FakeSwe.calls[0][2] & FakeSwe.FLG_SWIEPH
+
+
+def test_swiss_provider_requires_jpl_file_setting_for_jpl(monkeypatch):
+    class FakeSwe:
+        FLG_SWIEPH = 2
+        FLG_JPLEPH = 1
+        FLG_SPEED = 256
+        FLG_SIDEREAL = 65536
+        SIDM_LAHIRI = 1
+        SUN = 0
+
+        @classmethod
+        def set_sid_mode(cls, sid_mode):
+            cls.sid_mode = sid_mode
+
+    monkeypatch.delenv("SWISSEPH_JPL_FILE", raising=False)
+    monkeypatch.setattr("apps.calculations.ephemeris.import_module", lambda name: FakeSwe)
+
+    with pytest.raises(EphemerisUnavailable, match="SWISSEPH_JPL_FILE"):
+        SwissEphemerisProvider().planet_positions(
+            datetime(2000, 1, 1, 12, tzinfo=timezone.utc),
+            ["Surya"],
+            CalculationSettings(ephemeris="jpl"),
+        )
 
 
 def test_swiss_provider_calculates_sidereal_lagna(monkeypatch):

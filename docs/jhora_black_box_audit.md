@@ -64,9 +64,11 @@ First parity run:
 
 - rashi, nakshatra and pada matched for grahas and Lagna;
 - panchanga yoga and karana matched;
-- planet longitudes differ by about 55-99 arcseconds;
-- Lagna differs by about 58 arcseconds;
-- Rahu/Ketu differ much more, so true/mean node settings must be audited first;
+- preserving input seconds improved Lagna diff to about 41 arcseconds;
+- switching the fixture to mean nodes reduced Rahu/Ketu diff from about 2368 arcseconds to about 54 arcseconds;
+- planet longitudes still differ by about 55-99 arcseconds;
+- Swiss Lahiri for the fixture date is about `23-07-31.62`, while the JHora export says `23-06-37.20`, a gap of about 54.42 arcseconds;
+- the current highest-priority audit item is JHora's exact Lahiri/profile setting, not a blind formula rewrite;
 - JHora weekday/tithi naming and sunrise-day handling need a separate normalization check.
 
 ## Next Manual Pass

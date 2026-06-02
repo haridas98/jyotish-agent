@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from importlib import import_module
@@ -26,6 +27,8 @@ class CalculationSettings:
             raise ValueError("Only Lahiri ayanamsa is supported in the MVP")
         if self.node_type not in {"true", "mean"}:
             raise ValueError("node_type must be true or mean")
+        if self.ephemeris not in {"swiss", "jpl"}:
+            raise ValueError("ephemeris must be swiss or jpl")
 
 
 @dataclass(frozen=True)
@@ -70,7 +73,7 @@ class SwissEphemerisProvider:
         swe = self._load_swisseph()
         self._apply_settings(swe, settings)
         jd = julian_day(moment)
-        flags = swe.FLG_SWIEPH | swe.FLG_SPEED | swe.FLG_SIDEREAL
+        flags = self._calculation_flags(swe, settings)
         output: dict[str, BodyPosition] = {}
 
         for body in bodies:
@@ -124,6 +127,22 @@ class SwissEphemerisProvider:
     def _apply_settings(self, swe, settings: CalculationSettings) -> None:
         if settings.ayanamsa == "lahiri":
             swe.set_sid_mode(swe.SIDM_LAHIRI)
+        ephemeris_path = os.getenv("SWISSEPH_EPHE_PATH")
+        if ephemeris_path and hasattr(swe, "set_ephe_path"):
+            swe.set_ephe_path(ephemeris_path)
+        if settings.ephemeris == "jpl":
+            jpl_file = os.getenv("SWISSEPH_JPL_FILE")
+            if not jpl_file:
+                raise EphemerisUnavailable(
+                    "JPL ephemeris requires SWISSEPH_JPL_FILE in backend .env, "
+                    "for example de441.eph on SWISSEPH_EPHE_PATH."
+                )
+            if hasattr(swe, "set_jpl_file"):
+                swe.set_jpl_file(jpl_file)
+
+    def _calculation_flags(self, swe, settings: CalculationSettings) -> int:
+        ephemeris_flag = swe.FLG_JPLEPH if settings.ephemeris == "jpl" else swe.FLG_SWIEPH
+        return ephemeris_flag | swe.FLG_SPEED | swe.FLG_SIDEREAL
 
     def _calculate_body(
         self,
@@ -141,7 +160,10 @@ class SwissEphemerisProvider:
             constant_name = "MEAN_NODE"
 
         body_id = getattr(swe, constant_name)
-        values, _retflags = swe.calc_ut(jd, body_id, flags)
+        try:
+            values, _retflags = swe.calc_ut(jd, body_id, flags)
+        except Exception as exc:
+            raise EphemerisUnavailable(f"{settings.ephemeris} ephemeris calculation failed: {exc}") from exc
         longitude = normalize_degrees(float(values[0]))
         latitude = float(values[1]) if len(values) > 1 else None
         distance_au = float(values[2]) if len(values) > 2 else None
