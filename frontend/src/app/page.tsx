@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import {
+  calculateCompatibility,
   calculateSavedProfile,
   calculateMuhurta,
   calculateTransits,
@@ -18,6 +19,7 @@ import {
   type BirthChart,
   type BirthChartRequest,
   type ChartProfile,
+  type CompatibilityReport,
   type DayPeriod,
   type DashaPeriod,
   type GrahaPosition,
@@ -53,6 +55,12 @@ const calculationStatusLabelsRu: Record<string, string> = {
   pending_separate_workflow: "отдельный режим",
   signature_only: "только признак",
   missing_lagna: "нет лагны",
+};
+
+const compatibilityLevelLabelsRu: Record<string, string> = {
+  supportive: "поддерживающе",
+  mixed: "смешанно",
+  caution: "нужна осторожность",
 };
 
 const bodyLabelsRu: Record<string, string> = {
@@ -625,6 +633,144 @@ function MuhurtaPanel({ report, status }: { report: MuhurtaReport | null; status
   );
 }
 
+type CompatibilityPanelProps = {
+  report: CompatibilityReport | null;
+  status: string;
+  partnerBirthDate: string;
+  setPartnerBirthDate: Dispatch<SetStateAction<string>>;
+  partnerBirthTime: string;
+  setPartnerBirthTime: Dispatch<SetStateAction<string>>;
+  partnerPlaceName: string;
+  setPartnerPlaceName: Dispatch<SetStateAction<string>>;
+  partnerPlaceMatches: PlaceCandidate[];
+  selectedPartnerPlace: PlaceCandidate | null;
+  showPartnerPlaceSuggestions: boolean;
+  setShowPartnerPlaceSuggestions: Dispatch<SetStateAction<boolean>>;
+  partnerPlaceSearchStatus: string;
+  onSelectPartnerPlace: (place: PlaceCandidate) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  disabled: boolean;
+};
+
+function CompatibilityPanel({
+  report,
+  status,
+  partnerBirthDate,
+  setPartnerBirthDate,
+  partnerBirthTime,
+  setPartnerBirthTime,
+  partnerPlaceName,
+  setPartnerPlaceName,
+  partnerPlaceMatches,
+  selectedPartnerPlace,
+  showPartnerPlaceSuggestions,
+  setShowPartnerPlaceSuggestions,
+  partnerPlaceSearchStatus,
+  onSelectPartnerPlace,
+  onSubmit,
+  disabled,
+}: CompatibilityPanelProps) {
+  const rows = report?.kuta_rows ?? [];
+  const scoreLabel = report ? `${report.score.total}/${report.score.max}` : "-";
+  const percentLabel = report ? `${report.score.percent.toFixed(1)}%` : "-";
+  const levelLabel = report ? compatibilityLevelLabelsRu[report.assessment.level] ?? report.assessment.level : "ожидает";
+
+  return (
+    <section className="panel workflow-panel compatibility-panel">
+      <div className="panel-heading">
+        <h2>Совместимость</h2>
+        <span>{status}</span>
+      </div>
+      <form className="compatibility-form" onSubmit={onSubmit}>
+        <div className="compatibility-form-grid">
+          <label>
+            Дата второго человека
+            <input type="date" value={partnerBirthDate} onChange={(event) => setPartnerBirthDate(event.target.value)} />
+          </label>
+          <label>
+            Время второго человека
+            <input type="time" value={partnerBirthTime} onChange={(event) => setPartnerBirthTime(event.target.value)} />
+          </label>
+          <label className="compatibility-place-label">
+            Место второго человека
+            <input
+              value={partnerPlaceName}
+              onChange={(event) => {
+                setPartnerPlaceName(event.target.value);
+                setShowPartnerPlaceSuggestions(true);
+              }}
+              onFocus={() => setShowPartnerPlaceSuggestions(true)}
+              placeholder="Город рождения"
+            />
+          </label>
+        </div>
+        <div className="place-suggestions compatibility-suggestions">
+          <span>{partnerPlaceSearchStatus}</span>
+          {showPartnerPlaceSuggestions && partnerPlaceMatches.length ? (
+            <div className="place-suggestion-list">
+              {partnerPlaceMatches.slice(0, 5).map((place) => (
+                <button type="button" key={place.id} onClick={() => onSelectPartnerPlace(place)}>
+                  <strong>{place.label}</strong>
+                  <small>{place.timezone} · {formatCoordinate(place.latitude)}, {formatCoordinate(place.longitude)}</small>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        {selectedPartnerPlace ? (
+          <div className="compatibility-place-summary">
+            <span>Выбрано</span>
+            <strong>{selectedPartnerPlace.label}</strong>
+            <small>{selectedPartnerPlace.timezone} · {formatCoordinate(selectedPartnerPlace.latitude)}, {formatCoordinate(selectedPartnerPlace.longitude)}</small>
+          </div>
+        ) : null}
+        <button className="secondary-button compatibility-button" type="submit" disabled={disabled}>
+          Рассчитать совместимость
+        </button>
+      </form>
+
+      {report ? (
+        <div className="compatibility-result">
+          <div className="compatibility-score-grid">
+            <div>
+              <span>Ашта-кута</span>
+              <strong>{scoreLabel}</strong>
+              <small>{percentLabel}</small>
+            </div>
+            <div>
+              <span>Оценка</span>
+              <strong>{levelLabel}</strong>
+              <small>нулевых факторов: {report.assessment.caution_count}</small>
+            </div>
+            <div>
+              <span>Луна A/B</span>
+              <strong>{report.moon.person_a.nakshatra} / {report.moon.person_b.nakshatra}</strong>
+              <small>{report.moon.person_a.rashi} / {report.moon.person_b.rashi}</small>
+            </div>
+          </div>
+          <div className="kuta-table">
+            <div className="kuta-row kuta-head">
+              <span>Кута</span>
+              <span>Баллы</span>
+              <span>Детали</span>
+            </div>
+            {rows.map((row) => (
+              <div className="kuta-row" key={row.key}>
+                <strong>{row.name}</strong>
+                <span>{row.score}/{row.max_score}</span>
+                <small>{row.details}</small>
+              </div>
+            ))}
+          </div>
+          <p className="workflow-note">{report.assessment.note}</p>
+        </div>
+      ) : (
+        <div className="pending-strip">Сначала рассчитай основную карту, затем добавь данные второго человека.</div>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
   const [birthDate, setBirthDate] = useState("1990-08-15");
   const [birthTime, setBirthTime] = useState("10:24");
@@ -642,8 +788,18 @@ export default function Home() {
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [transitReport, setTransitReport] = useState<TransitReport | null>(null);
   const [muhurtaReport, setMuhurtaReport] = useState<MuhurtaReport | null>(null);
+  const [compatibilityReport, setCompatibilityReport] = useState<CompatibilityReport | null>(null);
+  const [lastBirthPayload, setLastBirthPayload] = useState<BirthChartRequest | null>(null);
   const [status, setStatus] = useState("Расчёт не запускался");
   const [workflowStatus, setWorkflowStatus] = useState("Ожидает расчёт карты");
+  const [compatibilityStatus, setCompatibilityStatus] = useState("Ожидает основную карту");
+  const [partnerBirthDate, setPartnerBirthDate] = useState("1991-01-01");
+  const [partnerBirthTime, setPartnerBirthTime] = useState("09:00");
+  const [partnerPlaceName, setPartnerPlaceName] = useState("Вриндаван");
+  const [partnerPlaceMatches, setPartnerPlaceMatches] = useState<PlaceCandidate[]>([]);
+  const [selectedPartnerPlace, setSelectedPartnerPlace] = useState<PlaceCandidate | null>(null);
+  const [showPartnerPlaceSuggestions, setShowPartnerPlaceSuggestions] = useState(false);
+  const [partnerPlaceSearchStatus, setPartnerPlaceSearchStatus] = useState("Введите город второго человека");
   const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
   const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
   const [sourceStatus, setSourceStatus] = useState("Поиск по VL не запускался");
@@ -715,6 +871,38 @@ export default function Home() {
   }, [placeName]);
 
   useEffect(() => {
+    let cancelled = false;
+    if (partnerPlaceName.trim().length < 2) {
+      setPartnerPlaceMatches([]);
+      setSelectedPartnerPlace(null);
+      setPartnerPlaceSearchStatus("Введите город второго человека");
+      return;
+    }
+
+    setPartnerPlaceSearchStatus("Ищу город второго человека...");
+    const searchTimeout = window.setTimeout(() => {
+      searchPlaces(partnerPlaceName)
+        .then((items) => {
+          if (cancelled) return;
+          setPartnerPlaceMatches(items);
+          setSelectedPartnerPlace(items[0] ?? null);
+          setPartnerPlaceSearchStatus(items.length ? `${items.length} подсказок найдено` : "Подсказок нет");
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPartnerPlaceMatches([]);
+          setSelectedPartnerPlace(null);
+          setPartnerPlaceSearchStatus("Не удалось получить подсказки");
+        });
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(searchTimeout);
+    };
+  }, [partnerPlaceName]);
+
+  useEffect(() => {
     fetchCurrentUser()
       .then((user) => {
         setCurrentUser(user);
@@ -730,6 +918,12 @@ export default function Home() {
     setSelectedPlace(place);
     setPlaceName(place.label);
     setShowPlaceSuggestions(false);
+  }
+
+  function selectPartnerPlace(place: PlaceCandidate) {
+    setSelectedPartnerPlace(place);
+    setPartnerPlaceName(place.label);
+    setShowPartnerPlaceSuggestions(false);
   }
 
   function buildBirthPayload(): BirthChartRequest | null {
@@ -760,6 +954,23 @@ export default function Home() {
               longitude: manualLon,
             }
           : {}),
+    };
+  }
+
+  function buildPartnerPayload(): BirthChartRequest | null {
+    if (!selectedPartnerPlace) {
+      setCompatibilityStatus("Выбери город второго человека из подсказок");
+      return null;
+    }
+    return {
+      birth_date: partnerBirthDate,
+      birth_time: partnerBirthTime,
+      place_name: selectedPartnerPlace.label,
+      place_id: selectedPartnerPlace.id,
+      country_code: selectedPartnerPlace.country_code,
+      timezone: selectedPartnerPlace.timezone,
+      latitude: selectedPartnerPlace.latitude,
+      longitude: selectedPartnerPlace.longitude,
     };
   }
 
@@ -856,21 +1067,45 @@ export default function Home() {
     );
   }
 
+  async function handleCompatibilitySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const personA = lastBirthPayload ?? buildBirthPayload();
+    const personB = buildPartnerPayload();
+    if (!personA || !personB) return;
+
+    setCompatibilityStatus("Считаю совместимость...");
+    try {
+      const result = await calculateCompatibility({
+        person_a: personA,
+        person_b: personB,
+      });
+      setCompatibilityReport(result);
+      setCompatibilityStatus("рассчитано");
+    } catch (error) {
+      setCompatibilityReport(null);
+      setCompatibilityStatus(error instanceof Error ? error.message : "Ошибка API совместимости");
+    }
+  }
+
   async function handleCalculateProfile(profile: ChartProfile) {
     setProfileStatus(`Рассчитываю: ${profile.display_name}`);
     try {
       const calculation = await calculateSavedProfile(profile.id);
-      setChart(calculation.result);
-      setChartMode("D1");
-      setBirthReport(null);
-      await refreshWorkflowReports({
+      const payload = {
         birth_date: profile.birth_date,
         birth_time: profile.birth_time ?? "",
         place_name: profile.place.label,
         timezone: profile.timezone,
         latitude: profile.place.latitude,
         longitude: profile.place.longitude,
-      });
+      };
+      setChart(calculation.result);
+      setChartMode("D1");
+      setBirthReport(null);
+      setLastBirthPayload(payload);
+      setCompatibilityReport(null);
+      setCompatibilityStatus("Можно считать совместимость");
+      await refreshWorkflowReports(payload);
       setStatus("Сохранённая карта рассчитана");
       await refreshProfiles();
     } catch (error) {
@@ -888,6 +1123,9 @@ export default function Home() {
       setChart(result.chart);
       setChartMode("D1");
       setBirthReport(result.report);
+      setLastBirthPayload(payload);
+      setCompatibilityReport(null);
+      setCompatibilityStatus("Можно считать совместимость");
       await refreshWorkflowReports(payload);
       setStatus("Отчёт построен");
     } catch (error) {
@@ -895,6 +1133,9 @@ export default function Home() {
       setBirthReport(null);
       setTransitReport(null);
       setMuhurtaReport(null);
+      setCompatibilityReport(null);
+      setLastBirthPayload(null);
+      setCompatibilityStatus("Ожидает основную карту");
       setStatus(error instanceof Error ? error.message : "Ошибка API");
     }
   }
@@ -1170,6 +1411,24 @@ export default function Home() {
             <ClassicalPanel classical={chart?.classical} />
             <TransitPanel report={transitReport} status={workflowStatus} />
             <MuhurtaPanel report={muhurtaReport} status={workflowStatus} />
+            <CompatibilityPanel
+              report={compatibilityReport}
+              status={compatibilityStatus}
+              partnerBirthDate={partnerBirthDate}
+              setPartnerBirthDate={setPartnerBirthDate}
+              partnerBirthTime={partnerBirthTime}
+              setPartnerBirthTime={setPartnerBirthTime}
+              partnerPlaceName={partnerPlaceName}
+              setPartnerPlaceName={setPartnerPlaceName}
+              partnerPlaceMatches={partnerPlaceMatches}
+              selectedPartnerPlace={selectedPartnerPlace}
+              showPartnerPlaceSuggestions={showPartnerPlaceSuggestions}
+              setShowPartnerPlaceSuggestions={setShowPartnerPlaceSuggestions}
+              partnerPlaceSearchStatus={partnerPlaceSearchStatus}
+              onSelectPartnerPlace={selectPartnerPlace}
+              onSubmit={handleCompatibilitySubmit}
+              disabled={!chart}
+            />
 
             <section className="panel" id="reports">
               <div className="panel-heading">

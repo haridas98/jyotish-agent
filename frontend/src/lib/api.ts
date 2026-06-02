@@ -52,6 +52,14 @@ export type CompatibilityRequest = {
   person_b: BirthChartRequest;
 };
 
+export type CompactPlacement = {
+  rashi: string | null;
+  rashi_index?: number | null;
+  nakshatra: string | null;
+  nakshatra_index?: number | null;
+  pada: number | null;
+};
+
 export type GrahaPosition = {
   body: string;
   longitude: number;
@@ -401,8 +409,26 @@ export type CompatibilityReport = {
     max: number;
     percent: number;
   };
-  moon: Record<string, unknown>;
+  moon: {
+    person_a: CompactPlacement;
+    person_b: CompactPlacement;
+    rashi_distance_a_to_b: number | null;
+    rashi_distance_b_to_a: number | null;
+  };
   kuta: Record<string, unknown>;
+  kuta_rows: {
+    key: string;
+    name: string;
+    score: number;
+    max_score: number;
+    status: string;
+    details: string;
+  }[];
+  assessment: {
+    level: string;
+    caution_count: number;
+    note: string;
+  };
   vaishnava_note: string;
 };
 

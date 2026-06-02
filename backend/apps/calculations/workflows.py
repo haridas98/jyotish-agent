@@ -142,6 +142,28 @@ GRAHA_ENEMIES = {
     "Shani": {"Surya", "Chandra", "Mangala"},
 }
 
+KUTA_LABELS = {
+    "varna": "Varna",
+    "vashya": "Vashya",
+    "tara": "Tara",
+    "yoni": "Yoni",
+    "graha_maitri": "Graha Maitri",
+    "gana": "Gana",
+    "bhakoot": "Bhakoot",
+    "nadi": "Nadi",
+}
+
+KUTA_ORDER = (
+    "varna",
+    "vashya",
+    "tara",
+    "yoni",
+    "graha_maitri",
+    "gana",
+    "bhakoot",
+    "nadi",
+)
+
 
 def build_transit_report(
     data: dict[str, Any],
@@ -206,6 +228,8 @@ def build_compatibility_report(
     }
     total_score = round(sum(float(item["score"]) for item in kuta.values()), 2)
     max_score = round(sum(float(item["max_score"]) for item in kuta.values()), 2)
+    kuta_rows = _kuta_rows(kuta)
+    vaishnava_note = "Совместимость не должна подменять садху-сангу, ответственность и совместное служение Кришне."
 
     return {
         "status": "partial",
@@ -222,9 +246,9 @@ def build_compatibility_report(
             "rashi_distance_b_to_a": _house_from(rashi_b, rashi_a),
         },
         "kuta": kuta,
-        "vaishnava_note": (
-            "Совместимость не должна подменять садху-сангу, ответственность и совместное служение Кришне."
-        ),
+        "kuta_rows": kuta_rows,
+        "assessment": _compatibility_assessment(total_score, max_score, kuta_rows, vaishnava_note),
+        "vaishnava_note": vaishnava_note,
     }
 
 
@@ -323,6 +347,56 @@ def _muhurta_candidate(day: date, candidate_time: time, chart: dict[str, Any]) -
         "blocked_periods": blocked_periods,
         "reasons": reasons,
     }
+
+
+def _kuta_rows(kuta: dict[str, dict[str, object]]) -> list[dict[str, object]]:
+    rows = []
+    for key in KUTA_ORDER:
+        item = kuta[key]
+        rows.append(
+            {
+                "key": key,
+                "name": KUTA_LABELS[key],
+                "score": item["score"],
+                "max_score": item["max_score"],
+                "status": item["status"],
+                "details": _kuta_details(item),
+            }
+        )
+    return rows
+
+
+def _compatibility_assessment(
+    total_score: float,
+    max_score: float,
+    kuta_rows: list[dict[str, object]],
+    note: str,
+) -> dict[str, object]:
+    percent = total_score / max_score * 100 if max_score else 0
+    caution_count = sum(1 for row in kuta_rows if float(row["score"]) == 0 and float(row["max_score"]) > 0)
+    if percent >= 65 and caution_count <= 1:
+        level = "supportive"
+    elif percent >= 50:
+        level = "mixed"
+    else:
+        level = "caution"
+    return {
+        "level": level,
+        "caution_count": caution_count,
+        "note": note,
+    }
+
+
+def _kuta_details(item: dict[str, object]) -> str:
+    person_a = item.get("person_a")
+    person_b = item.get("person_b")
+    if person_a is not None and person_b is not None:
+        return f"{person_a} / {person_b}"
+    a_to_b = item.get("a_to_b_count") or item.get("distance_a_to_b")
+    b_to_a = item.get("b_to_a_count") or item.get("distance_b_to_a")
+    if a_to_b is not None and b_to_a is not None:
+        return f"{a_to_b} / {b_to_a}"
+    return str(item.get("status") or "")
 
 
 def _day_periods(chart: dict[str, Any]) -> list[dict[str, Any]]:

@@ -961,6 +961,111 @@ select {
   padding: 5px 8px;
 }
 
+.compatibility-form {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+}
+
+.compatibility-form-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 160px 140px minmax(220px, 1fr);
+}
+
+.compatibility-suggestions {
+  margin-top: 0;
+}
+
+.compatibility-place-summary {
+  background: #f7fbf8;
+  border: 1px solid #c9ddcf;
+  border-radius: 7px;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
+.compatibility-place-summary span,
+.compatibility-place-summary small,
+.compatibility-score-grid span,
+.compatibility-score-grid small,
+.kuta-row small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.compatibility-place-summary strong {
+  color: var(--green);
+}
+
+.compatibility-button {
+  justify-self: start;
+  min-height: 44px;
+}
+
+.compatibility-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.compatibility-result {
+  display: grid;
+  gap: 12px;
+}
+
+.compatibility-score-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+}
+
+.compatibility-score-grid div {
+  background: #faf8f1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.compatibility-score-grid strong {
+  color: var(--green);
+  font-size: 18px;
+}
+
+.kuta-table {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.kuta-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(120px, 1fr) 90px minmax(120px, 1fr);
+  min-height: 42px;
+  padding: 9px 12px;
+}
+
+.kuta-row:first-child {
+  border-top: 0;
+}
+
+.kuta-head {
+  background: #faf8f1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.kuta-row strong {
+  color: var(--green);
+}
+
 .house-overview {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1267,6 +1372,12 @@ select {
 
   .workflow-row {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .compatibility-form-grid,
+  .compatibility-score-grid,
+  .kuta-row {
+    grid-template-columns: 1fr;
   }
 
   .house-grid {

@@ -132,6 +132,27 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
     assert result["kuta"]["tara"]["max_score"] == 3.0
     assert result["kuta"]["bhakoot"]["score"] == 0.0
     assert result["kuta"]["nadi"]["score"] == 0.0
+    assert [row["key"] for row in result["kuta_rows"]] == [
+        "varna",
+        "vashya",
+        "tara",
+        "yoni",
+        "graha_maitri",
+        "gana",
+        "bhakoot",
+        "nadi",
+    ]
+    assert result["kuta_rows"][0] == {
+        "key": "varna",
+        "name": "Varna",
+        "score": 1.0,
+        "max_score": 1.0,
+        "status": "calculated",
+        "details": "Kshatriya / Vaishya",
+    }
+    assert result["assessment"]["level"] == "caution"
+    assert result["assessment"]["caution_count"] == 2
+    assert "садху-сангу" in result["assessment"]["note"]
 
 
 def test_build_muhurta_report_ranks_candidates_by_panchanga_rules():
