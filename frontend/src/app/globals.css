@@ -1454,7 +1454,7 @@ select {
   border-bottom: 1px solid var(--line);
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 0.8fr) minmax(150px, 0.9fr) 88px;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 0.8fr) minmax(150px, 0.9fr) 130px;
   padding: 11px 0;
 }
 
@@ -1482,6 +1482,7 @@ select {
   font-style: normal;
   justify-self: end;
   padding: 4px 9px;
+  text-align: center;
 }
 
 .audit-row em.ready {
@@ -1492,6 +1493,15 @@ select {
 .audit-row em.draft {
   background: #f7ead9;
   color: #985a12;
+}
+
+.readiness-note {
+  background: #f8f6ef;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 12px 0;
 }
 
 .source-table {

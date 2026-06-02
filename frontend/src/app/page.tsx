@@ -237,6 +237,18 @@ function auditNoteRu(key: string, fallback: string) {
   return auditSourceBasisRu[key] ?? fallback;
 }
 
+function auditCalculationReadyRu(status: string) {
+  if (status.startsWith("calculated")) return "расчёт есть";
+  if (status.startsWith("partial")) return "частично";
+  if (status.startsWith("baseline") || status === "api_available") return "базовый расчёт";
+  if (status === "api_ready") return "API готов";
+  return auditStatusRu(status);
+}
+
+function auditInterpretationReadyRu(ready: boolean) {
+  return ready ? "финал возможен" : "нужен review";
+}
+
 function compatibilityFindingRu(value: string) {
   return value
     .replace("Ashtakuta score", "Баллы аштакуты")
@@ -864,6 +876,9 @@ function ShastraAuditPanel({ audit }: { audit: BirthChart["shastra_audit"] | und
               <strong>{audit.summary.partial_or_audit}</strong>
             </div>
           </div>
+          <div className="readiness-note">
+            Расчётный слой и финальный клиентский текст разделены: расчёт может быть уже готов, но финальная интерпретация требует проверенной цитаты, нормального OCR и review.
+          </div>
           <div className="audit-table">
             {items.map((item) => (
               <div className="audit-row" key={item.key}>
@@ -871,12 +886,14 @@ function ShastraAuditPanel({ audit }: { audit: BirthChart["shastra_audit"] | und
                   <strong>{auditLayerLabelsRu[item.key] ?? item.label}</strong>
                   <span>{item.source_priority.join(", ")}</span>
                 </div>
+                <span>{auditCalculationReadyRu(item.implementation_status)}</span>
                 <span>{auditStatusRu(item.authority_status)}</span>
-                <span>{auditStatusRu(item.implementation_status)}</span>
                 <em className={item.can_generate_client_interpretation ? "ready" : "draft"}>
-                  {item.can_generate_client_interpretation ? "можно" : "нельзя"}
+                  {auditInterpretationReadyRu(item.can_generate_client_interpretation)}
                 </em>
-                <small>{auditNoteRu(item.key, item.blocker ?? item.source_basis)}</small>
+                <small>
+                  Статус расчёта: {auditStatusRu(item.implementation_status)}. Финальный текст: {auditNoteRu(item.key, item.blocker ?? item.source_basis)}
+                </small>
               </div>
             ))}
           </div>
