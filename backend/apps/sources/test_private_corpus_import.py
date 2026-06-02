@@ -4,6 +4,7 @@ import pytest
 from django.core.management import call_command
 
 from apps.sources.models import ReviewStatus, SourcePassage, SourceWork
+from apps.sources.segmentation import segment_private_work
 
 
 @pytest.mark.django_db
@@ -44,3 +45,40 @@ def test_import_private_corpus_chunks_local_books_as_research_only(tmp_path):
     assert passages.count() > 1
     assert all(passage.review_status == ReviewStatus.RESEARCH_ONLY for passage in passages)
     assert all(passage.metadata["import_kind"] == "private_full_text_chunk" for passage in passages)
+
+
+@pytest.mark.django_db
+def test_segment_private_work_creates_review_only_candidate_passages():
+    work = SourceWork.objects.create(
+        slug="brhat-jataka-private-test",
+        title="Brhat Jataka private test",
+        source_class=SourceWork.SourceClass.JYOTISH_SHASTRA,
+        review_status=ReviewStatus.RESEARCH_ONLY,
+    )
+    SourcePassage.objects.create(
+        work=work,
+        reference="private full text chunk 0001",
+        body=(
+            "--- page 1 ---\n"
+            "Sloka 1. Lagna source condition for yoga testing.\n\n"
+            "Sloka 2. Chandra source condition for dasha testing.\n\n"
+            "--- page 2 ---\n"
+            "Stanza 3. Shani source condition for strength testing."
+        ),
+        review_status=ReviewStatus.RESEARCH_ONLY,
+        metadata={"import_kind": "private_full_text_chunk"},
+    )
+
+    counts = segment_private_work(work.slug, max_chars=70)
+    segment_private_work(work.slug, max_chars=70)
+
+    candidates = SourcePassage.objects.filter(
+        work=work,
+        metadata__import_kind="candidate_shastra_passage",
+    ).order_by("reference")
+    assert counts["candidate_passages"] >= 3
+    assert candidates.count() == counts["candidate_passages"]
+    assert candidates[0].review_status == ReviewStatus.RESEARCH_ONLY
+    assert candidates[0].metadata["exact_reference_status"] == "needs_review"
+    assert candidates[0].metadata["public_quote_policy"] == "blocked_until_approved"
+    assert candidates[0].metadata["source_reference"] == "private full text chunk 0001"

@@ -5,6 +5,7 @@ from .views import (
     BirthDraftAnalysisView,
     BirthReportView,
     CompatibilityAnalysisPacketView,
+    ShastraConditionMatrixView,
 )
 
 urlpatterns = [
@@ -23,5 +24,10 @@ urlpatterns = [
         "reports/compatibility/analysis-packet",
         CompatibilityAnalysisPacketView.as_view(),
         name="compatibility-analysis-packet",
+    ),
+    path(
+        "reports/shastra-condition-matrix",
+        ShastraConditionMatrixView.as_view(),
+        name="shastra-condition-matrix",
     ),
 ]

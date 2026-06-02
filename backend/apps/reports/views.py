@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from apps.calculations.chart import ChartInputError
 from apps.calculations.ephemeris import EphemerisUnavailable
+from apps.interpretations.condition_matrix import shastra_condition_matrix
 from apps.interpretations.engine import public_interpretation_sections_for_chart
 from apps.sources.citations import combined_citation_search, local_research_corpus_search
 
@@ -89,6 +90,14 @@ class CompatibilityAnalysisPacketView(APIView):
             return Response({"error": str(exc)}, status=400)
         except EphemerisUnavailable as exc:
             return Response({"error": str(exc)}, status=503)
+
+
+class ShastraConditionMatrixView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        return Response(shastra_condition_matrix())
 
 
 def vl_citation_search(query: str) -> list[dict[str, object]]:

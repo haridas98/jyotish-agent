@@ -49,6 +49,7 @@ class AnalysisProvider:
         )
 
 
+@pytest.mark.django_db
 def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations():
     try:
         from apps.reports.analysis_packet import build_analysis_packet
@@ -101,6 +102,8 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     )
 
     assert packet["schema_version"] == "jyotish-analysis-packet-v1"
+    assert packet["shastra_coverage"]["schema_version"] == "jyotish-source-coverage-v1"
+    assert packet["shastra_condition_matrix"]["schema_version"] == "jyotish-shastra-condition-matrix-v1"
     assert packet["status"] == "ready_for_generation"
     assert packet["generator_policy"]["language"] == "ru"
     assert packet["generator_policy"]["forbidden_outputs"][0] == "independent_demigod_worship"
@@ -133,6 +136,8 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert "detected_yoga_source_map" in packet["prompt_markdown"]
     assert "citation_requests" in packet["prompt_markdown"]
     assert "research_context" in packet["prompt_markdown"]
+    assert "shastra_coverage" in packet["prompt_markdown"]
+    assert "shastra_condition_matrix" in packet["prompt_markdown"]
     assert "compare_multiple_translation_variants" in packet["prompt_markdown"]
     assert "cite_exact_edition_translator_and_reference" in packet["prompt_markdown"]
     assert "flag_translation_conflicts" in packet["prompt_markdown"]
@@ -140,6 +145,7 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert "independent demigod" in packet["prompt_markdown"]
 
 
+@pytest.mark.django_db
 def test_build_compatibility_analysis_packet_contains_two_chart_context_and_perspective_requests():
     try:
         from apps.reports.analysis_packet import build_compatibility_analysis_packet
@@ -171,6 +177,8 @@ def test_build_compatibility_analysis_packet_contains_two_chart_context_and_pers
     )
 
     assert packet["schema_version"] == "jyotish-compatibility-analysis-packet-v1"
+    assert packet["shastra_coverage"]["schema_version"] == "jyotish-source-coverage-v1"
+    assert packet["shastra_condition_matrix"]["schema_version"] == "jyotish-shastra-condition-matrix-v1"
     assert packet["status"] == "needs_citation_review"
     assert packet["generator_policy"]["required_behaviors"][0] == "compare_both_charts_from_multiple_angles"
     assert "compare_multiple_translation_variants" in packet["generator_policy"]["required_behaviors"]

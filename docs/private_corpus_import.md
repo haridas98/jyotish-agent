@@ -15,7 +15,23 @@ Search imported research chunks:
 GET /api/sources/research/search?q=gaja%20kesari
 ```
 
+Split imported chunks into review-only passage candidates:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py segment_private_corpus --max-chars 1800
+```
+
+Inspect source and condition coverage:
+
+```http
+GET /api/sources/coverage
+GET /api/reports/shastra-condition-matrix
+```
+
 The birth-chart and compatibility analysis packets include matching private chunks in `research_context`. These items are not `citations`; they are evidence for internal comparison only.
+
+The analysis packets also include `shastra_coverage` and `shastra_condition_matrix`, so Codex CLI can work through every calculation layer, report section and yoga condition against loaded shastra evidence.
 
 Digital source candidates:
 
@@ -29,6 +45,7 @@ Digital source candidates:
 Rules:
 
 - imported chunks are always `research_only`;
+- segmented candidate passages are also `research_only`;
 - public reports cannot quote imported chunks until a passage is manually approved;
 - source metadata keeps `rights_status` and `public_quote_policy`;
 - do not commit `.private_corpus/`.

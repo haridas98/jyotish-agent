@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.sources.citations import local_research_corpus_search
+from apps.sources.coverage import source_coverage_matrix
 from apps.vl_integration.client import search_vl_documents
 
 
@@ -42,3 +43,11 @@ class ResearchSearchView(APIView):
         except ValueError:
             return Response({"error": "limit must be an integer"}, status=400)
         return Response({"items": local_research_corpus_search(query, limit=min(limit, 20))})
+
+
+class SourceCoverageView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        return Response(source_coverage_matrix())

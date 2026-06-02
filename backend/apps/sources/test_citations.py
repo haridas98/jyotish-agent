@@ -6,6 +6,7 @@ from apps.sources.citations import (
     local_approved_citation_search,
     local_research_corpus_search,
 )
+from apps.sources.coverage import source_coverage_matrix
 from apps.sources.models import ReviewStatus, SourcePassage, SourceWork, VLCitationLink
 
 
@@ -141,3 +142,52 @@ def test_research_search_api_rejects_invalid_limit():
     response = APIClient().get("/api/sources/research/search", {"q": "lagna", "limit": "many"})
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_source_coverage_matrix_counts_private_chunks_and_missing_sources():
+    private_work = SourceWork.objects.create(
+        slug="brhat-jataka-aiyar-1905-private",
+        title="Brhat Jataka",
+        source_class=SourceWork.SourceClass.JYOTISH_SHASTRA,
+        review_status=ReviewStatus.RESEARCH_ONLY,
+    )
+    SourcePassage.objects.create(
+        work=private_work,
+        reference="private full text chunk 0001",
+        body="Yoga source area.",
+        review_status=ReviewStatus.RESEARCH_ONLY,
+        metadata={"import_kind": "private_full_text_chunk"},
+    )
+
+    coverage = source_coverage_matrix(
+        [
+            {
+                "key": "yogas",
+                "label": "Yogas",
+                "source_priority": ["brhat-jataka", "missing-source"],
+            }
+        ]
+    )
+
+    row = coverage["layers"][0]
+    assert row["coverage_status"] == "private_text_loaded"
+    assert row["sources"][0]["coverage_status"] == "private_full_text_available"
+    assert row["sources"][0]["private_full_text_chunks"] == 1
+    assert row["sources"][1]["coverage_status"] == "missing"
+    assert row["needs_exact_mapping"] is True
+
+
+@pytest.mark.django_db
+def test_source_coverage_api_returns_matrix():
+    SourceWork.objects.create(
+        slug="phaladipika-subrahmanya-sastri-private",
+        title="Phaladipika",
+        source_class=SourceWork.SourceClass.JYOTISH_SHASTRA,
+        review_status=ReviewStatus.RESEARCH_ONLY,
+    )
+
+    response = APIClient().get("/api/sources/coverage")
+
+    assert response.status_code == 200
+    assert response.json()["summary"]["total_layers"] >= 1

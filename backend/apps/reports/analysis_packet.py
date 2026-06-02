@@ -7,9 +7,11 @@ from apps.calculations.chart import build_birth_chart
 from apps.calculations.ephemeris import EphemerisProvider
 from apps.calculations.workflows import build_compatibility_report
 from apps.interpretations.citation_requests import build_citation_requests
+from apps.interpretations.condition_matrix import shastra_condition_matrix
 from apps.interpretations.shastra_catalog import explanation_schedule
 from apps.interpretations.yoga_catalog import yoga_catalog_overview
 from apps.interpretations.yoga_source_map import detected_yoga_source_map
+from apps.sources.coverage import source_coverage_matrix
 
 from .birth_report import CitationSearch, InterpretationProvider, compose_birth_report
 
@@ -41,11 +43,15 @@ def build_analysis_packet(
         detected_yoga_source_map=yoga_source_map,
     )
     research_context = _research_context(citation_requests, research_search)
+    shastra_coverage = source_coverage_matrix()
+    condition_matrix = shastra_condition_matrix()
 
     packet = {
         "schema_version": SCHEMA_VERSION,
         "status": _packet_status(report, citations),
         "generator_policy": _generator_policy(),
+        "shastra_coverage": shastra_coverage,
+        "shastra_condition_matrix": condition_matrix,
         "citation_requests": citation_requests,
         "context": {
             "birth": chart.get("birth", {}),
@@ -58,6 +64,8 @@ def build_analysis_packet(
             "chart_facts": report.get("chart_facts", {}),
             "person_summary": report.get("person_summary", {}),
             "sections": report.get("sections", []),
+            "shastra_coverage": shastra_coverage,
+            "shastra_condition_matrix": condition_matrix,
         },
         "report": {
             "review_status": report.get("review_status", "draft"),
@@ -88,11 +96,15 @@ def build_compatibility_analysis_packet(
         citation_search(_compatibility_seed_query(compatibility))
     )
     research_context = _research_context(citation_requests, research_search)
+    shastra_coverage = source_coverage_matrix()
+    condition_matrix = shastra_condition_matrix()
 
     packet = {
         "schema_version": COMPATIBILITY_SCHEMA_VERSION,
         "status": "needs_citation_review",
         "generator_policy": _compatibility_generator_policy(),
+        "shastra_coverage": shastra_coverage,
+        "shastra_condition_matrix": condition_matrix,
         "citation_requests": citation_requests,
         "context": {
             "person_a": {
@@ -104,6 +116,8 @@ def build_compatibility_analysis_packet(
                 "chart": person_b_chart,
             },
             "compatibility": compatibility,
+            "shastra_coverage": shastra_coverage,
+            "shastra_condition_matrix": condition_matrix,
             "source_review_status": "exact_shastra_citations_required_before_public_marriage_guidance",
         },
         "report": {
