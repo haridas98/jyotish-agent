@@ -28,6 +28,7 @@ python -m venv .venv
 .\.venv\Scripts\python -m pip install -e ".[dev]"
 .\.venv\Scripts\python manage.py migrate
 .\.venv\Scripts\python manage.py seed_vaishnava_interpretations
+.\.venv\Scripts\python manage.py seed_shastra_catalog
 .\.venv\Scripts\python manage.py runserver 127.0.0.1:8100
 ```
 

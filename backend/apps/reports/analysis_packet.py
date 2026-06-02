@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from apps.calculations.ephemeris import EphemerisProvider
+from apps.interpretations.shastra_catalog import explanation_schedule
 
 from .birth_report import CitationSearch, InterpretationProvider, compose_birth_report
 
@@ -35,6 +36,7 @@ def build_analysis_packet(
             "place": chart.get("place", {}),
             "settings": chart.get("settings", {}),
             "chart": chart,
+            "explanation_schedule": explanation_schedule(),
             "chart_facts": report.get("chart_facts", {}),
             "person_summary": report.get("person_summary", {}),
             "sections": report.get("sections", []),

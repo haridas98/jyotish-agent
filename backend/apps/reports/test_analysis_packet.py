@@ -96,12 +96,15 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert packet["generator_policy"]["forbidden_outputs"][0] == "independent_demigod_worship"
     assert packet["report"]["source_policy"] == "citation_first"
     assert packet["context"]["birth"]["date"] == "2000-01-01"
+    assert packet["context"]["explanation_schedule"][0]["key"] == "calculation_audit"
+    assert packet["context"]["explanation_schedule"][-1]["key"] == "source_review_notes"
     assert packet["context"]["chart_facts"]["grahas"]["Chandra"]["house"] == 2
     assert {citation["title"] for citation in packet["citations"]} == {
         "Srimad-Bhagavatam 1.2.6",
         "Bhagavad-gita 9.22",
     }
     assert "OUTPUT JSON schema" in packet["prompt_markdown"]
+    assert "explanation_schedule" in packet["prompt_markdown"]
     assert "не выдумывай цитаты" in packet["prompt_markdown"]
     assert "independent demigod" in packet["prompt_markdown"]
 
