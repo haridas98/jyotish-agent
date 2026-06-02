@@ -66,6 +66,6 @@ The app now calculates draft layers that must receive fixture coverage before th
 
 - Bhinna/Sarva Ashtakavarga scores;
 - Shadbala components beyond the current naisargika/uccha/dig subset;
-- Gulika/Mandi exact longitude with real sunrise/sunset;
+- Gulika/Mandi exact longitude now uses real sunrise/sunset segmentation but still needs JHora parity fixtures;
 - full ashtakuta compatibility tables;
 - task-specific muhurta scoring.

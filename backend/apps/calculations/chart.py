@@ -11,6 +11,7 @@ from .classical import classical_calculations
 from .constants import GRAHAS
 from .ephemeris import BodyPosition, CalculationSettings, EphemerisProvider, SwissEphemerisProvider
 from .panchanga import panchanga_from_longitudes
+from .solar import gulika_segment_for_moment, solar_day, solar_day_payload
 from .vargas import divisional_chart
 from .vimshottari import vimshottari_payload
 
@@ -44,6 +45,8 @@ def build_birth_chart(
     ephemeris = provider or SwissEphemerisProvider()
     positions = ephemeris.planet_positions(local_moment, GRAHAS, settings)
     ascendant = _calculate_ascendant(ephemeris, local_moment, latitude, longitude, settings)
+    solar = solar_day(birth_date, latitude, longitude, tz)
+    upagraha_context = _upagraha_context(ephemeris, local_moment, latitude, longitude, settings)
 
     payload = {
         "calculation_version": CALCULATION_VERSION,
@@ -69,6 +72,8 @@ def build_birth_chart(
             "latitude": latitude,
             "longitude": longitude,
         },
+        "solar_day": solar_day_payload(solar),
+        "upagraha_context": upagraha_context,
         "grahas": [_position_payload(positions[body]) for body in GRAHAS if body in positions],
         "ascendant": _position_payload(ascendant) if ascendant else None,
         "houses": _whole_sign_houses(ascendant) if ascendant else [],
@@ -135,6 +140,22 @@ def _calculate_ascendant(
     if calculator is None:
         return None
     return calculator(local_moment, latitude, longitude, settings)
+
+
+def _upagraha_context(
+    provider: EphemerisProvider,
+    local_moment: datetime,
+    latitude: float,
+    longitude: float,
+    settings: CalculationSettings,
+) -> dict[str, Any]:
+    segment = gulika_segment_for_moment(local_moment, latitude, longitude)
+    midpoint = datetime.fromisoformat(str(segment["midpoint"]))
+    ascendant = _calculate_ascendant(provider, midpoint, latitude, longitude, settings)
+    return {
+        "gulika": segment,
+        "gulika_ascendant": _position_payload(ascendant) if ascendant else None,
+    }
 
 
 def _whole_sign_houses(ascendant: BodyPosition) -> list[dict[str, Any]]:

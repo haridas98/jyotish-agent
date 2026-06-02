@@ -231,6 +231,66 @@ def test_build_birth_chart_adds_lagna_and_whole_sign_houses_when_provider_suppor
     assert result["houses"][1]["rashi"] == "Simha"
 
 
+def test_build_birth_chart_adds_solar_day_and_gulika_context():
+    from apps.calculations.chart import build_birth_chart
+
+    class FakeProviderWithVariableLagna:
+        def __init__(self):
+            self.ascendant_moments = []
+
+        def planet_positions(self, moment, bodies, settings):
+            return {
+                "Surya": BodyPosition(
+                    body="Surya",
+                    longitude=30.0,
+                    latitude=0.0,
+                    distance_au=1.0,
+                    speed_longitude=1.0,
+                    placement=zodiac_placement(30.0),
+                ),
+                "Chandra": BodyPosition(
+                    body="Chandra",
+                    longitude=60.0,
+                    latitude=0.0,
+                    distance_au=1.0,
+                    speed_longitude=1.0,
+                    placement=zodiac_placement(60.0),
+                ),
+            }
+
+        def ascendant_position(self, moment, latitude, longitude, settings):
+            self.ascendant_moments.append(moment)
+            longitude_value = 90.0 if len(self.ascendant_moments) == 1 else 120.0
+            return BodyPosition(
+                body="Lagna",
+                longitude=longitude_value,
+                latitude=None,
+                distance_au=None,
+                speed_longitude=None,
+                placement=zodiac_placement(longitude_value),
+            )
+
+    provider = FakeProviderWithVariableLagna()
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2026-06-02",
+            "birth_time": "10:00",
+            "place_name": "Vrindavan",
+        },
+        provider=provider,
+    )
+
+    assert result["solar_day"]["sunrise"].startswith("2026-06-02T05:")
+    assert result["solar_day"]["sunset"].startswith("2026-06-02T19:")
+    assert result["solar_day"]["day_periods"][0]["key"] == "rahu_kalam"
+    assert provider.ascendant_moments[1].isoformat().startswith("2026-06-02T13:")
+    upagraha = result["classical"]["special_points"]["upagrahas"]["items"][0]
+    assert upagraha["key"] == "gulika"
+    assert upagraha["longitude"] == 120.0
+    assert upagraha["local_time"].startswith("13:")
+
+
 def test_build_birth_chart_adds_shodasha_varga_payload():
     from apps.calculations.chart import build_birth_chart
 

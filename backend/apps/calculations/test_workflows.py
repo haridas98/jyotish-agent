@@ -154,6 +154,27 @@ def test_build_muhurta_report_ranks_candidates_by_panchanga_rules():
     assert "Кришн" in result["vaishnava_note"]
 
 
+def test_build_muhurta_report_penalizes_rahu_kalam_candidate_time():
+    from apps.calculations.workflows import build_muhurta_report
+
+    result = build_muhurta_report(
+        {
+            "place_name": "Vrindavan",
+            "start_date": "2026-06-02",
+            "end_date": "2026-06-02",
+            "time": "16:00",
+        },
+        provider=WorkflowProvider(),
+    )
+
+    candidate = result["candidates"][0]
+
+    assert candidate["day_periods"][0]["key"] == "rahu_kalam"
+    assert candidate["blocked_periods"][0]["key"] == "rahu_kalam"
+    assert any("Rahu Kalam" in reason for reason in candidate["reasons"])
+    assert candidate["score"] <= 20
+
+
 @pytest.mark.django_db
 def test_transit_api_returns_400_for_missing_birth_data():
     response = APIClient().post("/api/calculations/transits", {"birth_date": "2000-01-01"}, format="json")

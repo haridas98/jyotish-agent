@@ -940,6 +940,27 @@ select {
   margin: 0;
 }
 
+.muhurta-item .avoid-line {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.period-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.period-chip {
+  background: #f7ead9;
+  border: 1px solid #e5cda8;
+  border-radius: 999px;
+  color: #804a10;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 5px 8px;
+}
+
 .house-overview {
   border: 1px solid var(--line);
   border-radius: 8px;

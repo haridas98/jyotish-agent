@@ -143,6 +143,11 @@ export type SpecialPoint = {
   nakshatra: string;
   pada: number;
   local_time?: string;
+  period?: string;
+  segment?: number;
+  starts_at?: string;
+  ends_at?: string;
+  midpoint?: string;
   calculation_note?: string;
 };
 
@@ -165,6 +170,31 @@ export type ShadbalaRow = {
     dig: number;
   };
   known_total: number;
+};
+
+export type DayPeriod = {
+  key: string;
+  name: string;
+  period: string;
+  segment: number;
+  starts_at: string;
+  ends_at: string;
+  midpoint: string;
+  local_time: string;
+  status: string;
+};
+
+export type SolarDay = {
+  date: string;
+  timezone: string;
+  sunrise: string;
+  sunset: string;
+  next_sunrise: string;
+  daylight_minutes: number;
+  night_minutes: number;
+  status: string;
+  method: string;
+  day_periods: DayPeriod[];
 };
 
 export type ClassicalCalculations = {
@@ -220,6 +250,7 @@ export type BirthChart = {
     latitude: number;
     longitude: number;
   };
+  solar_day?: SolarDay;
   grahas: GrahaPosition[];
   ascendant: GrahaPosition | null;
   houses: HousePlacement[];
@@ -350,6 +381,8 @@ export type MuhurtaCandidate = {
   time: string;
   score: number;
   panchanga: Panchanga;
+  day_periods: DayPeriod[];
+  blocked_periods: DayPeriod[];
   reasons: string[];
 };
 

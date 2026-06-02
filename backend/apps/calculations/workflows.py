@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from datetime import date, time, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Any
 
 from .chart import build_birth_chart
 from .constants import RASHIS
 from .ephemeris import EphemerisProvider
+from .solar import moment_hits_periods
 
 VARNA_ORDER = {
     "Shudra": 1,
@@ -257,7 +258,7 @@ def build_muhurta_report(
     candidates.sort(key=lambda item: (-item["score"], item["date"], item["time"]))
     return {
         "status": "partial",
-        "method": "Daily panchanga scoring by tithi, vara, yoga, and karana; final muhurta requires task-specific review.",
+        "method": "Daily panchanga scoring with sunrise-based Rahu/Yamaganda/Gulika avoidance; final muhurta requires task-specific review.",
         "candidates": candidates,
         "vaishnava_note": "Даже благоприятное время используем для служения Кришне, а не как замену преданию.",
     }
@@ -278,6 +279,8 @@ def _muhurta_candidate(day: date, candidate_time: time, chart: dict[str, Any]) -
     panchanga = chart.get("panchanga", {})
     score = 50
     reasons = []
+    day_periods = _day_periods(chart)
+    blocked_periods = _blocked_periods(chart, day_periods)
     tithi_name = panchanga.get("tithi", {}).get("name")
     yoga_name = panchanga.get("yoga", {}).get("name")
     karana_name = panchanga.get("karana", {}).get("name")
@@ -300,14 +303,60 @@ def _muhurta_candidate(day: date, candidate_time: time, chart: dict[str, Any]) -
     if karana_name == "Vishti":
         score -= 15
         reasons.append("Vishti karana")
+    for period in blocked_periods:
+        if period.get("key") == "rahu_kalam":
+            score -= 15
+            reasons.append(f"Избегать Rahu Kalam: {_period_time_range(period)}")
+        elif period.get("key") == "yamaganda":
+            score -= 10
+            reasons.append(f"Избегать Yamaganda: {_period_time_range(period)}")
+        elif period.get("key") == "gulika_kala":
+            score -= 5
+            reasons.append(f"Осторожно Gulika Kala: {_period_time_range(period)}")
 
     return {
         "date": day.isoformat(),
         "time": candidate_time.isoformat(timespec="minutes"),
         "score": max(0, min(100, score)),
         "panchanga": panchanga,
+        "day_periods": day_periods,
+        "blocked_periods": blocked_periods,
         "reasons": reasons,
     }
+
+
+def _day_periods(chart: dict[str, Any]) -> list[dict[str, Any]]:
+    solar = chart.get("solar_day")
+    if not isinstance(solar, dict):
+        return []
+    periods = solar.get("day_periods")
+    return [period for period in periods if isinstance(period, dict)] if isinstance(periods, list) else []
+
+
+def _blocked_periods(chart: dict[str, Any], day_periods: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    raw_moment = (chart.get("birth") or {}).get("local_datetime")
+    if not isinstance(raw_moment, str):
+        return []
+    try:
+        moment = datetime.fromisoformat(raw_moment)
+    except ValueError:
+        return []
+    return moment_hits_periods(moment, day_periods)
+
+
+def _period_time_range(period: dict[str, Any]) -> str:
+    starts_at = _time_label(period.get("starts_at"))
+    ends_at = _time_label(period.get("ends_at"))
+    return f"{starts_at}-{ends_at}"
+
+
+def _time_label(value: object) -> str:
+    if not isinstance(value, str):
+        return ""
+    try:
+        return datetime.fromisoformat(value).strftime("%H:%M")
+    except ValueError:
+        return ""
 
 
 def _tara_kuta(nak_a: int | None, nak_b: int | None) -> dict[str, object]:

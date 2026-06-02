@@ -408,6 +408,30 @@ def _point_payload(key: str, name: str, longitude: float) -> dict[str, object]:
 
 
 def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
+    context = chart.get("upagraha_context")
+    if isinstance(context, dict):
+        segment = context.get("gulika")
+        gulika_ascendant = context.get("gulika_ascendant")
+        longitude = _body_longitude(gulika_ascendant)
+        if longitude is None:
+            longitude = _body_longitude(chart.get("ascendant"))
+        if isinstance(segment, dict) and longitude is not None:
+            item = _point_payload("gulika", "Gulika/Mandi", longitude)
+            item["local_time"] = str(segment.get("local_time") or "")
+            item["period"] = str(segment.get("period") or "")
+            item["segment"] = segment.get("segment")
+            item["starts_at"] = segment.get("starts_at")
+            item["ends_at"] = segment.get("ends_at")
+            item["midpoint"] = segment.get("midpoint")
+            item["calculation_note"] = (
+                "Actual sunrise/sunset segment with Lagna at Gulika midpoint; pending JHora fixture parity."
+            )
+            return {
+                "status": "draft_needs_jhora_audit",
+                "method": "Gulika/Mandi uses actual sunrise/sunset period segmentation and midpoint Lagna.",
+                "items": [item],
+            }
+
     birth = chart.get("birth", {})
     raw_moment = birth.get("local_datetime") if isinstance(birth, dict) else None
     ascendant = _body_longitude(chart.get("ascendant"))

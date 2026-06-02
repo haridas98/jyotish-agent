@@ -18,6 +18,7 @@ import {
   type BirthChart,
   type BirthChartRequest,
   type ChartProfile,
+  type DayPeriod,
   type DashaPeriod,
   type GrahaPosition,
   type MuhurtaReport,
@@ -125,6 +126,16 @@ function formatDate(value: string) {
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function formatIsoTime(value: string | null | undefined) {
+  if (!value) return "";
+  const match = value.match(/T(\d{2}:\d{2})/);
+  return match?.[1] ?? value;
+}
+
+function formatPeriodRange(period: DayPeriod) {
+  return `${period.name} ${formatIsoTime(period.starts_at)}-${formatIsoTime(period.ends_at)}`;
 }
 
 function isoDateOffset(days: number) {
@@ -493,7 +504,11 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
               <div key={point.key}>
                 <span>{point.name}</span>
                 <strong>{point.local_time ?? formatDegrees(point.longitude)}</strong>
-                <small>{point.rashi}</small>
+                <small>
+                  {point.rashi}
+                  {point.period ? ` · ${point.period === "day" ? "день" : "ночь"}` : ""}
+                  {point.segment ? ` · сегмент ${point.segment}` : ""}
+                </small>
               </div>
             ))}
           </div>
@@ -584,6 +599,20 @@ function MuhurtaPanel({ report, status }: { report: MuhurtaReport | null; status
               <small>
                 {candidate.panchanga.tithi?.name ?? "Титхи"} · {candidate.panchanga.vara?.name ?? "Вара"}
               </small>
+              {candidate.blocked_periods?.length ? (
+                <small className="avoid-line">
+                  Попадает: {candidate.blocked_periods.map(formatPeriodRange).join("; ")}
+                </small>
+              ) : null}
+              {candidate.day_periods?.length ? (
+                <div className="period-chip-row">
+                  {candidate.day_periods.map((period) => (
+                    <span className="period-chip" key={`${candidate.date}-${period.key}`}>
+                      {formatPeriodRange(period)}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               <p>{candidate.reasons.length ? candidate.reasons.join("; ") : "Нейтральная панчанга"}</p>
             </div>
           ))}
