@@ -47,6 +47,7 @@ const calculationStatusLabelsRu: Record<string, string> = {
   draft_needs_jhora_audit: "нужна сверка JHora",
   pending_jhora_audit: "ждёт сверку JHora",
   pending_endpoint: "ждёт API",
+  api_available: "API готов",
   pending_separate_chart_pair: "нужны две карты",
   pending_separate_workflow: "отдельный режим",
   signature_only: "только признак",
@@ -411,11 +412,15 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
     ["Аштакаварга", classical.ashtakavarga?.status],
     ["Шадбала", classical.shadbala?.status],
     ["Транзиты", classical.transits?.status],
+    ["Совместимость", classical.compatibility?.status],
     ["Мухурта", classical.muhurta?.status],
   ];
   const baladi = classical.avasthas?.baladi ?? [];
   const yogas = classical.yogas?.items ?? [];
   const lots = classical.special_points?.arabic_lots ?? [];
+  const upagrahas = classical.special_points?.upagrahas.items ?? [];
+  const shadbala = classical.shadbala?.items ?? [];
+  const ashtakavarga = classical.ashtakavarga;
 
   return (
     <section className="panel classical-panel">
@@ -484,6 +489,40 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
               <span>Упаграхи</span>
               <strong>{statusRu(classical.special_points?.upagrahas.status)}</strong>
             </div>
+            {upagrahas.map((point) => (
+              <div key={point.key}>
+                <span>{point.name}</span>
+                <strong>{point.local_time ?? formatDegrees(point.longitude)}</strong>
+                <small>{point.rashi}</small>
+              </div>
+            ))}
+          </div>
+          <div className="classical-list">
+            <h3>Аштакаварга</h3>
+            <div>
+              <span>SAV total</span>
+              <strong>{ashtakavarga?.sarva.total ?? "-"}</strong>
+              <small>{statusRu(ashtakavarga?.status)}</small>
+            </div>
+            {Object.entries(ashtakavarga?.bhinna ?? {}).slice(0, 4).map(([body, row]) => (
+              <div key={body}>
+                <span>{labelRu(body)}</span>
+                <strong>{row.total}</strong>
+                <small>{row.scores.join(" ")}</small>
+              </div>
+            ))}
+          </div>
+          <div className="classical-list">
+            <h3>Шадбала</h3>
+            {shadbala.slice(0, 4).map((row) => (
+              <div key={row.body}>
+                <span>{labelRu(row.body)}</span>
+                <strong>{row.known_total}</strong>
+                <small>
+                  N {row.components.naisargika}, U {row.components.uccha}, D {row.components.dig}
+                </small>
+              </div>
+            ))}
           </div>
         </div>
       </div>

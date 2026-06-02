@@ -7,6 +7,140 @@ from .chart import build_birth_chart
 from .constants import RASHIS
 from .ephemeris import EphemerisProvider
 
+VARNA_ORDER = {
+    "Shudra": 1,
+    "Vaishya": 2,
+    "Kshatriya": 3,
+    "Brahmana": 4,
+}
+
+VARNA_BY_ELEMENT = {
+    0: "Kshatriya",
+    1: "Vaishya",
+    2: "Shudra",
+    3: "Brahmana",
+    4: "Kshatriya",
+    5: "Vaishya",
+    6: "Shudra",
+    7: "Brahmana",
+    8: "Kshatriya",
+    9: "Vaishya",
+    10: "Shudra",
+    11: "Brahmana",
+}
+
+VASHYA_GROUPS = {
+    0: "chatushpada",
+    1: "chatushpada",
+    2: "nara",
+    3: "jala",
+    4: "vana",
+    5: "nara",
+    6: "nara",
+    7: "keeta",
+    8: "chatushpada",
+    9: "chatushpada",
+    10: "nara",
+    11: "jala",
+}
+
+NAKSHATRA_GANA = (
+    "deva",
+    "manushya",
+    "rakshasa",
+    "manushya",
+    "deva",
+    "manushya",
+    "deva",
+    "deva",
+    "rakshasa",
+    "rakshasa",
+    "manushya",
+    "manushya",
+    "deva",
+    "rakshasa",
+    "deva",
+    "rakshasa",
+    "deva",
+    "rakshasa",
+    "rakshasa",
+    "manushya",
+    "manushya",
+    "deva",
+    "rakshasa",
+    "rakshasa",
+    "manushya",
+    "manushya",
+    "deva",
+)
+
+NAKSHATRA_YONI = (
+    "horse",
+    "elephant",
+    "sheep",
+    "serpent",
+    "serpent",
+    "dog",
+    "cat",
+    "sheep",
+    "cat",
+    "rat",
+    "rat",
+    "cow",
+    "buffalo",
+    "tiger",
+    "buffalo",
+    "tiger",
+    "deer",
+    "deer",
+    "dog",
+    "monkey",
+    "mongoose",
+    "monkey",
+    "lion",
+    "horse",
+    "lion",
+    "cow",
+    "elephant",
+)
+
+NAKSHATRA_NADI = tuple("adi" if index % 3 == 0 else "madhya" if index % 3 == 1 else "antya" for index in range(27))
+
+RASHI_LORDS = {
+    0: "Mangala",
+    1: "Shukra",
+    2: "Budha",
+    3: "Chandra",
+    4: "Surya",
+    5: "Budha",
+    6: "Shukra",
+    7: "Mangala",
+    8: "Guru",
+    9: "Shani",
+    10: "Shani",
+    11: "Guru",
+}
+
+GRAHA_FRIENDS = {
+    "Surya": {"Chandra", "Mangala", "Guru"},
+    "Chandra": {"Surya", "Budha"},
+    "Mangala": {"Surya", "Chandra", "Guru"},
+    "Budha": {"Surya", "Shukra"},
+    "Guru": {"Surya", "Chandra", "Mangala"},
+    "Shukra": {"Budha", "Shani"},
+    "Shani": {"Budha", "Shukra"},
+}
+
+GRAHA_ENEMIES = {
+    "Surya": {"Shukra", "Shani"},
+    "Chandra": set(),
+    "Mangala": {"Budha"},
+    "Budha": {"Chandra"},
+    "Guru": {"Budha", "Shukra"},
+    "Shukra": {"Surya", "Chandra"},
+    "Shani": {"Surya", "Chandra", "Mangala"},
+}
+
 
 def build_transit_report(
     data: dict[str, Any],
@@ -59,19 +193,34 @@ def build_compatibility_report(
     nak_b = _int_or_none(moon_b.get("nakshatra_index") if moon_b else None)
     rashi_a = _rashi_index(moon_a)
     rashi_b = _rashi_index(moon_b)
+    kuta = {
+        "varna": _varna_kuta(rashi_a, rashi_b),
+        "vashya": _vashya_kuta(rashi_a, rashi_b),
+        "tara": _tara_kuta(nak_a, nak_b),
+        "yoni": _yoni_kuta(nak_a, nak_b),
+        "graha_maitri": _graha_maitri_kuta(rashi_a, rashi_b),
+        "gana": _gana_kuta(nak_a, nak_b),
+        "bhakoot": _bhakoot_kuta(rashi_a, rashi_b),
+        "nadi": _nadi_kuta(nak_a, nak_b),
+    }
+    total_score = round(sum(float(item["score"]) for item in kuta.values()), 2)
+    max_score = round(sum(float(item["max_score"]) for item in kuta.values()), 2)
 
     return {
         "status": "partial",
-        "method": "Moon-based compatibility baseline; full ashtakuta/ISKCON review pending.",
+        "method": "Ashtakuta baseline from Moon rashi/nakshatra; pending JHora and tradition review.",
+        "score": {
+            "total": total_score,
+            "max": max_score,
+            "percent": round(total_score / max_score * 100, 2) if max_score else 0,
+        },
         "moon": {
             "person_a": _compact_placement(moon_a),
             "person_b": _compact_placement(moon_b),
             "rashi_distance_a_to_b": _house_from(rashi_a, rashi_b),
             "rashi_distance_b_to_a": _house_from(rashi_b, rashi_a),
         },
-        "kuta": {
-            "tara": _tara_kuta(nak_a, nak_b),
-        },
+        "kuta": kuta,
         "vaishnava_note": (
             "Совместимость не должна подменять садху-сангу, ответственность и совместное служение Кришне."
         ),
@@ -174,6 +323,128 @@ def _tara_kuta(nak_a: int | None, nak_b: int | None) -> dict[str, object]:
         "b_to_a_count": b_to_a,
         "status": "calculated",
     }
+
+
+def _varna_kuta(rashi_a: int | None, rashi_b: int | None) -> dict[str, object]:
+    if rashi_a is None or rashi_b is None:
+        return _missing_kuta(1.0)
+    varna_a = VARNA_BY_ELEMENT[rashi_a]
+    varna_b = VARNA_BY_ELEMENT[rashi_b]
+    return {
+        "score": 1.0 if VARNA_ORDER[varna_a] >= VARNA_ORDER[varna_b] else 0.0,
+        "max_score": 1.0,
+        "person_a": varna_a,
+        "person_b": varna_b,
+        "status": "calculated",
+    }
+
+
+def _vashya_kuta(rashi_a: int | None, rashi_b: int | None) -> dict[str, object]:
+    if rashi_a is None or rashi_b is None:
+        return _missing_kuta(2.0)
+    group_a = VASHYA_GROUPS[rashi_a]
+    group_b = VASHYA_GROUPS[rashi_b]
+    score = 2.0 if group_a == group_b else 1.0 if {group_a, group_b} & {"nara", "chatushpada"} else 0.5
+    return {
+        "score": score,
+        "max_score": 2.0,
+        "person_a": group_a,
+        "person_b": group_b,
+        "status": "calculated",
+    }
+
+
+def _yoni_kuta(nak_a: int | None, nak_b: int | None) -> dict[str, object]:
+    if nak_a is None or nak_b is None:
+        return _missing_kuta(4.0)
+    yoni_a = NAKSHATRA_YONI[nak_a]
+    yoni_b = NAKSHATRA_YONI[nak_b]
+    score = 4.0 if yoni_a == yoni_b else 2.0
+    return {
+        "score": score,
+        "max_score": 4.0,
+        "person_a": yoni_a,
+        "person_b": yoni_b,
+        "status": "calculated",
+    }
+
+
+def _graha_maitri_kuta(rashi_a: int | None, rashi_b: int | None) -> dict[str, object]:
+    if rashi_a is None or rashi_b is None:
+        return _missing_kuta(5.0)
+    lord_a = RASHI_LORDS[rashi_a]
+    lord_b = RASHI_LORDS[rashi_b]
+    if lord_a == lord_b:
+        score = 5.0
+    elif lord_b in GRAHA_FRIENDS[lord_a] and lord_a in GRAHA_FRIENDS[lord_b]:
+        score = 5.0
+    elif lord_b in GRAHA_ENEMIES[lord_a] or lord_a in GRAHA_ENEMIES[lord_b]:
+        score = 0.0
+    else:
+        score = 3.0
+    return {
+        "score": score,
+        "max_score": 5.0,
+        "person_a": lord_a,
+        "person_b": lord_b,
+        "status": "calculated",
+    }
+
+
+def _gana_kuta(nak_a: int | None, nak_b: int | None) -> dict[str, object]:
+    if nak_a is None or nak_b is None:
+        return _missing_kuta(6.0)
+    gana_a = NAKSHATRA_GANA[nak_a]
+    gana_b = NAKSHATRA_GANA[nak_b]
+    if gana_a == gana_b:
+        score = 6.0
+    elif {gana_a, gana_b} == {"deva", "manushya"}:
+        score = 5.0
+    elif {gana_a, gana_b} == {"manushya", "rakshasa"}:
+        score = 1.0
+    else:
+        score = 0.0
+    return {
+        "score": score,
+        "max_score": 6.0,
+        "person_a": gana_a,
+        "person_b": gana_b,
+        "status": "calculated",
+    }
+
+
+def _bhakoot_kuta(rashi_a: int | None, rashi_b: int | None) -> dict[str, object]:
+    if rashi_a is None or rashi_b is None:
+        return _missing_kuta(7.0)
+    distance_a = _house_from(rashi_a, rashi_b)
+    distance_b = _house_from(rashi_b, rashi_a)
+    adverse = {frozenset({2, 12}), frozenset({5, 9}), frozenset({6, 8})}
+    score = 0.0 if frozenset({distance_a, distance_b}) in adverse else 7.0
+    return {
+        "score": score,
+        "max_score": 7.0,
+        "distance_a_to_b": distance_a,
+        "distance_b_to_a": distance_b,
+        "status": "calculated",
+    }
+
+
+def _nadi_kuta(nak_a: int | None, nak_b: int | None) -> dict[str, object]:
+    if nak_a is None or nak_b is None:
+        return _missing_kuta(8.0)
+    nadi_a = NAKSHATRA_NADI[nak_a]
+    nadi_b = NAKSHATRA_NADI[nak_b]
+    return {
+        "score": 0.0 if nadi_a == nadi_b else 8.0,
+        "max_score": 8.0,
+        "person_a": nadi_a,
+        "person_b": nadi_b,
+        "status": "calculated",
+    }
+
+
+def _missing_kuta(max_score: float) -> dict[str, object]:
+    return {"score": 0.0, "max_score": max_score, "status": "missing_moon_data"}
 
 
 def _tara_favorable(count: int) -> bool:

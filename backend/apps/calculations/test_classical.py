@@ -1,7 +1,9 @@
 from apps.calculations.classical import (
     argala_summary,
+    ashtakavarga,
     baladi_avastha,
     classical_calculations,
+    shadbala_summary,
     special_points,
     yoga_signatures,
 )
@@ -63,6 +65,7 @@ def test_argala_summary_lists_primary_and_obstructing_houses_from_lagna():
 
 def test_special_points_include_day_and_night_lots_without_upagraha_claims():
     chart = {
+        "birth": {"local_datetime": "2026-06-02T10:00:00+05:30"},
         "ascendant": {"longitude": 90.0},
         "grahas": [
             {"body": "Surya", "longitude": 40.0},
@@ -75,7 +78,51 @@ def test_special_points_include_day_and_night_lots_without_upagraha_claims():
     assert points["arabic_lots"][0]["key"] == "part_of_fortune_day"
     assert points["arabic_lots"][0]["longitude"] == 120.0
     assert points["arabic_lots"][1]["longitude"] == 60.0
-    assert points["upagrahas"]["status"] == "pending_jhora_audit"
+    assert points["upagrahas"]["status"] == "draft_needs_jhora_audit"
+    assert points["upagrahas"]["items"][0]["key"] == "gulika"
+    assert points["upagrahas"]["items"][0]["local_time"] == "12:45"
+
+
+def test_ashtakavarga_generates_bav_and_sav_constants():
+    chart = {
+        "ascendant": {"rashi_index": 0, "rashi": "Mesha"},
+        "grahas": [
+            {"body": "Surya", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Chandra", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Mangala", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Budha", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Guru", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Shukra", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Shani", "rashi_index": 0, "rashi": "Mesha"},
+        ],
+    }
+
+    result = ashtakavarga(chart)
+
+    assert result["status"] == "draft_needs_jhora_audit"
+    assert result["bhinna"]["Surya"]["total"] == 48
+    assert result["bhinna"]["Surya"]["scores"][0] == 3
+    assert result["bhinna"]["Chandra"]["total"] == 49
+    assert result["sarva"]["total"] == 337
+
+
+def test_shadbala_summary_adds_natural_exaltation_and_directional_components():
+    chart = {
+        "ascendant": {"rashi_index": 0, "rashi": "Mesha"},
+        "grahas": [
+            {"body": "Surya", "longitude": 10.0, "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Shani", "longitude": 20.0, "rashi_index": 0, "rashi": "Mesha"},
+        ],
+    }
+
+    result = shadbala_summary(chart)
+    rows = {row["body"]: row for row in result["items"]}
+
+    assert result["status"] == "draft_needs_jhora_audit"
+    assert rows["Surya"]["components"]["naisargika"] == 60.0
+    assert rows["Surya"]["components"]["uccha"] == 60.0
+    assert rows["Shani"]["components"]["naisargika"] == 8.57
+    assert rows["Shani"]["components"]["uccha"] == 0.0
 
 
 def test_classical_calculations_payload_is_explicit_about_audited_and_pending_layers():
@@ -84,7 +131,11 @@ def test_classical_calculations_payload_is_explicit_about_audited_and_pending_la
         "grahas": [
             {"body": "Surya", "longitude": 120.0, "rashi_index": 4, "rashi": "Simha"},
             {"body": "Chandra", "longitude": 132.0, "rashi_index": 4, "rashi": "Simha"},
+            {"body": "Mangala", "longitude": 140.0, "rashi_index": 4, "rashi": "Simha"},
+            {"body": "Budha", "longitude": 150.0, "rashi_index": 5, "rashi": "Kanya"},
             {"body": "Guru", "longitude": 220.0, "rashi_index": 7, "rashi": "Vrischika"},
+            {"body": "Shukra", "longitude": 225.0, "rashi_index": 7, "rashi": "Vrischika"},
+            {"body": "Shani", "longitude": 230.0, "rashi_index": 7, "rashi": "Vrischika"},
         ],
         "vargas": {
             "D1": {
@@ -101,5 +152,5 @@ def test_classical_calculations_payload_is_explicit_about_audited_and_pending_la
     assert payload["avasthas"]["baladi"][0]["body"] == "Surya"
     assert payload["yogas"]["items"][0]["key"] == "gaja_kesari"
     assert payload["vimshopaka_bala"]["status"] == "draft_needs_jhora_audit"
-    assert payload["ashtakavarga"]["status"] == "pending_jhora_audit"
-    assert payload["shadbala"]["status"] == "pending_jhora_audit"
+    assert payload["ashtakavarga"]["sarva"]["total"] == 337
+    assert payload["shadbala"]["items"][0]["body"] == "Surya"

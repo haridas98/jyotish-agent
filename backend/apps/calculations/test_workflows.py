@@ -108,11 +108,30 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
     )
 
     assert result["status"] == "partial"
+    assert result["score"] == {
+        "total": 14.5,
+        "max": 36.0,
+        "percent": 40.28,
+    }
     assert result["moon"]["person_a"]["nakshatra"] == "Ashwini"
     assert result["moon"]["person_b"]["nakshatra"] == "Rohini"
     assert result["moon"]["rashi_distance_a_to_b"] == 2
+    assert set(result["kuta"]) == {
+        "varna",
+        "vashya",
+        "tara",
+        "yoni",
+        "graha_maitri",
+        "gana",
+        "bhakoot",
+        "nadi",
+    }
+    assert result["kuta"]["varna"]["score"] == 1.0
+    assert result["kuta"]["vashya"]["score"] == 2.0
     assert result["kuta"]["tara"]["score"] == 1.5
     assert result["kuta"]["tara"]["max_score"] == 3.0
+    assert result["kuta"]["bhakoot"]["score"] == 0.0
+    assert result["kuta"]["nadi"]["score"] == 0.0
 
 
 def test_build_muhurta_report_ranks_candidates_by_panchanga_rules():

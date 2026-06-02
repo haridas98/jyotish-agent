@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, time, timedelta
 from math import floor
 from typing import Any
 
@@ -34,6 +35,124 @@ EXALTATION_SIGNS = {
     "Shani": "Tula",
 }
 
+EXALTATION_DEGREES = {
+    "Surya": 10.0,
+    "Chandra": 33.0,
+    "Mangala": 298.0,
+    "Budha": 165.0,
+    "Guru": 95.0,
+    "Shukra": 357.0,
+    "Shani": 200.0,
+}
+
+DEBILITATION_DEGREES = {
+    "Surya": 190.0,
+    "Chandra": 213.0,
+    "Mangala": 118.0,
+    "Budha": 345.0,
+    "Guru": 275.0,
+    "Shukra": 177.0,
+    "Shani": 20.0,
+}
+
+NAISARGIKA_BALA = {
+    "Surya": 60.0,
+    "Chandra": 51.43,
+    "Shukra": 42.86,
+    "Guru": 34.29,
+    "Budha": 25.71,
+    "Mangala": 17.14,
+    "Shani": 8.57,
+}
+
+DIG_BALA_HOUSES = {
+    "Surya": 10,
+    "Mangala": 10,
+    "Chandra": 4,
+    "Shukra": 4,
+    "Budha": 1,
+    "Guru": 1,
+    "Shani": 7,
+}
+
+ASHTAKAVARGA_SOURCES = ("Surya", "Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Lagna")
+ASHTAKAVARGA_TARGETS = ("Surya", "Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani")
+
+ASHTAKAVARGA_RULES = {
+    "Surya": {
+        "Surya": (1, 2, 4, 7, 8, 9, 10, 11),
+        "Chandra": (3, 6, 10, 11),
+        "Mangala": (1, 2, 4, 7, 8, 9, 10, 11),
+        "Budha": (3, 5, 6, 9, 10, 11, 12),
+        "Guru": (5, 6, 9, 11),
+        "Shukra": (6, 7, 12),
+        "Shani": (1, 2, 4, 7, 8, 9, 10, 11),
+        "Lagna": (3, 4, 6, 10, 11, 12),
+    },
+    "Chandra": {
+        "Surya": (3, 6, 7, 8, 10, 11),
+        "Chandra": (1, 3, 6, 7, 10, 11),
+        "Mangala": (2, 3, 5, 6, 9, 10, 11),
+        "Budha": (1, 3, 4, 5, 7, 8, 10, 11),
+        "Guru": (1, 4, 7, 8, 10, 11, 12),
+        "Shukra": (3, 4, 5, 7, 9, 10, 11),
+        "Shani": (3, 5, 6, 11),
+        "Lagna": (3, 6, 10, 11),
+    },
+    "Mangala": {
+        "Surya": (3, 5, 6, 10, 11),
+        "Chandra": (3, 6, 11),
+        "Mangala": (1, 2, 4, 7, 8, 10, 11),
+        "Budha": (3, 5, 6, 11),
+        "Guru": (6, 10, 11, 12),
+        "Shukra": (6, 8, 11, 12),
+        "Shani": (1, 4, 7, 8, 9, 10, 11),
+        "Lagna": (1, 3, 6, 10, 11),
+    },
+    "Budha": {
+        "Surya": (5, 6, 9, 11, 12),
+        "Chandra": (2, 4, 6, 8, 10, 11),
+        "Mangala": (1, 2, 4, 7, 8, 9, 10, 11),
+        "Budha": (1, 3, 5, 6, 9, 10, 11, 12),
+        "Guru": (6, 8, 11, 12),
+        "Shukra": (1, 2, 3, 4, 5, 8, 9, 11),
+        "Shani": (1, 2, 4, 7, 8, 9, 10, 11),
+        "Lagna": (1, 2, 4, 6, 8, 10, 11),
+    },
+    "Guru": {
+        "Surya": (1, 2, 3, 4, 7, 8, 9, 10, 11),
+        "Chandra": (2, 5, 7, 9, 11),
+        "Mangala": (1, 2, 4, 7, 8, 10, 11),
+        "Budha": (1, 2, 4, 5, 6, 9, 10, 11),
+        "Guru": (1, 2, 3, 4, 7, 8, 10, 11),
+        "Shukra": (2, 5, 6, 9, 10, 11),
+        "Shani": (3, 5, 6, 12),
+        "Lagna": (1, 2, 4, 5, 6, 7, 9, 10, 11),
+    },
+    "Shukra": {
+        "Surya": (8, 11, 12),
+        "Chandra": (1, 2, 3, 4, 5, 8, 9, 11, 12),
+        "Mangala": (3, 5, 6, 9, 11, 12),
+        "Budha": (3, 5, 6, 9, 11),
+        "Guru": (5, 8, 9, 10, 11),
+        "Shukra": (1, 2, 3, 4, 5, 8, 9, 10, 11),
+        "Shani": (3, 4, 5, 8, 9, 10, 11),
+        "Lagna": (1, 2, 3, 4, 5, 8, 9, 11),
+    },
+    "Shani": {
+        "Surya": (1, 2, 4, 7, 8, 10, 11),
+        "Chandra": (3, 6, 11),
+        "Mangala": (3, 5, 6, 10, 11, 12),
+        "Budha": (6, 8, 9, 10, 11, 12),
+        "Guru": (5, 6, 11, 12),
+        "Shukra": (6, 11, 12),
+        "Shani": (3, 5, 6, 11),
+        "Lagna": (1, 3, 4, 6, 10, 11),
+    },
+}
+
+WEEKDAY_LORDS = ("Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Surya")
+
 
 def classical_calculations(chart: dict[str, Any]) -> dict[str, Any]:
     return {
@@ -43,14 +162,8 @@ def classical_calculations(chart: dict[str, Any]) -> dict[str, Any]:
             "baladi": _baladi_rows(chart),
         },
         "vimshopaka_bala": vimshopaka_bala(chart),
-        "ashtakavarga": {
-            "status": "pending_jhora_audit",
-            "method": "BAV/SAV tables are not exposed until rule tables are checked against JHora fixtures.",
-        },
-        "shadbala": {
-            "status": "pending_jhora_audit",
-            "method": "Requires full sixfold bala pipeline and parity fixtures before user-facing claims.",
-        },
+        "ashtakavarga": ashtakavarga(chart),
+        "shadbala": shadbala_summary(chart),
         "yogas": {
             "status": "draft_needs_citation",
             "method": "Only simple signature detection; interpretation requires shastra citations.",
@@ -59,16 +172,16 @@ def classical_calculations(chart: dict[str, Any]) -> dict[str, Any]:
         "argala": argala_summary(chart),
         "special_points": special_points(chart),
         "transits": {
-            "status": "pending_endpoint",
-            "method": "Transit API will reuse the same ephemeris engine for an as-of datetime.",
+            "status": "api_available",
+            "method": "Transit API compares as-of grahas to natal Lagna and Moon.",
         },
         "compatibility": {
-            "status": "pending_separate_chart_pair",
-            "method": "Requires two birth profiles and ethical wording policy.",
+            "status": "api_available",
+            "method": "Compatibility API exposes ashtakuta baseline for two birth profiles.",
         },
         "muhurta": {
-            "status": "pending_separate_workflow",
-            "method": "Requires task type, location, time window, and Vaishnava remedial policy.",
+            "status": "api_available",
+            "method": "Muhurta API ranks panchanga candidates in a date window.",
         },
     }
 
@@ -162,14 +275,70 @@ def special_points(chart: dict[str, Any]) -> dict[str, object]:
     return {
         "status": "partial",
         "arabic_lots": lots,
-        "upagrahas": {
-            "status": "pending_jhora_audit",
-            "method": "Gulika/Mandi and other upagrahas need weekday/day-night segment fixtures.",
-        },
+        "upagrahas": _upagrahas(chart),
         "vedic_points": {
             "status": "pending_jhora_audit",
             "method": "Indu lagna, bhrigu bindu, and related points need source mapping.",
         },
+    }
+
+
+def ashtakavarga(chart: dict[str, Any]) -> dict[str, object]:
+    sources = _ashtakavarga_sources(chart)
+    bhinna = {}
+    sarva_scores = [0] * len(RASHIS)
+    missing_sources = [source for source in ASHTAKAVARGA_SOURCES if source not in sources]
+    for target in ASHTAKAVARGA_TARGETS:
+        scores = [0] * len(RASHIS)
+        for source, houses in ASHTAKAVARGA_RULES[target].items():
+            source_index = sources.get(source)
+            if source_index is None:
+                continue
+            for house in houses:
+                scores[(source_index + house - 1) % len(RASHIS)] += 1
+        for index, value in enumerate(scores):
+            sarva_scores[index] += value
+        bhinna[target] = {
+            "scores": scores,
+            "total": sum(scores),
+        }
+    return {
+        "status": "draft_needs_jhora_audit",
+        "method": "Bhinna/Sarva Ashtakavarga bindu tables; pending JHora fixture parity.",
+        "missing_sources": missing_sources,
+        "bhinna": bhinna,
+        "sarva": {
+            "scores": sarva_scores,
+            "total": sum(sarva_scores),
+        },
+    }
+
+
+def shadbala_summary(chart: dict[str, Any]) -> dict[str, object]:
+    lagna_index = _int_or_none((chart.get("ascendant") or {}).get("rashi_index"))
+    items = []
+    for graha in chart.get("grahas", []):
+        body = str(graha.get("body") or "")
+        longitude = _body_longitude(graha)
+        rashi_index = _int_or_none(graha.get("rashi_index"))
+        if body not in NAISARGIKA_BALA or longitude is None:
+            continue
+        components = {
+            "naisargika": NAISARGIKA_BALA[body],
+            "uccha": _uccha_bala(body, longitude),
+            "dig": _dig_bala(body, lagna_index, rashi_index),
+        }
+        items.append(
+            {
+                "body": body,
+                "components": components,
+                "known_total": round(sum(components.values()), 2),
+            }
+        )
+    return {
+        "status": "draft_needs_jhora_audit",
+        "method": "Partial Shadbala: naisargika, uccha, and whole-sign dig bala only.",
+        "items": items,
     }
 
 
@@ -236,6 +405,91 @@ def _point_payload(key: str, name: str, longitude: float) -> dict[str, object]:
         "nakshatra": placement.nakshatra,
         "pada": placement.pada,
     }
+
+
+def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
+    birth = chart.get("birth", {})
+    raw_moment = birth.get("local_datetime") if isinstance(birth, dict) else None
+    ascendant = _body_longitude(chart.get("ascendant"))
+    if not isinstance(raw_moment, str):
+        return {
+            "status": "missing_birth_time",
+            "items": [],
+            "method": "Needs local birth datetime.",
+        }
+    try:
+        moment = datetime.fromisoformat(raw_moment)
+    except ValueError:
+        return {
+            "status": "invalid_birth_time",
+            "items": [],
+            "method": "Needs ISO local birth datetime.",
+        }
+    gulika_time = _saturn_segment_midpoint(moment)
+    offset_hours = (gulika_time.hour + gulika_time.minute / 60) - (moment.hour + moment.minute / 60)
+    base_longitude = ascendant if ascendant is not None else 0.0
+    gulika_longitude = normalize_degrees(base_longitude + offset_hours * 15.0)
+    item = _point_payload("gulika", "Gulika/Mandi", gulika_longitude)
+    item["local_time"] = gulika_time.strftime("%H:%M")
+    item["calculation_note"] = "Approximate weekday Saturn segment; sunrise/sunset audit pending."
+    return {
+        "status": "draft_needs_jhora_audit",
+        "method": "Civil 06:00-18:00/18:00-06:00 Saturn segment approximation pending JHora audit.",
+        "items": [item],
+    }
+
+
+def _saturn_segment_midpoint(moment: datetime) -> time:
+    day_start = moment.replace(hour=6, minute=0, second=0, microsecond=0)
+    day_end = moment.replace(hour=18, minute=0, second=0, microsecond=0)
+    if day_start <= moment < day_end:
+        period_start = day_start
+        segment_hours = 12 / 8
+        start_lord_index = moment.weekday()
+    else:
+        if moment < day_start:
+            period_start = day_start - timedelta(hours=12)
+        else:
+            period_start = day_end
+        segment_hours = 12 / 8
+        start_lord_index = (moment.weekday() + 1) % len(WEEKDAY_LORDS)
+
+    sequence = [WEEKDAY_LORDS[(start_lord_index + offset) % len(WEEKDAY_LORDS)] for offset in range(8)]
+    saturn_segment = sequence.index("Shani")
+    midpoint = period_start + timedelta(hours=segment_hours * saturn_segment + segment_hours / 2)
+    return midpoint.timetz().replace(tzinfo=None)
+
+
+def _ashtakavarga_sources(chart: dict[str, Any]) -> dict[str, int]:
+    sources = {}
+    ascendant_index = _int_or_none((chart.get("ascendant") or {}).get("rashi_index"))
+    if ascendant_index is not None:
+        sources["Lagna"] = ascendant_index
+    for graha in chart.get("grahas", []):
+        body = graha.get("body")
+        rashi_index = _int_or_none(graha.get("rashi_index"))
+        if body in ASHTAKAVARGA_TARGETS and rashi_index is not None:
+            sources[str(body)] = rashi_index
+    return sources
+
+
+def _uccha_bala(body: str, longitude: float) -> float:
+    debilitation = DEBILITATION_DEGREES.get(body)
+    if debilitation is None:
+        return 0.0
+    distance = abs(normalize_degrees(longitude) - debilitation)
+    distance = min(distance, 360.0 - distance)
+    return round(distance / 3.0, 2)
+
+
+def _dig_bala(body: str, lagna_index: int | None, rashi_index: int | None) -> float:
+    target_house = DIG_BALA_HOUSES.get(body)
+    if target_house is None or lagna_index is None or rashi_index is None:
+        return 0.0
+    house = _house_from(lagna_index, rashi_index)
+    distance = abs(house - target_house)
+    distance = min(distance, 12 - distance)
+    return round(60.0 * max(0.0, 1 - distance / 6.0), 2)
 
 
 def _graha_index(chart: dict[str, Any]) -> dict[str, dict[str, Any]]:

@@ -142,12 +142,29 @@ export type SpecialPoint = {
   rashi_index: number;
   nakshatra: string;
   pada: number;
+  local_time?: string;
+  calculation_note?: string;
 };
 
 export type VimshopakaRow = {
   body: string;
   supportive_vargas: string[];
   support_count: number;
+};
+
+export type AshtakavargaBody = {
+  scores: number[];
+  total: number;
+};
+
+export type ShadbalaRow = {
+  body: string;
+  components: {
+    naisargika: number;
+    uccha: number;
+    dig: number;
+  };
+  known_total: number;
 };
 
 export type ClassicalCalculations = {
@@ -157,8 +174,14 @@ export type ClassicalCalculations = {
   vimshopaka_bala?: ClassicalStatus & {
     items: VimshopakaRow[];
   };
-  ashtakavarga?: ClassicalStatus;
-  shadbala?: ClassicalStatus;
+  ashtakavarga?: ClassicalStatus & {
+    missing_sources: string[];
+    bhinna: Record<string, AshtakavargaBody>;
+    sarva: AshtakavargaBody;
+  };
+  shadbala?: ClassicalStatus & {
+    items: ShadbalaRow[];
+  };
   yogas?: ClassicalStatus & {
     items: YogaSignature[];
   };
@@ -169,7 +192,9 @@ export type ClassicalCalculations = {
   };
   special_points?: ClassicalStatus & {
     arabic_lots: SpecialPoint[];
-    upagrahas: ClassicalStatus;
+    upagrahas: ClassicalStatus & {
+      items: SpecialPoint[];
+    };
     vedic_points: ClassicalStatus;
   };
   transits?: ClassicalStatus;
@@ -338,6 +363,11 @@ export type MuhurtaReport = {
 export type CompatibilityReport = {
   status: string;
   method: string;
+  score: {
+    total: number;
+    max: number;
+    percent: number;
+  };
   moon: Record<string, unknown>;
   kuta: Record<string, unknown>;
   vaishnava_note: string;

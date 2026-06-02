@@ -67,7 +67,7 @@ def test_build_birth_chart_uses_local_timezone_and_provider():
     assert result["grahas"][0]["rashi"] == "Vrishabha"
     assert result["grahas"][0]["nakshatra"] == "Krittika"
     assert result["classical"]["avasthas"]["status"] == "calculated"
-    assert result["classical"]["ashtakavarga"]["status"] == "pending_jhora_audit"
+    assert result["classical"]["ashtakavarga"]["status"] == "draft_needs_jhora_audit"
 
 
 def test_build_birth_chart_accepts_custom_place_with_coordinates():
