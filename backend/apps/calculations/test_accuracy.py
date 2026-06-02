@@ -194,3 +194,93 @@ def test_compare_chart_to_fixture_checks_jhora_classical_layers():
     assert report.diagnostics["jhora_layers"]["ashtakavarga"]["matched"] == 12
     assert report.diagnostics["jhora_layers"]["shadbala"]["matched"] == 1
     assert report.passed is False
+
+
+def test_compare_chart_to_fixture_checks_external_service_layers_without_authority_claim():
+    report = compare_chart_to_fixture(
+        {
+            "classical": {
+                "ashtakavarga": {
+                    "bhinna": {
+                        "Surya": {
+                            "scores": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                        }
+                    }
+                },
+                "shadbala": {
+                    "items": [
+                        {"body": "Surya", "known_total": 300.0},
+                    ]
+                },
+            }
+        },
+        {
+            "id": "external-service-case",
+            "external_expected": [
+                {
+                    "id": "vedaansh",
+                    "name": "Vedaansh",
+                    "authority_tier": "black_box_service",
+                    "expected": {
+                        "ashtakavarga": {
+                            "Su": {
+                                "Mesha": 1,
+                                "Vrishabha": 2,
+                                "Mithuna": 3,
+                                "Karka": 4,
+                                "Simha": 5,
+                                "Kanya": 6,
+                                "Tula": 7,
+                                "Vrischika": 8,
+                                "Dhanu": 9,
+                                "Makara": 10,
+                                "Kumbha": 11,
+                                "Meena": 12,
+                            }
+                        },
+                        "shadbala": {
+                            "Sun": {"shadbala": 343.31},
+                        },
+                    },
+                }
+            ],
+        },
+    )
+
+    external = report.diagnostics["external_layers"]["vedaansh"]
+
+    assert report.exact_matches["external.vedaansh.ashtakavarga.Su.Mesha"] is True
+    assert report.exact_matches["external.vedaansh.shadbala.Sun.shadbala"] is False
+    assert external["name"] == "Vedaansh"
+    assert external["authority_tier"] == "black_box_service"
+    assert external["ashtakavarga"]["matched"] == 12
+    assert external["shadbala"]["failed"] == 1
+    assert report.diagnostics["authority"]["black_box_services"] == 1
+
+
+def test_compare_chart_to_fixture_can_skip_unconfirmed_external_capture():
+    report = compare_chart_to_fixture(
+        {"classical": {}},
+        {
+            "id": "raw-external-case",
+            "external_expected": [
+                {
+                    "id": "vedic_horo",
+                    "name": "Vedic-Horo",
+                    "authority_tier": "black_box_service",
+                    "compare": False,
+                    "skip_reason": "visual cell order not confirmed",
+                    "expected": {
+                        "ashtakavarga": {
+                            "Su": {"Mesha": 5},
+                        },
+                    },
+                }
+            ],
+        },
+    )
+
+    assert report.passed is True
+    assert report.exact_matches == {}
+    assert report.diagnostics["external_layers"]["vedic_horo"]["skipped"] is True
+    assert report.diagnostics["external_layers"]["vedic_horo"]["reason"] == "visual cell order not confirmed"

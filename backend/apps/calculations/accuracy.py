@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field as dataclass_field
 from statistics import mean, median, pstdev
 from typing import Any
@@ -155,6 +156,20 @@ def compare_chart_to_fixture(chart: dict[str, Any], fixture: dict[str, Any]) -> 
     )
     if jhora_layer_diagnostics:
         diagnostics["jhora_layers"] = jhora_layer_diagnostics
+    external_layer_diagnostics = _compare_external_layers(
+        chart,
+        fixture.get("external_expected", []),
+        tolerances,
+        exact_matches,
+        missing_fields,
+    )
+    if external_layer_diagnostics:
+        diagnostics["external_layers"] = external_layer_diagnostics
+        diagnostics["authority"] = {
+            "primary_rule_source": "shastra_source_backed_rules",
+            "black_box_services": len(external_layer_diagnostics),
+            "policy": "external services are comparison witnesses, not primary authority",
+        }
     passed = (
         not missing_fields
         and all(comparison.passed for comparison in comparisons)
@@ -206,11 +221,64 @@ def _compare_jhora_layers(
     return diagnostics
 
 
+def _compare_external_layers(
+    chart: dict[str, Any],
+    sources: Any,
+    tolerances: dict[str, Any],
+    exact_matches: dict[str, bool],
+    missing_fields: list[str],
+) -> dict[str, Any]:
+    if not isinstance(sources, list):
+        return {}
+    diagnostics: dict[str, Any] = {}
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        source_id = _source_id(source)
+        layer_diagnostics: dict[str, Any] = {
+            "name": str(source.get("name") or source_id),
+            "authority_tier": str(source.get("authority_tier") or "black_box_service"),
+        }
+        if source.get("compare") is False:
+            layer_diagnostics["skipped"] = True
+            layer_diagnostics["reason"] = str(source.get("skip_reason") or "comparison disabled")
+            diagnostics[source_id] = layer_diagnostics
+            continue
+        expected = source.get("expected")
+        if not isinstance(expected, dict):
+            continue
+        prefix = f"external.{source_id}"
+        ashtakavarga = _compare_jhora_ashtakavarga(
+            chart,
+            expected,
+            exact_matches,
+            missing_fields,
+            key_prefix=prefix,
+        )
+        if ashtakavarga["checked"]:
+            layer_diagnostics["ashtakavarga"] = ashtakavarga
+        shadbala = _compare_jhora_shadbala(
+            chart,
+            expected,
+            tolerances,
+            exact_matches,
+            missing_fields,
+            key_prefix=prefix,
+        )
+        if shadbala["checked"]:
+            layer_diagnostics["shadbala"] = shadbala
+        if len(layer_diagnostics) > 2:
+            diagnostics[source_id] = layer_diagnostics
+    return diagnostics
+
+
 def _compare_jhora_ashtakavarga(
     chart: dict[str, Any],
     expected: dict[str, Any],
     exact_matches: dict[str, bool],
     missing_fields: list[str],
+    *,
+    key_prefix: str = "jhora",
 ) -> dict[str, int]:
     expected_ashtakavarga = expected.get("ashtakavarga")
     if not isinstance(expected_ashtakavarga, dict):
@@ -226,13 +294,13 @@ def _compare_jhora_ashtakavarga(
         scores = actual_row.get("scores") if isinstance(actual_row, dict) else None
         if not isinstance(scores, list) or len(scores) < len(RASHIS):
             missing += 1
-            missing_fields.append(f"jhora.ashtakavarga.{jhora_body}")
+            missing_fields.append(f"{key_prefix}.ashtakavarga.{jhora_body}")
             continue
         for index, rashi in enumerate(RASHIS):
             if rashi not in expected_row:
                 continue
             checked += 1
-            key = f"jhora.ashtakavarga.{jhora_body}.{rashi}"
+            key = f"{key_prefix}.ashtakavarga.{jhora_body}.{rashi}"
             exact_matches[key] = int(scores[index]) == int(expected_row[rashi])
             if exact_matches[key]:
                 matched += 1
@@ -253,6 +321,8 @@ def _compare_jhora_shadbala(
     tolerances: dict[str, Any],
     exact_matches: dict[str, bool],
     missing_fields: list[str],
+    *,
+    key_prefix: str = "jhora",
 ) -> dict[str, float | int]:
     expected_shadbala = expected.get("shadbala")
     if not isinstance(expected_shadbala, dict):
@@ -272,14 +342,14 @@ def _compare_jhora_shadbala(
         actual_row = actual_items.get(body)
         if not isinstance(actual_row, dict) or "known_total" not in actual_row:
             missing += 1
-            missing_fields.append(f"jhora.shadbala.{jhora_body}")
+            missing_fields.append(f"{key_prefix}.shadbala.{jhora_body}")
             continue
         checked += 1
         expected_value = float(expected_row["shadbala"])
         actual_value = float(actual_row["known_total"])
         delta = abs(actual_value - expected_value)
         max_abs_delta = max(max_abs_delta, delta)
-        key = f"jhora.shadbala.{jhora_body}.shadbala"
+        key = f"{key_prefix}.shadbala.{jhora_body}.shadbala"
         exact_matches[key] = delta <= tolerance
         if exact_matches[key]:
             matched += 1
@@ -292,6 +362,12 @@ def _compare_jhora_shadbala(
         "missing": missing,
         "max_abs_delta": round(max_abs_delta, 6),
     }
+
+
+def _source_id(source: dict[str, Any]) -> str:
+    raw = str(source.get("id") or source.get("name") or "external").strip().lower()
+    normalized = re.sub(r"[^a-z0-9]+", "_", raw).strip("_")
+    return normalized or "external"
 
 
 def _compare_exact(

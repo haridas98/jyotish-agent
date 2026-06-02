@@ -17,7 +17,7 @@ Jyotish Agent is a Gaudiya Vaishnava astrology service. The goal is accurate jyo
 - Codex-ready analysis packet API and CLI for draft chart interpretation generation.
 - Accuracy fixture runner for JHora-style parity cases.
 - JHora `.jhd` input importer for draft parity fixtures.
-- Policy docs for sources, JHora parity, and Vaishnava interpretation.
+- Policy docs for calculation authority, sources, JHora parity, and Vaishnava interpretation.
 
 ## Local Start
 
@@ -58,6 +58,7 @@ npm run dev -- --hostname 127.0.0.1 --port 3130
 ## Important Rules
 
 - Do not copy or decompile Jagannatha Hora. Use it only as a functional and accuracy reference.
+- Do not treat any single astrology website as final authority. Follow `docs/calculation_authority.md`.
 - Do not duplicate `C:\Projects\vl` content. Query it read-only for citations.
 - Do not publish unreviewed shastra imports or unapproved interpretation rules.
 - Do not recommend independent demigod worship. Remedies must be Krishna-centered.

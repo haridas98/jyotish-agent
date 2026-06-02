@@ -12,6 +12,12 @@ Jagannatha Hora is a functional and numerical reference. Parity means the servic
 - sunrise method;
 - calculation date and ephemeris.
 
+## Cross-Service Rule
+
+JHora is not the final authority. When JHora, VedicHoro, Vedaansh, AstroSutra or another service disagrees, the disagreement is recorded as evidence. The formula changes only when supported by shastra, a documented parampara decision, or a verified settings/profile mismatch.
+
+See `docs/calculation_authority.md`.
+
 ## What Is Not Allowed
 
 - Decompiling JHora.
@@ -29,4 +35,3 @@ Every comparison run must store:
 - settings;
 - Jyotish Agent calculation version;
 - differences and explanation.
-

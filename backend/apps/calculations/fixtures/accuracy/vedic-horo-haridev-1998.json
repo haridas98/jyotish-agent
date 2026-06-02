@@ -1,0 +1,139 @@
+{
+  "id": "vedic-horo-haridev-1998",
+  "source": "external_black_box_service",
+  "review_status": "draft",
+  "notes": "Vedic-Horo capture from user-provided URL. Treat as black-box witness only; settings are not fully documented on the page.",
+  "input": {
+    "birth_date": "1998-04-30",
+    "birth_time": "13:45:00",
+    "place_name": "Sterlitamak",
+    "timezone": "Asia/Yekaterinburg",
+    "latitude": 53.37,
+    "longitude": 55.57,
+    "node_type": "true",
+    "ayanamsa": "lahiri",
+    "ephemeris": "swiss"
+  },
+  "external_expected": [
+    {
+      "id": "vedic_horo",
+      "name": "Vedic-Horo",
+      "authority_tier": "black_box_service",
+      "url": "https://vedic-horo.ru/analyse.php?name=Haridev&date=30.04.1998&time=13:45:00&latitude=53.37&longitude=55.57&timezone=+6",
+      "captured_at": "2026-06-02",
+      "compare": false,
+      "skip_reason": "Raw text capture exposes Ashtakavarga values but visual cell order needs browser/screenshot confirmation before numeric comparison.",
+      "settings": {
+        "ayanamsa_value": "23°49'53''",
+        "timezone_offset": "+6",
+        "settings_status": "needs_manual_confirmation"
+      },
+      "expected": {
+        "ashtakavarga": {
+          "Su": {
+            "Mesha": 5,
+            "Vrishabha": 3,
+            "Mithuna": 2,
+            "Karka": 5,
+            "Simha": 5,
+            "Kanya": 6,
+            "Tula": 4,
+            "Vrischika": 5,
+            "Dhanu": 1,
+            "Makara": 5,
+            "Kumbha": 5,
+            "Meena": 2
+          },
+          "Mo": {
+            "Mesha": 2,
+            "Vrishabha": 4,
+            "Mithuna": 7,
+            "Karka": 2,
+            "Simha": 4,
+            "Kanya": 6,
+            "Tula": 5,
+            "Vrischika": 4,
+            "Dhanu": 2,
+            "Makara": 2,
+            "Kumbha": 5,
+            "Meena": 6
+          },
+          "Ma": {
+            "Mesha": 5,
+            "Vrishabha": 4,
+            "Mithuna": 2,
+            "Karka": 3,
+            "Simha": 4,
+            "Kanya": 3,
+            "Tula": 6,
+            "Vrischika": 4,
+            "Dhanu": 0,
+            "Makara": 4,
+            "Kumbha": 3,
+            "Meena": 1
+          },
+          "Me": {
+            "Mesha": 7,
+            "Vrishabha": 3,
+            "Mithuna": 3,
+            "Karka": 4,
+            "Simha": 5,
+            "Kanya": 6,
+            "Tula": 6,
+            "Vrischika": 5,
+            "Dhanu": 4,
+            "Makara": 5,
+            "Kumbha": 5,
+            "Meena": 1
+          },
+          "Ju": {
+            "Mesha": 6,
+            "Vrishabha": 5,
+            "Mithuna": 2,
+            "Karka": 4,
+            "Simha": 6,
+            "Kanya": 6,
+            "Tula": 5,
+            "Vrischika": 4,
+            "Dhanu": 4,
+            "Makara": 7,
+            "Kumbha": 4,
+            "Meena": 3
+          },
+          "Ve": {
+            "Mesha": 5,
+            "Vrishabha": 5,
+            "Mithuna": 4,
+            "Karka": 4,
+            "Simha": 6,
+            "Kanya": 4,
+            "Tula": 4,
+            "Vrischika": 5,
+            "Dhanu": 4,
+            "Makara": 2,
+            "Kumbha": 4,
+            "Meena": 5
+          },
+          "Sa": {
+            "Mesha": 3,
+            "Vrishabha": 5,
+            "Mithuna": 3,
+            "Karka": 3,
+            "Simha": 3,
+            "Kanya": 3,
+            "Tula": 5,
+            "Vrischika": 5,
+            "Dhanu": 1,
+            "Makara": 3,
+            "Kumbha": 2,
+            "Meena": 3
+          }
+        }
+      }
+    }
+  ],
+  "tolerances": {
+    "planet_longitude_arcseconds": 1.0,
+    "lagna_arcseconds": 5.0
+  }
+}

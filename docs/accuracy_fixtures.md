@@ -69,6 +69,31 @@ The fixture harness also compares captured JHora classical layers when they are 
 
 The Lagna/Ascendant Ashtakavarga row is currently parsed but skipped until the app implements that row explicitly.
 
+Other services go under `external_expected`. They are comparison witnesses, not primary authority:
+
+```json
+{
+  "external_expected": [
+    {
+      "id": "vedic_horo",
+      "name": "VedicHoro",
+      "authority_tier": "black_box_service",
+      "url": "https://vedic-horo.com/",
+      "compare": false,
+      "skip_reason": "raw text captured, visual cell order not confirmed",
+      "expected": {
+        "ashtakavarga": {},
+        "shadbala": {}
+      }
+    }
+  ]
+}
+```
+
+Use `"compare": false` until the capture mapping is visually confirmed. This prevents false failures from tables whose DOM/text order differs from the rendered chart order.
+
+See `docs/calculation_authority.md` for the authority order.
+
 ## Draft Classical Layers To Audit
 
 The app now calculates draft layers that must receive fixture coverage before they can be marked authoritative:
