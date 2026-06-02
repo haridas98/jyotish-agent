@@ -16,6 +16,7 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Vimshottari dasha baseline.
 - Transit, compatibility, and muhurta API baselines.
 - Report sections with citations.
+- Codex-ready analysis packet generation for reviewed draft interpretation.
 - Read-only integration with the VL database.
 - Seeded foundational Vaishnava interpretation rules with approved citation anchors.
 - Accuracy comparison harness against Jagannatha Hora exports.

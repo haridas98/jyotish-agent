@@ -7,8 +7,9 @@ from rest_framework.views import APIView
 from apps.calculations.chart import ChartInputError
 from apps.calculations.ephemeris import EphemerisUnavailable
 from apps.interpretations.engine import public_interpretation_sections_for_chart
-from apps.vl_integration.client import search_vl_documents
+from apps.sources.citations import combined_citation_search
 
+from .analysis_packet import build_analysis_packet
 from .birth_report import compose_birth_report
 
 
@@ -31,8 +32,27 @@ class BirthReportView(APIView):
             return Response({"error": str(exc)}, status=503)
 
 
+class BirthAnalysisPacketView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def post(self, request):
+        try:
+            return Response(
+                build_analysis_packet(
+                    request.data,
+                    citation_search=vl_citation_search,
+                    interpretation_provider=public_interpretation_sections_for_chart,
+                )
+            )
+        except ChartInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
 def vl_citation_search(query: str) -> list[dict[str, object]]:
-    return search_vl_documents(
+    return combined_citation_search(
         settings.VL_DATABASE_URL,
         query,
         limit=3,

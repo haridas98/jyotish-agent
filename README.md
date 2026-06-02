@@ -14,6 +14,7 @@ Jyotish Agent is a Gaudiya Vaishnava astrology service. The goal is accurate jyo
 - Authenticated birth profile API with private per-user profile listing.
 - Real Swiss-backed D1 calculation basics: grahas, Lagna, whole-sign houses, panchanga.
 - Vimshottari mahadasha MVP engine from Moon longitude, marked draft until JHora parity.
+- Codex-ready analysis packet API and CLI for draft chart interpretation generation.
 - Accuracy fixture runner for JHora-style parity cases.
 - Policy docs for sources, JHora parity, and Vaishnava interpretation.
 
@@ -28,6 +29,18 @@ python -m venv .venv
 .\.venv\Scripts\python manage.py migrate
 .\.venv\Scripts\python manage.py seed_vaishnava_interpretations
 .\.venv\Scripts\python manage.py runserver 127.0.0.1:8100
+```
+
+Generate an analysis packet for Codex CLI:
+
+```powershell
+cd backend
+.\.venv\Scripts\python manage.py build_analysis_packet `
+  --birth-date 1998-04-30 `
+  --birth-time 13:45 `
+  --place-name "Ishimbay" `
+  --output .tmp\analysis-packet.json `
+  --prompt-output .tmp\analysis-prompt.md
 ```
 
 Frontend:
