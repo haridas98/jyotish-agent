@@ -51,6 +51,9 @@ Rules for generated text:
 
 - do not invent shastra citations;
 - use `citation_requests` as the checklist for missing shastra evidence;
+- compare multiple translation variants when they are present in the packet;
+- cite exact work, chapter/verse if known, edition and translator for every shastra quote;
+- flag translation or edition conflicts instead of hiding them;
 - do not present calculation drafts as final doctrine;
 - do not recommend independent demigod worship;
 - reframe remedies through Krishna, sadhu-sanga, sadhana, service, and Srila Prabhupada.
@@ -59,4 +62,5 @@ Source import policy:
 
 - public-domain scans, such as the 1905 Brhat Jataka scan, can be used as import candidates;
 - modern translations of Phaladipika, Saravali, Jataka Parijata and similar works stay `copyright_review_required` until rights are checked;
+- Phaladipika by V. Subrahmanya Sastri is a `private_research_only_until_approved` translation-comparison candidate until rights are verified;
 - do not publish generated interpretations from unapproved passages.

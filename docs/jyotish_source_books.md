@@ -9,6 +9,7 @@
 | Brhat Jataka | Lagna, grahas, yogas, ashtakavarga anchors | `public_domain_scan`; source: <https://archive.org/details/brihatjataka00varaiala> |
 | Jataka Parijata | Natal judgment, yogas, bhava/graha synthesis | `copyright_review_required` |
 | Phaladipika | Graha results, yogas, dasha interpretation | `copyright_review_required`; source anchor: <https://openlibrary.org/works/OL1038542W/Mantreswara%27s_phaladeepika> |
+| Phaladipika - V. Subrahmanya Sastri translation | Translation comparison candidate for graha/yoga/dasha wording | `rights_review_required`; `private_research_only_until_approved`; OpenLibrary edition says 1937, user-provided 1932 claim still needs legal bibliographic check |
 | Saravali | Broad natal results, yogas, sign/house combinations | `copyright_review_required`; source anchor: <https://www.rarebooksocietyofindia.org/postDetail.php?id=196174216674_10153565781516675> |
 | Sarvartha Cintamani | Bhava and life-topic analysis | `research_only` until edition selected |
 
@@ -54,4 +55,6 @@
 - Public-domain scans can become OCR/import candidates.
 - Modern translations stay `copyright_review_required` until rights are checked.
 - No public generated interpretation may cite a passage until it is `approved`.
+- Multiple translation variants should be compared before final wording; public text must cite exact work, reference, edition and translator.
+- Copyright-review or private-research passages can guide internal review only; do not quote them publicly until approved/licensed.
 - BPHS is useful but not treated as the only or highest authority when older classics or Shyamasundara Dasa's methodology raise caution.

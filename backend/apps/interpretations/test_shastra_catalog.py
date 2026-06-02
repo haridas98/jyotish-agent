@@ -63,6 +63,10 @@ def test_seed_shastra_catalog_creates_idempotent_authority_sources_and_review_an
     assert "archive.org" in brhat_jataka.source_url
     assert brhat_jataka.metadata["access_policy"] == "public_domain_scan"
     assert SourceWork.objects.get(slug="phaladipika").metadata["access_policy"] == "copyright_review_required"
+    phaladipika_variant = SourceWork.objects.get(slug="phaladipika-subrahmanya-sastri")
+    assert phaladipika_variant.metadata["translation_variant"] == "V. Subrahmanya Sastri"
+    assert phaladipika_variant.metadata["rights_status"] == "rights_review_required"
+    assert phaladipika_variant.metadata["use_policy"] == "private_research_only_until_approved"
     assert SourceWork.objects.get(slug="brhat-parashara-hora-shastra").metadata["authority_note"] == "use_with_caution"
 
     passage = SourcePassage.objects.get(reference="Shyamasundara recommended reading list")

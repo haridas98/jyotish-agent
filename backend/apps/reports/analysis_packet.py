@@ -123,6 +123,7 @@ def render_analysis_prompt(packet: dict[str, Any]) -> str:
         "- если классический remedy требует поклонения грахе или полубогу, переформулируй через "
         "прибежище у Кришны, садхану, служение вайшнавам и наставления Шрилы Прабхупады;\n"
         "- оставляй review_status=draft, пока человек не проверит текст.\n\n"
+        f"{_translation_review_rules()}"
         "OUTPUT JSON schema:\n"
         "{\n"
         '  "review_status": "draft",\n'
@@ -169,6 +170,7 @@ def render_compatibility_analysis_prompt(packet: dict[str, Any]) -> str:
         "    }\n"
         "  ]\n"
         "}\n\n"
+        f"{_translation_review_rules()}"
         "COMPATIBILITY ANALYSIS PACKET JSON:\n"
         "```json\n"
         f"{json.dumps(packet_for_prompt, ensure_ascii=False, indent=2)}\n"
@@ -184,16 +186,29 @@ def _generator_policy() -> dict[str, Any]:
         "forbidden_outputs": [
             "independent_demigod_worship",
             "uncited_scriptural_claims",
+            "public_quotation_from_unreviewed_translation",
             "fatalistic_guarantees",
             "medical_legal_financial_directives",
         ],
         "required_behaviors": [
             "cite_only_packet_citations",
+            "compare_multiple_translation_variants",
+            "cite_exact_edition_translator_and_reference",
+            "flag_translation_conflicts",
             "mark_unverified_claims_for_review",
             "keep_remedies_krishna_centered",
             "preserve_calculation_uncertainty",
         ],
     }
+
+
+def _translation_review_rules() -> str:
+    return (
+        "- compare_multiple_translation_variants: when source variants are present, compare them before final wording;\n"
+        "- cite_exact_edition_translator_and_reference: every shastra quote must name work, chapter/verse if known, edition and translator;\n"
+        "- flag_translation_conflicts: if translations disagree, say it is a translation/edition issue and keep the conclusion draft;\n"
+        "- do not quote copyright_review_required or private_research_only passages in public text until approved.\n"
+    )
 
 
 def _compatibility_generator_policy() -> dict[str, Any]:

@@ -94,6 +94,8 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert packet["status"] == "ready_for_generation"
     assert packet["generator_policy"]["language"] == "ru"
     assert packet["generator_policy"]["forbidden_outputs"][0] == "independent_demigod_worship"
+    assert "compare_multiple_translation_variants" in packet["generator_policy"]["required_behaviors"]
+    assert "public_quotation_from_unreviewed_translation" in packet["generator_policy"]["forbidden_outputs"]
     assert packet["report"]["source_policy"] == "citation_first"
     assert packet["context"]["birth"]["date"] == "2000-01-01"
     assert packet["context"]["explanation_schedule"][0]["key"] == "calculation_audit"
@@ -117,6 +119,9 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert "explanation_schedule" in packet["prompt_markdown"]
     assert "detected_yoga_source_map" in packet["prompt_markdown"]
     assert "citation_requests" in packet["prompt_markdown"]
+    assert "compare_multiple_translation_variants" in packet["prompt_markdown"]
+    assert "cite_exact_edition_translator_and_reference" in packet["prompt_markdown"]
+    assert "flag_translation_conflicts" in packet["prompt_markdown"]
     assert "не выдумывай цитаты" in packet["prompt_markdown"]
     assert "independent demigod" in packet["prompt_markdown"]
 
@@ -154,6 +159,7 @@ def test_build_compatibility_analysis_packet_contains_two_chart_context_and_pers
     assert packet["schema_version"] == "jyotish-compatibility-analysis-packet-v1"
     assert packet["status"] == "needs_citation_review"
     assert packet["generator_policy"]["required_behaviors"][0] == "compare_both_charts_from_multiple_angles"
+    assert "compare_multiple_translation_variants" in packet["generator_policy"]["required_behaviors"]
     assert packet["context"]["compatibility"]["coverage"]["system"] == "ashtakuta_plus_chart_analysis"
     assert packet["context"]["person_a"]["chart"]["birth"]["date"] == "2000-01-01"
     assert packet["context"]["person_b"]["chart"]["birth"]["date"] == "2001-02-03"
@@ -164,6 +170,7 @@ def test_build_compatibility_analysis_packet_contains_two_chart_context_and_pers
     assert "compatibility" in packet["prompt_markdown"]
     assert "person_a" in packet["prompt_markdown"]
     assert "person_b" in packet["prompt_markdown"]
+    assert "compare_multiple_translation_variants" in packet["prompt_markdown"]
     assert "independent demigod" in packet["prompt_markdown"]
 
 
