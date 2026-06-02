@@ -5,6 +5,7 @@ from apps.calculations.classical import (
     classical_calculations,
     shadbala_summary,
     special_points,
+    vimshopaka_bala,
     yoga_signatures,
 )
 
@@ -130,6 +131,27 @@ def test_special_points_include_day_and_night_lots_without_upagraha_claims():
     assert points["upagrahas"]["items"][0]["local_time"] == "12:45"
 
 
+def test_special_points_include_solar_upagrahas_from_sun_longitude():
+    chart = {
+        "birth": {"local_datetime": "2026-06-02T10:00:00+05:30"},
+        "ascendant": {"longitude": 90.0},
+        "grahas": [
+            {"body": "Surya", "longitude": 10.0},
+            {"body": "Chandra", "longitude": 70.0},
+        ],
+    }
+
+    points = special_points(chart)
+    rows = {point["key"]: point for point in points["upagrahas"]["items"]}
+
+    assert rows["dhuma"]["longitude"] == 143.333333
+    assert rows["vyatipata"]["longitude"] == 216.666667
+    assert rows["parivesha"]["longitude"] == 36.666667
+    assert rows["indrachapa"]["longitude"] == 323.333333
+    assert rows["upaketu"]["longitude"] == 340.0
+    assert rows["dhuma"]["calculation_note"] == "Solar upagraha from Surya longitude."
+
+
 def test_special_points_calculate_indu_lagna_when_lagna_and_moon_are_present():
     chart = {
         "ascendant": {"longitude": 0.0, "rashi_index": 0, "rashi": "Mesha"},
@@ -200,6 +222,78 @@ def test_shadbala_summary_adds_natural_exaltation_and_directional_components():
     assert rows["Shani"]["components"]["kala"] == 0.0
 
 
+def test_vimshopaka_bala_uses_weighted_varga_schemes_not_support_count_proxy():
+    chart = {
+        "grahas": [{"body": "Surya", "rashi": "Simha"}],
+        "vargas": {
+            code: {"placements": [{"body": "Surya", "rashi": "Simha"}]}
+            for code in (
+                "D1",
+                "D2",
+                "D3",
+                "D4",
+                "D7",
+                "D9",
+                "D10",
+                "D12",
+                "D16",
+                "D20",
+                "D24",
+                "D27",
+                "D30",
+                "D40",
+                "D45",
+                "D60",
+            )
+        },
+    }
+
+    result = vimshopaka_bala(chart)
+    row = result["items"][0]
+
+    assert result["status"] == "calculated_needs_jhora_audit"
+    assert row["body"] == "Surya"
+    assert row["primary_scheme"] == "shodasha"
+    assert row["score"] == 20.0
+    assert row["percentage"] == 100.0
+    assert row["scheme_scores"]["shadvarga"] == 20.0
+    assert row["scheme_scores"]["saptavarga"] == 20.0
+    assert row["scheme_scores"]["dashavarga"] == 20.0
+    assert row["scheme_scores"]["shodasha"] == 20.0
+    assert row["varga_scores"]["D1"]["weight"] == 3.5
+    assert row["varga_scores"]["D1"]["dignity"] == "own"
+    assert row["varga_scores"]["D1"]["factor"] == 1.0
+
+
+def test_vimshopaka_bala_scores_friend_neutral_enemy_and_debilitation_dignities():
+    chart = {
+        "grahas": [{"body": "Surya", "rashi": "Simha"}],
+        "vargas": {
+            "D1": {"placements": [{"body": "Surya", "rashi": "Simha"}]},
+            "D2": {"placements": [{"body": "Surya", "rashi": "Karka"}]},
+            "D3": {"placements": [{"body": "Surya", "rashi": "Kanya"}]},
+            "D9": {"placements": [{"body": "Surya", "rashi": "Tula"}]},
+            "D12": {"placements": [{"body": "Surya", "rashi": "Makara"}]},
+            "D30": {"placements": [{"body": "Surya", "rashi": "Mesha"}]},
+        },
+    }
+
+    result = vimshopaka_bala(chart)
+    row = result["items"][0]
+
+    assert row["scheme_scores"]["shadvarga"] == 11.0
+    assert row["varga_scores"]["D2"]["dignity"] == "friend"
+    assert row["varga_scores"]["D2"]["factor"] == 0.75
+    assert row["varga_scores"]["D3"]["dignity"] == "neutral"
+    assert row["varga_scores"]["D3"]["factor"] == 0.5
+    assert row["varga_scores"]["D9"]["dignity"] == "debilitation"
+    assert row["varga_scores"]["D9"]["factor"] == 0.0
+    assert row["varga_scores"]["D12"]["dignity"] == "enemy"
+    assert row["varga_scores"]["D12"]["factor"] == 0.25
+    assert row["varga_scores"]["D30"]["dignity"] == "exaltation"
+    assert row["varga_scores"]["D30"]["factor"] == 1.0
+
+
 def test_classical_calculations_payload_is_explicit_about_audited_and_pending_layers():
     chart = {
         "ascendant": {"longitude": 90.0, "rashi_index": 3, "rashi": "Karka"},
@@ -227,6 +321,6 @@ def test_classical_calculations_payload_is_explicit_about_audited_and_pending_la
     assert payload["avasthas"]["baladi"][0]["body"] == "Surya"
     assert payload["yogas"]["status"] == "partial_calculated_needs_citation"
     assert payload["yogas"]["items"][0]["key"] == "gaja_kesari"
-    assert payload["vimshopaka_bala"]["status"] == "partial_calculated_needs_jhora_audit"
+    assert payload["vimshopaka_bala"]["status"] == "calculated_needs_jhora_audit"
     assert payload["ashtakavarga"]["sarva"]["total"] == 337
     assert payload["shadbala"]["items"][0]["body"] == "Surya"

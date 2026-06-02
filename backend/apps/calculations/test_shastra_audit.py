@@ -41,3 +41,6 @@ def test_shastra_audit_payload_marks_verified_and_partial_layers():
     assert payload["items_by_key"]["ashtakavarga"]["public_claim"] == "source_backed_not_jhora_verified"
     assert payload["items_by_key"]["shadbala"]["implementation_status"] == "partial"
     assert payload["items_by_key"]["shadbala"]["can_generate_client_interpretation"] is False
+    assert payload["items_by_key"]["vimshopaka"]["implementation_status"] == "calculated_needs_jhora_audit"
+    assert payload["items_by_key"]["vimshopaka"]["can_generate_client_interpretation"] is False
+    assert payload["items_by_key"]["upagrahas"]["implementation_status"] == "calculated_needs_jhora_audit"

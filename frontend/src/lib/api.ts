@@ -162,8 +162,24 @@ export type SpecialPoint = {
 
 export type VimshopakaRow = {
   body: string;
+  primary_scheme: string;
+  score: number;
+  percentage: number;
+  scheme_scores: Record<string, number>;
+  scheme_percentages: Record<string, number>;
+  varga_scores: Record<
+    string,
+    {
+      rashi: string;
+      weight: number;
+      dignity: string;
+      factor: number;
+      score: number;
+    }
+  >;
   supportive_vargas: string[];
   support_count: number;
+  missing_vargas: string[];
 };
 
 export type AshtakavargaBody = {

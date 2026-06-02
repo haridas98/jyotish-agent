@@ -27,9 +27,10 @@ Currently blocked for final interpretation:
 - avasthas: calculated, text-rule review open;
 - ashtakavarga: Brhat Jataka based, JHora/service diff open;
 - shadbala: partial only, not full shadbala;
-- vimshopaka: temporary proxy;
+- vimshopaka: weighted calculation across shadvarga/saptavarga/dashavarga/shodasha schemes; JHora and tradition audit still required;
 - yogas: detected conditions only, exact citations/cancellations pending;
-- argala, upagrahas, special points: partial/source audit open;
+- argala and special points: partial/source audit open;
+- upagrahas: Gulika plus Dhuma/Vyatipata/Parivesha/Indrachapa/Upaketu calculated; JHora audit open;
 - transits, compatibility, muhurta: API/baseline only, not final counsel.
 
 ## Source Anchors

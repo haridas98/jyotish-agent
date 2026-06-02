@@ -127,10 +127,10 @@ const auditSourceBasisRu: Record<string, string> = {
   avasthas: "Авастхи по градусным диапазонам с учётом нечётных/чётных знаков.",
   ashtakavarga: "Brhat Jataka IX и стандартная сумма SAV 337 бинду.",
   shadbala: "Сейчас это не полная шадбала, а только часть компонентов.",
-  vimshopaka: "Пока временная оценка; нужна утверждённая таблица весов варг.",
+  vimshopaka: "Взвешенный расчёт есть; нужна сверка JHora и традиции перед публичной интерпретацией.",
   yogas: "Показываются условия йог, но не окончательное предсказание.",
   argala: "Структурная аргала; нужна сверка традиции применения.",
-  upagrahas: "Сейчас надёжно выводится только Гулика.",
+  upagrahas: "Гулика и солнечные упаграхи рассчитаны; нужна JHora-сверка перед интерпретацией.",
   special_points: "Нужна точная привязка формул к источникам.",
   transits: "API готов, правила интерпретации транзитов ещё не финальны.",
   compatibility: "Базовая аштакута не заменяет традиционное наставление.",
@@ -581,6 +581,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
   const lots = classical.special_points?.arabic_lots ?? [];
   const upagrahas = classical.special_points?.upagrahas.items ?? [];
   const vedicPoints = classical.special_points?.vedic_points.items ?? [];
+  const vimshopaka = classical.vimshopaka_bala?.items ?? [];
   const shadbala = classical.shadbala?.items ?? [];
   const ashtakavarga = classical.ashtakavarga;
 
@@ -686,6 +687,19 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
                 <span>{labelRu(body)}</span>
                 <strong>{row.total}</strong>
                 <small>{row.scores.join(" ")}</small>
+              </div>
+            ))}
+          </div>
+          <div className="classical-list">
+            <h3>Вимшопака</h3>
+            {vimshopaka.slice(0, 7).map((row) => (
+              <div key={row.body}>
+                <span>{labelRu(row.body)}</span>
+                <strong>{row.score.toFixed(2)} / 20</strong>
+                <small>
+                  {row.primary_scheme}; D1 {row.varga_scores.D1?.dignity ?? "-"}; D9{" "}
+                  {row.varga_scores.D9?.dignity ?? "-"}
+                </small>
               </div>
             ))}
           </div>

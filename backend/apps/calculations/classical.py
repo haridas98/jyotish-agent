@@ -193,6 +193,86 @@ ASHTAKAVARGA_RULES = {
 
 WEEKDAY_LORDS = ("Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Surya")
 
+VIMSHOPAKA_SCHEMES = {
+    "shadvarga": {
+        "D1": 6.0,
+        "D2": 2.0,
+        "D3": 4.0,
+        "D9": 5.0,
+        "D12": 2.0,
+        "D30": 1.0,
+    },
+    "saptavarga": {
+        "D1": 5.0,
+        "D2": 2.0,
+        "D3": 3.0,
+        "D7": 2.5,
+        "D9": 4.5,
+        "D12": 2.0,
+        "D30": 1.0,
+    },
+    "dashavarga": {
+        "D1": 3.0,
+        "D2": 1.5,
+        "D3": 1.5,
+        "D7": 1.5,
+        "D9": 2.5,
+        "D10": 1.5,
+        "D12": 1.5,
+        "D16": 2.0,
+        "D30": 1.0,
+        "D60": 4.0,
+    },
+    "shodasha": {
+        "D1": 3.5,
+        "D2": 1.0,
+        "D3": 1.0,
+        "D4": 0.5,
+        "D7": 0.5,
+        "D9": 3.0,
+        "D10": 0.5,
+        "D12": 0.5,
+        "D16": 2.0,
+        "D20": 0.5,
+        "D24": 0.5,
+        "D27": 0.5,
+        "D30": 1.0,
+        "D40": 0.5,
+        "D45": 0.5,
+        "D60": 4.0,
+    },
+}
+
+NATURAL_FRIENDS = {
+    "Surya": {"Chandra", "Mangala", "Guru"},
+    "Chandra": {"Surya", "Budha"},
+    "Mangala": {"Surya", "Chandra", "Guru"},
+    "Budha": {"Surya", "Shukra"},
+    "Guru": {"Surya", "Chandra", "Mangala"},
+    "Shukra": {"Budha", "Shani"},
+    "Shani": {"Budha", "Shukra"},
+}
+
+NATURAL_NEUTRALS = {
+    "Surya": {"Budha"},
+    "Chandra": {"Mangala", "Guru", "Shukra", "Shani"},
+    "Mangala": {"Shukra", "Shani"},
+    "Budha": {"Mangala", "Guru", "Shani"},
+    "Guru": {"Shani"},
+    "Shukra": {"Mangala", "Guru"},
+    "Shani": {"Guru"},
+}
+
+MOOLATRIKONA_SIGNS = {
+    "Surya": "Simha",
+    "Chandra": "Vrishabha",
+    "Mangala": "Mesha",
+    "Budha": "Kanya",
+    "Guru": "Dhanu",
+    "Shukra": "Tula",
+    "Shani": "Kumbha",
+}
+
 
 def classical_calculations(chart: dict[str, Any]) -> dict[str, Any]:
     return {
@@ -398,30 +478,106 @@ def shadbala_summary(chart: dict[str, Any]) -> dict[str, object]:
 
 def vimshopaka_bala(chart: dict[str, Any]) -> dict[str, object]:
     grahas = _graha_index(chart)
+    vargas = chart.get("vargas") or {}
     rows = []
     for body in grahas:
         if body not in OWN_SIGNS and body not in EXALTATION_SIGNS:
             continue
-        supportive = []
-        for code, varga in (chart.get("vargas") or {}).items():
-            placement = _varga_placement(varga, body)
-            if not placement:
-                continue
-            rashi = str(placement.get("rashi") or "")
-            if rashi in OWN_SIGNS.get(body, set()) or rashi == EXALTATION_SIGNS.get(body):
-                supportive.append(code)
+        varga_scores = _vimshopaka_varga_scores(body, vargas)
+        scheme_scores = {
+            scheme: _vimshopaka_scheme_score(weights, varga_scores)
+            for scheme, weights in VIMSHOPAKA_SCHEMES.items()
+        }
+        primary_score = scheme_scores["shodasha"]
+        supportive = [
+            code
+            for code, score in varga_scores.items()
+            if score["factor"] == 1.0 and code in VIMSHOPAKA_SCHEMES["shodasha"]
+        ]
         rows.append(
             {
                 "body": body,
+                "primary_scheme": "shodasha",
+                "score": primary_score,
+                "percentage": round(primary_score * 5.0, 2),
+                "scheme_scores": scheme_scores,
+                "scheme_percentages": {
+                    scheme: round(score * 5.0, 2) for scheme, score in scheme_scores.items()
+                },
+                "varga_scores": varga_scores,
                 "supportive_vargas": supportive,
                 "support_count": len(supportive),
+                "missing_vargas": [
+                    code for code in VIMSHOPAKA_SCHEMES["shodasha"] if code not in varga_scores
+                ],
             }
         )
     return {
-        "status": "partial_calculated_needs_jhora_audit",
-        "method": "Temporary own/exaltation varga support count; not final Vimshopaka/Shadbala.",
+        "status": "calculated_needs_jhora_audit",
+        "method": (
+            "Weighted Vimshopaka Bala across shadvarga, saptavarga, dashavarga and "
+            "shodasha-varga schemes; dignity factors still require JHora and text audit."
+        ),
         "items": rows,
     }
+
+
+def _vimshopaka_varga_scores(
+    body: str,
+    vargas: object,
+) -> dict[str, dict[str, object]]:
+    if not isinstance(vargas, dict):
+        return {}
+    scores: dict[str, dict[str, object]] = {}
+    for code, weight in VIMSHOPAKA_SCHEMES["shodasha"].items():
+        placement = _varga_placement(vargas.get(code), body)
+        if not placement:
+            continue
+        rashi = str(placement.get("rashi") or "")
+        dignity, factor = _varga_dignity(body, rashi)
+        scores[code] = {
+            "rashi": rashi,
+            "weight": weight,
+            "dignity": dignity,
+            "factor": factor,
+            "score": round(weight * factor, 2),
+        }
+    return scores
+
+
+def _vimshopaka_scheme_score(
+    weights: dict[str, float],
+    varga_scores: dict[str, dict[str, object]],
+) -> float:
+    total = 0.0
+    for code, weight in weights.items():
+        factor = _float_or_none(varga_scores.get(code, {}).get("factor"))
+        if factor is not None:
+            total += weight * factor
+    return round(total, 2)
+
+
+def _varga_dignity(body: str, rashi: str) -> tuple[str, float]:
+    if not rashi:
+        return "missing", 0.0
+    if rashi == EXALTATION_SIGNS.get(body):
+        return "exaltation", 1.0
+    if rashi in OWN_SIGNS.get(body, set()):
+        return "own", 1.0
+    if rashi == MOOLATRIKONA_SIGNS.get(body):
+        return "moolatrikona", 1.0
+    if rashi == _debilitation_sign(body):
+        return "debilitation", 0.0
+
+    try:
+        lord = _rashi_lord(RASHIS.index(rashi))
+    except ValueError:
+        return "unknown", 0.0
+    if lord in NATURAL_FRIENDS.get(body, set()):
+        return "friend", 0.75
+    if lord in NATURAL_NEUTRALS.get(body, set()):
+        return "neutral", 0.5
+    return "enemy", 0.25
 
 
 def _baladi_rows(chart: dict[str, Any]) -> list[dict[str, object]]:
@@ -674,6 +830,7 @@ def _point_payload(key: str, name: str, longitude: float) -> dict[str, object]:
 
 
 def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
+    solar_items = _solar_upagrahas(chart)
     context = chart.get("upagraha_context")
     if isinstance(context, dict):
         segment = context.get("gulika")
@@ -695,7 +852,7 @@ def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
             return {
                 "status": "calculated_needs_jhora_audit",
                 "method": "Gulika/Mandi uses actual sunrise/sunset period segmentation and midpoint Lagna.",
-                "items": [item],
+                "items": [item, *solar_items],
             }
 
     birth = chart.get("birth", {})
@@ -703,17 +860,17 @@ def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
     ascendant = _body_longitude(chart.get("ascendant"))
     if not isinstance(raw_moment, str):
         return {
-            "status": "missing_birth_time",
-            "items": [],
-            "method": "Needs local birth datetime.",
+            "status": "partial_missing_birth_time" if solar_items else "missing_birth_time",
+            "items": solar_items,
+            "method": "Needs local birth datetime for Gulika; solar upagrahas use Surya longitude.",
         }
     try:
         moment = datetime.fromisoformat(raw_moment)
     except ValueError:
         return {
-            "status": "invalid_birth_time",
-            "items": [],
-            "method": "Needs ISO local birth datetime.",
+            "status": "partial_invalid_birth_time" if solar_items else "invalid_birth_time",
+            "items": solar_items,
+            "method": "Needs ISO local birth datetime for Gulika; solar upagrahas use Surya longitude.",
         }
     gulika_time = _saturn_segment_midpoint(moment)
     offset_hours = (gulika_time.hour + gulika_time.minute / 60) - (moment.hour + moment.minute / 60)
@@ -724,9 +881,37 @@ def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
     item["calculation_note"] = "Approximate weekday Saturn segment; sunrise/sunset audit pending."
     return {
         "status": "calculated_needs_jhora_audit",
-        "method": "Civil 06:00-18:00/18:00-06:00 Saturn segment approximation pending JHora audit.",
-        "items": [item],
+        "method": (
+            "Civil 06:00-18:00/18:00-06:00 Saturn segment approximation plus solar "
+            "upagrahas; pending JHora audit."
+        ),
+        "items": [item, *solar_items],
     }
+
+
+def _solar_upagrahas(chart: dict[str, Any]) -> list[dict[str, object]]:
+    sun = _body_longitude(_graha_index(chart).get("Surya"))
+    if sun is None:
+        return []
+
+    dhuma = normalize_degrees(sun + 133.33333333333334)
+    vyatipata = normalize_degrees(360.0 - dhuma)
+    parivesha = normalize_degrees(vyatipata + 180.0)
+    indrachapa = normalize_degrees(360.0 - parivesha)
+    upaketu = normalize_degrees(indrachapa + 16.666666666666668)
+    return [
+        _solar_upagraha_payload("dhuma", "Dhuma", dhuma),
+        _solar_upagraha_payload("vyatipata", "Vyatipata", vyatipata),
+        _solar_upagraha_payload("parivesha", "Parivesha", parivesha),
+        _solar_upagraha_payload("indrachapa", "Indrachapa", indrachapa),
+        _solar_upagraha_payload("upaketu", "Upaketu", upaketu),
+    ]
+
+
+def _solar_upagraha_payload(key: str, name: str, longitude: float) -> dict[str, object]:
+    item = _point_payload(key, name, longitude)
+    item["calculation_note"] = "Solar upagraha from Surya longitude."
+    return item
 
 
 def _vedic_points(chart: dict[str, Any]) -> dict[str, object]:
