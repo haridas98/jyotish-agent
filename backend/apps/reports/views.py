@@ -42,14 +42,16 @@ class BirthAnalysisPacketView(APIView):
 
     def post(self, request):
         try:
-            return Response(
-                build_analysis_packet(
-                    request.data,
-                    citation_search=vl_citation_search,
-                    research_search=local_research_corpus_search,
-                    interpretation_provider=public_interpretation_sections_for_chart,
-                )
+            packet = build_analysis_packet(
+                request.data,
+                citation_search=vl_citation_search,
+                research_search=local_research_corpus_search,
+                interpretation_provider=public_interpretation_sections_for_chart,
+                include_prompt=_include_prompt(request),
             )
+            if not _include_prompt(request):
+                packet = {key: value for key, value in packet.items() if key != "prompt_markdown"}
+            return Response(packet)
         except ChartInputError as exc:
             return Response({"error": str(exc)}, status=400)
         except EphemerisUnavailable as exc:
@@ -87,6 +89,7 @@ class BirthCodexAnalysisView(APIView):
                     citation_search=vl_citation_search,
                     research_search=local_research_corpus_search,
                     interpretation_provider=public_interpretation_sections_for_chart,
+                    refresh_evidence=False,
                 )
             )
         except ChartInputError as exc:
@@ -139,3 +142,7 @@ def vl_citation_search(query: str) -> list[dict[str, object]]:
         limit=3,
         public_base_url=settings.VL_PUBLIC_BASE_URL,
     )
+
+
+def _include_prompt(request) -> bool:
+    return str(request.query_params.get("include_prompt") or "").lower() in {"1", "true", "yes"}

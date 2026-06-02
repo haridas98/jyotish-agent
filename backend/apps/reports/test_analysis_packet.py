@@ -250,13 +250,25 @@ def test_analysis_packet_includes_persisted_shastra_evidence():
 @pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_analysis_packet_api_returns_packet(monkeypatch):
-    monkeypatch.setattr(
-        "apps.reports.views.build_analysis_packet",
-        lambda data, citation_search=None, research_search=None, interpretation_provider=None: {
+    captured = {}
+
+    def fake_build_analysis_packet(
+        data,
+        citation_search=None,
+        research_search=None,
+        interpretation_provider=None,
+        include_prompt=True,
+    ):
+        captured["include_prompt"] = include_prompt
+        return {
             "schema_version": "jyotish-analysis-packet-v1",
             "status": "ready_for_generation",
             "prompt_markdown": "prompt",
-        },
+        }
+
+    monkeypatch.setattr(
+        "apps.reports.views.build_analysis_packet",
+        fake_build_analysis_packet,
     )
 
     response = APIClient().post(
@@ -271,6 +283,47 @@ def test_analysis_packet_api_returns_packet(monkeypatch):
 
     assert response.status_code == 200
     assert response.data["schema_version"] == "jyotish-analysis-packet-v1"
+    assert "prompt_markdown" not in response.data
+    assert captured["include_prompt"] is False
+
+
+@pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="")
+def test_analysis_packet_api_can_include_prompt_when_requested(monkeypatch):
+    captured = {}
+
+    def fake_build_analysis_packet(
+        data,
+        citation_search=None,
+        research_search=None,
+        interpretation_provider=None,
+        include_prompt=True,
+    ):
+        captured["include_prompt"] = include_prompt
+        return {
+            "schema_version": "jyotish-analysis-packet-v1",
+            "status": "ready_for_generation",
+            "prompt_markdown": "prompt",
+        }
+
+    monkeypatch.setattr(
+        "apps.reports.views.build_analysis_packet",
+        fake_build_analysis_packet,
+    )
+
+    response = APIClient().post(
+        "/api/reports/birth-chart/analysis-packet?include_prompt=1",
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["prompt_markdown"] == "prompt"
+    assert captured["include_prompt"] is True
 
 
 @pytest.mark.django_db

@@ -37,6 +37,7 @@ def generate_birth_chart_codex_cli_analysis(
         citation_search=citation_search,
         research_search=research_search,
         interpretation_provider=interpretation_provider,
+        include_prompt=False,
     )
     prompt = render_codex_cli_analysis_prompt(packet)
     raw_output = (codex_runner or codex_exec_runner)(prompt)
@@ -51,12 +52,16 @@ def generate_birth_chart_codex_cli_analysis(
         provider="codex_cli",
         model="codex_exec",
         input_snapshot=data,
-        packet_snapshot=packet,
+        packet_snapshot=_record_packet_snapshot(packet),
         output_json=output,
         prompt_markdown=prompt,
     )
     output["id"] = record.id
     return output
+
+
+def _record_packet_snapshot(packet: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in packet.items() if key != "prompt_markdown"}
 
 
 def render_codex_cli_analysis_prompt(packet: dict[str, Any]) -> str:
@@ -106,15 +111,94 @@ def _compact_packet_for_codex_cli(packet: dict[str, Any]) -> dict[str, Any]:
         "place": context.get("place", {}),
         "settings": context.get("settings", {}),
         "chart_facts": context.get("chart_facts", {}),
-        "person_summary": context.get("person_summary", {}),
-        "detected_yoga_source_map": context.get("detected_yoga_source_map", []),
-        "sections": context.get("sections", []),
-        "citations": packet.get("citations", []),
+        "person_summary": _compact_person_summary(context.get("person_summary")),
+        "detected_yoga_source_map": _compact_yoga_source_map(context.get("detected_yoga_source_map", [])),
+        "sections": _compact_report_sections(context.get("sections", [])),
+        "citations": _compact_citations(packet.get("citations", [])),
         "shastra_coverage_summary": (packet.get("shastra_coverage") or {}).get("summary", {}),
         "shastra_condition_summary": (packet.get("shastra_condition_matrix") or {}).get("summary", {}),
         "shastra_evidence": _compact_evidence(packet.get("shastra_evidence"), relevant_keys),
         "source_rules": (packet.get("shastra_evidence") or {}).get("prompt_rules", []),
     }
+
+
+def _compact_person_summary(summary: object) -> dict[str, Any]:
+    if not isinstance(summary, dict):
+        return {}
+    allowed_keys = {
+        "birth_context",
+        "core_factors",
+        "graha_houses",
+        "houses",
+        "panchanga",
+        "dasha",
+    }
+    return {key: summary[key] for key in allowed_keys if key in summary}
+
+
+def _compact_yoga_source_map(rows: object) -> list[dict[str, Any]]:
+    if not isinstance(rows, list):
+        return []
+    compact = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        compact.append(
+            {
+                "key": row.get("catalog_key") or row.get("key"),
+                "name": row.get("name"),
+                "detected_status": row.get("detected_status"),
+                "source_mapping_status": row.get("source_mapping_status"),
+                "public_release_policy": row.get("public_release_policy"),
+                "category": row.get("category"),
+                "source_priority": row.get("source_priority", []),
+                "definition_scope": row.get("definition_scope"),
+                "bodies": row.get("bodies", []),
+                "reference": row.get("reference"),
+            }
+        )
+    return compact
+
+
+def _compact_report_sections(sections: object) -> list[dict[str, Any]]:
+    if not isinstance(sections, list):
+        return []
+    compact = []
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        compact.append(
+            {
+                "key": section.get("key"),
+                "title": section.get("title"),
+                "review_status": section.get("review_status"),
+                "body": str(section.get("body") or "")[:500],
+                "citation_titles": [
+                    str(citation.get("title") or citation.get("work_title") or "")
+                    for citation in section.get("citations", [])
+                    if isinstance(citation, dict)
+                ][:3],
+            }
+        )
+    return compact
+
+
+def _compact_citations(citations: object) -> list[dict[str, Any]]:
+    if not isinstance(citations, list):
+        return []
+    compact = []
+    for citation in citations[:5]:
+        if not isinstance(citation, dict):
+            continue
+        compact.append(
+            {
+                "title": citation.get("title"),
+                "work_title": citation.get("work_title"),
+                "public_url": citation.get("public_url"),
+                "snippet": str(citation.get("snippet") or "")[:280],
+            }
+        )
+    return compact
 
 
 def _relevant_condition_keys(packet: dict[str, Any]) -> set[str]:
@@ -155,7 +239,7 @@ def _compact_evidence(evidence_payload: object, relevant_keys: set[str]) -> dict
                 "condition_title": row.get("condition_title"),
                 "condition_summary": row.get("condition_summary"),
                 "evidence_status": row.get("evidence_status"),
-                "evidence": [_compact_evidence_item(item) for item in (row.get("evidence") or [])[:2]],
+                "evidence": [_compact_evidence_item(item) for item in (row.get("evidence") or [])[:1]],
             }
         )
     return {
@@ -179,7 +263,7 @@ def _compact_evidence_item(item: object) -> dict[str, Any]:
         "review_status": item.get("review_status"),
         "public_quote_policy": item.get("public_quote_policy"),
         "matched_terms": item.get("matched_terms", []),
-        "snippet": str(item.get("snippet") or "")[:700],
+        "snippet": str(item.get("snippet") or "")[:220],
     }
 
 

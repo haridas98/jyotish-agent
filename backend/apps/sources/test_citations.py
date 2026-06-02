@@ -178,6 +178,32 @@ def test_source_coverage_matrix_counts_private_chunks_and_missing_sources():
     assert row["needs_exact_mapping"] is True
 
 
+def test_source_coverage_matrix_reuses_duplicate_source_lookups(monkeypatch):
+    calls = []
+
+    def fake_source_coverage(source_key):
+        calls.append(source_key)
+        return {
+            "source_key": str(source_key),
+            "coverage_status": "missing",
+            "works": [],
+            "approved_passages": 0,
+            "research_passages": 0,
+            "private_full_text_chunks": 0,
+        }
+
+    monkeypatch.setattr("apps.sources.coverage._source_coverage", fake_source_coverage)
+
+    source_coverage_matrix(
+        [
+            {"key": "first", "source_priority": ["brhat-jataka", "phaladipika"]},
+            {"key": "second", "source_priority": ["brhat-jataka", "phaladipika"]},
+        ]
+    )
+
+    assert calls == ["brhat-jataka", "phaladipika"]
+
+
 @pytest.mark.django_db
 def test_source_coverage_api_returns_matrix():
     SourceWork.objects.create(

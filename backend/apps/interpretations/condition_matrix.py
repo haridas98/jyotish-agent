@@ -10,9 +10,21 @@ from .yoga_catalog import yoga_registry
 
 
 def shastra_condition_matrix() -> dict[str, Any]:
-    calculation_rows = [_calculation_row(row) for row in CALCULATION_SHASTRA_AUDIT]
-    section_rows = [_section_row(row) for row in explanation_schedule()]
-    yoga_rows = [_yoga_row(row) for row in yoga_registry()]
+    calculation_inputs = list(CALCULATION_SHASTRA_AUDIT)
+    section_inputs = explanation_schedule()
+    yoga_inputs = yoga_registry()
+    coverage_layers = iter(
+        source_coverage_matrix(
+            [
+                *[_calculation_coverage_target(row) for row in calculation_inputs],
+                *[_section_coverage_target(row) for row in section_inputs],
+                *[_yoga_coverage_target(row) for row in yoga_inputs],
+            ]
+        )["layers"]
+    )
+    calculation_rows = [_calculation_row(row, next(coverage_layers)) for row in calculation_inputs]
+    section_rows = [_section_row(row, next(coverage_layers)) for row in section_inputs]
+    yoga_rows = [_yoga_row(row, next(coverage_layers)) for row in yoga_inputs]
     conditions = calculation_rows + section_rows + yoga_rows
     return {
         "schema_version": "jyotish-shastra-condition-matrix-v1",
@@ -30,13 +42,7 @@ def shastra_condition_matrix() -> dict[str, Any]:
     }
 
 
-def _calculation_row(row: dict[str, Any]) -> dict[str, Any]:
-    coverage = _coverage_for(
-        key=str(row["key"]),
-        label=str(row["label"]),
-        source_priority=_string_list(row.get("source_priority")),
-        source_basis=str(row.get("source_basis") or ""),
-    )
+def _calculation_row(row: dict[str, Any], coverage: dict[str, Any]) -> dict[str, Any]:
     return {
         "kind": "calculation_layer",
         "key": str(row["key"]),
@@ -52,13 +58,8 @@ def _calculation_row(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _section_row(row: dict[str, Any]) -> dict[str, Any]:
+def _section_row(row: dict[str, Any], coverage: dict[str, Any]) -> dict[str, Any]:
     source_priority = _string_list(row.get("source_priority"))
-    coverage = _coverage_for(
-        key=str(row["key"]),
-        label=str(row.get("title_ru") or row["key"]),
-        source_priority=source_priority,
-    )
     return {
         "kind": "report_section",
         "key": str(row["key"]),
@@ -74,15 +75,9 @@ def _section_row(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _yoga_row(row: dict[str, Any]) -> dict[str, Any]:
+def _yoga_row(row: dict[str, Any], coverage: dict[str, Any]) -> dict[str, Any]:
     title = str(row.get("name") or row["key"])
     source_priority = _string_list(row.get("source_priority"))
-    coverage = _coverage_for(
-        key=str(row["key"]),
-        label=title,
-        source_priority=source_priority,
-        source_basis=str(row.get("definition_scope") or ""),
-    )
     return {
         "kind": "yoga_condition",
         "key": str(row["key"]),
@@ -101,24 +96,30 @@ def _yoga_row(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _coverage_for(
-    *,
-    key: str,
-    label: str,
-    source_priority: list[str],
-    source_basis: str = "",
-) -> dict[str, Any]:
-    coverage = source_coverage_matrix(
-        [
-            {
-                "key": key,
-                "label": label,
-                "source_priority": source_priority,
-                "source_basis": source_basis,
-            }
-        ]
-    )
-    return coverage["layers"][0]
+def _calculation_coverage_target(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "key": str(row["key"]),
+        "label": str(row["label"]),
+        "source_priority": _string_list(row.get("source_priority")),
+        "source_basis": str(row.get("source_basis") or ""),
+    }
+
+
+def _section_coverage_target(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "key": str(row["key"]),
+        "label": str(row.get("title_ru") or row["key"]),
+        "source_priority": _string_list(row.get("source_priority")),
+    }
+
+
+def _yoga_coverage_target(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "key": str(row["key"]),
+        "label": str(row.get("name") or row["key"]),
+        "source_priority": _string_list(row.get("source_priority")),
+        "source_basis": str(row.get("definition_scope") or ""),
+    }
 
 
 def _release_policy(coverage: dict[str, Any]) -> str:

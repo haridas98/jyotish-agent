@@ -23,7 +23,8 @@ ALIASES = {
 
 
 def source_coverage_matrix(targets: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    layers = [_layer_coverage(item) for item in (targets or CALCULATION_SHASTRA_AUDIT)]
+    source_cache: dict[str, dict[str, Any]] = {}
+    layers = [_layer_coverage(item, source_cache=source_cache) for item in (targets or CALCULATION_SHASTRA_AUDIT)]
     return {
         "schema_version": "jyotish-source-coverage-v1",
         "summary": {
@@ -46,8 +47,8 @@ def source_coverage_matrix(targets: list[dict[str, Any]] | None = None) -> dict[
     }
 
 
-def _layer_coverage(item: dict[str, Any]) -> dict[str, Any]:
-    sources = [_source_coverage(source_key) for source_key in item.get("source_priority", [])]
+def _layer_coverage(item: dict[str, Any], *, source_cache: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    sources = [_cached_source_coverage(source_key, source_cache) for source_key in item.get("source_priority", [])]
     approved_count = sum(int(source["approved_passages"]) for source in sources)
     private_count = sum(int(source["private_full_text_chunks"]) for source in sources)
     research_count = sum(int(source["research_passages"]) for source in sources)
@@ -62,6 +63,13 @@ def _layer_coverage(item: dict[str, Any]) -> dict[str, Any]:
         "needs_exact_mapping": approved_count == 0,
         "sources": sources,
     }
+
+
+def _cached_source_coverage(source_key: object, source_cache: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    raw_key = str(source_key or "").strip()
+    if raw_key not in source_cache:
+        source_cache[raw_key] = _source_coverage(raw_key)
+    return source_cache[raw_key]
 
 
 def _source_coverage(source_key: object) -> dict[str, Any]:

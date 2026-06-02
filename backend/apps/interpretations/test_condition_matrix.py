@@ -42,3 +42,29 @@ def test_shastra_condition_matrix_api_returns_conditions():
 
     assert response.status_code == 200
     assert response.json()["summary"]["total_conditions"] > 0
+
+
+def test_shastra_condition_matrix_batches_source_coverage(monkeypatch):
+    calls = []
+
+    def fake_source_coverage_matrix(targets=None):
+        calls.append(targets)
+        layers = [
+            {
+                "key": str(item["key"]),
+                "coverage_status": "missing_sources",
+                "needs_exact_mapping": True,
+            }
+            for item in targets
+        ]
+        return {"layers": layers}
+
+    monkeypatch.setattr(
+        "apps.interpretations.condition_matrix.source_coverage_matrix",
+        fake_source_coverage_matrix,
+    )
+
+    matrix = shastra_condition_matrix()
+
+    assert len(calls) == 1
+    assert len(calls[0]) == matrix["summary"]["total_conditions"]

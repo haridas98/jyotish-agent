@@ -27,6 +27,7 @@ def build_analysis_packet(
     citation_search: CitationSearch | None = None,
     research_search: ResearchSearch | None = None,
     interpretation_provider: InterpretationProvider | None = None,
+    include_prompt: bool = True,
 ) -> dict[str, Any]:
     composed = compose_birth_report(
         data,
@@ -79,7 +80,8 @@ def build_analysis_packet(
         "citations": citations,
         "research_context": research_context,
     }
-    packet["prompt_markdown"] = render_analysis_prompt(packet)
+    if include_prompt:
+        packet["prompt_markdown"] = render_analysis_prompt(packet)
     return packet
 
 
