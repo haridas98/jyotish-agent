@@ -435,6 +435,8 @@ export type GeneratedDraftAnalysis = {
   sections: {
     title: string;
     body: string;
+    condition_keys?: string[];
+    evidence_references?: string[];
     citation_titles: string[];
     review_notes?: string[];
   }[];
@@ -750,6 +752,21 @@ export async function generateCompatibilityAnalysisPacket(payload: Compatibility
 
 export async function generateBirthDraftAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
   const response = await apiFetch("/api/reports/birth-chart/draft-analysis", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function generateBirthCodexAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
+  const response = await apiFetch("/api/reports/birth-chart/codex-analysis", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

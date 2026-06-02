@@ -27,11 +27,34 @@ Inspect source and condition coverage:
 ```http
 GET /api/sources/coverage
 GET /api/reports/shastra-condition-matrix
+GET /api/reports/shastra-evidence
 ```
 
 The birth-chart and compatibility analysis packets include matching private chunks in `research_context`. These items are not `citations`; they are evidence for internal comparison only.
 
 The analysis packets also include `shastra_coverage` and `shastra_condition_matrix`, so Codex CLI can work through every calculation layer, report section and yoga condition against loaded shastra evidence.
+
+Build condition-to-passage evidence:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_shastra_evidence --limit-per-condition 5 --min-score 10
+```
+
+Generate a Codex CLI draft from matched evidence:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py generate_codex_analysis `
+  --birth-date 1998-04-30 `
+  --birth-time 13:45 `
+  --place-name "Sterlitamak, Russia" `
+  --latitude 53.37 `
+  --longitude 55.57 `
+  --timezone Asia/Yekaterinburg `
+  --as-of-date 2026-06-03 `
+  --output ..\.tmp\codex-analysis-haridev.json
+```
 
 Digital source candidates:
 
@@ -46,6 +69,7 @@ Rules:
 
 - imported chunks are always `research_only`;
 - segmented candidate passages are also `research_only`;
+- condition evidence maps `condition/yoga/avastha -> passage -> inferred reference -> draft interpretation prompt`;
 - public reports cannot quote imported chunks until a passage is manually approved;
 - source metadata keeps `rights_status` and `public_quote_policy`;
 - do not commit `.private_corpus/`.

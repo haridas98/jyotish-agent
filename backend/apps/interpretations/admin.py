@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import InterpretationBlock, InterpretationRule, RemedyPolicy
+from .models import InterpretationBlock, InterpretationRule, RemedyPolicy, ShastraConditionEvidence
 
 
 @admin.register(InterpretationRule)
@@ -25,3 +25,16 @@ class RemedyPolicyAdmin(admin.ModelAdmin):
     search_fields = ("slug", "classical_trigger", "vaishnava_reframe")
     filter_horizontal = ("passages",)
 
+
+@admin.register(ShastraConditionEvidence)
+class ShastraConditionEvidenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "condition_key",
+        "condition_kind",
+        "condition_title",
+        "score",
+        "reference_status",
+        "review_status",
+    )
+    list_filter = ("condition_kind", "reference_status", "review_status")
+    search_fields = ("condition_key", "condition_title", "passage__reference", "passage__body")

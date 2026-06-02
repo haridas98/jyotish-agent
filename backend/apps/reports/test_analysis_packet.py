@@ -7,6 +7,8 @@ from rest_framework.test import APIClient
 
 from apps.calculations.ephemeris import BodyPosition
 from apps.calculations.primitives import zodiac_placement
+from apps.interpretations.models import ShastraConditionEvidence
+from apps.sources.models import ReviewStatus, SourcePassage, SourceWork
 
 
 class AnalysisProvider:
@@ -104,6 +106,7 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert packet["schema_version"] == "jyotish-analysis-packet-v1"
     assert packet["shastra_coverage"]["schema_version"] == "jyotish-source-coverage-v1"
     assert packet["shastra_condition_matrix"]["schema_version"] == "jyotish-shastra-condition-matrix-v1"
+    assert packet["shastra_evidence"]["schema_version"] == "jyotish-shastra-evidence-v1"
     assert packet["status"] == "ready_for_generation"
     assert packet["generator_policy"]["language"] == "ru"
     assert packet["generator_policy"]["forbidden_outputs"][0] == "independent_demigod_worship"
@@ -138,6 +141,7 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert "research_context" in packet["prompt_markdown"]
     assert "shastra_coverage" in packet["prompt_markdown"]
     assert "shastra_condition_matrix" in packet["prompt_markdown"]
+    assert "shastra_evidence" in packet["prompt_markdown"]
     assert "compare_multiple_translation_variants" in packet["prompt_markdown"]
     assert "cite_exact_edition_translator_and_reference" in packet["prompt_markdown"]
     assert "flag_translation_conflicts" in packet["prompt_markdown"]
@@ -179,6 +183,7 @@ def test_build_compatibility_analysis_packet_contains_two_chart_context_and_pers
     assert packet["schema_version"] == "jyotish-compatibility-analysis-packet-v1"
     assert packet["shastra_coverage"]["schema_version"] == "jyotish-source-coverage-v1"
     assert packet["shastra_condition_matrix"]["schema_version"] == "jyotish-shastra-condition-matrix-v1"
+    assert packet["shastra_evidence"]["schema_version"] == "jyotish-shastra-evidence-v1"
     assert packet["status"] == "needs_citation_review"
     assert packet["generator_policy"]["required_behaviors"][0] == "compare_both_charts_from_multiple_angles"
     assert "compare_multiple_translation_variants" in packet["generator_policy"]["required_behaviors"]
@@ -194,6 +199,52 @@ def test_build_compatibility_analysis_packet_contains_two_chart_context_and_pers
     assert "person_b" in packet["prompt_markdown"]
     assert "compare_multiple_translation_variants" in packet["prompt_markdown"]
     assert "independent demigod" in packet["prompt_markdown"]
+
+
+@pytest.mark.django_db
+def test_analysis_packet_includes_persisted_shastra_evidence():
+    try:
+        from apps.reports.analysis_packet import build_analysis_packet
+    except ModuleNotFoundError:
+        pytest.fail("analysis packet service is not implemented yet")
+
+    work = SourceWork.objects.create(
+        slug="phaladipika-subrahmanya-sastri-private",
+        title="Phaladipika",
+        source_class=SourceWork.SourceClass.JYOTISH_SHASTRA,
+        review_status=ReviewStatus.RESEARCH_ONLY,
+    )
+    passage = SourcePassage.objects.create(
+        work=work,
+        reference="candidate passage 0001",
+        body="Adhyaya 6. Sloka 16. Gaja Kesari Yoga source wording.",
+        review_status=ReviewStatus.RESEARCH_ONLY,
+        metadata={"import_kind": "candidate_shastra_passage"},
+    )
+    ShastraConditionEvidence.objects.create(
+        condition_key="gaja_kesari",
+        condition_kind="yoga_condition",
+        condition_title="Gaja Kesari",
+        passage=passage,
+        score=42,
+        inferred_reference="Adhyaya 6, Sloka 16",
+        reference_status="inferred_needs_review",
+    )
+
+    packet = build_analysis_packet(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=AnalysisProvider(),
+    )
+
+    gaja = next(
+        row for row in packet["shastra_evidence"]["conditions"] if row["condition_key"] == "gaja_kesari"
+    )
+    assert gaja["evidence"][0]["inferred_reference"] == "Adhyaya 6, Sloka 16"
+    assert gaja["evidence"][0]["work_title"] == "Phaladipika"
 
 
 @pytest.mark.django_db

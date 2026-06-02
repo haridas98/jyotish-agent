@@ -8,8 +8,8 @@ import {
   calculateTransits,
   createChartProfile,
   fetchCurrentUser,
+  generateBirthCodexAnalysis,
   generateBirthReport,
-  generateBirthDraftAnalysis,
   generateCompatibilityAnalysisPacket,
   listChartProfiles,
   loginUser,
@@ -612,11 +612,11 @@ function ReportPreviewPanel({
         <div className="report-sections">
           <div className="draft-generation-strip">
             <div>
-              <strong>AI draft по шастра-пакету</strong>
+              <strong>Codex CLI draft по шастра-связям</strong>
               <span>{draftStatus}</span>
             </div>
             <button type="button" className="secondary-button" onClick={onGenerateDraft} disabled={draftDisabled}>
-              Сгенерировать draft
+              Сгенерировать через Codex CLI
             </button>
           </div>
           {draftAnalysis ? (
@@ -638,6 +638,20 @@ function ReportPreviewPanel({
                         <span key={`${section.title}-${title}`}>{title}</span>
                       ))}
                     </div>
+                  ) : null}
+                  {section.evidence_references?.length ? (
+                    <div className="report-citations evidence-citations">
+                      {section.evidence_references.map((reference) => (
+                        <span key={`${section.title}-${reference}`}>{reference}</span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {section.review_notes?.length ? (
+                    <ul className="review-notes">
+                      {section.review_notes.map((note) => (
+                        <li key={`${section.title}-${note}`}>{note}</li>
+                      ))}
+                    </ul>
                   ) : null}
                 </article>
               ))}
@@ -1551,11 +1565,11 @@ export default function Home() {
   async function handleGenerateDraftAnalysis() {
     const payload = lastBirthPayload ?? buildBirthPayload();
     if (!payload) return;
-    setDraftAnalysisStatus("Генерирую draft через LLM...");
+    setDraftAnalysisStatus("Запускаю Codex CLI и сопоставление с шастрами...");
     try {
-      const result = await generateBirthDraftAnalysis(payload);
+      const result = await generateBirthCodexAnalysis(payload);
       setDraftAnalysis(result);
-      setDraftAnalysisStatus(`Сохранён draft #${result.id}, нужен review`);
+      setDraftAnalysisStatus(`Codex CLI draft #${result.id}: ${result.sections.length} разделов, нужен review`);
     } catch (error) {
       setDraftAnalysis(null);
       setDraftAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации draft");

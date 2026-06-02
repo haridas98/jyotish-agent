@@ -1384,6 +1384,21 @@ select {
   text-decoration: none;
 }
 
+.evidence-citations span {
+  border-color: #e5cda8;
+  color: #804a10;
+}
+
+.review-notes {
+  color: var(--muted);
+  display: grid;
+  font-size: 13px;
+  gap: 5px;
+  line-height: 1.35;
+  margin: 0;
+  padding-left: 18px;
+}
+
 .readiness-panel strong {
   color: var(--green);
 }

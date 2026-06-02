@@ -78,3 +78,37 @@ class RemedyPolicy(models.Model):
     def __str__(self) -> str:
         return self.slug
 
+
+class ShastraConditionEvidence(models.Model):
+    condition_key = models.SlugField(max_length=180)
+    condition_kind = models.CharField(max_length=64)
+    condition_title = models.CharField(max_length=255)
+    passage = models.ForeignKey(
+        SourcePassage,
+        on_delete=models.CASCADE,
+        related_name="condition_evidence",
+    )
+    score = models.PositiveIntegerField(default=0)
+    inferred_reference = models.CharField(max_length=255, blank=True)
+    reference_status = models.CharField(max_length=64, default="needs_review")
+    public_quote_policy = models.CharField(max_length=64, default="blocked_until_approved")
+    review_status = models.CharField(
+        max_length=32,
+        choices=ReviewStatus.choices,
+        default=ReviewStatus.RESEARCH_ONLY,
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("condition_key", "passage")]
+        ordering = ["condition_key", "-score", "id"]
+        indexes = [
+            models.Index(fields=["condition_key", "-score"]),
+            models.Index(fields=["review_status"]),
+            models.Index(fields=["reference_status"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.condition_key}: {self.passage}"
