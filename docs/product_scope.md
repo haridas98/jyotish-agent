@@ -17,6 +17,7 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Transit, compatibility, and muhurta API baselines.
 - Report sections with citations.
 - Read-only integration with the VL database.
+- Seeded foundational Vaishnava interpretation rules with approved citation anchors.
 - Accuracy comparison harness against Jagannatha Hora exports.
 
 ## Later Phases
