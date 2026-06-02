@@ -65,6 +65,8 @@ Digital source candidates:
 | Jataka Parijata, V. Subrahmanya Sastri | WisdomLib has previews/buy references; full text source still needs clean source | private research if user supplies file |
 | Brihat Parashara Hora Shastra | Shyamasundara Dasa warns to use with caution; modern editions need rights review | private research / conditional authority |
 | SanskritDocuments Jyotish ITX corpus | <https://sanskritdocuments.org/sanskrit/sociology_astrology/> | private research / Sanskrit ITRANS |
+| GRETIL Jyotish/astronomy/math corpus | <https://gretil.sub.uni-goettingen.de/gretil.html#Jyot> | private research / Sanskrit plain text |
+| Internet Archive Jyotish OCR layer | archive.org item OCR for Saravali, Sarvartha, Muhurta, Jaimini, Hora Sara, Prasna and related works | private research / OCR rights review |
 
 Rules:
 
