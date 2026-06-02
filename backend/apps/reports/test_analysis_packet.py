@@ -98,6 +98,8 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert packet["context"]["birth"]["date"] == "2000-01-01"
     assert packet["context"]["explanation_schedule"][0]["key"] == "calculation_audit"
     assert packet["context"]["explanation_schedule"][-1]["key"] == "source_review_notes"
+    assert packet["context"]["yoga_catalog_overview"]["total_yogas"] >= 90
+    assert "nabhasa_akriti" in packet["context"]["yoga_catalog_overview"]["categories"]
     assert packet["context"]["chart_facts"]["grahas"]["Chandra"]["house"] == 2
     assert {citation["title"] for citation in packet["citations"]} == {
         "Srimad-Bhagavatam 1.2.6",

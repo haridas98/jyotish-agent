@@ -18,6 +18,7 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Report sections with citations.
 - Codex-ready analysis packet generation for reviewed draft interpretation.
 - Ordered shastra explanation schedule and research-only authority catalog seed.
+- Research-only broad yoga catalog seed, including rare Nabhasa and named yogas.
 - Read-only integration with the VL database.
 - Seeded foundational Vaishnava interpretation rules with approved citation anchors.
 - Accuracy comparison harness against Jagannatha Hora exports.

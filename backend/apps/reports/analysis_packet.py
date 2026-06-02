@@ -5,6 +5,7 @@ from typing import Any
 
 from apps.calculations.ephemeris import EphemerisProvider
 from apps.interpretations.shastra_catalog import explanation_schedule
+from apps.interpretations.yoga_catalog import yoga_catalog_overview
 
 from .birth_report import CitationSearch, InterpretationProvider, compose_birth_report
 
@@ -37,6 +38,7 @@ def build_analysis_packet(
             "settings": chart.get("settings", {}),
             "chart": chart,
             "explanation_schedule": explanation_schedule(),
+            "yoga_catalog_overview": yoga_catalog_overview(),
             "chart_facts": report.get("chart_facts", {}),
             "person_summary": report.get("person_summary", {}),
             "sections": report.get("sections", []),

@@ -10,6 +10,7 @@ The packet is citation-first. A generator may use only citations listed in the p
 ```powershell
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py seed_shastra_catalog
+.\.venv\Scripts\python manage.py seed_yoga_catalog
 .\.venv\Scripts\python manage.py import_interpretation_catalog C:\path\catalog.json
 .\.venv\Scripts\python manage.py build_analysis_packet `
   --birth-date 1998-04-30 `
