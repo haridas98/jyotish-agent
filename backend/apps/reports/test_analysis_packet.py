@@ -100,6 +100,10 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert packet["context"]["explanation_schedule"][-1]["key"] == "source_review_notes"
     assert packet["context"]["yoga_catalog_overview"]["total_yogas"] >= 90
     assert "nabhasa_akriti" in packet["context"]["yoga_catalog_overview"]["categories"]
+    yoga_map = packet["context"]["detected_yoga_source_map"]
+    assert yoga_map
+    assert all(row["citation_policy"] == "required_for_public_interpretation" for row in yoga_map)
+    assert any(row["source_mapping_status"] == "mapped_research_only" for row in yoga_map)
     assert packet["context"]["chart_facts"]["grahas"]["Chandra"]["house"] == 2
     assert {citation["title"] for citation in packet["citations"]} == {
         "Srimad-Bhagavatam 1.2.6",
@@ -107,6 +111,7 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     }
     assert "OUTPUT JSON schema" in packet["prompt_markdown"]
     assert "explanation_schedule" in packet["prompt_markdown"]
+    assert "detected_yoga_source_map" in packet["prompt_markdown"]
     assert "не выдумывай цитаты" in packet["prompt_markdown"]
     assert "independent demigod" in packet["prompt_markdown"]
 
