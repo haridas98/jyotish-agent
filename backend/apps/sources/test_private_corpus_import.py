@@ -48,6 +48,69 @@ def test_import_private_corpus_chunks_local_books_as_research_only(tmp_path):
 
 
 @pytest.mark.django_db
+def test_import_private_corpus_accepts_itrans_itx_files(tmp_path):
+    text_path = tmp_path / "phaladipika.itx"
+    text_path.write_text(
+        "% Text title : phaladIpikA\n\\engtitle{.. phaladIpikA ..}\nrAshi bheda shuklAmbaradharaM devam\n",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "works": [
+                    {
+                        "slug": "phaladipika-sanskrit-itx-test",
+                        "title": "Phaladipika Sanskrit ITX test",
+                        "author": "Mantreswara",
+                        "edition": "SanskritDocuments ITRANS test",
+                        "language_code": "sa-ITRANS",
+                        "source_url": "https://sanskritdocuments.org/doc_z_misc_sociology_astrology/phaladIpika.itx",
+                        "local_path": str(text_path),
+                        "rights_status": "personal_study_research_only",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    call_command("import_private_corpus", str(manifest_path), "--chunk-chars", "500")
+
+    work = SourceWork.objects.get(slug="phaladipika-sanskrit-itx-test")
+    passage = SourcePassage.objects.get(work=work)
+    assert work.language_code == "sa-ITRANS"
+    assert passage.body.startswith("% Text title : phaladIpikA")
+    assert passage.metadata["rights_status"] == "personal_study_research_only"
+
+
+@pytest.mark.django_db
+def test_import_private_corpus_accepts_utf8_sig_manifest(tmp_path):
+    text_path = tmp_path / "brihajjataka.itx"
+    text_path.write_text("% Text title : bRihajjAtakam\nlagna yoga\n", encoding="utf-8")
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "works": [
+                    {
+                        "slug": "brhat-jataka-sanskrit-bom-test",
+                        "title": "Brhat Jataka Sanskrit BOM test",
+                        "language_code": "sa-ITRANS",
+                        "local_path": str(text_path),
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8-sig",
+    )
+
+    call_command("import_private_corpus", str(manifest_path))
+
+    assert SourceWork.objects.filter(slug="brhat-jataka-sanskrit-bom-test").exists()
+
+
+@pytest.mark.django_db
 def test_segment_private_work_creates_review_only_candidate_passages():
     work = SourceWork.objects.create(
         slug="brhat-jataka-private-test",

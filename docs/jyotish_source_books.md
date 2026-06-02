@@ -1,5 +1,7 @@
 # Jyotish Source Books
 
+Sanskrit ITX corpus list: [sanskrit_corpus_sources.md](sanskrit_corpus_sources.md).
+
 Основной ориентир: Shyamasundara Dasa, [Recommended Reading List](https://shyamasundaradasa.com/jyotish/study/books.html). Его методологическое предупреждение по BPHS: [On the Authenticity of the Brhat Parasara Hora Sastra](https://shyamasundaradasa.com/jyotish/resources/articles/bphs.html).
 
 ## Primary Natal Classics

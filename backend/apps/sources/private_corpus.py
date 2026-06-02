@@ -9,11 +9,12 @@ from django.db import transaction
 from .models import ReviewStatus, SourcePassage, SourceWork
 
 DEFAULT_CHUNK_CHARS = 8000
+SUPPORTED_PRIVATE_CORPUS_SUFFIXES = {".txt", ".md", ".itx"}
 
 
 @transaction.atomic
 def import_private_corpus_manifest(manifest_path: Path, chunk_chars: int = DEFAULT_CHUNK_CHARS) -> dict[str, int]:
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
     works = _list(manifest, "works")
     imported_passages = 0
     for item in works:
@@ -71,8 +72,8 @@ def _local_path(item: dict[str, Any], base_dir: Path) -> Path:
     path = raw_path if raw_path.is_absolute() else base_dir / raw_path
     if not path.exists():
         raise FileNotFoundError(f"Private corpus file does not exist: {path}")
-    if path.suffix.lower() not in {".txt", ".md"}:
-        raise ValueError("Private corpus importer currently supports .txt and .md files")
+    if path.suffix.lower() not in SUPPORTED_PRIVATE_CORPUS_SUFFIXES:
+        raise ValueError("Private corpus importer currently supports .txt, .md and .itx files")
     return path
 
 

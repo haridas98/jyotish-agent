@@ -2,7 +2,7 @@
 
 Full book text for research should stay outside git in `.private_corpus/`.
 
-Supported input now: `.txt` and `.md`. Convert PDF/OCR to text first, then import it as `research_only`.
+Supported input now: `.txt`, `.md` and SanskritDocuments `.itx`. Convert PDF/OCR to text first, then import it as `research_only`.
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend
@@ -64,6 +64,7 @@ Digital source candidates:
 | Phaladeepika, V. Subrahmanya Sastri | <https://www.wisdomlib.org/hinduism/book/phaladeepika-by-mantreswara-text-and-translation>; <https://openlibrary.org/works/OL1038542W/Mantreswara%27s_phaladeepika> | private research / rights review |
 | Jataka Parijata, V. Subrahmanya Sastri | WisdomLib has previews/buy references; full text source still needs clean source | private research if user supplies file |
 | Brihat Parashara Hora Shastra | Shyamasundara Dasa warns to use with caution; modern editions need rights review | private research / conditional authority |
+| SanskritDocuments Jyotish ITX corpus | <https://sanskritdocuments.org/sanskrit/sociology_astrology/> | private research / Sanskrit ITRANS |
 
 Rules:
 
