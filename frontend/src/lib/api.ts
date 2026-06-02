@@ -157,6 +157,7 @@ export type SpecialPoint = {
   ends_at?: string;
   midpoint?: string;
   calculation_note?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type VimshopakaRow = {
@@ -175,7 +176,10 @@ export type ShadbalaRow = {
   components: {
     naisargika: number;
     uccha: number;
+    sthana?: number;
     dig: number;
+    chesta?: number;
+    kala?: number;
   };
   known_total: number;
 };
@@ -233,7 +237,9 @@ export type ClassicalCalculations = {
     upagrahas: ClassicalStatus & {
       items: SpecialPoint[];
     };
-    vedic_points: ClassicalStatus;
+    vedic_points: ClassicalStatus & {
+      items: SpecialPoint[];
+    };
   };
   transits?: ClassicalStatus;
   compatibility?: ClassicalStatus;

@@ -65,6 +65,29 @@ def test_yoga_signatures_detect_mahapurusha_lunar_solar_and_amala_patterns():
     assert rows["amala"]["reference"] == "Lagna"
 
 
+def test_yoga_signatures_detect_lordship_and_cancellation_patterns():
+    chart = {
+        "ascendant": {"rashi_index": 0, "rashi": "Mesha"},
+        "grahas": [
+            {"body": "Chandra", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Mangala", "rashi_index": 3, "rashi": "Karka"},
+            {"body": "Budha", "rashi_index": 7, "rashi": "Vrischika"},
+            {"body": "Guru", "rashi_index": 3, "rashi": "Karka"},
+            {"body": "Shukra", "rashi_index": 3, "rashi": "Karka"},
+            {"body": "Shani", "rashi_index": 3, "rashi": "Karka"},
+            {"body": "Surya", "rashi_index": 4, "rashi": "Simha"},
+        ],
+    }
+
+    rows = {item["key"]: item for item in yoga_signatures(chart)}
+
+    assert rows["dharma_karmadhipati_raja"]["bodies"] == ["Guru", "Shani"]
+    assert rows["kendra_trikona_raja"]["reference"] == "Lagna"
+    assert rows["second_lord_eleventh_lord_link"]["bodies"] == ["Shukra", "Shani"]
+    assert rows["viparita_harsha"]["bodies"] == ["Budha"]
+    assert rows["neecha_bhanga_raja"]["bodies"] == ["Mangala", "Chandra"]
+
+
 def test_argala_summary_lists_primary_and_obstructing_houses_from_lagna():
     chart = {
         "ascendant": {"rashi_index": 0, "rashi": "Mesha"},
@@ -107,6 +130,25 @@ def test_special_points_include_day_and_night_lots_without_upagraha_claims():
     assert points["upagrahas"]["items"][0]["local_time"] == "12:45"
 
 
+def test_special_points_calculate_indu_lagna_when_lagna_and_moon_are_present():
+    chart = {
+        "ascendant": {"longitude": 0.0, "rashi_index": 0, "rashi": "Mesha"},
+        "grahas": [
+            {"body": "Chandra", "longitude": 90.0, "rashi_index": 3, "rashi": "Karka"},
+            {"body": "Surya", "longitude": 40.0, "rashi_index": 1, "rashi": "Vrishabha"},
+        ],
+    }
+
+    points = special_points(chart)
+    rows = {point["key"]: point for point in points["vedic_points"]["items"]}
+
+    assert points["vedic_points"]["status"] == "calculated_needs_source_audit"
+    assert rows["indu_lagna"]["rashi"] == "Kumbha"
+    assert rows["indu_lagna"]["metadata"]["lagna_ninth_lord"] == "Guru"
+    assert rows["indu_lagna"]["metadata"]["moon_ninth_lord"] == "Guru"
+    assert rows["indu_lagna"]["metadata"]["kala_sum"] == 20
+
+
 def test_ashtakavarga_generates_bav_and_sav_constants():
     chart = {
         "ascendant": {"rashi_index": 0, "rashi": "Mesha"},
@@ -133,10 +175,11 @@ def test_ashtakavarga_generates_bav_and_sav_constants():
 
 def test_shadbala_summary_adds_natural_exaltation_and_directional_components():
     chart = {
+        "birth": {"local_datetime": "2026-06-02T10:00:00+05:30"},
         "ascendant": {"rashi_index": 0, "rashi": "Mesha"},
         "grahas": [
-            {"body": "Surya", "longitude": 10.0, "rashi_index": 0, "rashi": "Mesha"},
-            {"body": "Shani", "longitude": 20.0, "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Surya", "longitude": 10.0, "rashi_index": 0, "rashi": "Mesha", "speed_longitude": 1.0},
+            {"body": "Shani", "longitude": 20.0, "rashi_index": 0, "rashi": "Mesha", "speed_longitude": -0.02},
         ],
     }
 
@@ -147,9 +190,13 @@ def test_shadbala_summary_adds_natural_exaltation_and_directional_components():
     assert rows["Surya"]["components"]["naisargika"] == 60.0
     assert rows["Surya"]["components"]["uccha"] == 60.0
     assert rows["Surya"]["components"]["sthana"] == 60.0
+    assert rows["Surya"]["components"]["chesta"] == 15.0
+    assert rows["Surya"]["components"]["kala"] == 60.0
     assert rows["Shani"]["components"]["naisargika"] == 8.57
     assert rows["Shani"]["components"]["uccha"] == 0.0
     assert rows["Shani"]["components"]["sthana"] == 0.0
+    assert rows["Shani"]["components"]["chesta"] == 60.0
+    assert rows["Shani"]["components"]["kala"] == 0.0
 
 
 def test_classical_calculations_payload_is_explicit_about_audited_and_pending_layers():

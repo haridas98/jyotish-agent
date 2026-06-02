@@ -66,6 +66,8 @@ const calculationStatusLabelsRu: Record<string, string> = {
   calculated_needs_task_review: "рассчитано, нужна проверка задачи",
   partial_calculated_needs_citation: "частично рассчитано, нужны цитаты",
   partial_calculated_needs_jhora_audit: "частично рассчитано, нужна сверка JHora",
+  calculated_needs_source_audit: "рассчитано, нужен аудит источника",
+  pending_source_mapping: "нужна привязка источника",
   pending_jhora_audit: "ждёт сверку JHora",
   pending_endpoint: "ждёт API",
   api_available: "API готов",
@@ -498,6 +500,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
   const yogas = classical.yogas?.items ?? [];
   const lots = classical.special_points?.arabic_lots ?? [];
   const upagrahas = classical.special_points?.upagrahas.items ?? [];
+  const vedicPoints = classical.special_points?.vedic_points.items ?? [];
   const shadbala = classical.shadbala?.items ?? [];
   const ashtakavarga = classical.ashtakavarga;
 
@@ -579,6 +582,17 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
                 </small>
               </div>
             ))}
+            <div>
+              <span>Ведические точки</span>
+              <strong>{statusRu(classical.special_points?.vedic_points.status)}</strong>
+            </div>
+            {vedicPoints.map((point) => (
+              <div key={point.key}>
+                <span>{point.name}</span>
+                <strong>{point.rashi}</strong>
+                <small>{point.nakshatra} {point.pada}</small>
+              </div>
+            ))}
           </div>
           <div className="classical-list">
             <h3>Аштакаварга</h3>
@@ -602,7 +616,8 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
                 <span>{labelRu(row.body)}</span>
                 <strong>{row.known_total}</strong>
                 <small>
-                  N {row.components.naisargika}, U {row.components.uccha}, D {row.components.dig}
+                  N {row.components.naisargika}, U {row.components.uccha}, S {row.components.sthana ?? 0}, D {row.components.dig}, C{" "}
+                  {row.components.chesta ?? 0}, K {row.components.kala ?? 0}
                 </small>
               </div>
             ))}

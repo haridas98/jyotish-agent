@@ -65,6 +65,16 @@ NAISARGIKA_BALA = {
     "Shani": 8.57,
 }
 
+INDU_KALAS = {
+    "Surya": 30,
+    "Chandra": 16,
+    "Mangala": 6,
+    "Budha": 8,
+    "Guru": 10,
+    "Shukra": 12,
+    "Shani": 1,
+}
+
 DIG_BALA_HOUSES = {
     "Surya": 10,
     "Mangala": 10,
@@ -75,9 +85,28 @@ DIG_BALA_HOUSES = {
     "Shani": 7,
 }
 
+RASHI_LORDS = {
+    0: "Mangala",
+    1: "Shukra",
+    2: "Budha",
+    3: "Chandra",
+    4: "Surya",
+    5: "Budha",
+    6: "Shukra",
+    7: "Mangala",
+    8: "Guru",
+    9: "Shani",
+    10: "Shani",
+    11: "Guru",
+}
+
 YOGA_PLANETS = ("Mangala", "Budha", "Guru", "Shukra", "Shani")
 NATURAL_BENEFICS = {"Budha", "Guru", "Shukra"}
 KENDRA_HOUSES = {1, 4, 7, 10}
+TRIKONA_HOUSES = {1, 5, 9}
+DUSTHANA_HOUSES = {6, 8, 12}
+DAY_STRONG_BODIES = {"Surya", "Guru", "Shukra"}
+NIGHT_STRONG_BODIES = {"Chandra", "Mangala", "Shani"}
 MAHAPURUSHA_YOGAS = {
     "Mangala": ("ruchaka_mahapurusha", "Ruchaka Mahapurusha"),
     "Budha": ("bhadra_mahapurusha", "Bhadra Mahapurusha"),
@@ -254,6 +283,8 @@ def yoga_signatures(chart: dict[str, Any]) -> list[dict[str, object]]:
     items.extend(_moon_adjacent_yogas(grahas))
     items.extend(_sun_adjacent_yogas(grahas))
     items.extend(_amala_yogas(chart, grahas))
+    items.extend(_lordship_yogas(chart, grahas))
+    items.extend(_neecha_bhanga_yogas(chart, grahas))
 
     return items
 
@@ -292,10 +323,7 @@ def special_points(chart: dict[str, Any]) -> dict[str, object]:
         "status": "partial",
         "arabic_lots": lots,
         "upagrahas": _upagrahas(chart),
-        "vedic_points": {
-            "status": "pending_jhora_audit",
-            "method": "Indu lagna, bhrigu bindu, and related points need source mapping.",
-        },
+        "vedic_points": _vedic_points(chart),
     }
 
 
@@ -346,6 +374,8 @@ def shadbala_summary(chart: dict[str, Any]) -> dict[str, object]:
             "uccha": _uccha_bala(body, longitude),
             "sthana": _sthana_bala(body, str(graha.get("rashi") or "")),
             "dig": _dig_bala(body, lagna_index, rashi_index),
+            "chesta": _chesta_bala(graha),
+            "kala": _kala_bala(body, chart),
         }
         items.append(
             {
@@ -356,7 +386,7 @@ def shadbala_summary(chart: dict[str, Any]) -> dict[str, object]:
         )
     return {
         "status": "partial_calculated_needs_jhora_audit",
-        "method": "Partial Shadbala: naisargika, uccha, sthana dignity, and whole-sign dig bala only.",
+        "method": "Partial Shadbala: naisargika, uccha, sthana dignity, whole-sign dig, chesta, and day/night kala bala.",
         "items": items,
     }
 
@@ -495,6 +525,105 @@ def _benefics_in_house_from(grahas: dict[str, dict[str, Any]], reference_index: 
     return [body for body in _planets_in_house_from(grahas, reference_index, house) if body in NATURAL_BENEFICS]
 
 
+def _lordship_yogas(chart: dict[str, Any], grahas: dict[str, dict[str, Any]]) -> list[dict[str, object]]:
+    lagna_index = _int_or_none((chart.get("ascendant") or {}).get("rashi_index"))
+    if lagna_index is None:
+        return []
+    rows = []
+    ninth_lord = _house_lord(lagna_index, 9)
+    tenth_lord = _house_lord(lagna_index, 10)
+    if _associated(grahas, ninth_lord, tenth_lord):
+        rows.append(
+            _yoga_payload(
+                "dharma_karmadhipati_raja",
+                "Dharma Karmadhipati Raja",
+                _unique_bodies([ninth_lord, tenth_lord]),
+                "calculated_needs_citation",
+                reference="Lagna",
+            )
+        )
+
+    for kendra in KENDRA_HOUSES:
+        for trikona in TRIKONA_HOUSES:
+            kendra_lord = _house_lord(lagna_index, kendra)
+            trikona_lord = _house_lord(lagna_index, trikona)
+            if kendra_lord != trikona_lord and _associated(grahas, kendra_lord, trikona_lord):
+                rows.append(
+                    _yoga_payload(
+                        "kendra_trikona_raja",
+                        "Kendra Trikona Raja",
+                        _unique_bodies([kendra_lord, trikona_lord]),
+                        "calculated_needs_citation",
+                        reference="Lagna",
+                    )
+                )
+                break
+        if any(row["key"] == "kendra_trikona_raja" for row in rows):
+            break
+
+    second_lord = _house_lord(lagna_index, 2)
+    eleventh_lord = _house_lord(lagna_index, 11)
+    if _associated(grahas, second_lord, eleventh_lord):
+        rows.append(
+            _yoga_payload(
+                "second_lord_eleventh_lord_link",
+                "Second/Eleventh Lord Link",
+                _unique_bodies([second_lord, eleventh_lord]),
+                "calculated_needs_citation",
+                reference="Lagna",
+            )
+        )
+
+    rows.extend(_viparita_yogas(lagna_index, grahas))
+    return rows
+
+
+def _viparita_yogas(lagna_index: int, grahas: dict[str, dict[str, Any]]) -> list[dict[str, object]]:
+    rows = []
+    for house, key, name in (
+        (6, "viparita_harsha", "Harsha Viparita Raja"),
+        (8, "viparita_sarala", "Sarala Viparita Raja"),
+        (12, "viparita_vimala", "Vimala Viparita Raja"),
+    ):
+        lord = _house_lord(lagna_index, house)
+        placement = grahas.get(lord)
+        rashi_index = _int_or_none(placement.get("rashi_index") if placement else None)
+        if rashi_index is None:
+            continue
+        placed_house = _house_from(lagna_index, rashi_index)
+        if placed_house in DUSTHANA_HOUSES and placed_house != house:
+            rows.append(_yoga_payload(key, name, [lord], "calculated_needs_citation", reference="Lagna"))
+    return rows
+
+
+def _neecha_bhanga_yogas(chart: dict[str, Any], grahas: dict[str, dict[str, Any]]) -> list[dict[str, object]]:
+    lagna_index = _int_or_none((chart.get("ascendant") or {}).get("rashi_index"))
+    moon_index = _int_or_none((grahas.get("Chandra") or {}).get("rashi_index"))
+    rows = []
+    for body, graha in grahas.items():
+        rashi = str(graha.get("rashi") or "")
+        rashi_index = _int_or_none(graha.get("rashi_index"))
+        if rashi_index is None or rashi != _debilitation_sign(body):
+            continue
+        debility_lord = _rashi_lord(rashi_index)
+        lord_index = _int_or_none((grahas.get(debility_lord) or {}).get("rashi_index"))
+        if lord_index is None:
+            continue
+        from_lagna = lagna_index is not None and _house_from(lagna_index, lord_index) in KENDRA_HOUSES
+        from_moon = moon_index is not None and _house_from(moon_index, lord_index) in KENDRA_HOUSES
+        if from_lagna or from_moon:
+            rows.append(
+                _yoga_payload(
+                    "neecha_bhanga_raja",
+                    "Neecha Bhanga Raja",
+                    _unique_bodies([body, debility_lord]),
+                    "calculated_needs_citation",
+                    reference="Lagna/Moon",
+                )
+            )
+    return rows
+
+
 def _yoga_payload(
     key: str,
     name: str,
@@ -595,6 +724,43 @@ def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
     }
 
 
+def _vedic_points(chart: dict[str, Any]) -> dict[str, object]:
+    items = []
+    indu = _indu_lagna(chart)
+    if indu:
+        items.append(indu)
+    return {
+        "status": "calculated_needs_source_audit" if items else "pending_source_mapping",
+        "method": "Indu/Dhana Lagna by ninth lords from Lagna and Moon; source passage and JHora parity still required.",
+        "items": items,
+    }
+
+
+def _indu_lagna(chart: dict[str, Any]) -> dict[str, object] | None:
+    lagna_index = _int_or_none((chart.get("ascendant") or {}).get("rashi_index"))
+    moon_index = _int_or_none((_graha_index(chart).get("Chandra") or {}).get("rashi_index"))
+    if lagna_index is None or moon_index is None:
+        return None
+    lagna_ninth_lord = _house_lord(lagna_index, 9)
+    moon_ninth_lord = _house_lord(moon_index, 9)
+    if lagna_ninth_lord not in INDU_KALAS or moon_ninth_lord not in INDU_KALAS:
+        return None
+    kala_sum = INDU_KALAS[lagna_ninth_lord] + INDU_KALAS[moon_ninth_lord]
+    remainder = kala_sum % 12 or 12
+    rashi_index = (moon_index + remainder - 1) % len(RASHIS)
+    longitude = rashi_index * 30.0
+    point = _point_payload("indu_lagna", "Indu/Dhana Lagna", longitude)
+    point["metadata"] = {
+        "lagna_ninth_lord": lagna_ninth_lord,
+        "moon_ninth_lord": moon_ninth_lord,
+        "kala_sum": kala_sum,
+        "remainder": remainder,
+        "counted_from": "Chandra",
+        "audit_status": "needs_source_and_jhora_fixture",
+    }
+    return point
+
+
 def _saturn_segment_midpoint(moment: datetime) -> time:
     day_start = moment.replace(hour=6, minute=0, second=0, microsecond=0)
     day_end = moment.replace(hour=18, minute=0, second=0, microsecond=0)
@@ -657,6 +823,27 @@ def _debilitation_sign(body: str) -> str:
     return zodiac_placement(degree).rashi
 
 
+def _chesta_bala(graha: dict[str, Any]) -> float:
+    speed = _float_or_none(graha.get("speed_longitude"))
+    if graha.get("retrograde") is True or (speed is not None and speed < 0):
+        return 60.0
+    if speed is None:
+        return 0.0
+    return round(min(60.0, abs(speed) * 15.0), 2)
+
+
+def _kala_bala(body: str, chart: dict[str, Any]) -> float:
+    moment = _birth_moment(chart)
+    if moment is None:
+        return 0.0
+    is_day = 6 <= moment.hour < 18
+    if body == "Budha":
+        return 30.0
+    if is_day:
+        return 60.0 if body in DAY_STRONG_BODIES else 0.0
+    return 60.0 if body in NIGHT_STRONG_BODIES else 0.0
+
+
 def _dig_bala(body: str, lagna_index: int | None, rashi_index: int | None) -> float:
     target_house = DIG_BALA_HOUSES.get(body)
     if target_house is None or lagna_index is None or rashi_index is None:
@@ -665,6 +852,28 @@ def _dig_bala(body: str, lagna_index: int | None, rashi_index: int | None) -> fl
     distance = abs(house - target_house)
     distance = min(distance, 12 - distance)
     return round(60.0 * max(0.0, 1 - distance / 6.0), 2)
+
+
+def _house_lord(lagna_index: int, house: int) -> str:
+    return _rashi_lord((lagna_index + house - 1) % len(RASHIS))
+
+
+def _rashi_lord(rashi_index: int) -> str:
+    return RASHI_LORDS[rashi_index % len(RASHIS)]
+
+
+def _associated(grahas: dict[str, dict[str, Any]], first: str, second: str) -> bool:
+    first_index = _int_or_none((grahas.get(first) or {}).get("rashi_index"))
+    second_index = _int_or_none((grahas.get(second) or {}).get("rashi_index"))
+    return first_index is not None and first_index == second_index
+
+
+def _unique_bodies(bodies: list[str]) -> list[str]:
+    unique = []
+    for body in bodies:
+        if body not in unique:
+            unique.append(body)
+    return unique
 
 
 def _graha_index(chart: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -690,6 +899,23 @@ def _body_longitude(body: object) -> float | None:
     try:
         return float(body["longitude"])
     except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _birth_moment(chart: dict[str, Any]) -> datetime | None:
+    raw = (chart.get("birth") or {}).get("local_datetime")
+    if not isinstance(raw, str):
+        return None
+    try:
+        return datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def _float_or_none(value: object) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
         return None
 
 
