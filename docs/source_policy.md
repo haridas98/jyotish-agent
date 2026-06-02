@@ -16,6 +16,10 @@ A report may cite only sources with `approved` review status. Research-only or r
 
 The VL database is the source of truth for Srila Prabhupada and existing Vaishnava corpus data. Jyotish Agent should use a read-only connection and store only citation links, not duplicate text bodies unless a cache is explicitly approved.
 
+## Jyotish Texts
+
+The shastra catalog may store source URLs and short review anchors immediately. Full text import is allowed only for public-domain or explicitly licensed editions. Modern translations and PDFs from unclear mirrors must stay `copyright_review_required` and cannot be used for public generated interpretation until reviewed.
+
 ## Citation Requirement
 
 Every interpretive claim must have one of these:
@@ -24,4 +28,3 @@ Every interpretive claim must have one of these:
 - a jyotish shastra passage;
 - a Prabhupada or Gaudiya source;
 - an explicit `calculation_only` label.
-

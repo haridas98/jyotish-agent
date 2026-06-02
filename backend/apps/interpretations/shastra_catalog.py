@@ -187,29 +187,34 @@ def shastra_authority_catalog() -> dict[str, Any]:
                 "brhat-jataka",
                 "Brhat Jataka",
                 SourceWork.SourceClass.JYOTISH_SHASTRA,
-                "",
+                "https://archive.org/details/brihatjataka00varaiala",
                 authority_tier="primary_classic",
+                access_policy="public_domain_scan",
+                edition_note="N. Chidambaram Aiyar English translation, 1905 scan.",
             ),
             _work(
                 "jataka-parijata",
                 "Jataka Parijata",
                 SourceWork.SourceClass.JYOTISH_SHASTRA,
-                "",
+                "https://elibraryofyoga.com/items/5586d137-1723-4564-81b3-84a5db5f2945",
                 authority_tier="primary_classic",
+                access_policy="copyright_review_required",
             ),
             _work(
                 "phaladipika",
                 "Phaladipika",
                 SourceWork.SourceClass.JYOTISH_SHASTRA,
-                "",
+                "https://openlibrary.org/works/OL1038542W/Mantreswara%27s_phaladeepika",
                 authority_tier="primary_classic",
+                access_policy="copyright_review_required",
             ),
             _work(
                 "saravali",
                 "Saravali",
                 SourceWork.SourceClass.JYOTISH_SHASTRA,
-                "",
+                "https://www.rarebooksocietyofindia.org/postDetail.php?id=196174216674_10153565781516675",
                 authority_tier="primary_classic",
+                access_policy="copyright_review_required",
             ),
             _work(
                 "sarvartha-cintamani",
@@ -319,6 +324,7 @@ def _work(
     authority_tier: str,
     review_status: str = ReviewStatus.RESEARCH_ONLY,
     authority_note: str = "",
+    **metadata_items: str,
 ) -> dict[str, Any]:
     metadata = {
         "seed": "shastra_authority_catalog",
@@ -326,6 +332,7 @@ def _work(
     }
     if authority_note:
         metadata["authority_note"] = authority_note
+    metadata.update({key: value for key, value in metadata_items.items() if value})
     return {
         "slug": slug,
         "title": title,

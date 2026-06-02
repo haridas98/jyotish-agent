@@ -142,3 +142,5 @@ REST_FRAMEWORK = {
 
 VL_DATABASE_URL = os.getenv("VL_DATABASE_URL", "")
 VL_PUBLIC_BASE_URL = os.getenv("VL_PUBLIC_BASE_URL", "http://127.0.0.1:3001")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.2")

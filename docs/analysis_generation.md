@@ -15,6 +15,21 @@ POST /api/reports/compatibility/analysis-packet
 
 The compatibility packet includes both birth charts, ashtakuta, Lagna/Moon/7th-house/Shukra-Mangala/Guru-Shukra/dasha perspectives, citation requests for each perspective, and a Codex-ready prompt.
 
+For direct LLM generation, configure:
+
+```env
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-5.2
+```
+
+Then call:
+
+```http
+POST /api/reports/birth-chart/draft-analysis
+```
+
+The generated text is saved as `GeneratedAnalysisDraft` with `review_status=draft`.
+
 ```powershell
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py seed_shastra_catalog
@@ -39,3 +54,9 @@ Rules for generated text:
 - do not present calculation drafts as final doctrine;
 - do not recommend independent demigod worship;
 - reframe remedies through Krishna, sadhu-sanga, sadhana, service, and Srila Prabhupada.
+
+Source import policy:
+
+- public-domain scans, such as the 1905 Brhat Jataka scan, can be used as import candidates;
+- modern translations of Phaladipika, Saravali, Jataka Parijata and similar works stay `copyright_review_required` until rights are checked;
+- do not publish generated interpretations from unapproved passages.

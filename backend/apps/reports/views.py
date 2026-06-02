@@ -11,6 +11,7 @@ from apps.sources.citations import combined_citation_search
 
 from .analysis_packet import build_analysis_packet, build_compatibility_analysis_packet
 from .birth_report import compose_birth_report
+from .draft_generation import DraftGenerationUnavailable, generate_birth_chart_draft_analysis
 
 
 class BirthReportView(APIView):
@@ -48,6 +49,25 @@ class BirthAnalysisPacketView(APIView):
         except ChartInputError as exc:
             return Response({"error": str(exc)}, status=400)
         except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class BirthDraftAnalysisView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def post(self, request):
+        try:
+            return Response(
+                generate_birth_chart_draft_analysis(
+                    request.data,
+                    citation_search=vl_citation_search,
+                    interpretation_provider=public_interpretation_sections_for_chart,
+                )
+            )
+        except ChartInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        except (EphemerisUnavailable, DraftGenerationUnavailable) as exc:
             return Response({"error": str(exc)}, status=503)
 
 

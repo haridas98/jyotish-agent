@@ -1,6 +1,11 @@
 from django.urls import path
 
-from .views import BirthAnalysisPacketView, BirthReportView, CompatibilityAnalysisPacketView
+from .views import (
+    BirthAnalysisPacketView,
+    BirthDraftAnalysisView,
+    BirthReportView,
+    CompatibilityAnalysisPacketView,
+)
 
 urlpatterns = [
     path("reports/birth-chart", BirthReportView.as_view(), name="birth-report"),
@@ -8,6 +13,11 @@ urlpatterns = [
         "reports/birth-chart/analysis-packet",
         BirthAnalysisPacketView.as_view(),
         name="birth-analysis-packet",
+    ),
+    path(
+        "reports/birth-chart/draft-analysis",
+        BirthDraftAnalysisView.as_view(),
+        name="birth-draft-analysis",
     ),
     path(
         "reports/compatibility/analysis-packet",

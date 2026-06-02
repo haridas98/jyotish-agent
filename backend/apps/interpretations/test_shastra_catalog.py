@@ -58,7 +58,11 @@ def test_seed_shastra_catalog_creates_idempotent_authority_sources_and_review_an
         "sarvartha-cintamani",
     }
     assert big_five.issubset(set(SourceWork.objects.values_list("slug", flat=True)))
-    assert SourceWork.objects.get(slug="brhat-jataka").metadata["authority_tier"] == "primary_classic"
+    brhat_jataka = SourceWork.objects.get(slug="brhat-jataka")
+    assert brhat_jataka.metadata["authority_tier"] == "primary_classic"
+    assert "archive.org" in brhat_jataka.source_url
+    assert brhat_jataka.metadata["access_policy"] == "public_domain_scan"
+    assert SourceWork.objects.get(slug="phaladipika").metadata["access_policy"] == "copyright_review_required"
     assert SourceWork.objects.get(slug="brhat-parashara-hora-shastra").metadata["authority_note"] == "use_with_caution"
 
     passage = SourcePassage.objects.get(reference="Shyamasundara recommended reading list")

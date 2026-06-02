@@ -9,6 +9,7 @@ import {
   createChartProfile,
   fetchCurrentUser,
   generateBirthReport,
+  generateBirthDraftAnalysis,
   generateCompatibilityAnalysisPacket,
   listChartProfiles,
   loginUser,
@@ -24,6 +25,7 @@ import {
   type DayPeriod,
   type DashaPeriod,
   type GrahaPosition,
+  type GeneratedDraftAnalysis,
   type MuhurtaReport,
   type PersonSummary,
   type PlaceCandidate,
@@ -573,7 +575,19 @@ function DashaWorkspacePanel({ summary, periods }: { summary: PersonSummary | nu
   );
 }
 
-function ReportPreviewPanel({ birthReport }: { birthReport: BirthReport["report"] | null }) {
+function ReportPreviewPanel({
+  birthReport,
+  draftAnalysis,
+  draftStatus,
+  onGenerateDraft,
+  draftDisabled,
+}: {
+  birthReport: BirthReport["report"] | null;
+  draftAnalysis: GeneratedDraftAnalysis | null;
+  draftStatus: string;
+  onGenerateDraft: () => void;
+  draftDisabled: boolean;
+}) {
   return (
     <section className="panel report-preview">
       <div className="panel-heading">
@@ -582,6 +596,39 @@ function ReportPreviewPanel({ birthReport }: { birthReport: BirthReport["report"
       </div>
       {birthReport ? (
         <div className="report-sections">
+          <div className="draft-generation-strip">
+            <div>
+              <strong>AI draft по шастра-пакету</strong>
+              <span>{draftStatus}</span>
+            </div>
+            <button type="button" className="secondary-button" onClick={onGenerateDraft} disabled={draftDisabled}>
+              Сгенерировать draft
+            </button>
+          </div>
+          {draftAnalysis ? (
+            <div className="generated-draft">
+              <div className="block-heading">
+                <h3>Нейро-черновик</h3>
+                <span>#{draftAnalysis.id} · {draftAnalysis.review_status}</span>
+              </div>
+              {draftAnalysis.sections.map((section) => (
+                <article className="report-section" key={`${draftAnalysis.id}-${section.title}`}>
+                  <div>
+                    <strong>{section.title}</strong>
+                    <em>draft</em>
+                  </div>
+                  <p>{section.body}</p>
+                  {section.citation_titles.length ? (
+                    <div className="report-citations">
+                      {section.citation_titles.map((title) => (
+                        <span key={`${section.title}-${title}`}>{title}</span>
+                      ))}
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : null}
           {birthReport.sections.map((section) => (
             <article className="report-section" key={section.key}>
               <div>
@@ -1139,6 +1186,8 @@ export default function Home() {
   const [chartMode, setChartMode] = useState("D1");
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
+  const [draftAnalysis, setDraftAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
+  const [draftAnalysisStatus, setDraftAnalysisStatus] = useState("Черновик ещё не генерировался");
   const [transitReport, setTransitReport] = useState<TransitReport | null>(null);
   const [muhurtaReport, setMuhurtaReport] = useState<MuhurtaReport | null>(null);
   const [compatibilityReport, setCompatibilityReport] = useState<CompatibilityReport | null>(null);
@@ -1478,6 +1527,20 @@ export default function Home() {
     }
   }
 
+  async function handleGenerateDraftAnalysis() {
+    const payload = lastBirthPayload ?? buildBirthPayload();
+    if (!payload) return;
+    setDraftAnalysisStatus("Генерирую draft через LLM...");
+    try {
+      const result = await generateBirthDraftAnalysis(payload);
+      setDraftAnalysis(result);
+      setDraftAnalysisStatus(`Сохранён draft #${result.id}, нужен review`);
+    } catch (error) {
+      setDraftAnalysis(null);
+      setDraftAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации draft");
+    }
+  }
+
   async function handleCalculateProfile(profile: ChartProfile) {
     setProfileStatus(`Рассчитываю: ${profile.display_name}`);
     try {
@@ -1493,6 +1556,8 @@ export default function Home() {
       setChart(calculation.result);
       setChartMode("D1");
       setBirthReport(null);
+      setDraftAnalysis(null);
+      setDraftAnalysisStatus("Черновик ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
@@ -1514,6 +1579,8 @@ export default function Home() {
       setChart(result.chart);
       setChartMode("D1");
       setBirthReport(result.report);
+      setDraftAnalysis(null);
+      setDraftAnalysisStatus("Черновик ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
@@ -1522,6 +1589,8 @@ export default function Home() {
     } catch (error) {
       setChart(null);
       setBirthReport(null);
+      setDraftAnalysis(null);
+      setDraftAnalysisStatus("Черновик ещё не генерировался");
       setTransitReport(null);
       setMuhurtaReport(null);
       setCompatibilityReport(null);
@@ -1819,7 +1888,15 @@ export default function Home() {
                 {activeAnalysisTab === "calculations" ? <DetailedCalculationsPanel summary={personSummary} /> : null}
                 {activeAnalysisTab === "yogas" ? <ClassicalPanel classical={chart?.classical} /> : null}
                 {activeAnalysisTab === "timeline" ? <DashaWorkspacePanel summary={personSummary} periods={vimshottariPeriods} /> : null}
-                {activeAnalysisTab === "guidance" ? <ReportPreviewPanel birthReport={birthReport} /> : null}
+                {activeAnalysisTab === "guidance" ? (
+                  <ReportPreviewPanel
+                    birthReport={birthReport}
+                    draftAnalysis={draftAnalysis}
+                    draftStatus={draftAnalysisStatus}
+                    onGenerateDraft={handleGenerateDraftAnalysis}
+                    draftDisabled={!birthReport}
+                  />
+                ) : null}
                 {activeAnalysisTab === "workflows" ? (
                   <div className="analysis-tab-stack">
                     <TransitPanel report={transitReport} status={workflowStatus} />
