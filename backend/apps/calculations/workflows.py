@@ -232,8 +232,8 @@ def build_compatibility_report(
     vaishnava_note = "Совместимость не должна подменять садху-сангу, ответственность и совместное служение Кришне."
 
     return {
-        "status": "partial",
-        "method": "Ashtakuta baseline from Moon rashi/nakshatra; pending JHora and tradition review.",
+        "status": "calculated_needs_tradition_review",
+        "method": "Ashtakuta from Moon rashi/nakshatra; final reading still needs tradition review and context.",
         "score": {
             "total": total_score,
             "max": max_score,
@@ -281,7 +281,7 @@ def build_muhurta_report(
 
     candidates.sort(key=lambda item: (-item["score"], item["date"], item["time"]))
     return {
-        "status": "partial",
+        "status": "calculated_needs_task_review",
         "method": "Daily panchanga scoring with sunrise-based Rahu/Yamaganda/Gulika avoidance; final muhurta requires task-specific review.",
         "candidates": candidates,
         "vaishnava_note": "Даже благоприятное время используем для служения Кришне, а не как замену преданию.",

@@ -41,6 +41,30 @@ def test_yoga_signatures_detect_common_chart_patterns():
     assert "chandra_mangala" in keys
 
 
+def test_yoga_signatures_detect_mahapurusha_lunar_solar_and_amala_patterns():
+    chart = {
+        "ascendant": {"rashi_index": 0, "rashi": "Mesha"},
+        "grahas": [
+            {"body": "Chandra", "rashi_index": 3, "rashi": "Karka"},
+            {"body": "Mangala", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Budha", "rashi_index": 4, "rashi": "Simha"},
+            {"body": "Guru", "rashi_index": 2, "rashi": "Mithuna"},
+            {"body": "Shukra", "rashi_index": 9, "rashi": "Makara"},
+            {"body": "Shani", "rashi_index": 11, "rashi": "Meena"},
+            {"body": "Surya", "rashi_index": 1, "rashi": "Vrishabha"},
+        ],
+    }
+
+    rows = {item["key"]: item for item in yoga_signatures(chart)}
+
+    assert rows["ruchaka_mahapurusha"]["status"] == "calculated_needs_citation"
+    assert rows["durudhara"]["bodies"] == ["Budha", "Guru"]
+    assert rows["veshi"]["bodies"] == ["Guru"]
+    assert rows["voshi"]["bodies"] == ["Mangala"]
+    assert rows["ubhayachari"]["status"] == "calculated_needs_citation"
+    assert rows["amala"]["reference"] == "Lagna"
+
+
 def test_argala_summary_lists_primary_and_obstructing_houses_from_lagna():
     chart = {
         "ascendant": {"rashi_index": 0, "rashi": "Mesha"},
@@ -78,7 +102,7 @@ def test_special_points_include_day_and_night_lots_without_upagraha_claims():
     assert points["arabic_lots"][0]["key"] == "part_of_fortune_day"
     assert points["arabic_lots"][0]["longitude"] == 120.0
     assert points["arabic_lots"][1]["longitude"] == 60.0
-    assert points["upagrahas"]["status"] == "draft_needs_jhora_audit"
+    assert points["upagrahas"]["status"] == "calculated_needs_jhora_audit"
     assert points["upagrahas"]["items"][0]["key"] == "gulika"
     assert points["upagrahas"]["items"][0]["local_time"] == "12:45"
 
@@ -99,11 +123,12 @@ def test_ashtakavarga_generates_bav_and_sav_constants():
 
     result = ashtakavarga(chart)
 
-    assert result["status"] == "draft_needs_jhora_audit"
+    assert result["status"] == "calculated_needs_jhora_audit"
     assert result["bhinna"]["Surya"]["total"] == 48
     assert result["bhinna"]["Surya"]["scores"][0] == 3
     assert result["bhinna"]["Chandra"]["total"] == 49
     assert result["sarva"]["total"] == 337
+    assert result["audit_status"] == "needs_jhora_fixture"
 
 
 def test_shadbala_summary_adds_natural_exaltation_and_directional_components():
@@ -118,11 +143,13 @@ def test_shadbala_summary_adds_natural_exaltation_and_directional_components():
     result = shadbala_summary(chart)
     rows = {row["body"]: row for row in result["items"]}
 
-    assert result["status"] == "draft_needs_jhora_audit"
+    assert result["status"] == "partial_calculated_needs_jhora_audit"
     assert rows["Surya"]["components"]["naisargika"] == 60.0
     assert rows["Surya"]["components"]["uccha"] == 60.0
+    assert rows["Surya"]["components"]["sthana"] == 60.0
     assert rows["Shani"]["components"]["naisargika"] == 8.57
     assert rows["Shani"]["components"]["uccha"] == 0.0
+    assert rows["Shani"]["components"]["sthana"] == 0.0
 
 
 def test_classical_calculations_payload_is_explicit_about_audited_and_pending_layers():
@@ -150,7 +177,8 @@ def test_classical_calculations_payload_is_explicit_about_audited_and_pending_la
     payload = classical_calculations(chart)
 
     assert payload["avasthas"]["baladi"][0]["body"] == "Surya"
+    assert payload["yogas"]["status"] == "partial_calculated_needs_citation"
     assert payload["yogas"]["items"][0]["key"] == "gaja_kesari"
-    assert payload["vimshopaka_bala"]["status"] == "draft_needs_jhora_audit"
+    assert payload["vimshopaka_bala"]["status"] == "partial_calculated_needs_jhora_audit"
     assert payload["ashtakavarga"]["sarva"]["total"] == 337
     assert payload["shadbala"]["items"][0]["body"] == "Surya"

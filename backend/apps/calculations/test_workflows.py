@@ -107,7 +107,7 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
         provider=WorkflowProvider(),
     )
 
-    assert result["status"] == "partial"
+    assert result["status"] == "calculated_needs_tradition_review"
     assert result["score"] == {
         "total": 14.5,
         "max": 36.0,
@@ -168,7 +168,7 @@ def test_build_muhurta_report_ranks_candidates_by_panchanga_rules():
         provider=WorkflowProvider(),
     )
 
-    assert result["status"] == "partial"
+    assert result["status"] == "calculated_needs_task_review"
     assert result["candidates"][0]["date"] == "2026-06-01"
     assert result["candidates"][0]["panchanga"]["tithi"]["name"] == "Ekadashi"
     assert result["candidates"][0]["score"] > result["candidates"][-1]["score"]

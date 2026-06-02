@@ -75,6 +75,17 @@ DIG_BALA_HOUSES = {
     "Shani": 7,
 }
 
+YOGA_PLANETS = ("Mangala", "Budha", "Guru", "Shukra", "Shani")
+NATURAL_BENEFICS = {"Budha", "Guru", "Shukra"}
+KENDRA_HOUSES = {1, 4, 7, 10}
+MAHAPURUSHA_YOGAS = {
+    "Mangala": ("ruchaka_mahapurusha", "Ruchaka Mahapurusha"),
+    "Budha": ("bhadra_mahapurusha", "Bhadra Mahapurusha"),
+    "Guru": ("hamsa_mahapurusha", "Hamsa Mahapurusha"),
+    "Shukra": ("malavya_mahapurusha", "Malavya Mahapurusha"),
+    "Shani": ("shasha_mahapurusha", "Shasha Mahapurusha"),
+}
+
 ASHTAKAVARGA_SOURCES = ("Surya", "Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Lagna")
 ASHTAKAVARGA_TARGETS = ("Surya", "Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani")
 
@@ -165,7 +176,7 @@ def classical_calculations(chart: dict[str, Any]) -> dict[str, Any]:
         "ashtakavarga": ashtakavarga(chart),
         "shadbala": shadbala_summary(chart),
         "yogas": {
-            "status": "draft_needs_citation",
+            "status": "partial_calculated_needs_citation",
             "method": "Only simple signature detection; interpretation requires shastra citations.",
             "items": yoga_signatures(chart),
         },
@@ -239,6 +250,11 @@ def yoga_signatures(chart: dict[str, Any]) -> list[dict[str, object]]:
             }
         )
 
+    items.extend(_mahapurusha_yogas(chart, grahas))
+    items.extend(_moon_adjacent_yogas(grahas))
+    items.extend(_sun_adjacent_yogas(grahas))
+    items.extend(_amala_yogas(chart, grahas))
+
     return items
 
 
@@ -302,9 +318,11 @@ def ashtakavarga(chart: dict[str, Any]) -> dict[str, object]:
             "scores": scores,
             "total": sum(scores),
         }
+    status = "partial_calculated_needs_jhora_audit" if missing_sources else "calculated_needs_jhora_audit"
     return {
-        "status": "draft_needs_jhora_audit",
+        "status": status,
         "method": "Bhinna/Sarva Ashtakavarga bindu tables; pending JHora fixture parity.",
+        "audit_status": "needs_jhora_fixture",
         "missing_sources": missing_sources,
         "bhinna": bhinna,
         "sarva": {
@@ -326,6 +344,7 @@ def shadbala_summary(chart: dict[str, Any]) -> dict[str, object]:
         components = {
             "naisargika": NAISARGIKA_BALA[body],
             "uccha": _uccha_bala(body, longitude),
+            "sthana": _sthana_bala(body, str(graha.get("rashi") or "")),
             "dig": _dig_bala(body, lagna_index, rashi_index),
         }
         items.append(
@@ -336,8 +355,8 @@ def shadbala_summary(chart: dict[str, Any]) -> dict[str, object]:
             }
         )
     return {
-        "status": "draft_needs_jhora_audit",
-        "method": "Partial Shadbala: naisargika, uccha, and whole-sign dig bala only.",
+        "status": "partial_calculated_needs_jhora_audit",
+        "method": "Partial Shadbala: naisargika, uccha, sthana dignity, and whole-sign dig bala only.",
         "items": items,
     }
 
@@ -364,7 +383,7 @@ def vimshopaka_bala(chart: dict[str, Any]) -> dict[str, object]:
             }
         )
     return {
-        "status": "draft_needs_jhora_audit",
+        "status": "partial_calculated_needs_jhora_audit",
         "method": "Temporary own/exaltation varga support count; not final Vimshopaka/Shadbala.",
         "items": rows,
     }
@@ -378,6 +397,119 @@ def _baladi_rows(chart: dict[str, Any]) -> list[dict[str, object]]:
             continue
         rows.append({"body": graha.get("body"), **baladi_avastha(longitude)})
     return rows
+
+
+def _mahapurusha_yogas(chart: dict[str, Any], grahas: dict[str, dict[str, Any]]) -> list[dict[str, object]]:
+    lagna_index = _int_or_none((chart.get("ascendant") or {}).get("rashi_index"))
+    if lagna_index is None:
+        return []
+    rows = []
+    for body, (key, name) in MAHAPURUSHA_YOGAS.items():
+        graha = grahas.get(body)
+        rashi_index = _int_or_none(graha.get("rashi_index") if graha else None)
+        rashi = str(graha.get("rashi") or "") if graha else ""
+        if rashi_index is None:
+            continue
+        is_kendra = _house_from(lagna_index, rashi_index) in KENDRA_HOUSES
+        is_strong_sign = rashi in OWN_SIGNS.get(body, set()) or rashi == EXALTATION_SIGNS.get(body)
+        if is_kendra and is_strong_sign:
+            rows.append(
+                _yoga_payload(
+                    key,
+                    name,
+                    [body],
+                    "calculated_needs_citation",
+                    reference="Lagna",
+                )
+            )
+    return rows
+
+
+def _moon_adjacent_yogas(grahas: dict[str, dict[str, Any]]) -> list[dict[str, object]]:
+    moon = grahas.get("Chandra")
+    moon_index = _int_or_none(moon.get("rashi_index") if moon else None)
+    if moon_index is None:
+        return []
+    second = _planets_in_house_from(grahas, moon_index, 2)
+    twelfth = _planets_in_house_from(grahas, moon_index, 12)
+    if second and twelfth:
+        return [_yoga_payload("durudhara", "Durudhara", sorted(second + twelfth), "calculated_needs_citation", reference="Chandra")]
+    if second:
+        return [_yoga_payload("sunapha", "Sunapha", sorted(second), "calculated_needs_citation", reference="Chandra")]
+    if twelfth:
+        return [_yoga_payload("anapha", "Anapha", sorted(twelfth), "calculated_needs_citation", reference="Chandra")]
+    return [_yoga_payload("kemadruma", "Kemadruma", ["Chandra"], "calculated_needs_citation", reference="Chandra")]
+
+
+def _sun_adjacent_yogas(grahas: dict[str, dict[str, Any]]) -> list[dict[str, object]]:
+    sun = grahas.get("Surya")
+    sun_index = _int_or_none(sun.get("rashi_index") if sun else None)
+    if sun_index is None:
+        return []
+    second = _planets_in_house_from(grahas, sun_index, 2)
+    twelfth = _planets_in_house_from(grahas, sun_index, 12)
+    rows = []
+    if second:
+        rows.append(_yoga_payload("veshi", "Veshi", sorted(second), "calculated_needs_citation", reference="Surya"))
+    if twelfth:
+        rows.append(_yoga_payload("voshi", "Voshi", sorted(twelfth), "calculated_needs_citation", reference="Surya"))
+    if second and twelfth:
+        rows.append(
+            _yoga_payload(
+                "ubhayachari",
+                "Ubhayachari",
+                sorted(second + twelfth),
+                "calculated_needs_citation",
+                reference="Surya",
+            )
+        )
+    return rows
+
+
+def _amala_yogas(chart: dict[str, Any], grahas: dict[str, dict[str, Any]]) -> list[dict[str, object]]:
+    rows = []
+    lagna_index = _int_or_none((chart.get("ascendant") or {}).get("rashi_index"))
+    if lagna_index is not None:
+        benefics = _benefics_in_house_from(grahas, lagna_index, 10)
+        if benefics:
+            rows.append(_yoga_payload("amala", "Amala", benefics, "calculated_needs_citation", reference="Lagna"))
+    moon = grahas.get("Chandra")
+    moon_index = _int_or_none(moon.get("rashi_index") if moon else None)
+    if moon_index is not None:
+        benefics = _benefics_in_house_from(grahas, moon_index, 10)
+        if benefics:
+            rows.append(_yoga_payload("amala_chandra", "Amala from Chandra", benefics, "calculated_needs_citation", reference="Chandra"))
+    return rows
+
+
+def _planets_in_house_from(grahas: dict[str, dict[str, Any]], reference_index: int, house: int) -> list[str]:
+    bodies = []
+    for body in YOGA_PLANETS:
+        rashi_index = _int_or_none((grahas.get(body) or {}).get("rashi_index"))
+        if rashi_index is not None and _house_from(reference_index, rashi_index) == house:
+            bodies.append(body)
+    return bodies
+
+
+def _benefics_in_house_from(grahas: dict[str, dict[str, Any]], reference_index: int, house: int) -> list[str]:
+    return [body for body in _planets_in_house_from(grahas, reference_index, house) if body in NATURAL_BENEFICS]
+
+
+def _yoga_payload(
+    key: str,
+    name: str,
+    bodies: list[str],
+    status: str,
+    *,
+    reference: str,
+) -> dict[str, object]:
+    return {
+        "key": key,
+        "name": name,
+        "bodies": bodies,
+        "status": status,
+        "reference": reference,
+    }
 
 
 def _argala_rows(chart: dict[str, Any], reference_index: int, houses: tuple[int, ...]) -> list[dict[str, object]]:
@@ -427,7 +559,7 @@ def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
                 "Actual sunrise/sunset segment with Lagna at Gulika midpoint; pending JHora fixture parity."
             )
             return {
-                "status": "draft_needs_jhora_audit",
+                "status": "calculated_needs_jhora_audit",
                 "method": "Gulika/Mandi uses actual sunrise/sunset period segmentation and midpoint Lagna.",
                 "items": [item],
             }
@@ -457,7 +589,7 @@ def _upagrahas(chart: dict[str, Any]) -> dict[str, object]:
     item["local_time"] = gulika_time.strftime("%H:%M")
     item["calculation_note"] = "Approximate weekday Saturn segment; sunrise/sunset audit pending."
     return {
-        "status": "draft_needs_jhora_audit",
+        "status": "calculated_needs_jhora_audit",
         "method": "Civil 06:00-18:00/18:00-06:00 Saturn segment approximation pending JHora audit.",
         "items": [item],
     }
@@ -504,6 +636,25 @@ def _uccha_bala(body: str, longitude: float) -> float:
     distance = abs(normalize_degrees(longitude) - debilitation)
     distance = min(distance, 360.0 - distance)
     return round(distance / 3.0, 2)
+
+
+def _sthana_bala(body: str, rashi: str) -> float:
+    if not rashi:
+        return 0.0
+    if rashi == EXALTATION_SIGNS.get(body):
+        return 60.0
+    if rashi == _debilitation_sign(body):
+        return 0.0
+    if rashi in OWN_SIGNS.get(body, set()):
+        return 45.0
+    return 15.0
+
+
+def _debilitation_sign(body: str) -> str:
+    degree = DEBILITATION_DEGREES.get(body)
+    if degree is None:
+        return ""
+    return zodiac_placement(degree).rashi
 
 
 def _dig_bala(body: str, lagna_index: int | None, rashi_index: int | None) -> float:
