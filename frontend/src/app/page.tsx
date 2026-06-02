@@ -38,6 +38,18 @@ const sourceRows = [
   ["Корпус VL", "База Шрилы Прабхупады", "Поиск подключён", "ready"],
 ];
 
+const analysisTabs = [
+  { key: "overview", label: "Обзор", hint: "главное" },
+  { key: "calculations", label: "Расчёты", hint: "D1, D9, дома" },
+  { key: "yogas", label: "Йоги и силы", hint: "draft + аудит" },
+  { key: "timeline", label: "Периоды", hint: "даши" },
+  { key: "guidance", label: "Разбор", hint: "текст и цитаты" },
+  { key: "workflows", label: "Практика", hint: "транзиты, мухурта, совместимость" },
+  { key: "sources", label: "Источники", hint: "VL и статус" },
+] as const;
+
+type AnalysisTab = (typeof analysisTabs)[number]["key"];
+
 const stateLabels: Record<string, string> = {
   draft: "черновик",
   ready: "готово",
@@ -305,27 +317,24 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
             </div>
           </div>
         </div>
-        <div className="summary-table">
-          <div className="summary-row summary-head">
-            <span>Граха</span>
-            <span>Раши</span>
-            <span>Дом</span>
-            <span>Накшатра</span>
-            <span>D9</span>
-          </div>
-          {summary.graha_houses.map((row) => (
-            <div className="summary-row" key={row.body}>
-              <strong>{labelRu(row.body)}</strong>
-              <span>{row.rashi}</span>
-              <span>{row.house ?? "-"}</span>
-              <span>
-                {row.nakshatra} {row.pada ?? ""}
-              </span>
-              <span>{row.navamsa}</span>
-            </div>
-          ))}
-        </div>
-        {summary.detailed_positions?.length ? (
+      </div>
+    </section>
+  );
+}
+
+function DetailedCalculationsPanel({ summary }: { summary: PersonSummary | null }) {
+  const detailedPositions = summary?.detailed_positions ?? [];
+  const houses = summary?.houses ?? [];
+
+  return (
+    <section className="panel calculation-detail-panel">
+      <div className="panel-heading">
+        <h2>Расчёты карты</h2>
+        <span>D1, D9, накшатры, дома</span>
+      </div>
+      <div className="summary-content">
+        {!summary ? <div className="pending-strip">Подробные расчёты появятся после построения карты.</div> : null}
+        {detailedPositions.length ? (
           <div className="detailed-positions">
             <div>
               <h3>Подробные положения</h3>
@@ -343,7 +352,7 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
                 <span>Упр.</span>
                 <span>Сила</span>
               </div>
-              {summary.detailed_positions.map((row) => (
+              {detailedPositions.map((row) => (
                 <div className="detailed-row" key={row.body}>
                   <strong>
                     {labelRu(row.body)}
@@ -364,14 +373,14 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
             </div>
           </div>
         ) : null}
-        {summary.houses.length ? (
+        {houses.length ? (
           <div className="house-overview">
             <div>
               <h3>Обзор домов</h3>
               <span>Цельнознаковые дома</span>
             </div>
             <div className="house-grid">
-              {summary.houses.map((house) => (
+              {houses.map((house) => (
                 <div className="house-card" key={house.house}>
                   <span>Дом {house.house}</span>
                   <strong>{house.rashi}</strong>
@@ -381,33 +390,78 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
             </div>
           </div>
         ) : null}
-        {summary.dasha.current_mahadasha_antardashas.length ? (
-          <div className="antardasha-panel">
-            <div>
-              <h3>Антардаши текущей махадаши</h3>
-              <span>
-                {summary.dasha.current_mahadasha ? labelRu(summary.dasha.current_mahadasha.lord) : "Ожидает"} махадаша
-              </span>
-            </div>
-            <div className="antardasha-strip">
-              {summary.dasha.current_mahadasha_antardashas.map((period) => {
-                const isActive =
-                  period.lord === summary.dasha.current_antardasha?.lord &&
-                  period.parent_lord === summary.dasha.current_antardasha?.parent_lord;
-                return (
-                  <div className={isActive ? "antardasha-item active" : "antardasha-item"} key={`${period.parent_lord}-${period.lord}-${period.starts_at}`}>
-                    <strong>{labelRu(period.lord)}</strong>
-                    <span>{period.duration_years.toFixed(2)} г.</span>
-                    <small>
-                      {formatDate(period.starts_at)} - {formatDate(period.ends_at)}
-                    </small>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
       </div>
+    </section>
+  );
+}
+
+function DashaWorkspacePanel({ summary, periods }: { summary: PersonSummary | null; periods: DashaPeriod[] }) {
+  return (
+    <section className="panel">
+      <div className="panel-heading">
+        <h2>Периоды Вимшоттари</h2>
+        <span>{periods.length ? "Махадаши и текущие антардаши" : "Ожидает долготу Луны"}</span>
+      </div>
+      <DashaTimeline periods={periods} />
+      {summary?.dasha.current_mahadasha_antardashas.length ? (
+        <div className="antardasha-panel">
+          <div>
+            <h3>Антардаши текущей махадаши</h3>
+            <span>{summary.dasha.current_mahadasha ? labelRu(summary.dasha.current_mahadasha.lord) : "Ожидает"} махадаша</span>
+          </div>
+          <div className="antardasha-strip">
+            {summary.dasha.current_mahadasha_antardashas.map((period) => {
+              const isActive =
+                period.lord === summary.dasha.current_antardasha?.lord &&
+                period.parent_lord === summary.dasha.current_antardasha?.parent_lord;
+              return (
+                <div className={isActive ? "antardasha-item active" : "antardasha-item"} key={`${period.parent_lord}-${period.lord}-${period.starts_at}`}>
+                  <strong>{labelRu(period.lord)}</strong>
+                  <span>{period.duration_years.toFixed(2)} г.</span>
+                  <small>
+                    {formatDate(period.starts_at)} - {formatDate(period.ends_at)}
+                  </small>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ReportPreviewPanel({ birthReport }: { birthReport: BirthReport["report"] | null }) {
+  return (
+    <section className="panel report-preview">
+      <div className="panel-heading">
+        <h2>Разбор карты</h2>
+        <span>{birthReport ? birthReport.review_status : "Отчёт ожидает расчёт"}</span>
+      </div>
+      {birthReport ? (
+        <div className="report-sections">
+          {birthReport.sections.map((section) => (
+            <article className="report-section" key={section.key}>
+              <div>
+                <strong>{section.title}</strong>
+                <em>{section.review_status}</em>
+              </div>
+              <p>{section.body}</p>
+              {section.citations.length ? (
+                <div className="report-citations">
+                  {section.citations.map((citation) => (
+                    <a href={citation.public_url || "#"} key={`${section.key}-${citation.title}`} target="_blank" rel="noreferrer">
+                      {citation.title || citation.work_title}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="pending-strip">Отчёт появится после расчёта карты.</div>
+      )}
     </section>
   );
 }
@@ -785,6 +839,7 @@ export default function Home() {
   const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [transitReport, setTransitReport] = useState<TransitReport | null>(null);
   const [muhurtaReport, setMuhurtaReport] = useState<MuhurtaReport | null>(null);
@@ -1163,8 +1218,8 @@ export default function Home() {
         </div>
         <nav aria-label="Основная навигация">
           <a className="active" href="#chart">Карты</a>
-          <a href="#reports">Отчёт</a>
-          <a href="#sources">Источники</a>
+          <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>Отчёт</a>
+          <a href="#reports" onClick={() => setActiveAnalysisTab("sources")}>Источники</a>
           <a href="#accuracy">Точность</a>
         </nav>
         <blockquote>
@@ -1407,98 +1462,86 @@ export default function Home() {
               <p className="calculation-result">{calculatedLabel}</p>
             </section>
 
-            <PersonSummaryPanel summary={personSummary} />
-            <ClassicalPanel classical={chart?.classical} />
-            <TransitPanel report={transitReport} status={workflowStatus} />
-            <MuhurtaPanel report={muhurtaReport} status={workflowStatus} />
-            <CompatibilityPanel
-              report={compatibilityReport}
-              status={compatibilityStatus}
-              partnerBirthDate={partnerBirthDate}
-              setPartnerBirthDate={setPartnerBirthDate}
-              partnerBirthTime={partnerBirthTime}
-              setPartnerBirthTime={setPartnerBirthTime}
-              partnerPlaceName={partnerPlaceName}
-              setPartnerPlaceName={setPartnerPlaceName}
-              partnerPlaceMatches={partnerPlaceMatches}
-              selectedPartnerPlace={selectedPartnerPlace}
-              showPartnerPlaceSuggestions={showPartnerPlaceSuggestions}
-              setShowPartnerPlaceSuggestions={setShowPartnerPlaceSuggestions}
-              partnerPlaceSearchStatus={partnerPlaceSearchStatus}
-              onSelectPartnerPlace={selectPartnerPlace}
-              onSubmit={handleCompatibilitySubmit}
-              disabled={!chart}
-            />
-
-            <section className="panel" id="reports">
-              <div className="panel-heading">
-                <h2>Линия Вимшоттари-даши</h2>
-                <span>{vimshottariPeriods.length ? "Уровень махадаши, MVP-движок" : "Ожидает долготу Луны"}</span>
-              </div>
-              <DashaTimeline periods={vimshottariPeriods} />
-            </section>
-
-            <section className="panel report-preview">
-              <div className="panel-heading">
-                <h2>Предпросмотр отчёта</h2>
-                <span>{birthReport ? birthReport.review_status : "Отчёт ожидает расчёт"}</span>
-              </div>
-              {birthReport ? (
-                <div className="report-sections">
-                  {birthReport.sections.map((section) => (
-                    <article className="report-section" key={section.key}>
-                      <div>
-                        <strong>{section.title}</strong>
-                        <em>{section.review_status}</em>
-                      </div>
-                      <p>{section.body}</p>
-                      {section.citations.length ? (
-                        <div className="report-citations">
-                          {section.citations.map((citation) => (
-                            <a href={citation.public_url || "#"} key={`${section.key}-${citation.title}`} target="_blank" rel="noreferrer">
-                              {citation.title || citation.work_title}
-                            </a>
-                          ))}
-                        </div>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="pending-strip">Отчёт появится после расчёта карты.</div>
-              )}
-            </section>
-
-            <section className="panel" id="sources">
-              <div className="panel-heading">
-                <h2>Цитаты и статус источников</h2>
-                <button type="button" className="secondary-button">Все источники</button>
-              </div>
-              <form className="source-search" onSubmit={handleSourceSearch}>
-                <input value={sourceQuery} onChange={(event) => setSourceQuery(event.target.value)} />
-                <button type="submit" className="secondary-button">Искать в VL</button>
-                <span>{sourceStatus}</span>
-              </form>
-              {sourceResults.length ? (
-                <div className="source-results">
-                  {sourceResults.map((result) => (
-                    <a href={result.public_url || "#"} key={result.id} target="_blank" rel="noreferrer">
-                      <strong>{result.title || result.work_title}</strong>
-                      <span>{result.work_title}</span>
-                      <p>{result.body}</p>
-                    </a>
-                  ))}
-                </div>
-              ) : null}
-              <div className="source-table">
-                {sourceRows.map(([component, source, citation, state]) => (
-                  <div className="source-row" key={component}>
-                    <strong>{component}</strong>
-                    <span>{source}</span>
-                    <span>{citation}</span>
-                    <em className={state}>{stateLabels[state] ?? state}</em>
-                  </div>
+            <section className="analysis-workspace" id="reports">
+              <div className="analysis-tabs" role="tablist" aria-label="Разделы анализа">
+                {analysisTabs.map((tab) => (
+                  <button
+                    type="button"
+                    key={tab.key}
+                    className={activeAnalysisTab === tab.key ? "active" : ""}
+                    onClick={() => setActiveAnalysisTab(tab.key)}
+                    role="tab"
+                    aria-selected={activeAnalysisTab === tab.key}
+                  >
+                    <strong>{tab.label}</strong>
+                    <span>{tab.hint}</span>
+                  </button>
                 ))}
+              </div>
+              <div className="analysis-panel-slot">
+                {activeAnalysisTab === "overview" ? <PersonSummaryPanel summary={personSummary} /> : null}
+                {activeAnalysisTab === "calculations" ? <DetailedCalculationsPanel summary={personSummary} /> : null}
+                {activeAnalysisTab === "yogas" ? <ClassicalPanel classical={chart?.classical} /> : null}
+                {activeAnalysisTab === "timeline" ? <DashaWorkspacePanel summary={personSummary} periods={vimshottariPeriods} /> : null}
+                {activeAnalysisTab === "guidance" ? <ReportPreviewPanel birthReport={birthReport} /> : null}
+                {activeAnalysisTab === "workflows" ? (
+                  <div className="analysis-tab-stack">
+                    <TransitPanel report={transitReport} status={workflowStatus} />
+                    <MuhurtaPanel report={muhurtaReport} status={workflowStatus} />
+                    <CompatibilityPanel
+                      report={compatibilityReport}
+                      status={compatibilityStatus}
+                      partnerBirthDate={partnerBirthDate}
+                      setPartnerBirthDate={setPartnerBirthDate}
+                      partnerBirthTime={partnerBirthTime}
+                      setPartnerBirthTime={setPartnerBirthTime}
+                      partnerPlaceName={partnerPlaceName}
+                      setPartnerPlaceName={setPartnerPlaceName}
+                      partnerPlaceMatches={partnerPlaceMatches}
+                      selectedPartnerPlace={selectedPartnerPlace}
+                      showPartnerPlaceSuggestions={showPartnerPlaceSuggestions}
+                      setShowPartnerPlaceSuggestions={setShowPartnerPlaceSuggestions}
+                      partnerPlaceSearchStatus={partnerPlaceSearchStatus}
+                      onSelectPartnerPlace={selectPartnerPlace}
+                      onSubmit={handleCompatibilitySubmit}
+                      disabled={!chart}
+                    />
+                  </div>
+                ) : null}
+                {activeAnalysisTab === "sources" ? (
+                  <section className="panel" id="sources">
+                    <div className="panel-heading">
+                      <h2>Цитаты и статус источников</h2>
+                      <button type="button" className="secondary-button">Все источники</button>
+                    </div>
+                    <form className="source-search" onSubmit={handleSourceSearch}>
+                      <input value={sourceQuery} onChange={(event) => setSourceQuery(event.target.value)} />
+                      <button type="submit" className="secondary-button">Искать в VL</button>
+                      <span>{sourceStatus}</span>
+                    </form>
+                    {sourceResults.length ? (
+                      <div className="source-results">
+                        {sourceResults.map((result) => (
+                          <a href={result.public_url || "#"} key={result.id} target="_blank" rel="noreferrer">
+                            <strong>{result.title || result.work_title}</strong>
+                            <span>{result.work_title}</span>
+                            <p>{result.body}</p>
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+                    <div className="source-table">
+                      {sourceRows.map(([component, source, citation, state]) => (
+                        <div className="source-row" key={component}>
+                          <strong>{component}</strong>
+                          <span>{source}</span>
+                          <span>{citation}</span>
+                          <em className={state}>{stateLabels[state] ?? state}</em>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
               </div>
             </section>
           </section>

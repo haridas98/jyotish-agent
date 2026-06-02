@@ -158,7 +158,7 @@ button {
 .content-grid {
   display: grid;
   gap: 24px;
-  grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
   padding: 24px;
 }
 
@@ -482,6 +482,72 @@ select {
   display: grid;
   gap: 16px;
   min-width: 0;
+}
+
+.analysis-workspace {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.analysis-tabs {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(7, minmax(118px, 1fr));
+  overflow: hidden;
+}
+
+.analysis-tabs button {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+  min-height: 66px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.analysis-tabs button:last-child {
+  border-right: 0;
+}
+
+.analysis-tabs button.active {
+  background: #f3f7f2;
+  box-shadow: inset 0 -3px 0 var(--green);
+}
+
+.analysis-tabs strong {
+  color: var(--green);
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.analysis-tabs span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.analysis-panel-slot,
+.analysis-tab-stack {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.analysis-panel-slot > .panel:not(.classical-panel):not(.workflow-panel):not(.person-summary-panel) {
+  overflow: hidden;
+}
+
+.analysis-panel-slot > .panel:not(.classical-panel):not(.workflow-panel):not(.person-summary-panel) > .panel-heading {
+  margin: 0;
+  padding: 18px;
 }
 
 .chart-panel {
@@ -1320,6 +1386,16 @@ select {
   color: #985a12;
 }
 
+@media (max-width: 1500px) {
+  .chart-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-tabs {
+    grid-template-columns: repeat(4, minmax(128px, 1fr));
+  }
+}
+
 @media (max-width: 1060px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -1359,6 +1435,16 @@ select {
 
   .source-search {
     grid-template-columns: 1fr;
+  }
+
+  .analysis-tabs {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .analysis-tabs button {
+    border-right: 1px solid var(--line);
+    flex: 0 0 152px;
   }
 
   .summary-grid,
