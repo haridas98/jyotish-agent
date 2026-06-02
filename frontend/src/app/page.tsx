@@ -74,6 +74,7 @@ const calculationStatusLabelsRu: Record<string, string> = {
   pending_endpoint: "ждёт API",
   api_available: "API готов",
   complete_baseline_needs_jhora_audit: "8/8, нужна сверка JHora",
+  multi_factor_needs_shastra_citation_review: "многофакторно, нужны цитаты",
   pending_separate_chart_pair: "нужны две карты",
   pending_separate_workflow: "отдельный режим",
   signature_only: "только признак",
@@ -92,6 +93,7 @@ const auditStatusLabelsRu: Record<string, string> = {
   baseline_api_ready: "API готов, правила не финальны",
   baseline_ashtakuta: "базовая аштакута",
   baseline_scoring: "базовая оценка",
+  multi_factor_calculated_needs_shastra_review: "многофакторно, нужны шастра-цитаты",
   source_backed: "есть шастра",
   source_backed_with_bphs_caution: "есть шастра, BPHS осторожно",
   source_backed_but_tradition_sensitive: "нужна традиционная сверка",
@@ -133,7 +135,7 @@ const auditSourceBasisRu: Record<string, string> = {
   upagrahas: "Гулика и солнечные упаграхи рассчитаны; нужна JHora-сверка перед интерпретацией.",
   special_points: "Нужна точная привязка формул к источникам.",
   transits: "API готов, правила интерпретации транзитов ещё не финальны.",
-  compatibility: "Базовая аштакута не заменяет традиционное наставление.",
+  compatibility: "Аштакута плюс анализ двух карт; нужен старший review перед выводами о браке.",
   muhurta: "Базовая оценка окна, не финальная элекция.",
 };
 
@@ -148,6 +150,28 @@ const compatibilityLevelLabelsRu: Record<string, string> = {
   supportive: "поддерживающе",
   mixed: "смешанно",
   caution: "нужна осторожность",
+  context: "контекст",
+  missing: "не хватает данных",
+};
+
+const compatibilityPerspectiveLabelsRu: Record<string, string> = {
+  ashtakuta: "Ашта-кута как базовый слой",
+  lagna_lagna: "Лагна и направление жизни",
+  moon_mind: "Луна и эмоциональный ритм",
+  seventh_house: "7 дом и способность к браку",
+  shukra_mangala: "Шукра и Мангала",
+  guru_shukra: "Гуру, Шукра и ценности семьи",
+  dasha_context: "Контекст даш",
+};
+
+const compatibilityPerspectiveBasisRu: Record<string, string> = {
+  ashtakuta: "Кута-милан по Луне и накшатре: важный слой, но не самостоятельный приговор.",
+  lagna_lagna: "Сравнение лагн показывает направление жизни и практический ритм семьи.",
+  moon_mind: "Сравнение Луны показывает манас, эмоциональную реакцию и бытовой комфорт.",
+  seventh_house: "Проверяются 7 дом, его управитель и планеты в 7 доме в обеих картах.",
+  shukra_mangala: "Шукра/Мангала дают вторичный показатель притяжения и возможного трения.",
+  guru_shukra: "Гуру и Шукра показывают дхарму, совет, привязанность и ценности семьи.",
+  dasha_context: "Даши рассматриваются отдельно и не должны отменять общий анализ карт.",
 };
 
 const bodyLabelsRu: Record<string, string> = {
@@ -206,6 +230,35 @@ function auditOrderRu(order: string[]) {
 
 function auditNoteRu(key: string, fallback: string) {
   return auditSourceBasisRu[key] ?? fallback;
+}
+
+function compatibilityFindingRu(value: string) {
+  return value
+    .replace("Ashtakuta score", "Баллы аштакуты")
+    .replace("Zero-score kutas:", "Нулевые куты:")
+    .replace("none", "нет")
+    .replace("Lagna distance", "Дистанция лагн")
+    .replace("Moon distance", "Дистанция Лун")
+    .replace("Moon nakshatras:", "Накшатры Луны:")
+    .replace("person_a seventh house", "Карта A: 7 дом")
+    .replace("person_b seventh house", "Карта B: 7 дом")
+    .replace("person_a seventh lord", "Карта A: управитель 7 дома")
+    .replace("person_b seventh lord", "Карта B: управитель 7 дома")
+    .replace("A Shukra to B Mangala distance", "Шукра A к Мангале B")
+    .replace("B Shukra to A Mangala distance", "Шукра B к Мангале A")
+    .replace("person_a Guru dignity", "Карта A: достоинство Гуру")
+    .replace("person_a Shukra dignity", "Карта A: достоинство Шукры")
+    .replace("person_b Guru dignity", "Карта B: достоинство Гуру")
+    .replace("person_b Shukra dignity", "Карта B: достоинство Шукры")
+    .replace("Birth mahadasha lords:", "Махадаши рождения:")
+    .replaceAll(" lord ", " управитель ")
+    .replaceAll(" in house ", " в доме ")
+    .replaceAll("exaltation", "экзальтация")
+    .replaceAll("debilitation", "дебилитация")
+    .replaceAll("own", "свой знак")
+    .replaceAll("friend", "дружественный знак")
+    .replaceAll("neutral", "нейтральный знак")
+    .replaceAll("enemy", "враждебный знак");
 }
 
 function formatCoordinate(value: number) {
@@ -901,6 +954,8 @@ function CompatibilityPanel({
   disabled,
 }: CompatibilityPanelProps) {
   const rows = report?.kuta_rows ?? [];
+  const perspectives = report?.analysis?.perspectives ?? [];
+  const summaries = report?.analysis?.chart_summaries;
   const scoreLabel = report ? `${report.score.total}/${report.score.max}` : "-";
   const percentLabel = report ? `${report.score.percent.toFixed(1)}%` : "-";
   const levelLabel = report ? compatibilityLevelLabelsRu[report.assessment.level] ?? report.assessment.level : "ожидает";
@@ -980,9 +1035,55 @@ function CompatibilityPanel({
             <div>
               <span>Покрытие</span>
               <strong>{report.coverage.calculated_kutas}/{report.coverage.total_kutas}</strong>
-              <small>{statusRu(report.coverage.status)}</small>
+              <small>
+                {statusRu(report.coverage.status)}
+                {report.coverage.calculated_perspectives
+                  ? ` · ${report.coverage.calculated_perspectives} ракурсов`
+                  : ""}
+              </small>
             </div>
           </div>
+          {summaries ? (
+            <div className="compatibility-chart-grid">
+              {(["person_a", "person_b"] as const).map((key) => {
+                const summary = summaries[key];
+                return (
+                  <div key={key}>
+                    <span>{key === "person_a" ? "Карта A" : "Карта B"}</span>
+                    <strong>
+                      Лагна {summary.lagna.rashi ?? "-"} · Луна {summary.moon.rashi ?? "-"}
+                    </strong>
+                    <small>
+                      7 дом {summary.seventh_house.rashi ?? "-"}, управитель{" "}
+                      {summary.seventh_house.lord ?? "-"} в доме {summary.seventh_lord.house ?? "-"}
+                    </small>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+          {perspectives.length ? (
+            <div className="compatibility-perspectives">
+              <div className="kuta-row kuta-head">
+                <span>Ракурс</span>
+                <span>Оценка</span>
+                <span>Вывод</span>
+              </div>
+              {perspectives.map((row) => (
+                <div className="compatibility-perspective-row" key={row.key}>
+                  <div>
+                    <strong>{compatibilityPerspectiveLabelsRu[row.key] ?? row.title}</strong>
+                    <small>{compatibilityPerspectiveBasisRu[row.key] ?? row.source_basis}</small>
+                  </div>
+                  <span>
+                    {row.max_score ? `${row.score}/${row.max_score}` : "контекст"}
+                    <small>{compatibilityLevelLabelsRu[row.status] ?? statusRu(row.status)}</small>
+                  </span>
+                  <small>{row.findings.slice(0, 2).map(compatibilityFindingRu).join(" ")}</small>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <div className="kuta-table">
             <div className="kuta-row kuta-head">
               <span>Кута</span>

@@ -459,6 +459,7 @@ export type CompatibilityReport = {
     system: string;
     calculated_kutas: number;
     total_kutas: number;
+    calculated_perspectives?: number;
     status: string;
   };
   score: {
@@ -481,6 +482,46 @@ export type CompatibilityReport = {
     status: string;
     details: string;
   }[];
+  analysis?: {
+    status: string;
+    review_status: string;
+    source_policy: string;
+    source_anchors: string[];
+    vaishnava_guard: string;
+    chart_summaries: Record<
+      "person_a" | "person_b",
+      {
+        lagna: CompactPlacement;
+        moon: CompactPlacement;
+        seventh_house: {
+          rashi: string | null;
+          rashi_index: number | null;
+          lord: string | null;
+          planets: string[];
+        };
+        seventh_lord: {
+          body: string | null;
+          rashi: string | null;
+          house: number | null;
+          dignity: string;
+        };
+        relationship_grahas: Record<string, Record<string, unknown>>;
+        birth_dasha_lord: string | null;
+      }
+    >;
+    perspectives: {
+      key: string;
+      title: string;
+      score: number;
+      max_score: number;
+      status: string;
+      findings: string[];
+      source_basis: string;
+      review_status: string;
+    }[];
+    support_factors: string[];
+    caution_factors: string[];
+  };
   assessment: {
     level: string;
     caution_count: number;

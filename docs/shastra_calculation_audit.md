@@ -31,7 +31,8 @@ Currently blocked for final interpretation:
 - yogas: detected conditions only, exact citations/cancellations pending;
 - argala and special points: partial/source audit open;
 - upagrahas: Gulika plus Dhuma/Vyatipata/Parivesha/Indrachapa/Upaketu calculated; JHora audit open;
-- transits, compatibility, muhurta: API/baseline only, not final counsel.
+- compatibility: multi-factor chart analysis is calculated, but not final marriage counsel without exact citations and senior review;
+- transits and muhurta: API/baseline only, not final counsel.
 
 ## Source Anchors
 

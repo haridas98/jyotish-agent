@@ -44,3 +44,7 @@ def test_shastra_audit_payload_marks_verified_and_partial_layers():
     assert payload["items_by_key"]["vimshopaka"]["implementation_status"] == "calculated_needs_jhora_audit"
     assert payload["items_by_key"]["vimshopaka"]["can_generate_client_interpretation"] is False
     assert payload["items_by_key"]["upagrahas"]["implementation_status"] == "calculated_needs_jhora_audit"
+    assert (
+        payload["items_by_key"]["compatibility"]["implementation_status"]
+        == "multi_factor_calculated_needs_shastra_review"
+    )

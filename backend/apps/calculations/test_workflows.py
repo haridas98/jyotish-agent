@@ -108,12 +108,11 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
     )
 
     assert result["status"] == "calculated_needs_tradition_review"
-    assert result["coverage"] == {
-        "system": "ashtakuta",
-        "calculated_kutas": 8,
-        "total_kutas": 8,
-        "status": "complete_baseline_needs_jhora_audit",
-    }
+    assert result["coverage"]["system"] == "ashtakuta_plus_chart_analysis"
+    assert result["coverage"]["calculated_kutas"] == 8
+    assert result["coverage"]["total_kutas"] == 8
+    assert result["coverage"]["calculated_perspectives"] >= 7
+    assert result["coverage"]["status"] == "multi_factor_needs_shastra_citation_review"
     assert result["score"] == {
         "total": 14.5,
         "max": 36.0,
@@ -160,6 +159,28 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
     assert result["assessment"]["caution_count"] == 2
     assert "садху-сангу" in result["assessment"]["note"]
     assert "Кришне" in result["vaishnava_note"]
+
+
+    analysis = result["analysis"]
+    perspective_keys = {row["key"] for row in analysis["perspectives"]}
+    assert analysis["status"] == "calculated_needs_shastra_citation_review"
+    assert {
+        "ashtakuta",
+        "lagna_lagna",
+        "moon_mind",
+        "seventh_house",
+        "shukra_mangala",
+        "guru_shukra",
+        "dasha_context",
+    } <= perspective_keys
+    assert analysis["chart_summaries"]["person_a"]["lagna"]["rashi"] == "Mesha"
+    assert analysis["chart_summaries"]["person_a"]["seventh_house"]["rashi"] == "Tula"
+    assert analysis["chart_summaries"]["person_a"]["seventh_house"]["lord"] == "Shukra"
+    assert analysis["chart_summaries"]["person_a"]["seventh_lord"]["house"] == 8
+    seventh = next(row for row in analysis["perspectives"] if row["key"] == "seventh_house")
+    assert seventh["status"] == "caution"
+    assert any("person_a seventh lord Shukra in house 8" in item for item in seventh["findings"])
+    assert analysis["vaishnava_guard"] == "final_guidance_requires_sadhu_guru_shastra_review"
 
 
 def test_build_muhurta_report_ranks_candidates_by_panchanga_rules():

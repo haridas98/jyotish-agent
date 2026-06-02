@@ -142,6 +142,40 @@ GRAHA_ENEMIES = {
     "Shani": {"Surya", "Chandra", "Mangala"},
 }
 
+OWN_SIGNS = {
+    "Surya": {"Simha"},
+    "Chandra": {"Karka"},
+    "Mangala": {"Mesha", "Vrischika"},
+    "Budha": {"Mithuna", "Kanya"},
+    "Guru": {"Dhanu", "Meena"},
+    "Shukra": {"Vrishabha", "Tula"},
+    "Shani": {"Makara", "Kumbha"},
+}
+
+EXALTATION_SIGNS = {
+    "Surya": "Mesha",
+    "Chandra": "Vrishabha",
+    "Mangala": "Makara",
+    "Budha": "Kanya",
+    "Guru": "Karka",
+    "Shukra": "Meena",
+    "Shani": "Tula",
+}
+
+DEBILITATION_SIGNS = {
+    "Surya": "Tula",
+    "Chandra": "Vrischika",
+    "Mangala": "Karka",
+    "Budha": "Meena",
+    "Guru": "Makara",
+    "Shukra": "Kanya",
+    "Shani": "Mesha",
+}
+
+KENDRA_HOUSES = {1, 4, 7, 10}
+TRIKONA_HOUSES = {1, 5, 9}
+DIFFICULT_RELATION_HOUSES = {6, 8, 12}
+
 KUTA_LABELS = {
     "varna": "Varna",
     "vashya": "Vashya",
@@ -230,15 +264,20 @@ def build_compatibility_report(
     max_score = round(sum(float(item["max_score"]) for item in kuta.values()), 2)
     kuta_rows = _kuta_rows(kuta)
     vaishnava_note = "Совместимость не должна подменять садху-сангу, ответственность и совместное служение Кришне."
+    analysis = _compatibility_chart_analysis(person_a, person_b, total_score, max_score, kuta_rows)
 
     return {
         "status": "calculated_needs_tradition_review",
-        "method": "Ashtakuta from Moon rashi/nakshatra; final reading still needs tradition review and context.",
+        "method": (
+            "Ashtakuta from Moon rashi/nakshatra plus multi-factor chart analysis: "
+            "Lagna, Moon, seventh house, Shukra/Mangala, Guru/Shukra and dasha context."
+        ),
         "coverage": {
-            "system": "ashtakuta",
+            "system": "ashtakuta_plus_chart_analysis",
             "calculated_kutas": len(kuta_rows),
             "total_kutas": len(KUTA_ORDER),
-            "status": "complete_baseline_needs_jhora_audit",
+            "calculated_perspectives": len(analysis["perspectives"]),
+            "status": "multi_factor_needs_shastra_citation_review",
         },
         "score": {
             "total": total_score,
@@ -253,6 +292,7 @@ def build_compatibility_report(
         },
         "kuta": kuta,
         "kuta_rows": kuta_rows,
+        "analysis": analysis,
         "assessment": _compatibility_assessment(total_score, max_score, kuta_rows, vaishnava_note),
         "vaishnava_note": vaishnava_note,
     }
@@ -393,6 +433,258 @@ def _compatibility_assessment(
     }
 
 
+def _compatibility_chart_analysis(
+    person_a: dict[str, Any],
+    person_b: dict[str, Any],
+    ashtakuta_score: float,
+    ashtakuta_max: float,
+    kuta_rows: list[dict[str, object]],
+) -> dict[str, object]:
+    summaries = {
+        "person_a": _compatibility_chart_summary(person_a),
+        "person_b": _compatibility_chart_summary(person_b),
+    }
+    perspectives = [
+        _ashtakuta_perspective(ashtakuta_score, ashtakuta_max, kuta_rows),
+        _lagna_lagna_perspective(summaries),
+        _moon_mind_perspective(person_a, person_b),
+        _seventh_house_perspective(summaries),
+        _shukra_mangala_perspective(person_a, person_b),
+        _guru_shukra_perspective(person_a, person_b),
+        _dasha_context_perspective(person_a, person_b),
+    ]
+    return {
+        "status": "calculated_needs_shastra_citation_review",
+        "review_status": "research_only",
+        "source_policy": "ashtakuta_is_one_layer_not_final_verdict",
+        "source_anchors": [
+            "muhurta-chintamani",
+            "jataka-parijata",
+            "brhat-jataka",
+            "teacher-review",
+        ],
+        "chart_summaries": summaries,
+        "perspectives": perspectives,
+        "support_factors": [
+            item for row in perspectives if row["status"] == "supportive" for item in row["findings"]
+        ],
+        "caution_factors": [
+            item for row in perspectives if row["status"] == "caution" for item in row["findings"]
+        ],
+        "vaishnava_guard": "final_guidance_requires_sadhu_guru_shastra_review",
+    }
+
+
+def _compatibility_chart_summary(chart: dict[str, Any]) -> dict[str, object]:
+    lagna = chart.get("ascendant")
+    lagna_index = _rashi_index(lagna)
+    moon = _graha(chart, "Chandra")
+    seventh_index = (lagna_index + 6) % 12 if lagna_index is not None else None
+    seventh_lord = RASHI_LORDS[seventh_index] if seventh_index is not None else None
+    seventh_lord_graha = _graha(chart, seventh_lord) if seventh_lord else None
+    seventh_lord_index = _rashi_index(seventh_lord_graha)
+    relationship_bodies = {
+        body: _relationship_graha_summary(chart, body)
+        for body in ("Chandra", "Shukra", "Mangala", "Guru", "Shani")
+    }
+    return {
+        "lagna": _compact_placement(lagna if isinstance(lagna, dict) else None),
+        "moon": _compact_placement(moon),
+        "seventh_house": {
+            "rashi": RASHIS[seventh_index] if seventh_index is not None else None,
+            "rashi_index": seventh_index,
+            "lord": seventh_lord,
+            "planets": _planets_in_house(chart, lagna_index, 7),
+        },
+        "seventh_lord": {
+            "body": seventh_lord,
+            "rashi": seventh_lord_graha.get("rashi") if isinstance(seventh_lord_graha, dict) else None,
+            "house": _house_from(lagna_index, seventh_lord_index),
+            "dignity": _graha_dignity(seventh_lord, seventh_lord_graha),
+        },
+        "relationship_grahas": relationship_bodies,
+        "birth_dasha_lord": _birth_dasha_lord(chart),
+    }
+
+
+def _relationship_graha_summary(chart: dict[str, Any], body: str) -> dict[str, object]:
+    graha = _graha(chart, body)
+    lagna_index = _rashi_index(chart.get("ascendant"))
+    rashi_index = _rashi_index(graha)
+    return {
+        "body": body,
+        "rashi": graha.get("rashi") if isinstance(graha, dict) else None,
+        "rashi_index": rashi_index,
+        "house": _house_from(lagna_index, rashi_index),
+        "nakshatra": graha.get("nakshatra") if isinstance(graha, dict) else None,
+        "dignity": _graha_dignity(body, graha),
+    }
+
+
+def _ashtakuta_perspective(
+    score: float,
+    max_score: float,
+    kuta_rows: list[dict[str, object]],
+) -> dict[str, object]:
+    percent = score / max_score * 100 if max_score else 0.0
+    status = "supportive" if percent >= 65 else "mixed" if percent >= 50 else "caution"
+    zero_rows = [row["name"] for row in kuta_rows if float(row["score"]) == 0 and float(row["max_score"]) > 0]
+    return _perspective(
+        "ashtakuta",
+        "Ashtakuta baseline",
+        round(score, 2),
+        max_score,
+        status,
+        [
+            f"Ashtakuta score {round(score, 2)}/{max_score} ({round(percent, 2)}%).",
+            f"Zero-score kutas: {', '.join(str(row) for row in zero_rows) if zero_rows else 'none'}.",
+        ],
+        "Classical kuta matching from Moon rashi and nakshatra; not a standalone marriage verdict.",
+    )
+
+
+def _lagna_lagna_perspective(summaries: dict[str, dict[str, object]]) -> dict[str, object]:
+    lagna_a = (summaries["person_a"]["lagna"] or {}).get("rashi_index")
+    lagna_b = (summaries["person_b"]["lagna"] or {}).get("rashi_index")
+    distance_a = _house_from(_int_or_none(lagna_a), _int_or_none(lagna_b))
+    distance_b = _house_from(_int_or_none(lagna_b), _int_or_none(lagna_a))
+    score, status = _relation_score(distance_a, distance_b, max_score=12.0)
+    return _perspective(
+        "lagna_lagna",
+        "Lagna and life direction",
+        score,
+        12.0,
+        status,
+        [f"Lagna distance A→B {distance_a}; B→A {distance_b}."],
+        "Lagna comparison checks shared life direction and practical household rhythm.",
+    )
+
+
+def _moon_mind_perspective(person_a: dict[str, Any], person_b: dict[str, Any]) -> dict[str, object]:
+    moon_a = _graha(person_a, "Chandra")
+    moon_b = _graha(person_b, "Chandra")
+    distance_a = _house_from(_rashi_index(moon_a), _rashi_index(moon_b))
+    distance_b = _house_from(_rashi_index(moon_b), _rashi_index(moon_a))
+    score, status = _relation_score(distance_a, distance_b, max_score=12.0)
+    return _perspective(
+        "moon_mind",
+        "Moon and emotional rhythm",
+        score,
+        12.0,
+        status,
+        [
+            f"Moon distance A→B {distance_a}; B→A {distance_b}.",
+            f"Moon nakshatras: {moon_a.get('nakshatra') if moon_a else None} / {moon_b.get('nakshatra') if moon_b else None}.",
+        ],
+        "Moon comparison reviews manas, daily emotional response and domestic comfort.",
+    )
+
+
+def _seventh_house_perspective(summaries: dict[str, dict[str, object]]) -> dict[str, object]:
+    findings = []
+    score = 0.0
+    for key in ("person_a", "person_b"):
+        seventh = summaries[key]["seventh_house"]
+        seventh_lord = summaries[key]["seventh_lord"]
+        house = _int_or_none(seventh_lord.get("house") if isinstance(seventh_lord, dict) else None)
+        lord = seventh_lord.get("body") if isinstance(seventh_lord, dict) else None
+        findings.append(f"{key} seventh house {seventh.get('rashi')} lord {lord}.")
+        findings.append(f"{key} seventh lord {lord} in house {house}.")
+        score += _seventh_lord_score(house)
+        planets = seventh.get("planets") if isinstance(seventh, dict) else []
+        if planets:
+            findings.append(f"{key} planets in seventh: {', '.join(str(item) for item in planets)}.")
+    status = "supportive" if score >= 9 else "mixed" if score >= 6 else "caution"
+    return _perspective(
+        "seventh_house",
+        "Seventh house and marriage capacity",
+        round(score, 2),
+        12.0,
+        status,
+        findings,
+        "The seventh house, its lord and occupants are checked in both natal charts.",
+    )
+
+
+def _shukra_mangala_perspective(person_a: dict[str, Any], person_b: dict[str, Any]) -> dict[str, object]:
+    shukra_a = _graha(person_a, "Shukra")
+    mangala_a = _graha(person_a, "Mangala")
+    shukra_b = _graha(person_b, "Shukra")
+    mangala_b = _graha(person_b, "Mangala")
+    distance_a = _house_from(_rashi_index(shukra_a), _rashi_index(mangala_b))
+    distance_b = _house_from(_rashi_index(shukra_b), _rashi_index(mangala_a))
+    score, status = _relation_score(distance_a, distance_b, max_score=10.0)
+    return _perspective(
+        "shukra_mangala",
+        "Shukra and Mangala chemistry",
+        score,
+        10.0,
+        status,
+        [
+            f"A Shukra to B Mangala distance {distance_a}.",
+            f"B Shukra to A Mangala distance {distance_b}.",
+        ],
+        "Shukra/Mangala comparison is a secondary attraction and friction indicator.",
+    )
+
+
+def _guru_shukra_perspective(person_a: dict[str, Any], person_b: dict[str, Any]) -> dict[str, object]:
+    findings = []
+    score = 0.0
+    for key, chart in (("person_a", person_a), ("person_b", person_b)):
+        for body in ("Guru", "Shukra"):
+            graha = _graha(chart, body)
+            dignity = _graha_dignity(body, graha)
+            findings.append(f"{key} {body} dignity {dignity}.")
+            score += _dignity_score(dignity)
+    status = "supportive" if score >= 7 else "mixed" if score >= 4 else "caution"
+    return _perspective(
+        "guru_shukra",
+        "Guru, Shukra and dharmic household values",
+        round(score, 2),
+        10.0,
+        status,
+        findings,
+        "Guru and Shukra are reviewed for dharma, counsel, affection and household values.",
+    )
+
+
+def _dasha_context_perspective(person_a: dict[str, Any], person_b: dict[str, Any]) -> dict[str, object]:
+    lord_a = _birth_dasha_lord(person_a)
+    lord_b = _birth_dasha_lord(person_b)
+    status = "context" if lord_a and lord_b else "missing"
+    return _perspective(
+        "dasha_context",
+        "Dasha context",
+        0.0,
+        0.0,
+        status,
+        [f"Birth mahadasha lords: {lord_a} / {lord_b}."],
+        "Dasha timing must be interpreted separately and should not override chart compatibility.",
+    )
+
+
+def _perspective(
+    key: str,
+    title: str,
+    score: float,
+    max_score: float,
+    status: str,
+    findings: list[str],
+    source_basis: str,
+) -> dict[str, object]:
+    return {
+        "key": key,
+        "title": title,
+        "score": score,
+        "max_score": max_score,
+        "status": status,
+        "findings": findings,
+        "source_basis": source_basis,
+        "review_status": "research_only",
+    }
+
+
 def _kuta_details(item: dict[str, object]) -> str:
     person_a = item.get("person_a")
     person_b = item.get("person_b")
@@ -403,6 +695,86 @@ def _kuta_details(item: dict[str, object]) -> str:
     if a_to_b is not None and b_to_a is not None:
         return f"{a_to_b} / {b_to_a}"
     return str(item.get("status") or "")
+
+
+def _relation_score(
+    distance_a: int | None,
+    distance_b: int | None,
+    *,
+    max_score: float,
+) -> tuple[float, str]:
+    if distance_a is None or distance_b is None:
+        return 0.0, "missing"
+    pair = {distance_a, distance_b}
+    if pair & DIFFICULT_RELATION_HOUSES:
+        return round(max_score * 0.25, 2), "caution"
+    if pair <= (KENDRA_HOUSES | TRIKONA_HOUSES | {11}):
+        return max_score, "supportive"
+    return round(max_score * 0.55, 2), "mixed"
+
+
+def _seventh_lord_score(house: int | None) -> float:
+    if house is None:
+        return 0.0
+    if house in KENDRA_HOUSES or house in TRIKONA_HOUSES:
+        return 6.0
+    if house in DIFFICULT_RELATION_HOUSES:
+        return 2.0
+    return 4.0
+
+
+def _planets_in_house(
+    chart: dict[str, Any],
+    lagna_index: int | None,
+    house: int,
+) -> list[str]:
+    if lagna_index is None:
+        return []
+    return [
+        str(graha.get("body"))
+        for graha in chart.get("grahas", [])
+        if isinstance(graha, dict) and _house_from(lagna_index, _rashi_index(graha)) == house
+    ]
+
+
+def _graha_dignity(body: str | None, graha: dict[str, Any] | None) -> str:
+    if not body or not isinstance(graha, dict):
+        return "missing"
+    rashi = str(graha.get("rashi") or "")
+    if rashi == EXALTATION_SIGNS.get(body):
+        return "exaltation"
+    if rashi in OWN_SIGNS.get(body, set()):
+        return "own"
+    if rashi == DEBILITATION_SIGNS.get(body):
+        return "debilitation"
+    try:
+        lord = RASHI_LORDS[RASHIS.index(rashi)]
+    except ValueError:
+        return "unknown"
+    if lord in GRAHA_FRIENDS.get(body, set()):
+        return "friend"
+    if lord in GRAHA_ENEMIES.get(body, set()):
+        return "enemy"
+    return "neutral"
+
+
+def _dignity_score(dignity: str) -> float:
+    return {
+        "exaltation": 2.5,
+        "own": 2.2,
+        "friend": 1.8,
+        "neutral": 1.2,
+        "enemy": 0.6,
+        "debilitation": 0.0,
+    }.get(dignity, 0.0)
+
+
+def _birth_dasha_lord(chart: dict[str, Any]) -> str | None:
+    periods = ((chart.get("dashas") or {}).get("vimshottari") or {}).get("mahadashas")
+    if isinstance(periods, list) and periods and isinstance(periods[0], dict):
+        lord = periods[0].get("lord")
+        return str(lord) if lord else None
+    return None
 
 
 def _day_periods(chart: dict[str, Any]) -> list[dict[str, Any]]:

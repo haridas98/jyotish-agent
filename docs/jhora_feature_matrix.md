@@ -18,7 +18,7 @@
 | Special points | partial | Phase 2 | Arabic lots plus Gulika/Mandi from actual sunrise/sunset segment timing; Vedic points pending fixture audit. |
 | Transits | partial | Phase 2 | `/api/calculations/transits` compares current/as-of grahas to natal Lagna and Moon. |
 | Annual charts | no | Phase 3 | After core parity. |
-| Compatibility | partial | Phase 3 | `/api/calculations/compatibility` exposes complete 8/8 ashtakuta baseline, UI form for second person, score rows, coverage metadata, and Vaishnava caution text. |
+| Compatibility | partial+ | Phase 3 | `/api/calculations/compatibility` exposes 8/8 ashtakuta plus multi-factor chart analysis: Lagna, Moon, seventh house, Shukra/Mangala, Guru/Shukra and dasha context. Final counsel still needs citations and senior review. |
 | Muhurta | partial | Phase 3 | `/api/calculations/muhurta` ranks date candidates by panchanga rules, Vaishnava priority, and sunrise-based Rahu/Yamaganda/Gulika avoidance. |
 | Prashna | no | Phase 3 | Separate input model. |
 | Reports | partial | MVP | Citation-first, no free hallucination. |

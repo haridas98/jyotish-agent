@@ -1102,6 +1102,53 @@ select {
   font-size: 18px;
 }
 
+.compatibility-chart-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+}
+
+.compatibility-chart-grid div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.compatibility-chart-grid span,
+.compatibility-chart-grid small,
+.compatibility-perspective-row small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.compatibility-chart-grid strong,
+.compatibility-perspective-row strong {
+  color: var(--green);
+}
+
+.compatibility-perspectives {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.compatibility-perspective-row {
+  align-items: start;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(190px, 1fr) 120px minmax(220px, 1.2fr);
+  padding: 10px 12px;
+}
+
+.compatibility-perspective-row div,
+.compatibility-perspective-row span {
+  display: grid;
+  gap: 4px;
+}
+
 .kuta-table {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1567,6 +1614,8 @@ select {
 
   .compatibility-form-grid,
   .compatibility-score-grid,
+  .compatibility-chart-grid,
+  .compatibility-perspective-row,
   .kuta-row {
     grid-template-columns: 1fr;
   }
