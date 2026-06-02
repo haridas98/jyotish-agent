@@ -1,0 +1,303 @@
+{
+  "id": "jhora-india-1947",
+  "source": "jhora_complete_calculations_clipboard",
+  "review_status": "draft",
+  "notes": "Expected values copied from JHora 8.0 complete calculations. Keep draft until calculation preferences are fully recorded.",
+  "input": {
+    "birth_date": "1947-08-15",
+    "birth_time": "00:00",
+    "place_name": "Delhi",
+    "timezone": "Asia/Kolkata",
+    "latitude": 28.666667,
+    "longitude": 77.216667
+  },
+  "jhora_metadata": {
+    "version_required": "8.0",
+    "source_name": "India.jhd",
+    "timezone_offset_hours": 5.5,
+    "timezone_compact": -5.3,
+    "raw_line_count": 14,
+    "ayanamsa": "23-06-37.20"
+  },
+  "expected": {
+    "ascendant": {
+      "longitude": 37.785167,
+      "rashi": "Vrishabha",
+      "nakshatra": "Krittika",
+      "pada": 4,
+      "navamsa": "Meena"
+    },
+    "grahas": {
+      "Surya": {
+        "longitude": 118.009767,
+        "rashi": "Karka",
+        "nakshatra": "Ashlesha",
+        "pada": 4,
+        "navamsa": "Meena"
+      },
+      "Chandra": {
+        "longitude": 93.999064,
+        "rashi": "Karka",
+        "nakshatra": "Pushya",
+        "pada": 1,
+        "navamsa": "Simha"
+      },
+      "Mangala": {
+        "longitude": 67.478653,
+        "rashi": "Mithuna",
+        "nakshatra": "Ardra",
+        "pada": 1,
+        "navamsa": "Dhanu"
+      },
+      "Budha": {
+        "longitude": 103.701506,
+        "rashi": "Karka",
+        "nakshatra": "Pushya",
+        "pada": 4,
+        "navamsa": "Vrischika"
+      },
+      "Guru": {
+        "longitude": 205.895425,
+        "rashi": "Tula",
+        "nakshatra": "Vishakha",
+        "pada": 2,
+        "navamsa": "Vrishabha"
+      },
+      "Shukra": {
+        "longitude": 112.588606,
+        "rashi": "Karka",
+        "nakshatra": "Ashlesha",
+        "pada": 2,
+        "navamsa": "Makara"
+      },
+      "Shani": {
+        "longitude": 110.495669,
+        "rashi": "Karka",
+        "nakshatra": "Ashlesha",
+        "pada": 2,
+        "navamsa": "Makara"
+      },
+      "Rahu": {
+        "longitude": 35.084842,
+        "rashi": "Vrishabha",
+        "nakshatra": "Krittika",
+        "pada": 3,
+        "navamsa": "Kumbha"
+      },
+      "Ketu": {
+        "longitude": 215.084842,
+        "rashi": "Vrischika",
+        "nakshatra": "Anuradha",
+        "pada": 1,
+        "navamsa": "Simha"
+      }
+    },
+    "panchanga": {
+      "tithi": "Krishna Trayodasi",
+      "vara": "Thursday",
+      "nakshatra": "Pushyami",
+      "yoga": "Siddhi",
+      "karana": "Vanija"
+    }
+  },
+  "jhora_expected": {
+    "ashtakavarga": {
+      "As": {
+        "Mesha": 6,
+        "Vrishabha": 4,
+        "Mithuna": 4,
+        "Karka": 5,
+        "Simha": 4,
+        "Kanya": 4,
+        "Tula": 6,
+        "Vrischika": 3,
+        "Dhanu": 4,
+        "Makara": 1,
+        "Kumbha": 4,
+        "Meena": 4
+      },
+      "Su": {
+        "Mesha": 6,
+        "Vrishabha": 4,
+        "Mithuna": 4,
+        "Karka": 4,
+        "Simha": 4,
+        "Kanya": 3,
+        "Tula": 3,
+        "Vrischika": 1,
+        "Dhanu": 4,
+        "Makara": 4,
+        "Kumbha": 5,
+        "Meena": 6
+      },
+      "Mo": {
+        "Mesha": 6,
+        "Vrishabha": 6,
+        "Mithuna": 0,
+        "Karka": 5,
+        "Simha": 2,
+        "Kanya": 5,
+        "Tula": 5,
+        "Vrischika": 5,
+        "Dhanu": 3,
+        "Makara": 5,
+        "Kumbha": 3,
+        "Meena": 4
+      },
+      "Ma": {
+        "Mesha": 3,
+        "Vrishabha": 6,
+        "Mithuna": 2,
+        "Karka": 4,
+        "Simha": 1,
+        "Kanya": 5,
+        "Tula": 2,
+        "Vrischika": 2,
+        "Dhanu": 5,
+        "Makara": 2,
+        "Kumbha": 3,
+        "Meena": 4
+      },
+      "Me": {
+        "Mesha": 4,
+        "Vrishabha": 7,
+        "Mithuna": 4,
+        "Karka": 4,
+        "Simha": 5,
+        "Kanya": 4,
+        "Tula": 4,
+        "Vrischika": 3,
+        "Dhanu": 5,
+        "Makara": 2,
+        "Kumbha": 5,
+        "Meena": 7
+      },
+      "Ju": {
+        "Mesha": 5,
+        "Vrishabha": 6,
+        "Mithuna": 3,
+        "Karka": 4,
+        "Simha": 6,
+        "Kanya": 4,
+        "Tula": 4,
+        "Vrischika": 6,
+        "Dhanu": 5,
+        "Makara": 5,
+        "Kumbha": 2,
+        "Meena": 6
+      },
+      "Ve": {
+        "Mesha": 3,
+        "Vrishabha": 8,
+        "Mithuna": 4,
+        "Karka": 4,
+        "Simha": 5,
+        "Kanya": 6,
+        "Tula": 3,
+        "Vrischika": 5,
+        "Dhanu": 2,
+        "Makara": 1,
+        "Kumbha": 6,
+        "Meena": 5
+      },
+      "Sa": {
+        "Mesha": 3,
+        "Vrishabha": 7,
+        "Mithuna": 2,
+        "Karka": 2,
+        "Simha": 4,
+        "Kanya": 3,
+        "Tula": 3,
+        "Vrischika": 2,
+        "Dhanu": 4,
+        "Makara": 1,
+        "Kumbha": 4,
+        "Meena": 4
+      }
+    },
+    "shadbala": {
+      "Sun": {
+        "shadbala": 343.31,
+        "rupas": 5.72,
+        "percent_strength": 114.44,
+        "ishta_phala": 32.12,
+        "kashta_phala": 24.74
+      },
+      "Moon": {
+        "shadbala": 443.61,
+        "rupas": 7.39,
+        "percent_strength": 123.23,
+        "ishta_phala": 17.82,
+        "kashta_phala": 32.52
+      },
+      "Mars": {
+        "shadbala": 439.93,
+        "rupas": 7.33,
+        "percent_strength": 146.64,
+        "ishta_phala": 20.29,
+        "kashta_phala": 39.17
+      },
+      "Mercury": {
+        "shadbala": 474.04,
+        "rupas": 7.9,
+        "percent_strength": 112.87,
+        "ishta_phala": 24.95,
+        "kashta_phala": 30.08
+      },
+      "Jupiter": {
+        "shadbala": 282.86,
+        "rupas": 4.71,
+        "percent_strength": 72.53,
+        "ishta_phala": 26.96,
+        "kashta_phala": 32.42
+      },
+      "Venus": {
+        "shadbala": 436.24,
+        "rupas": 7.27,
+        "percent_strength": 132.19,
+        "ishta_phala": 7.49,
+        "kashta_phala": 47.02
+      },
+      "Saturn": {
+        "shadbala": 310.41,
+        "rupas": 5.17,
+        "percent_strength": 103.47,
+        "ishta_phala": 11.04,
+        "kashta_phala": 40.86
+      }
+    },
+    "vimshottari_raw": [
+      "Sat  Sat 1946-09-02  Merc 1949-09-05  Ket 1952-05-12",
+      "     Ven 1953-06-22  Sun 1956-08-24  Moon 1957-08-05",
+      "     Mars 1959-03-04  Rah 1960-04-11  Jup 1963-02-17",
+      "Merc  Merc 1965-09-02  Ket 1968-01-27  Ven 1969-01-24",
+      "      Sun 1971-11-27  Moon 1972-10-03  Mars 1974-03-01",
+      "      Rah 1975-02-26  Jup 1977-09-18  Sat 1979-12-23",
+      "Ket  Ket 1982-09-03  Ven 1983-01-27  Sun 1984-03-27",
+      "     Moon 1984-08-05  Mars 1985-03-03  Rah 1985-08-02",
+      "     Jup 1986-08-21  Sat 1987-07-27  Merc 1988-09-05",
+      "Ven  Ven 1989-09-02  Sun 1992-12-31  Moon 1994-01-01",
+      "     Mars 1995-09-03  Rah 1996-11-02  Jup 1999-11-03",
+      "     Sat 2002-07-02  Merc 2005-09-03  Ket 2008-07-02",
+      "Sun  Sun 2009-09-03  Moon 2009-12-20  Mars 2010-06-20",
+      "     Rah 2010-10-28  Jup 2011-09-22  Sat 2012-07-08",
+      "     Merc 2013-06-19  Ket 2014-04-25  Ven 2014-09-03",
+      "Moon  Moon 2015-09-03  Mars 2016-07-02  Rah 2017-01-30",
+      "      Jup 2018-08-03  Sat 2019-12-03  Merc 2021-07-02",
+      "      Ket 2022-12-03  Ven 2023-07-03  Sun 2025-03-01",
+      "Mars  Mars 2025-09-03  Rah 2026-01-27  Jup 2027-02-14",
+      "      Sat 2028-01-22  Merc 2029-03-01  Ket 2030-02-26",
+      "      Ven 2030-07-27  Sun 2031-09-28  Moon 2032-01-31",
+      "Rah  Rah 2032-09-02  Jup 2035-05-13  Sat 2037-10-10",
+      "     Merc 2040-08-15  Ket 2043-03-01  Ven 2044-03-19",
+      "     Sun 2047-03-19  Moon 2048-02-12  Mars 2049-08-15",
+      "Jup  Jup 2050-09-03  Sat 2052-10-21  Merc 2055-05-01",
+      "     Ket 2057-08-09  Ven 2058-07-15  Sun 2061-03-13",
+      "     Moon 2062-01-01  Mars 2063-05-01  Rah 2064-04-06"
+    ]
+  },
+  "tolerances": {
+    "planet_longitude_arcseconds": 1.0,
+    "lagna_arcseconds": 5.0
+  }
+}

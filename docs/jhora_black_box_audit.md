@@ -49,6 +49,26 @@ cd C:\Projects\jyotish-agent\backend
 
 These fixtures contain input data only. They are not authoritative until expected results are manually exported from JHora and reviewed.
 
+## First Captured Expected Fixture
+
+`India.jhd` was opened in JHora 8.0 and `Edit -> Copy complete calculations` was captured through the application menu.
+
+Created fixture:
+
+- `backend/apps/calculations/fixtures/accuracy/jhora-india-1947.json`
+- source: `jhora_complete_calculations_clipboard`
+- review status: `draft`
+- captured layers: graha longitudes, Lagna, panchanga, Navamsa column, ashtakavarga, shadbala, Vimshottari raw block.
+
+First parity run:
+
+- rashi, nakshatra and pada matched for grahas and Lagna;
+- panchanga yoga and karana matched;
+- planet longitudes differ by about 55-99 arcseconds;
+- Lagna differs by about 58 arcseconds;
+- Rahu/Ketu differ much more, so true/mean node settings must be audited first;
+- JHora weekday/tithi naming and sunrise-day handling need a separate normalization check.
+
 ## Next Manual Pass
 
 For each priority fixture:

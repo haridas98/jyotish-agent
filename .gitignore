@@ -19,6 +19,8 @@ coverage/
 *.log
 *.sqlite3
 *.tsbuildinfo
+.tmp/
+.tmp-*
 
 .idea/
 .vscode/
