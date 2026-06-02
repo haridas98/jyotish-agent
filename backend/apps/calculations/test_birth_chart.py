@@ -68,6 +68,8 @@ def test_build_birth_chart_uses_local_timezone_and_provider():
     assert result["grahas"][0]["nakshatra"] == "Krittika"
     assert result["classical"]["avasthas"]["status"] == "calculated"
     assert result["classical"]["ashtakavarga"]["status"] == "partial_calculated_needs_jhora_profile_audit"
+    assert result["shastra_audit"]["items_by_key"]["ashtakavarga"]["public_claim"] == "source_backed_not_jhora_verified"
+    assert result["shastra_audit"]["items_by_key"]["shadbala"]["can_generate_client_interpretation"] is False
 
 
 def test_build_birth_chart_accepts_explicit_calculation_settings():

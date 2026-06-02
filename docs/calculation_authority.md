@@ -9,6 +9,8 @@
 
 No formula is changed only because one service disagrees. A change needs either a primary textual source, a documented tradition decision, or a verified settings/profile mismatch.
 
+The machine-readable gate for public interpretation is `shastra_audit` in the birth-chart payload. See `docs/shastra_calculation_audit.md`.
+
 ## Cross-Service Audit
 
 Use `external_expected` in accuracy fixtures for service captures:

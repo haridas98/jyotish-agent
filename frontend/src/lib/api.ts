@@ -246,6 +246,34 @@ export type ClassicalCalculations = {
   muhurta?: ClassicalStatus;
 };
 
+export type ShastraAuditItem = {
+  key: string;
+  label: string;
+  source_priority: string[];
+  source_basis: string;
+  authority_status: string;
+  implementation_status: string;
+  review_status: string;
+  public_claim: string;
+  can_generate_client_interpretation: boolean;
+  blocker?: string;
+};
+
+export type ShastraAudit = {
+  policy: string;
+  authority_order: string[];
+  bphs_policy: string;
+  summary: {
+    total: number;
+    source_backed: number;
+    client_interpretation_allowed: number;
+    partial_or_audit: number;
+    needs_text_rule_review: number;
+  };
+  items: ShastraAuditItem[];
+  items_by_key: Record<string, ShastraAuditItem>;
+};
+
 export type BirthChart = {
   calculation_version: string;
   birth: {
@@ -271,6 +299,7 @@ export type BirthChart = {
   vargas?: Record<string, VargaChart>;
   panchanga: Panchanga;
   classical?: ClassicalCalculations;
+  shastra_audit?: ShastraAudit;
   dashas?: {
     vimshottari?: {
       system: string;

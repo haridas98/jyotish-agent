@@ -11,6 +11,7 @@ from .classical import classical_calculations
 from .constants import GRAHAS
 from .ephemeris import BodyPosition, CalculationSettings, EphemerisProvider, SwissEphemerisProvider
 from .panchanga import panchanga_from_longitudes
+from .shastra_audit import shastra_audit_payload
 from .solar import gulika_segment_for_moment, solar_day, solar_day_payload
 from .vargas import divisional_chart
 from .vimshottari import vimshottari_payload
@@ -93,6 +94,7 @@ def build_birth_chart(
             local_moment,
         )
     payload["classical"] = classical_calculations(payload)
+    payload["shastra_audit"] = shastra_audit_payload()
     return payload
 
 

@@ -80,6 +80,70 @@ const calculationStatusLabelsRu: Record<string, string> = {
   missing_lagna: "нет лагны",
 };
 
+const auditStatusLabelsRu: Record<string, string> = {
+  calculated: "рассчитано",
+  calculated_needs_fixture_audit: "нужна сверка фикстур",
+  calculated_needs_text_rule_review: "нужна сверка текста",
+  calculated_jhora_profile_diff_open: "открыт JHora diff",
+  partial: "частично",
+  temporary_proxy: "временная формула",
+  partial_detection_needs_citations: "частично, нужны цитаты",
+  partial_gulika_only: "только Гулика",
+  baseline_api_ready: "API готов, правила не финальны",
+  baseline_ashtakuta: "базовая аштакута",
+  baseline_scoring: "базовая оценка",
+  source_backed: "есть шастра",
+  source_backed_with_bphs_caution: "есть шастра, BPHS осторожно",
+  source_backed_but_tradition_sensitive: "нужна традиционная сверка",
+  source_backed_but_pastoral_review_required: "нужна пастырская проверка",
+  needs_tradition_decision: "нужно решение традиции",
+  needs_source_mapping: "нужна привязка источника",
+  research_only: "только исследование",
+};
+
+const auditLayerLabelsRu: Record<string, string> = {
+  rashi_nakshatra_navamsa: "Раши, накшатра, пада, навамша",
+  vargas_d2_d60: "Варги D2-D60",
+  panchanga: "Панчанга",
+  vimshottari: "Вимшоттари даша",
+  avasthas: "Авастхи",
+  ashtakavarga: "Аштакаварга",
+  shadbala: "Шадбала",
+  vimshopaka: "Вимшопака бала",
+  yogas: "Йоги",
+  argala: "Аргала",
+  upagrahas: "Упаграхи",
+  special_points: "Специальные точки",
+  transits: "Транзиты",
+  compatibility: "Совместимость",
+  muhurta: "Мухурта",
+};
+
+const auditSourceBasisRu: Record<string, string> = {
+  rashi_nakshatra_navamsa: "Сиддхантическая математика координат и классические деления.",
+  vargas_d2_d60: "Правила варг требуют сверки вариантов, особенно если правило взято из modern BPHS.",
+  panchanga: "Угловые деления Солнце-Луна и правила панчанги/мухурты.",
+  vimshottari: "Уду-даша от накшатры Луны, 120-летний цикл и классическая последовательность грах.",
+  avasthas: "Авастхи по градусным диапазонам с учётом нечётных/чётных знаков.",
+  ashtakavarga: "Brhat Jataka IX и стандартная сумма SAV 337 бинду.",
+  shadbala: "Сейчас это не полная шадбала, а только часть компонентов.",
+  vimshopaka: "Пока временная оценка; нужна утверждённая таблица весов варг.",
+  yogas: "Показываются условия йог, но не окончательное предсказание.",
+  argala: "Структурная аргала; нужна сверка традиции применения.",
+  upagrahas: "Сейчас надёжно выводится только Гулика.",
+  special_points: "Нужна точная привязка формул к источникам.",
+  transits: "API готов, правила интерпретации транзитов ещё не финальны.",
+  compatibility: "Базовая аштакута не заменяет традиционное наставление.",
+  muhurta: "Базовая оценка окна, не финальная элекция.",
+};
+
+const authorityOrderRu: Record<string, string> = {
+  "older shastra and reviewed parampara instruction": "старшие шастры и проверенное наставление парампары",
+  "astronomical ephemeris and timezone audit": "астрономическая точность, эфемериды и часовой пояс",
+  "JHora and external services as black-box witnesses": "JHora и сервисы только как свидетели",
+  "internal regression fixtures": "внутренние regression fixtures",
+};
+
 const compatibilityLevelLabelsRu: Record<string, string> = {
   supportive: "поддерживающе",
   mixed: "смешанно",
@@ -129,6 +193,19 @@ function valueRu(value: string | number | null | undefined) {
 function statusRu(value: string | null | undefined) {
   if (!value) return "ожидает";
   return calculationStatusLabelsRu[value] ?? value;
+}
+
+function auditStatusRu(value: string | null | undefined) {
+  if (!value) return "ожидает";
+  return auditStatusLabelsRu[value] ?? statusRu(value);
+}
+
+function auditOrderRu(order: string[]) {
+  return order.map((item) => authorityOrderRu[item] ?? item).join(" → ");
+}
+
+function auditNoteRu(key: string, fallback: string) {
+  return auditSourceBasisRu[key] ?? fallback;
 }
 
 function formatCoordinate(value: number) {
@@ -627,6 +704,67 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
           </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+function ShastraAuditPanel({ audit }: { audit: BirthChart["shastra_audit"] | undefined }) {
+  const items = audit?.items ?? [];
+
+  return (
+    <section className="shastra-audit-panel">
+      <div className="block-heading">
+        <h3>Проверка расчётов по шастрам</h3>
+        <span>{audit ? `${audit.summary.source_backed}/${audit.summary.total} с опорой на шастру` : "ожидает карту"}</span>
+      </div>
+      {!audit ? (
+        <div className="pending-strip">Аудит появится после расчёта карты.</div>
+      ) : (
+        <>
+          <div className="shastra-policy">
+            <strong>Порядок авторитета</strong>
+            <span>{auditOrderRu(audit.authority_order)}</span>
+            <small>
+              Modern BPHS используем осторожно: если старшие источники или замечания Шьямасундары Прабху
+              показывают конфликт, правило остаётся на аудите.
+            </small>
+          </div>
+          <div className="audit-summary-grid">
+            <div>
+              <span>Всего слоёв</span>
+              <strong>{audit.summary.total}</strong>
+            </div>
+            <div>
+              <span>Есть опора на шастру</span>
+              <strong>{audit.summary.source_backed}</strong>
+            </div>
+            <div>
+              <span>Можно в разбор</span>
+              <strong>{audit.summary.client_interpretation_allowed}</strong>
+            </div>
+            <div>
+              <span>Draft / audit</span>
+              <strong>{audit.summary.partial_or_audit}</strong>
+            </div>
+          </div>
+          <div className="audit-table">
+            {items.map((item) => (
+              <div className="audit-row" key={item.key}>
+                <div>
+                  <strong>{auditLayerLabelsRu[item.key] ?? item.label}</strong>
+                  <span>{item.source_priority.join(", ")}</span>
+                </div>
+                <span>{auditStatusRu(item.authority_status)}</span>
+                <span>{auditStatusRu(item.implementation_status)}</span>
+                <em className={item.can_generate_client_interpretation ? "ready" : "draft"}>
+                  {item.can_generate_client_interpretation ? "можно" : "нельзя"}
+                </em>
+                <small>{auditNoteRu(item.key, item.blocker ?? item.source_basis)}</small>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }
@@ -1559,6 +1697,7 @@ export default function Home() {
                         ))}
                       </div>
                     ) : null}
+                    <ShastraAuditPanel audit={chart?.shastra_audit} />
                     <div className="source-table">
                       {sourceRows.map(([component, source, citation, state]) => (
                         <div className="source-row" key={component}>
