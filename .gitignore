@@ -21,6 +21,7 @@ coverage/
 *.tsbuildinfo
 .tmp/
 .tmp-*
+.private_corpus/
 
 .idea/
 .vscode/

@@ -18,7 +18,9 @@ The VL database is the source of truth for Srila Prabhupada and existing Vaishna
 
 ## Jyotish Texts
 
-The shastra catalog may store source URLs and short review anchors immediately. Full text import is allowed only for public-domain or explicitly licensed editions. Modern translations and PDFs from unclear mirrors must stay `copyright_review_required` and cannot be used for public generated interpretation until reviewed.
+The shastra catalog may store source URLs and short review anchors immediately. Full text committed to the repository is allowed only for public-domain or explicitly licensed editions. Modern translations and PDFs from unclear mirrors must stay `copyright_review_required` and cannot be used for public generated interpretation until reviewed.
+
+Local private full-text files may be imported from `.private_corpus/` for research-only comparison. These chunks must stay out of git, keep `review_status=research_only`, and cannot be quoted in public reports until a passage is manually approved.
 
 ## Citation Requirement
 

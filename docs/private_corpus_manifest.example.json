@@ -1,0 +1,24 @@
+{
+  "works": [
+    {
+      "slug": "brhat-jataka-aiyar-1905-private",
+      "title": "Brhat Jataka",
+      "author": "Varahamihira",
+      "edition": "N. Chidambaram Aiyar English translation, 1905 OCR",
+      "language_code": "en",
+      "source_url": "https://archive.org/details/brihatjataka00varaiala",
+      "local_path": "../.private_corpus/brhat-jataka-aiyar-1905.txt",
+      "rights_status": "public_domain_candidate"
+    },
+    {
+      "slug": "phaladipika-subrahmanya-sastri-private",
+      "title": "Phaladipika",
+      "author": "Mantreswara",
+      "edition": "V. Subrahmanya Sastri OCR, verify page references before approval",
+      "language_code": "en",
+      "source_url": "https://www.wisdomlib.org/hinduism/book/phaladeepika-by-mantreswara-text-and-translation",
+      "local_path": "../.private_corpus/phaladipika-subrahmanya-sastri.txt",
+      "rights_status": "private_research_only_until_approved"
+    }
+  ]
+}
