@@ -34,6 +34,9 @@ def test_shastra_condition_matrix_lists_calculation_layers_and_all_yogas_with_co
     assert gaja["public_release_policy"] == "needs_approved_passage"
     assert gaja["coverage_status"] in {"research_only_available", "private_text_loaded"}
     assert "Gaja Kesari Phaladipika" in gaja["search_queries"]
+    assert gaja["formula"]["description"] == "Guru is in a kendra from Chandra."
+    assert gaja["source_anchor_status"] == "exact_verse_verified"
+    assert gaja["source_anchors"][0]["reference"] == "Chapter 36, Verses 3-4"
 
 
 @pytest.mark.django_db

@@ -47,31 +47,33 @@ def divisional_chart(
     longitudes: dict[str, float],
     ascendant_longitude: float | None = None,
     codes: tuple[str, ...] = SHODASHA_VARGA_CODES,
+    scheme: str = "parashara",
 ) -> dict[str, dict[str, object]]:
     charts = {}
     for code in codes:
         placements = []
         if ascendant_longitude is not None:
-            placements.append(_placement("Lagna", ascendant_longitude, code))
-        placements.extend(_placement(body, longitude, code) for body, longitude in longitudes.items())
+            placements.append(_placement("Lagna", ascendant_longitude, code, scheme))
+        placements.extend(_placement(body, longitude, code, scheme) for body, longitude in longitudes.items())
         charts[code] = {
             "code": code,
             "name": VARGA_NAMES[code],
-            "method": "Parashara shodasha varga rules; D16/D20/D24/D27/D40/D45 use standard cyclic starts pending JHora fixture audit",
+            "method": _method_note(code, scheme),
             "placements": placements,
         }
     return charts
 
 
-def divisional_placement(longitude: float, code: str) -> tuple[int, str]:
+def divisional_placement(longitude: float, code: str, scheme: str = "parashara") -> tuple[int, str]:
     normalized = longitude % 360.0
     sign_index = min(11, floor(normalized / 30.0))
     sign_degrees = normalized % 30.0
+    scheme = _normalize_scheme(scheme)
 
     if code == "D1":
         index = sign_index
     elif code == "D2":
-        index = _hora(sign_index, sign_degrees)
+        index = _uma_shambhu_hora(sign_index, sign_degrees) if scheme == "jhora_uma_shambhu" else _hora(sign_index, sign_degrees)
     elif code == "D3":
         index = _cyclic_from_sign(sign_index, sign_degrees, 3, start_offset=0, step=4)
     elif code == "D4":
@@ -89,11 +91,11 @@ def divisional_placement(longitude: float, code: str) -> tuple[int, str]:
     elif code == "D16":
         index = _cyclic_from_start(_elemental_start(sign_index), sign_degrees, 16)
     elif code == "D20":
-        index = _cyclic_from_start(_elemental_start(sign_index), sign_degrees, 20)
+        index = _cyclic_from_start(_vimshamsha_start(sign_index), sign_degrees, 20)
     elif code == "D24":
         index = _cyclic_from_start(_odd_even_start(sign_index, odd_start=4, even_start=3), sign_degrees, 24)
     elif code == "D27":
-        index = _cyclic_from_start(_elemental_start(sign_index), sign_degrees, 27)
+        index = _cyclic_from_start(_bhamsha_start(sign_index), sign_degrees, 27)
     elif code == "D30":
         index = _trimsamsha(sign_index, sign_degrees)
     elif code == "D40":
@@ -109,9 +111,22 @@ def divisional_placement(longitude: float, code: str) -> tuple[int, str]:
     return index, RASHIS[index]
 
 
-def _placement(body: str, longitude: float, code: str) -> dict[str, object]:
-    rashi_index, rashi = divisional_placement(longitude, code)
+def _placement(body: str, longitude: float, code: str, scheme: str) -> dict[str, object]:
+    rashi_index, rashi = divisional_placement(longitude, code, scheme)
     return {"body": body, "rashi_index": rashi_index, "rashi": rashi}
+
+
+def _normalize_scheme(scheme: str) -> str:
+    value = str(scheme or "parashara").strip().lower()
+    if value in {"jhora", "jhora_v8", "jhora_uma_shambhu"}:
+        return "jhora_uma_shambhu"
+    return "parashara"
+
+
+def _method_note(code: str, scheme: str) -> str:
+    if code == "D2" and _normalize_scheme(scheme) == "jhora_uma_shambhu":
+        return "JHora D-2 (US): Uma-Shambhu Hora with two zodiac cycles and reversed even-sign halves."
+    return "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit."
 
 
 def _hora(sign_index: int, sign_degrees: float) -> int:
@@ -119,6 +134,15 @@ def _hora(sign_index: int, sign_degrees: float) -> int:
     if _is_odd_sign(sign_index):
         return 4 if first_half else 3
     return 3 if first_half else 4
+
+
+def _uma_shambhu_hora(sign_index: int, sign_degrees: float) -> int:
+    first_half = sign_degrees < 15.0
+    if _is_odd_sign(sign_index):
+        base = ((sign_index // 2) % 3) * 4
+        return base if first_half else base + 1
+    base = (((sign_index - 1) // 2) % 3) * 4 + 3
+    return base if first_half else base - 1
 
 
 def _navamsa(sign_index: int, sign_degrees: float) -> int:
@@ -171,6 +195,24 @@ def _elemental_start(sign_index: int) -> int:
     if sign_index in {1, 4, 7, 10}:
         return 4
     return 8
+
+
+def _vimshamsha_start(sign_index: int) -> int:
+    if sign_index in {0, 3, 6, 9}:
+        return 0
+    if sign_index in {1, 4, 7, 10}:
+        return 8
+    return 4
+
+
+def _bhamsha_start(sign_index: int) -> int:
+    if sign_index in {0, 4, 8}:
+        return 0
+    if sign_index in {1, 5, 9}:
+        return 3
+    if sign_index in {2, 6, 10}:
+        return 6
+    return 9
 
 
 def _odd_even_start(sign_index: int, odd_start: int, even_start: int) -> int:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Callable
 from urllib import error, request
 
@@ -119,11 +120,23 @@ def _normalize_llm_output(raw_output: dict[str, Any] | str) -> dict[str, Any]:
         try:
             parsed = json.loads(raw_output)
         except json.JSONDecodeError:
-            parsed = {"sections": [{"title": "Черновик", "body": raw_output, "citation_titles": []}]}
+            parsed = _parse_json_fence(raw_output)
         output = parsed if isinstance(parsed, dict) else {"sections": parsed}
     output.setdefault("language", "ru")
     output.setdefault("sections", [])
     return output
+
+
+def _parse_json_fence(raw_output: str) -> dict[str, Any]:
+    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_output, flags=re.DOTALL)
+    if match:
+        try:
+            parsed = json.loads(match.group(1))
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+    return {"sections": [{"title": "Черновик", "body": raw_output, "citation_titles": []}]}
 
 
 def _extract_openai_text(payload: dict[str, Any]) -> str:

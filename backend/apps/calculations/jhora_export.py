@@ -62,6 +62,51 @@ BODY_MAP = {
     "Ketu": "Ketu",
 }
 
+CHART_TOKEN_BODY_MAP = {
+    "As": "Lagna",
+    "Su": "Surya",
+    "Mo": "Chandra",
+    "Ma": "Mangala",
+    "Me": "Budha",
+    "Ju": "Guru",
+    "Ve": "Shukra",
+    "Sa": "Shani",
+    "Ra": "Rahu",
+    "Ke": "Ketu",
+}
+
+SUPPORTED_VARGA_CODES = {
+    "D2",
+    "D3",
+    "D4",
+    "D7",
+    "D9",
+    "D10",
+    "D12",
+    "D16",
+    "D20",
+    "D24",
+    "D27",
+    "D30",
+    "D40",
+    "D45",
+    "D60",
+}
+
+SOUTH_INDIAN_RASHI_CELLS = {
+    0: ("Pi", "Ar", "Ta", "Ge"),
+    1: ("Aq", "Cn"),
+    2: ("Cp", "Le"),
+    3: ("Sg", "Sc", "Li", "Vi"),
+}
+
+VIMSOPAKA_SCHEME_MAP = {
+    "dasa_varga": "Dasa Varga (10)",
+    "shodasa_varga": "Shodasa Varga (16)",
+    "sapta_varga": "Sapta Varga (7)",
+    "shad_varga": "Shad Varga (6)",
+}
+
 POSITION_RE = re.compile(
     r"^(?P<body>.+?)\s{2,}"
     r"(?P<degree>\d+)\s(?P<rashi>[A-Z][a-z])\s"
@@ -73,18 +118,29 @@ POSITION_RE = re.compile(
 def parse_jhora_complete_calculations(text: str) -> dict[str, Any]:
     lines = text.splitlines()
     positions = _parse_positions(lines)
+    ascendant = positions.pop("Lagna", {})
+    grahas = {body: row for body, row in positions.items() if body in BODY_MAP.values()}
+    special_points = {
+        body: row
+        for body, row in positions.items()
+        if body not in BODY_MAP.values()
+    }
     panchanga = _parse_panchanga(lines)
-    metadata = {"ayanamsa": _value_after_colon(lines, "Ayanamsa")}
+    ayanamsa = _value_after_colon(lines, "Ayanamsa")
+    metadata = {"ayanamsa": ayanamsa, "ayanamsa_degrees": _dms_to_degrees(ayanamsa)}
     return {
         "metadata": metadata,
         "expected": {
-            "ascendant": positions.pop("Lagna", {}),
-            "grahas": {body: row for body, row in positions.items() if body in BODY_MAP.values()},
+            "ascendant": ascendant,
+            "grahas": grahas,
             "panchanga": panchanga,
+            "vargas": _parse_varga_charts(lines),
         },
         "jhora_expected": {
+            "special_points": special_points,
             "ashtakavarga": _parse_ashtakavarga(lines),
             "shadbala": _parse_shadbala(lines),
+            "vimsopaka": _parse_vimsopaka(lines),
             "vimshottari_raw": _section_lines(lines, "Vimsottari Dasa", stop_prefixes=("Moola Dasa",)),
         },
     }
@@ -107,7 +163,7 @@ def _parse_positions(lines: list[str]) -> dict[str, dict[str, Any]]:
                 break
             continue
         raw_body = match.group("body").strip()
-        body = _body_name(raw_body)
+        body = _position_name(raw_body)
         if not body:
             continue
         rashi = RASHI_ABBR[match.group("rashi")]
@@ -179,6 +235,103 @@ def _parse_shadbala(lines: list[str]) -> dict[str, dict[str, float]]:
     return rows
 
 
+def _parse_vimsopaka(lines: list[str]) -> dict[str, dict[str, dict[str, float]]]:
+    start = _line_index(lines, "Vimsopaka Dasa Varga")
+    if start is None:
+        return {}
+    rows: dict[str, dict[str, dict[str, float]]] = {}
+    value_re = re.compile(r"(?P<score>\d+(?:\.\d+)?)\s+\((?P<percent>\d+(?:\.\d+)?)%\)")
+    for line in lines[start + 1 :]:
+        if not line.strip():
+            if rows:
+                break
+            continue
+        parts = line.split(maxsplit=1)
+        if len(parts) != 2 or parts[0] not in BODY_MAP:
+            continue
+        values = list(value_re.finditer(parts[1]))
+        if len(values) < len(VIMSOPAKA_SCHEME_MAP):
+            continue
+        rows[parts[0]] = {
+            scheme_key: {
+                "score": float(match.group("score")),
+                "percent": float(match.group("percent")),
+                "label": scheme_label,
+            }
+            for (scheme_key, scheme_label), match in zip(VIMSOPAKA_SCHEME_MAP.items(), values, strict=True)
+        }
+    return rows
+
+
+def _parse_varga_charts(lines: list[str]) -> dict[str, dict[str, dict[str, Any]]]:
+    charts = {}
+    for block in _ascii_chart_blocks(lines):
+        code = _chart_code(block)
+        if code not in SUPPORTED_VARGA_CODES:
+            continue
+        placements = _parse_south_indian_chart_block(block)
+        if placements:
+            charts[code] = placements
+    return charts
+
+
+def _ascii_chart_blocks(lines: list[str]) -> list[list[str]]:
+    blocks: list[list[str]] = []
+    current: list[str] = []
+    for line in lines:
+        if line.startswith("+---"):
+            if current:
+                current.append(line)
+                blocks.append(current)
+                current = []
+            else:
+                current = [line]
+            continue
+        if current:
+            current.append(line)
+    return blocks
+
+
+def _chart_code(block: list[str]) -> str:
+    for line in block:
+        match = re.search(r"\bD-(?P<number>\d+)\b", line)
+        if match:
+            return f"D{match.group('number')}"
+    return ""
+
+
+def _parse_south_indian_chart_block(block: list[str]) -> dict[str, dict[str, Any]]:
+    placements: dict[str, dict[str, Any]] = {}
+    zone = 0
+    for line in block:
+        if line.startswith("|-----------+-----------------------+-----------|"):
+            zone = 1 if zone < 1 else 3
+            continue
+        if line.startswith("|-----------|"):
+            zone = 2
+            continue
+        if not line.startswith("|") or line.startswith("+"):
+            continue
+        segments = line.split("|")[1:-1]
+        if zone in {0, 3} and len(segments) == 4:
+            for rashi_abbr, cell in zip(SOUTH_INDIAN_RASHI_CELLS[zone], segments, strict=True):
+                _add_chart_cell_tokens(placements, rashi_abbr, cell)
+        elif zone in {1, 2} and len(segments) >= 3:
+            _add_chart_cell_tokens(placements, SOUTH_INDIAN_RASHI_CELLS[zone][0], segments[0])
+            _add_chart_cell_tokens(placements, SOUTH_INDIAN_RASHI_CELLS[zone][1], segments[-1])
+    return placements
+
+
+def _add_chart_cell_tokens(placements: dict[str, dict[str, Any]], rashi_abbr: str, cell: str) -> None:
+    rashi = RASHI_ABBR[rashi_abbr]
+    for token in re.findall(r"\b(?:As|Su|Mo|Ma|Me|Ju|Ve|Sa|Ra|Ke)\b", cell):
+        body = CHART_TOKEN_BODY_MAP[token]
+        placements[body] = {
+            "rashi": rashi,
+            "rashi_index": RASHIS.index(rashi),
+        }
+
+
 def _section_lines(
     lines: list[str],
     heading_prefix: str,
@@ -213,12 +366,24 @@ def _line_index(lines: list[str], prefix: str) -> int | None:
     return next((index for index, line in enumerate(lines) if line.startswith(prefix)), None)
 
 
-def _body_name(raw_body: str) -> str:
+def _position_name(raw_body: str) -> str:
     base = raw_body.split("-", maxsplit=1)[0].strip()
     if base == "Lagna":
         return "Lagna"
-    return BODY_MAP.get(base, "")
+    return BODY_MAP.get(base) or base
 
 
 def _absolute_longitude(rashi: str, degree: int, minute: int, second: float) -> float:
     return round(RASHIS.index(rashi) * 30.0 + degree + minute / 60.0 + second / 3600.0, 6)
+
+
+def _dms_to_degrees(value: str) -> float | None:
+    match = re.match(r"^(?P<degree>\d+)-(?P<minute>\d{2})-(?P<second>\d{2}(?:\.\d+)?)$", value.strip())
+    if not match:
+        return None
+    return round(
+        int(match.group("degree"))
+        + int(match.group("minute")) / 60.0
+        + float(match.group("second")) / 3600.0,
+        9,
+    )

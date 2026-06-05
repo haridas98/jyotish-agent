@@ -15,6 +15,14 @@ def test_geonamescache_places_returns_offline_city_with_timezone():
     assert results[0].longitude
 
 
+def test_geonamescache_places_accepts_full_city_country_label():
+    results = geonamescache_places("Shymkent, Kazakhstan, KZ", limit=3)
+
+    assert results[0].name == "Shymkent"
+    assert results[0].country_code == "KZ"
+    assert results[0].timezone == "Asia/Almaty"
+
+
 def test_geocode_places_maps_nominatim_result_to_timezone_candidate():
     def fake_fetch(query: str, limit: int):
         assert query == "London"

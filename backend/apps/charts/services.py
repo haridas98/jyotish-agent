@@ -8,14 +8,30 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.utils.dateparse import parse_datetime
 
 from apps.calculations.chart import CALCULATION_VERSION, ChartInputError, build_birth_chart
-from apps.calculations.ephemeris import EphemerisProvider, EphemerisUnavailable
+from apps.calculations.ephemeris import CalculationSettings, EphemerisProvider, EphemerisUnavailable
 from apps.places.catalog import PlaceCandidate, PlaceNotFound, resolve_place
+from apps.places.geocoding import geocode_places
 
 from .models import BirthProfile, ChartCalculation, DashaPeriod, Place, PlanetPosition, VargaPlacement
 
 
 class ChartProfileInputError(ValueError):
     pass
+
+
+CALCULATION_SETTING_KEYS = (
+    "zodiac",
+    "calculation_model",
+    "ayanamsa",
+    "node_type",
+    "ephemeris",
+    "house_system",
+    "bhava_system",
+    "varga_scheme",
+    "sunrise_source",
+    "timezone_source",
+    "shadbala_profile",
+)
 
 
 def create_birth_profile(user: AbstractBaseUser, data: dict[str, Any]) -> BirthProfile:
@@ -40,6 +56,7 @@ def create_birth_profile(user: AbstractBaseUser, data: dict[str, Any]) -> BirthP
         birth_time_accuracy=birth_time_accuracy,
         place=place,
         timezone_name=catalog_place.timezone,
+        calculation_settings=_calculation_settings_snapshot(data),
         notes=str(data.get("notes", "")).strip(),
     )
 
@@ -90,8 +107,10 @@ def calculate_profile_chart(
         return calculation
 
     calculation.result = result
+    calculation.ayanamsa = str(result.get("settings", {}).get("ayanamsa") or calculation.ayanamsa)
+    calculation.house_system = str(result.get("settings", {}).get("house_system") or calculation.house_system)
     calculation.status = ChartCalculation.Status.COMPLETE
-    calculation.save(update_fields=["result", "status", "updated_at"])
+    calculation.save(update_fields=["ayanamsa", "house_system", "result", "status", "updated_at"])
     _persist_result_rows(calculation, result)
     return calculation
 
@@ -105,6 +124,7 @@ def profile_payload(profile: BirthProfile) -> dict[str, Any]:
         "birth_time": profile.birth_time.isoformat(timespec="minutes") if profile.birth_time else None,
         "birth_time_accuracy": profile.birth_time_accuracy,
         "timezone": profile.timezone_name,
+        "calculation_settings": _profile_calculation_settings(profile),
         "place": place_payload(profile.place),
         "latest_calculation": latest_calculation_summary(latest_calculation)
         if latest_calculation
@@ -158,9 +178,16 @@ def _resolve_profile_place(data: dict[str, Any], place_name: str) -> PlaceCandid
     try:
         return resolve_place(place_name)
     except PlaceNotFound as exc:
-        if not all(data.get(field) not in {None, ""} for field in ("timezone", "latitude", "longitude")):
-            raise ChartProfileInputError(str(exc)) from exc
+        if all(data.get(field) not in {None, ""} for field in ("timezone", "latitude", "longitude")):
+            return _custom_profile_place(data, place_name)
 
+        geocoded = _safe_geocode_place(place_name)
+        if geocoded:
+            return geocoded
+        raise ChartProfileInputError(str(exc)) from exc
+
+
+def _custom_profile_place(data: dict[str, Any], place_name: str) -> PlaceCandidate:
     name, admin_name, country_code = _parse_place_label(place_name)
     return PlaceCandidate(
         id=str(data.get("place_id") or f"custom:{place_name}").strip(),
@@ -171,6 +198,13 @@ def _resolve_profile_place(data: dict[str, Any], place_name: str) -> PlaceCandid
         longitude=_float_in_range(data, "longitude", -180, 180),
         timezone=str(data["timezone"]).strip(),
     )
+
+
+def _safe_geocode_place(place_name: str) -> PlaceCandidate | None:
+    try:
+        return next(iter(geocode_places(place_name, limit=1)), None)
+    except Exception:
+        return None
 
 
 def _parse_place_label(label: str) -> tuple[str, str, str]:
@@ -189,7 +223,41 @@ def _profile_input(profile: BirthProfile) -> dict[str, Any]:
         "timezone": profile.timezone_name,
         "latitude": float(profile.place.latitude),
         "longitude": float(profile.place.longitude),
+        **_profile_calculation_settings(profile),
     }
+
+
+def _profile_calculation_settings(profile: BirthProfile) -> dict[str, Any]:
+    defaults = _calculation_settings_snapshot({})
+    return {
+        **defaults,
+        **{key: value for key, value in (profile.calculation_settings or {}).items() if key in defaults},
+    }
+
+
+def _calculation_settings_snapshot(data: dict[str, Any]) -> dict[str, str]:
+    try:
+        settings = CalculationSettings(
+            zodiac=str(data.get("zodiac") or "sidereal").strip().lower(),
+            calculation_model=str(
+                data.get("calculation_model") or data.get("siddhanta_model") or "drik_siddhanta"
+            )
+            .strip()
+            .lower(),
+            ayanamsa=str(data.get("ayanamsa") or "lahiri").strip().lower(),
+            node_type=str(data.get("node_type") or "true").strip().lower(),
+            ephemeris=str(data.get("ephemeris") or "swiss").strip().lower(),
+            house_system=str(data.get("house_system") or "whole_sign").strip().lower(),
+            bhava_system=str(data.get("bhava_system") or "whole_sign").strip().lower(),
+            varga_scheme=str(data.get("varga_scheme") or "parashara").strip().lower(),
+            sunrise_source=str(data.get("sunrise_source") or "noaa").strip().lower(),
+            timezone_source=str(data.get("timezone_source") or "iana").strip().lower(),
+            shadbala_profile=str(data.get("shadbala_profile") or "bphs_classical").strip().lower(),
+        )
+    except ValueError as exc:
+        raise ChartProfileInputError(str(exc)) from exc
+
+    return {key: getattr(settings, key) for key in CALCULATION_SETTING_KEYS}
 
 
 def _persist_result_rows(calculation: ChartCalculation, result: dict[str, Any]) -> None:

@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from importlib import import_module
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -36,6 +37,22 @@ def test_solar_day_estimates_real_sunrise_and_sunset_for_place_timezone():
     assert result.sunrise.hour == 5
     assert result.sunset.hour == 19
     assert 800 <= result.daylight_minutes <= 840
+
+
+def test_solar_day_supports_jhora_center_no_refraction_profile():
+    require_solar_module()
+    try:
+        import_module("swisseph")
+    except ImportError:
+        pytest.skip("pyswisseph is optional")
+    tz = ZoneInfo("Asia/Yekaterinburg")
+
+    result = solar_day(date(1998, 4, 30), 53.6304, 55.9502, tz, source="swiss_center_no_refraction")
+
+    assert result.status == "calculated"
+    assert result.sunrise.strftime("%H:%M") == "06:50"
+    assert result.sunset.strftime("%H:%M") == "21:37"
+    assert "disc center" in result.method
 
 
 def test_daytime_inauspicious_periods_use_weekday_segment_tables():

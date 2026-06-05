@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.conf import settings
 from django.db import IntegrityError
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -13,6 +14,8 @@ def user_payload(user) -> dict[str, object]:
         "id": user.id,
         "username": user.get_username(),
         "email": user.email,
+        "is_active": user.is_active,
+        "is_staff": user.is_staff,
     }
 
 
@@ -35,12 +38,12 @@ class RegisterView(APIView):
                 username=username,
                 email=email,
                 password=password,
+                is_active=False,
             )
         except IntegrityError:
             return Response({"error": "username already exists"}, status=409)
 
-        login(request, user)
-        return Response({"user": user_payload(user)}, status=201)
+        return Response({"user": user_payload(user), "status": "pending_approval"}, status=202)
 
 
 class LoginView(APIView):
@@ -52,9 +55,13 @@ class LoginView(APIView):
         password = str(request.data.get("password", ""))
         user = authenticate(request, username=username, password=password)
         if user is None:
+            inactive = get_user_model().objects.filter(username=username, is_active=False).exists()
+            if inactive:
+                return Response({"error": "account pending approval"}, status=403)
             return Response({"error": "invalid credentials"}, status=401)
 
         login(request, user)
+        request.session.set_expiry(settings.SESSION_COOKIE_AGE)
         return Response({"user": user_payload(user)})
 
 

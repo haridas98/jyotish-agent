@@ -21,7 +21,21 @@ export type EphemerisStatus = {
   detail: string;
 };
 
-export type BirthChartRequest = {
+export type CalculationSettingsRequest = {
+  zodiac?: string;
+  calculation_model?: string;
+  ayanamsa?: string;
+  node_type?: string;
+  ephemeris?: string;
+  house_system?: string;
+  bhava_system?: string;
+  varga_scheme?: string;
+  sunrise_source?: string;
+  timezone_source?: string;
+  shadbala_profile?: string;
+};
+
+export type BirthChartRequest = CalculationSettingsRequest & {
   birth_date: string;
   birth_time: string;
   place_name: string;
@@ -37,7 +51,7 @@ export type TransitRequest = BirthChartRequest & {
   as_of_time?: string;
 };
 
-export type MuhurtaRequest = {
+export type MuhurtaRequest = CalculationSettingsRequest & {
   place_name: string;
   timezone?: string;
   latitude?: number;
@@ -45,11 +59,43 @@ export type MuhurtaRequest = {
   start_date: string;
   end_date: string;
   time?: string;
+  purpose?: string;
+  task_type?: string;
 };
 
 export type CompatibilityRequest = {
   person_a: BirthChartRequest;
   person_b: BirthChartRequest;
+};
+
+export type TithiPraveshaRequest = BirthChartRequest & {
+  target_year: number;
+  search_days?: number;
+  return_place_name?: string;
+  return_timezone?: string;
+  return_latitude?: number;
+  return_longitude?: number;
+};
+
+export type PrashnaRequest = CalculationSettingsRequest & {
+  question?: string;
+  question_date: string;
+  question_time: string;
+  place_name: string;
+  timezone?: string;
+  latitude?: number;
+  longitude?: number;
+};
+
+export type MundaneRequest = CalculationSettingsRequest & {
+  event_type?: string;
+  description?: string;
+  event_date: string;
+  event_time: string;
+  place_name: string;
+  timezone?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type CompactPlacement = {
@@ -65,10 +111,15 @@ export type GrahaPosition = {
   longitude: number;
   latitude: number | null;
   speed_longitude: number | null;
+  ephemeris_engine?: string | null;
+  ephemeris_flags?: number | null;
   rashi: string;
+  rashi_index?: number;
   nakshatra: string;
+  nakshatra_index?: number;
   pada: number;
   navamsa: string;
+  navamsa_index?: number;
 };
 
 export type HousePlacement = {
@@ -99,6 +150,10 @@ export type Panchanga = {
   vara?: {
     name: string;
   };
+  nakshatra?: {
+    name: string;
+    pada?: number;
+  };
   yoga?: {
     number: number;
     name: string;
@@ -109,6 +164,7 @@ export type Panchanga = {
 };
 
 export type DashaPeriod = {
+  name?: string;
   lord: string;
   level: number;
   starts_at: string;
@@ -135,6 +191,27 @@ export type YogaSignature = {
   name: string;
   bodies: string[];
   status: string;
+  category?: string;
+  rarity?: string;
+  present?: boolean;
+  detection_status?: string;
+  source_priority?: string[];
+  reference?: string;
+  formula?: {
+    description: string;
+    status: string;
+    source_basis: string;
+  };
+};
+
+export type YogaSummary = {
+  catalog_total: number;
+  detected_count: number;
+  signature_checked_count: number;
+  checked_not_present_count: number;
+  formula_pending_count: number;
+  calculation_pending_count?: number;
+  citation_required_count: number;
 };
 
 export type ArgalaRow = {
@@ -196,6 +273,14 @@ export type ShadbalaRow = {
     dig: number;
     chesta?: number;
     kala?: number;
+    drik?: number;
+  };
+  subcomponents?: {
+    sthana?: Record<string, unknown>;
+    dig?: Record<string, unknown>;
+    chesta?: Record<string, unknown>;
+    kala?: Record<string, unknown>;
+    drik?: Record<string, unknown>;
   };
   known_total: number;
 };
@@ -210,6 +295,15 @@ export type DayPeriod = {
   midpoint: string;
   local_time: string;
   status: string;
+};
+
+export type WorkflowInterpretationPlan = {
+  kind: string;
+  source_anchors: string[];
+  required_factors: string[];
+  client_text_sequence: string[];
+  gaudiya_guard: string;
+  citation_rule: string;
 };
 
 export type SolarDay = {
@@ -242,6 +336,8 @@ export type ClassicalCalculations = {
   };
   yogas?: ClassicalStatus & {
     items: YogaSignature[];
+    coverage?: YogaSignature[];
+    summary?: YogaSummary;
   };
   argala?: ClassicalStatus & {
     reference: string;
@@ -292,6 +388,19 @@ export type ShastraAudit = {
 
 export type BirthChart = {
   calculation_version: string;
+  settings?: {
+    zodiac: string;
+    calculation_model: string;
+    ayanamsa: string;
+    node_type: string;
+    ephemeris: string;
+    house_system: string;
+    bhava_system: string;
+    varga_scheme: string;
+    sunrise_source: string;
+    timezone_source: string;
+    shadbala_profile: string;
+  };
   birth: {
     date: string;
     time: string;
@@ -323,7 +432,183 @@ export type BirthChart = {
       year_length_days: number;
       mahadashas: DashaPeriod[];
     };
+    extra?: {
+      status: string;
+      yogini?: {
+        system: string;
+        status: string;
+        level: string;
+        cycle_years: number;
+        year_length_days: number;
+        start_rule: string;
+        mahadashas: DashaPeriod[];
+      };
+      ashtottari?: {
+        system: string;
+        status: string;
+        cycle_years: number;
+        sequence: { lord: string; years: number }[];
+        audit: Record<string, unknown>;
+      };
+    };
   };
+};
+
+export type DualCalculationReport = {
+  status: string;
+  profile_status: string;
+  primary_calculation: {
+    key: string;
+    calculation_version: string;
+    settings: NonNullable<BirthChart["settings"]>;
+    birth: BirthChart["birth"];
+    place: BirthChart["place"];
+    chart: BirthChart;
+  };
+  jhora_profile_calculation: {
+    key: string;
+    calculation_version: string;
+    settings: NonNullable<BirthChart["settings"]>;
+    birth: BirthChart["birth"];
+    place: BirthChart["place"];
+    chart: BirthChart;
+  };
+  settings_diff: Array<{
+    key: string;
+    primary: string | null;
+    jhora_profile: string | null;
+    matches: boolean;
+  }>;
+  delta: {
+    exact_match: boolean;
+    summary: {
+      graha_count: number;
+      max_graha_delta_arcseconds: number;
+      varga_mismatches: number;
+      dasha_mismatches: number;
+      shadbala_mismatches: number;
+      panchanga_mismatches: number;
+    };
+    lagna: null | {
+      body: string;
+      primary_longitude: number;
+      jhora_profile_longitude: number;
+      signed_delta_arcseconds: number;
+      delta_arcseconds: number;
+      primary_rashi: string;
+      jhora_profile_rashi: string;
+      rashi_matches: boolean;
+      primary_nakshatra: string;
+      jhora_profile_nakshatra: string;
+      nakshatra_matches: boolean;
+      primary_pada: number;
+      jhora_profile_pada: number;
+      pada_matches: boolean;
+    };
+    grahas: Array<{
+      body: string;
+      primary_longitude: number;
+      jhora_profile_longitude: number;
+      signed_delta_arcseconds: number;
+      delta_arcseconds: number;
+      primary_rashi: string;
+      jhora_profile_rashi: string;
+      rashi_matches: boolean;
+      primary_nakshatra: string;
+      jhora_profile_nakshatra: string;
+      nakshatra_matches: boolean;
+      primary_pada: number;
+      jhora_profile_pada: number;
+      pada_matches: boolean;
+    }>;
+    vargas: {
+      mismatch_count: number;
+      rows: Array<{
+        code: string;
+        checked: number;
+        mismatches: number;
+        missing: number;
+        samples: Array<{
+          body: string;
+          primary: string | null;
+          jhora_profile: string | null;
+        }>;
+      }>;
+    };
+    dashas: {
+      mismatch_count: number;
+      rows: Array<{
+        index: number;
+        status?: string;
+        primary_lord?: string | null;
+        jhora_profile_lord?: string | null;
+        primary_starts_at?: string | null;
+        jhora_profile_starts_at?: string | null;
+        primary_ends_at?: string | null;
+        jhora_profile_ends_at?: string | null;
+        matches?: boolean;
+      }>;
+    };
+    shadbala: {
+      mismatch_count: number;
+      rows: Array<{
+        body: string;
+        primary?: number;
+        jhora_profile?: number;
+        delta?: number;
+        status?: string;
+      }>;
+    };
+    panchanga: {
+      mismatch_count: number;
+      rows: Array<{
+        key: string;
+        primary: string | null;
+        jhora_profile: string | null;
+        matches: boolean;
+      }>;
+    };
+  };
+  authority_decision: {
+    accepted_track: string;
+    status: string;
+    needs_review: boolean;
+    reason: string;
+    differing_settings: string[];
+  };
+};
+
+export type JHoraAccuracyReport = {
+  fixture_id: string;
+  passed: boolean;
+  generated_at: string;
+  source_report: string;
+  source_export: string;
+  summary: {
+    longitude: {
+      checked: number;
+      failed: number;
+      max_delta_arcseconds: number;
+      median_delta_arcseconds: number;
+      ayanamsa_delta_arcseconds: number;
+      corrected_max_delta_arcseconds: number;
+      failed_samples: Array<{
+        body: string;
+        delta_arcseconds: number;
+        signed_delta_arcseconds: number;
+      }>;
+    };
+    exact_groups: Array<{
+      key: string;
+      total: number;
+      passed: number;
+      failed: number;
+      failed_samples: string[];
+    }>;
+    jhora_layers: Record<string, Record<string, number | string | null>>;
+    missing_fields: string[];
+  };
+  diagnostics: Record<string, unknown>;
 };
 
 export type ReportCitation = {
@@ -426,19 +711,107 @@ export type AnalysisPacket = {
   report: Record<string, unknown>;
 };
 
+export type ShastraEvidenceCitation = {
+  condition_key: string;
+  condition_title: string;
+  work_slug: string;
+  work_title: string;
+  source_url: string;
+  passage_id: number;
+  evidence_id: number;
+  reference: string;
+  excerpt: string;
+  reviewer: string;
+  review_status: string;
+  public_quote_policy: string;
+};
+
+export type ShastraEvidenceItem = {
+  id: number;
+  condition_key: string;
+  score: number;
+  work_slug: string;
+  work_title: string;
+  passage_id: number;
+  passage_reference: string;
+  inferred_reference: string;
+  reference_status: string;
+  review_status: string;
+  public_quote_policy: string;
+  snippet: string;
+};
+
+export type ShastraEvidenceCondition = {
+  condition_key: string;
+  condition_kind: string;
+  condition_title: string;
+  condition_summary: string;
+  evidence_status: string;
+  public_release_policy: string;
+  approved_citations: ShastraEvidenceCitation[];
+  evidence: ShastraEvidenceItem[];
+};
+
+export type ShastraEvidencePayload = {
+  schema_version: string;
+  summary: {
+    conditions: number;
+    conditions_with_evidence: number;
+    evidence_items: number;
+    approved_conditions: number;
+    approved_evidence_items: number;
+    review_queue_items: number;
+  };
+  conditions: ShastraEvidenceCondition[];
+};
+
 export type GeneratedDraftAnalysis = {
   id: number;
   kind: string;
   review_status: string;
+  coverage_status?: string;
   source_policy: string;
   language?: string;
   sections: {
     title: string;
     body: string;
+    key_points?: string[];
+    practical_steps?: string[];
     condition_keys?: string[];
     evidence_references?: string[];
     citation_titles: string[];
+    source_traces?: {
+      condition_key: string;
+      work_title: string;
+      reference: string;
+      source_status: string;
+      short_excerpt: string;
+      interpretation: string;
+    }[];
     review_notes?: string[];
+  }[];
+};
+
+export type CodexAnalysisChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type CodexAnalysisChatResponse = {
+  id?: number;
+  kind: string;
+  analysis_id: number;
+  question: string;
+  answer: string;
+  history_used?: number;
+  evidence_references?: string[];
+  source_traces?: {
+    condition_key?: string;
+    work_title?: string;
+    reference?: string;
+    source_status?: string;
+    short_excerpt?: string;
+    interpretation?: string;
   }[];
 };
 
@@ -455,6 +828,7 @@ export type TransitRow = {
 export type TransitReport = {
   status: string;
   method: string;
+  interpretation_plan?: WorkflowInterpretationPlan;
   as_of: {
     date: string;
     time: string;
@@ -472,6 +846,14 @@ export type MuhurtaCandidate = {
   date: string;
   time: string;
   score: number;
+  purpose: string;
+  purpose_profile: string;
+  purpose_adjustments: {
+    field: string;
+    name: string | null;
+    delta: number;
+    status: string;
+  }[];
   panchanga: Panchanga;
   day_periods: DayPeriod[];
   blocked_periods: DayPeriod[];
@@ -481,13 +863,146 @@ export type MuhurtaCandidate = {
 export type MuhurtaReport = {
   status: string;
   method: string;
+  purpose: string;
+  purpose_profile: string;
+  interpretation_plan?: WorkflowInterpretationPlan;
   candidates: MuhurtaCandidate[];
   vaishnava_note: string;
+};
+
+export type TithiPraveshaReport = {
+  status: string;
+  method: string;
+  target_year: number;
+  interpretation_plan?: WorkflowInterpretationPlan;
+  search: {
+    center_date: string;
+    search_days: number;
+    step_hours: number;
+    tolerance_degrees: number;
+  };
+  natal: {
+    birth: BirthChart["birth"];
+    tithi?: Panchanga["tithi"];
+    solar_lunar_angle: number;
+    sun: CompactPlacement;
+    moon: CompactPlacement;
+  };
+  return: {
+    date: string;
+    time: string;
+    timezone: string;
+    local_datetime: string;
+    solar_lunar_angle: number;
+    delta_degrees: number;
+    iterations: number;
+    chart: BirthChart;
+  };
+  annual_context: {
+    lagna: CompactPlacement;
+    sun: CompactPlacement;
+    moon: CompactPlacement;
+    panchanga: Panchanga;
+    tajaka?: {
+      status: string;
+      method: string;
+      completed_years?: number;
+      muntha?: {
+        rashi_index: number;
+        rashi: string;
+        house_from_annual_lagna: number;
+      };
+    };
+  };
+  audit: {
+    review_status: string;
+    source_anchors: string[];
+    public_interpretation_status: string;
+  };
+};
+
+export type TajakaReport = {
+  status: string;
+  method: string;
+  tithi_pravesha: TithiPraveshaReport;
+  interpretation_plan?: WorkflowInterpretationPlan;
+  tajaka: {
+    status: string;
+    muntha?: {
+      rashi_index: number;
+      rashi: string;
+      house_from_annual_lagna: number;
+    };
+    annual_lagna: CompactPlacement;
+    annual_moon: CompactPlacement;
+    annual_sun: CompactPlacement;
+    panchanga: Panchanga;
+    open_items: string[];
+  };
+  audit: {
+    review_status: string;
+    public_interpretation_status: string;
+    chart_id: string | null;
+  };
+};
+
+export type PrashnaReport = {
+  status: string;
+  method: string;
+  interpretation_plan?: WorkflowInterpretationPlan;
+  question: {
+    text: string;
+    asked_at: BirthChart["birth"];
+    place: BirthChart["place"];
+  };
+  chart: BirthChart;
+  indicators: {
+    lagna: CompactPlacement;
+    lagna_lord: string | null;
+    lagna_lord_placement: CompactPlacement;
+    moon: CompactPlacement;
+    moon_house_from_lagna: number | null;
+    seventh_house_rashi: string | null;
+    panchanga: Panchanga;
+  };
+  audit: {
+    review_status: string;
+    source_anchors: string[];
+    public_interpretation_status: string;
+  };
+};
+
+export type MundaneReport = {
+  status: string;
+  method: string;
+  interpretation_plan?: WorkflowInterpretationPlan;
+  event: {
+    type: string;
+    description: string;
+    occurred_at: BirthChart["birth"];
+    place: BirthChart["place"];
+  };
+  chart: BirthChart;
+  indicators: {
+    lagna: CompactPlacement;
+    sun: CompactPlacement;
+    moon: CompactPlacement;
+    tenth_house_rashi: string | null;
+    fourth_house_rashi: string | null;
+    slow_planets: { body: string; placement: CompactPlacement; house_from_lagna: number | null }[];
+    panchanga: Panchanga;
+  };
+  audit: {
+    review_status: string;
+    source_anchors: string[];
+    public_interpretation_status: string;
+  };
 };
 
 export type CompatibilityReport = {
   status: string;
   method: string;
+  interpretation_plan?: WorkflowInterpretationPlan;
   coverage: {
     system: string;
     calculated_kutas: number;
@@ -578,6 +1093,8 @@ export type User = {
   id: number;
   username: string;
   email: string;
+  is_active: boolean;
+  is_staff: boolean;
 };
 
 export type ChartProfile = {
@@ -587,6 +1104,7 @@ export type ChartProfile = {
   birth_time: string | null;
   birth_time_accuracy: string;
   timezone: string;
+  calculation_settings: NonNullable<BirthChart["settings"]>;
   place: {
     id: number;
     external_id: string;
@@ -648,7 +1166,70 @@ export type ResearchSearchResult = {
   is_public_citation: boolean;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8100";
+export type SourceWorkSummary = {
+  id: number;
+  slug: string;
+  title: string;
+  source_class: string;
+  author: string;
+  edition: string;
+  language_code: string;
+  source_url: string;
+  review_status: string;
+  passage_count: number | null;
+  rights_status: string;
+  public_quote_policy: string;
+};
+
+export type SourceInventory = {
+  schema_version: string;
+  summary: {
+    total_works: number;
+    total_passages: number;
+    research_only_works: number;
+    research_only_passages: number;
+    returned_works: number;
+    search_scope: string;
+  };
+  works: SourceWorkSummary[];
+};
+
+export type SourcePassageResult = {
+  id: number;
+  reference: string;
+  body: string;
+  language_code: string;
+  review_status: string;
+  rights_status: string;
+  public_quote_policy: string;
+  metadata: Record<string, unknown>;
+};
+
+export type SourcePassagesResponse = {
+  work: SourceWorkSummary;
+  limit: number;
+  offset: number;
+  items: SourcePassageResult[];
+};
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const FALLBACK_RESPONSE_STATUSES = new Set([404, 502, 503, 504]);
+
+function apiBaseUrls() {
+  if (API_BASE_URL) return [API_BASE_URL];
+  const browserHost = typeof window === "undefined" ? "" : window.location.hostname;
+  const browserProtocol = typeof window === "undefined" ? "http:" : window.location.protocol;
+  const host = browserHost || "127.0.0.1";
+  const protocol = browserProtocol === "https:" ? "https" : "http";
+  return Array.from(
+    new Set([
+      `${protocol}://${host}:8000`,
+      `${protocol}://${host}:8100`,
+      "http://127.0.0.1:8000",
+      "http://127.0.0.1:8100",
+    ]),
+  );
+}
 
 function csrfToken() {
   if (typeof document === "undefined") return "";
@@ -660,10 +1241,20 @@ function csrfToken() {
 
 async function ensureCsrf(force = false) {
   if (!force && csrfToken()) return;
-  await fetch(`${API_BASE_URL}/api/auth/csrf`, {
-    credentials: "include",
-    cache: "no-store",
-  });
+  let lastError: unknown = null;
+  for (const baseUrl of apiBaseUrls()) {
+    try {
+      const response = await fetch(`${baseUrl}/api/auth/csrf`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (response.ok) return;
+      lastError = new Error(`CSRF API ${baseUrl} returned ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
 }
 
 async function apiFetch(path: string, init: RequestInit = {}) {
@@ -673,11 +1264,52 @@ async function apiFetch(path: string, init: RequestInit = {}) {
     await ensureCsrf();
     headers.set("X-CSRFToken", csrfToken());
   }
-  return fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    credentials: "include",
-    headers,
-  });
+  let lastError: unknown = null;
+  const baseUrls = apiBaseUrls();
+  for (let index = 0; index < baseUrls.length; index += 1) {
+    const baseUrl = baseUrls[index];
+    try {
+      const response = await fetch(`${baseUrl}${path}`, {
+        ...init,
+        credentials: "include",
+        headers,
+      });
+      const canTryNextBaseUrl =
+        !process.env.NEXT_PUBLIC_API_BASE_URL &&
+        index < baseUrls.length - 1 &&
+        FALLBACK_RESPONSE_STATUSES.has(response.status);
+      if (canTryNextBaseUrl) {
+        lastError = new Error(`API ${baseUrl} returned ${response.status}`);
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
+async function retryNetworkFetch<T>(operation: () => Promise<T>, retries = 1): Promise<T> {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (!isNetworkFetchError(error) || attempt >= retries) break;
+      await delay(1500 * (attempt + 1));
+    }
+  }
+  throw lastError;
+}
+
+function isNetworkFetchError(error: unknown) {
+  return error instanceof TypeError && /fetch|network|load failed/i.test(error.message);
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 export async function fetchZodiacPlacement(longitude: number): Promise<ZodiacPlacement> {
@@ -720,6 +1352,34 @@ export async function calculateBirthChart(payload: BirthChartRequest): Promise<B
   return data;
 }
 
+export async function calculateDualCalculation(payload: BirthChartRequest): Promise<DualCalculationReport> {
+  const response = await apiFetch("/api/calculations/dual", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function fetchJHoraAccuracyReport(): Promise<JHoraAccuracyReport> {
+  const response = await apiFetch("/api/calculations/jhora-accuracy", {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function generateBirthReport(payload: BirthChartRequest): Promise<BirthReport> {
   const response = await apiFetch("/api/reports/birth-chart", {
     method: "POST",
@@ -750,6 +1410,37 @@ export async function generateCompatibilityAnalysisPacket(payload: Compatibility
   return data;
 }
 
+export async function generateCompatibilityCodexAnalysis(payload: CompatibilityRequest): Promise<GeneratedDraftAnalysis> {
+  return retryNetworkFetch(async () => {
+    const response = await apiFetch("/api/reports/compatibility/codex-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error ?? `API returned ${response.status}`);
+    }
+
+    return data;
+  });
+}
+
+export async function fetchShastraEvidence(keys: string[] = []): Promise<ShastraEvidencePayload> {
+  const query = keys.length ? `?keys=${encodeURIComponent(keys.join(","))}` : "";
+  const response = await apiFetch(`/api/reports/shastra-evidence${query}`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function generateBirthDraftAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
   const response = await apiFetch("/api/reports/birth-chart/draft-analysis", {
     method: "POST",
@@ -765,11 +1456,54 @@ export async function generateBirthDraftAnalysis(payload: BirthChartRequest): Pr
   return data;
 }
 
-export async function generateBirthCodexAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
-  const response = await apiFetch("/api/reports/birth-chart/codex-analysis", {
+export async function generateBirthCodexAnalysis(
+  payload: BirthChartRequest,
+  options: { forceRegenerate?: boolean } = {},
+): Promise<GeneratedDraftAnalysis> {
+  return retryNetworkFetch(async () => {
+    const response = await apiFetch("/api/reports/birth-chart/codex-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options.forceRegenerate ? { ...payload, force_regenerate: true } : payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error ?? `API returned ${response.status}`);
+    }
+
+    return data;
+  });
+}
+
+export async function askBirthCodexAnalysis(
+  analysisId: number,
+  question: string,
+  history: CodexAnalysisChatMessage[],
+): Promise<CodexAnalysisChatResponse> {
+  const response = await apiFetch("/api/reports/birth-chart/codex-analysis/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ analysis_id: analysisId, question, history }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function askCompatibilityCodexAnalysis(
+  analysisId: number,
+  question: string,
+  history: CodexAnalysisChatMessage[],
+): Promise<CodexAnalysisChatResponse> {
+  const response = await apiFetch("/api/reports/compatibility/codex-analysis/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ analysis_id: analysisId, question, history }),
   });
 
   const data = await response.json();
@@ -825,6 +1559,66 @@ export async function calculateCompatibility(payload: CompatibilityRequest): Pro
   return data;
 }
 
+export async function calculateTithiPravesha(payload: TithiPraveshaRequest): Promise<TithiPraveshaReport> {
+  const response = await apiFetch("/api/calculations/tithi-pravesha", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function calculateTajaka(payload: TithiPraveshaRequest): Promise<TajakaReport> {
+  const response = await apiFetch("/api/calculations/tajaka", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function calculatePrashna(payload: PrashnaRequest): Promise<PrashnaReport> {
+  const response = await apiFetch("/api/calculations/prashna", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function calculateMundane(payload: MundaneRequest): Promise<MundaneReport> {
+  const response = await apiFetch("/api/calculations/mundane", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function searchPlaces(query: string): Promise<PlaceCandidate[]> {
   if (!query.trim()) return [];
   const response = await apiFetch(`/api/places/search?q=${encodeURIComponent(query)}`, {
@@ -865,6 +1659,33 @@ export async function searchResearchSources(query: string): Promise<ResearchSear
   }
 
   return data.items ?? [];
+}
+
+export async function fetchSourceWorks(): Promise<SourceInventory> {
+  const response = await apiFetch("/api/sources/works?limit=1000", {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function fetchSourcePassages(slug: string, offset = 0): Promise<SourcePassagesResponse> {
+  const response = await apiFetch(
+    `/api/sources/works/${encodeURIComponent(slug)}/passages?limit=12&offset=${encodeURIComponent(offset)}`,
+    { cache: "no-store" },
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
 }
 
 export async function fetchCurrentUser(): Promise<User | null> {
@@ -934,6 +1755,9 @@ export async function createChartProfile(payload: BirthChartRequest & { display_
   });
   const data = await response.json();
   if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error("Нет доступа к сохранению: войдите заново или обновите страницу для CSRF-сессии");
+    }
     throw new Error(data.error ?? `API returned ${response.status}`);
   }
   return data.profile;

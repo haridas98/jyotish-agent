@@ -30,10 +30,23 @@ Invoke-RestMethod http://127.0.0.1:8100/api/calculations/ephemeris/status
 
 ## Optional JPL Mode
 
-Download a Swiss Ephemeris-compatible JPL file such as `de441.eph` or `de431.eph`, then configure `backend\.env`:
+For Swiss `.se1` mode, put the required files for the birth-date range into a local ephemeris directory and set:
 
 ```env
 SWISSEPH_EPHE_PATH=C:\path\to\swisseph\ephe
+```
+
+For the current Sterlitamak/JHora audit packet, local private development uses:
+
+```env
+SWISSEPH_EPHE_PATH=C:\Projects\jyotish-agent\.tmp\swisseph\ephe
+```
+
+with `sepl_18.se1`, `semo_18.se1` and `seas_18.se1`, covering 1800-2399.
+
+Download a Swiss Ephemeris-compatible JPL file such as `de441.eph` or `de431.eph`, then additionally configure:
+
+```env
 SWISSEPH_JPL_FILE=de441.eph
 ```
 
@@ -46,6 +59,20 @@ Then pass this calculation setting in chart input:
 ```
 
 If `ephemeris=jpl` is requested without `SWISSEPH_JPL_FILE`, the backend returns an explicit ephemeris availability error instead of silently falling back.
+
+## JHora Sunrise Profile
+
+JHora's Sterlitamak export uses sunrise `06:50:21` and sunset `21:37:48`. This matches Swiss Ephemeris rise/set when using solar disc center and no atmospheric refraction.
+
+Use this chart setting for JHora parity fixtures:
+
+```json
+{
+  "sunrise_source": "swiss_center_no_refraction"
+}
+```
+
+The default remains `noaa` for general MVP calculations.
 
 ## Licensing Rule
 
@@ -60,5 +87,6 @@ Do not hide this decision in code. Record it in this document and in deployment 
 ## References
 
 - Swiss Ephemeris official site: https://www.astro.com/swisseph/
+- Swiss Ephemeris ephemeris download note: https://www.astro.com/ftp/swisseph/ephe/
 - pyswisseph package: https://pypi.org/project/pyswisseph/
 - JPL Horizons API: https://ssd-api.jpl.nasa.gov/doc/horizons.html

@@ -35,6 +35,39 @@ def test_birth_profile_create_resolves_place_for_authenticated_user(user):
 
 
 @pytest.mark.django_db
+def test_birth_profile_create_persists_calculation_settings(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Settings chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "birth_time_accuracy": "exact",
+            "place_name": "Vrindavan",
+            "calculation_model": "drik_siddhanta",
+            "ayanamsa": "lahiri",
+            "node_type": "mean",
+            "ephemeris": "swiss",
+            "house_system": "whole_sign",
+            "bhava_system": "whole_sign",
+            "varga_scheme": "parashara",
+            "sunrise_source": "noaa",
+            "timezone_source": "iana",
+            "shadbala_profile": "bphs_classical",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["profile"]["calculation_settings"]["node_type"] == "mean"
+    profile = BirthProfile.objects.get(user=user, display_name="Settings chart")
+    assert profile.calculation_settings["node_type"] == "mean"
+
+
+@pytest.mark.django_db
 def test_birth_profile_create_accepts_geocoded_place_for_authenticated_user(user):
     client = APIClient()
     client.force_authenticate(user=user)
@@ -59,6 +92,28 @@ def test_birth_profile_create_accepts_geocoded_place_for_authenticated_user(user
     assert response.status_code == 201
     assert response.data["profile"]["place"]["label"] == "London, United Kingdom, GB"
     assert response.data["profile"]["timezone"] == "Europe/London"
+
+
+@pytest.mark.django_db
+def test_birth_profile_create_accepts_gelendzhik_catalog_place(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Gelendzhik chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "birth_time_accuracy": "exact",
+            "place_name": "Gelendzhik, Russia, RU",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["profile"]["place"]["label"] == "Gelendzhik, Russia, RU"
+    assert response.data["profile"]["timezone"] == "Europe/Moscow"
 
 
 @pytest.mark.django_db

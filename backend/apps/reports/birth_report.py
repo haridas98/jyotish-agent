@@ -139,8 +139,12 @@ def _birth_context(chart: dict[str, Any]) -> list[dict[str, object]]:
     return [
         {"label": "Birth", "value": birth.get("local_datetime", "")},
         {"label": "Place", "value": place.get("label") or place.get("name", "")},
+        {"label": "Calculation model", "value": settings.get("calculation_model", "")},
         {"label": "Ayanamsa", "value": settings.get("ayanamsa", "")},
+        {"label": "Node type", "value": settings.get("node_type", "")},
         {"label": "Ephemeris", "value": settings.get("ephemeris", "")},
+        {"label": "House system", "value": settings.get("house_system", "")},
+        {"label": "Timezone source", "value": settings.get("timezone_source", "")},
     ]
 
 

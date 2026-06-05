@@ -66,6 +66,11 @@ def test_compose_birth_report_uses_chart_facts_citations_and_vaishnava_guard():
     assert result["report"]["chart_facts"]["grahas"]["Chandra"]["house"] == 2
     assert result["report"]["person_summary"]["core_factors"][0]["label"] == "Lagna"
     assert result["report"]["person_summary"]["core_factors"][0]["value"] == "Karka"
+    birth_context = {row["label"]: row["value"] for row in result["report"]["person_summary"]["birth_context"]}
+    assert birth_context["Calculation model"] == "drik_siddhanta"
+    assert birth_context["Node type"] == "true"
+    assert birth_context["House system"] == "whole_sign"
+    assert birth_context["Timezone source"] == "iana"
     assert result["report"]["person_summary"]["graha_houses"][1]["body"] == "Chandra"
     assert result["report"]["person_summary"]["graha_houses"][1]["house"] == 2
     assert result["report"]["person_summary"]["detailed_positions"][0]["body"] == "Surya"

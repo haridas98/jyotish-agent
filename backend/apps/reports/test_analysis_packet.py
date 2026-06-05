@@ -107,6 +107,7 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert packet["shastra_coverage"]["schema_version"] == "jyotish-source-coverage-v1"
     assert packet["shastra_condition_matrix"]["schema_version"] == "jyotish-shastra-condition-matrix-v1"
     assert packet["shastra_evidence"]["schema_version"] == "jyotish-shastra-evidence-v1"
+    assert packet["shastra_source_traces"]["schema_version"] == "jyotish-shastra-source-traces-v1"
     assert packet["status"] == "ready_for_generation"
     assert packet["generator_policy"]["language"] == "ru"
     assert packet["generator_policy"]["forbidden_outputs"][0] == "independent_demigod_worship"
@@ -117,11 +118,16 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert packet["context"]["explanation_schedule"][0]["key"] == "calculation_audit"
     assert packet["context"]["explanation_schedule"][-1]["key"] == "source_review_notes"
     assert packet["context"]["yoga_catalog_overview"]["total_yogas"] >= 90
+    assert packet["context"]["yoga_catalog_overview"]["anchor_coverage"]["exact_verse_verified"] >= 70
+    assert packet["context"]["jhora_parity_suite"]["case_count"] >= 20
+    assert packet["context"]["workflow_interpretation_library"]["transits"]["required_factors"]
     assert "nabhasa_akriti" in packet["context"]["yoga_catalog_overview"]["categories"]
     yoga_map = packet["context"]["detected_yoga_source_map"]
     assert yoga_map
     assert all(row["citation_policy"] == "required_for_public_interpretation" for row in yoga_map)
     assert any(row["source_mapping_status"] == "mapped_research_only" for row in yoga_map)
+    assert any(row["source_anchors"] for row in yoga_map)
+    assert all(row["explanation_plan"]["client_text_sequence"] for row in yoga_map)
     citation_requests = packet["citation_requests"]
     assert citation_requests
     assert any(request["kind"] == "detected_yoga" for request in citation_requests)
@@ -137,11 +143,15 @@ def test_build_analysis_packet_contains_codex_ready_prompt_policy_and_citations(
     assert "OUTPUT JSON schema" in packet["prompt_markdown"]
     assert "explanation_schedule" in packet["prompt_markdown"]
     assert "detected_yoga_source_map" in packet["prompt_markdown"]
+    assert "source_anchors" in packet["prompt_markdown"]
+    assert "workflow_interpretation_library" in packet["prompt_markdown"]
+    assert "jhora_parity_suite" in packet["prompt_markdown"]
     assert "citation_requests" in packet["prompt_markdown"]
     assert "research_context" in packet["prompt_markdown"]
     assert "shastra_coverage" in packet["prompt_markdown"]
     assert "shastra_condition_matrix" in packet["prompt_markdown"]
     assert "shastra_evidence" in packet["prompt_markdown"]
+    assert "shastra_source_traces" in packet["prompt_markdown"]
     assert "compare_multiple_translation_variants" in packet["prompt_markdown"]
     assert "cite_exact_edition_translator_and_reference" in packet["prompt_markdown"]
     assert "flag_translation_conflicts" in packet["prompt_markdown"]
@@ -191,6 +201,8 @@ def test_build_compatibility_analysis_packet_contains_two_chart_context_and_pers
     assert packet["context"]["person_a"]["chart"]["birth"]["date"] == "2000-01-01"
     assert packet["context"]["person_b"]["chart"]["birth"]["date"] == "2001-02-03"
     assert packet["context"]["compatibility"]["analysis"]["perspectives"]
+    assert packet["context"]["compatibility"]["interpretation_plan"]["kind"] == "compatibility"
+    assert packet["context"]["jhora_parity_suite"]["case_count"] >= 20
     assert any(request["kind"] == "compatibility_perspective" for request in packet["citation_requests"])
     assert all(request["required_for_public_text"] for request in packet["citation_requests"])
     assert packet["citations"][0]["title"] == "Vivaha source anchor"
@@ -245,6 +257,62 @@ def test_analysis_packet_includes_persisted_shastra_evidence():
     )
     assert gaja["evidence"][0]["inferred_reference"] == "Adhyaya 6, Sloka 16"
     assert gaja["evidence"][0]["work_title"] == "Phaladipika"
+    traces = packet["shastra_source_traces"]["traces"]
+    assert any(trace["condition_key"] == "gaja_kesari" for trace in traces)
+
+
+@pytest.mark.django_db
+def test_analysis_packet_exposes_approved_shastra_citations_separately():
+    try:
+        from apps.reports.analysis_packet import build_analysis_packet
+    except ModuleNotFoundError:
+        pytest.fail("analysis packet service is not implemented yet")
+
+    work = SourceWork.objects.create(
+        slug="phaladipika-subrahmanya-sastri-private",
+        title="Phaladipika",
+        source_class=SourceWork.SourceClass.JYOTISH_SHASTRA,
+        review_status=ReviewStatus.RESEARCH_ONLY,
+    )
+    passage = SourcePassage.objects.create(
+        work=work,
+        reference="Adhyaya 6, Sloka 16",
+        body="Gaja Kesari Yoga source wording.",
+        review_status=ReviewStatus.APPROVED,
+        metadata={"import_kind": "candidate_shastra_passage", "public_quote_policy": "approved_public_quote"},
+    )
+    ShastraConditionEvidence.objects.create(
+        condition_key="gaja_kesari",
+        condition_kind="yoga_condition",
+        condition_title="Gaja Kesari",
+        passage=passage,
+        score=42,
+        inferred_reference="Adhyaya 6, Sloka 16",
+        reference_status="approved",
+        public_quote_policy="approved_public_quote",
+        review_status=ReviewStatus.APPROVED,
+        metadata={
+            "approved_reference": "Adhyaya 6, Sloka 16",
+            "approved_excerpt": "Gaja Kesari Yoga source wording.",
+            "reviewer": "source-review",
+        },
+    )
+
+    packet = build_analysis_packet(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=AnalysisProvider(),
+    )
+
+    approved = packet["approved_shastra_citations"]
+    assert approved["summary"]["approved_evidence_items"] == 1
+    assert approved["items"][0]["condition_key"] == "gaja_kesari"
+    assert approved["items"][0]["reference"] == "Adhyaya 6, Sloka 16"
+    assert approved["items"][0]["excerpt"] == "Gaja Kesari Yoga source wording."
+    assert "approved_shastra_citations" in packet["prompt_markdown"]
 
 
 @pytest.mark.django_db

@@ -49,7 +49,7 @@ The fixture runner stores these under `diagnostics.external_layers`. They do not
 
 ## Current Ashtakavarga Decision
 
-The implemented BAV/SAV table follows Brihat Jataka chapter IX and the standard 337-bindu total. JHora 8.0 currently differs in 6 of 84 checked BAV cells on the India fixture. This remains a JHora profile/settings audit item, not a formula change.
+The implemented BAV/SAV table follows Brihat Jataka chapter IX and the standard 337-bindu total. The Sterlitamak JHora 8.0 fixture now matches 84 of 84 checked Sun-through-Saturn BAV cells. Lagna/Ascendant Ashtakavarga is still skipped until the app implements that row explicitly.
 
 ## Sources To Cross-Check
 

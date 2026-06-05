@@ -13,12 +13,16 @@ from .services import calculate_profile_chart
 
 
 class FakeProvider:
+    def __init__(self) -> None:
+        self.settings: CalculationSettings | None = None
+
     def planet_positions(
         self,
         moment: datetime,
         bodies: list[str],
         settings: CalculationSettings,
     ) -> dict[str, BodyPosition]:
+        self.settings = settings
         return {
             body: BodyPosition(
                 body=body,
@@ -54,11 +58,56 @@ def test_calculate_profile_chart_persists_positions_and_all_vargas():
         timezone_name="Asia/Kolkata",
     )
 
-    calculation = calculate_profile_chart(profile, provider=FakeProvider())
+    provider = FakeProvider()
+    calculation = calculate_profile_chart(profile, provider=provider)
 
     assert calculation.status == calculation.Status.COMPLETE
+    assert provider.settings == CalculationSettings()
     assert calculation.result["birth"]["timezone"] == "Asia/Kolkata"
     assert PlanetPosition.objects.filter(calculation=calculation).count() == len(GRAHAS)
     assert VargaPlacement.objects.filter(calculation=calculation, varga="D9").count() == len(GRAHAS)
     assert VargaPlacement.objects.filter(calculation=calculation, varga="D60").count() == len(GRAHAS)
     assert DashaPeriod.objects.filter(calculation=calculation, system="vimshottari").count() == 9
+
+
+@pytest.mark.django_db
+def test_calculate_profile_chart_uses_saved_calculation_settings():
+    user = get_user_model().objects.create_user(username="settings-user", password="strong-pass-108")
+    place = Place.objects.create(
+        external_id="in-vrindavan",
+        name="Vrindavan",
+        country_code="IN",
+        latitude=Decimal("27.565000"),
+        longitude=Decimal("77.659300"),
+        timezone_name="Asia/Kolkata",
+        metadata={"label": "Vrindavan, Uttar Pradesh, IN"},
+    )
+    profile = BirthProfile.objects.create(
+        user=user,
+        display_name="Mean node chart",
+        birth_date=date(1990, 8, 15),
+        birth_time=time(10, 24),
+        birth_time_accuracy=BirthProfile.TimeAccuracy.EXACT,
+        place=place,
+        timezone_name="Asia/Kolkata",
+        calculation_settings={
+            "calculation_model": "drik_siddhanta",
+            "ayanamsa": "lahiri",
+            "node_type": "mean",
+            "ephemeris": "swiss",
+            "house_system": "whole_sign",
+            "bhava_system": "whole_sign",
+            "varga_scheme": "parashara",
+            "sunrise_source": "noaa",
+            "timezone_source": "iana",
+            "shadbala_profile": "bphs_classical",
+        },
+    )
+    provider = FakeProvider()
+
+    calculation = calculate_profile_chart(profile, provider=provider)
+
+    assert calculation.status == calculation.Status.COMPLETE
+    assert provider.settings == CalculationSettings(node_type="mean")
+    assert calculation.input_snapshot["node_type"] == "mean"
+    assert calculation.result["settings"]["node_type"] == "mean"

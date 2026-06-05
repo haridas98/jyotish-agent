@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone, tzinfo
+from importlib import import_module
 from math import acos, asin, atan, cos, degrees, floor, radians, sin, tan
+import os
 from typing import Any
 
 WEEKDAY_LORDS = ("Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Surya")
@@ -28,6 +30,9 @@ YAMAGANDA_SEGMENTS = {
 }
 
 SOLAR_METHOD = "NOAA sunrise equation, apparent sunrise zenith 90.833 degrees."
+SWISS_CENTER_NO_REFRACTION_METHOD = (
+    "Swiss Ephemeris rise/set, solar disc center, no atmospheric refraction; matches JHora sunrise profile."
+)
 
 
 @dataclass(frozen=True)
@@ -49,14 +54,16 @@ class SolarDay:
         return round((self.next_sunrise - self.sunset).total_seconds() / 60)
 
 
-def solar_day(day: date, latitude: float, longitude: float, tz: tzinfo) -> SolarDay:
-    sunrise = _sun_event(day, latitude, longitude, tz, sunrise=True)
-    sunset = _sun_event(day, latitude, longitude, tz, sunrise=False)
-    next_sunrise = _sun_event(day + timedelta(days=1), latitude, longitude, tz, sunrise=True)
+def solar_day(day: date, latitude: float, longitude: float, tz: tzinfo, source: str = "noaa") -> SolarDay:
+    sunrise = _sun_event_for_source(day, latitude, longitude, tz, sunrise=True, source=source)
+    sunset = _sun_event_for_source(day, latitude, longitude, tz, sunrise=False, source=source)
+    next_sunrise = _sun_event_for_source(day + timedelta(days=1), latitude, longitude, tz, sunrise=True, source=source)
     status = "calculated"
+    method = _solar_method(source)
 
     if sunrise is None or sunset is None or next_sunrise is None or sunset <= sunrise:
         status = "fallback_fixed_clock"
+        method = f"{method}; fixed-clock fallback"
         sunrise = datetime.combine(day, datetime.min.time(), tzinfo=tz).replace(hour=6)
         sunset = datetime.combine(day, datetime.min.time(), tzinfo=tz).replace(hour=18)
         next_sunrise = sunrise + timedelta(days=1)
@@ -68,6 +75,7 @@ def solar_day(day: date, latitude: float, longitude: float, tz: tzinfo) -> Solar
         sunset=sunset,
         next_sunrise=next_sunrise,
         status=status,
+        method=method,
     )
 
 
@@ -95,11 +103,16 @@ def daytime_inauspicious_periods(day: SolarDay) -> list[dict[str, Any]]:
     ]
 
 
-def gulika_segment_for_moment(moment: datetime, latitude: float, longitude: float) -> dict[str, Any]:
+def gulika_segment_for_moment(
+    moment: datetime,
+    latitude: float,
+    longitude: float,
+    source: str = "noaa",
+) -> dict[str, Any]:
     if moment.tzinfo is None:
         raise ValueError("moment must be timezone-aware")
 
-    current_day = solar_day(moment.date(), latitude, longitude, moment.tzinfo)
+    current_day = solar_day(moment.date(), latitude, longitude, moment.tzinfo, source=source)
     if current_day.sunrise <= moment < current_day.sunset:
         segment = _saturn_segment(moment.weekday())
         return _period_payload(
@@ -113,7 +126,7 @@ def gulika_segment_for_moment(moment: datetime, latitude: float, longitude: floa
         )
 
     if moment < current_day.sunrise:
-        previous_day = solar_day(moment.date() - timedelta(days=1), latitude, longitude, moment.tzinfo)
+        previous_day = solar_day(moment.date() - timedelta(days=1), latitude, longitude, moment.tzinfo, source=source)
         period_start = previous_day.sunset
         period_end = current_day.sunrise
         start_lord_index = moment.weekday()
@@ -179,6 +192,50 @@ def _segment_bounds(period_start: datetime, period_end: datetime, segment: int) 
 def _saturn_segment(start_lord_index: int) -> int:
     sequence = [WEEKDAY_LORDS[(start_lord_index + offset) % len(WEEKDAY_LORDS)] for offset in range(8)]
     return sequence.index("Shani") + 1
+
+
+def _sun_event_for_source(
+    day: date,
+    latitude: float,
+    longitude: float,
+    tz: tzinfo,
+    *,
+    sunrise: bool,
+    source: str,
+) -> datetime | None:
+    if source == "swiss_center_no_refraction":
+        return _swiss_sun_event(day, latitude, longitude, tz, sunrise=sunrise)
+    return _sun_event(day, latitude, longitude, tz, sunrise=sunrise)
+
+
+def _solar_method(source: str) -> str:
+    if source == "swiss_center_no_refraction":
+        return SWISS_CENTER_NO_REFRACTION_METHOD
+    return SOLAR_METHOD
+
+
+def _swiss_sun_event(day: date, latitude: float, longitude: float, tz: tzinfo, *, sunrise: bool) -> datetime | None:
+    try:
+        swe = import_module("swisseph")
+    except ImportError:
+        return None
+
+    ephemeris_path = os.getenv("SWISSEPH_EPHE_PATH")
+    if ephemeris_path and hasattr(swe, "set_ephe_path"):
+        swe.set_ephe_path(ephemeris_path)
+
+    jd = swe.julday(day.year, day.month, day.day, 0.0)
+    rsmi = swe.CALC_RISE if sunrise else swe.CALC_SET
+    rsmi |= swe.BIT_DISC_CENTER | swe.BIT_NO_REFRACTION
+    try:
+        result, values = swe.rise_trans(jd, swe.SUN, rsmi, (longitude, latitude, 0), 0, 0, swe.FLG_SWIEPH)
+    except Exception:
+        return None
+    if result < 0:
+        return None
+    year, month, event_day, hour = swe.revjul(values[0])
+    utc_moment = datetime(year, month, event_day, tzinfo=timezone.utc) + timedelta(hours=hour)
+    return utc_moment.astimezone(tz).replace(microsecond=0)
 
 
 def _sun_event(day: date, latitude: float, longitude: float, tz: tzinfo, *, sunrise: bool) -> datetime | None:

@@ -5,20 +5,25 @@ from typing import Any
 
 from apps.calculations.chart import build_birth_chart
 from apps.calculations.ephemeris import EphemerisProvider
+from apps.calculations.jhora_parity_suite import jhora_parity_suite_manifest
 from apps.calculations.workflows import build_compatibility_report
 from apps.interpretations.citation_requests import build_citation_requests
 from apps.interpretations.condition_matrix import shastra_condition_matrix
-from apps.interpretations.evidence_matcher import shastra_evidence_payload
+from apps.interpretations.evidence_matcher import shastra_evidence_payload, shastra_source_trace_payload
 from apps.interpretations.shastra_catalog import explanation_schedule
 from apps.interpretations.yoga_catalog import yoga_catalog_overview
 from apps.interpretations.yoga_source_map import detected_yoga_source_map
 from apps.sources.coverage import source_coverage_matrix
+from apps.sources.inventory import source_inventory_payload
 
 from .birth_report import CitationSearch, InterpretationProvider, compose_birth_report
 
 SCHEMA_VERSION = "jyotish-analysis-packet-v1"
 COMPATIBILITY_SCHEMA_VERSION = "jyotish-compatibility-analysis-packet-v1"
 ResearchSearch = CitationSearch
+RESEARCH_CONTEXT_MAX_ITEMS = 96
+RESEARCH_CONTEXT_QUERY_LIMIT = 40
+RESEARCH_CONTEXT_SEARCH_LIMIT = 6
 
 
 def build_analysis_packet(
@@ -45,17 +50,25 @@ def build_analysis_packet(
         detected_yoga_source_map=yoga_source_map,
     )
     research_context = _research_context(citation_requests, research_search)
+    source_inventory = source_inventory_payload()
     shastra_coverage = source_coverage_matrix()
     condition_matrix = shastra_condition_matrix()
     shastra_evidence = shastra_evidence_payload()
+    shastra_source_traces = shastra_source_trace_payload()
+    approved_shastra_citations = _approved_shastra_citations_payload(shastra_evidence)
+    jhora_parity_suite = jhora_parity_suite_manifest()
+    workflow_interpretation_library = _workflow_interpretation_library()
 
     packet = {
         "schema_version": SCHEMA_VERSION,
         "status": _packet_status(report, citations),
         "generator_policy": _generator_policy(),
         "shastra_coverage": shastra_coverage,
+        "source_inventory": source_inventory,
         "shastra_condition_matrix": condition_matrix,
         "shastra_evidence": shastra_evidence,
+        "shastra_source_traces": shastra_source_traces,
+        "approved_shastra_citations": approved_shastra_citations,
         "citation_requests": citation_requests,
         "context": {
             "birth": chart.get("birth", {}),
@@ -69,8 +82,13 @@ def build_analysis_packet(
             "person_summary": report.get("person_summary", {}),
             "sections": report.get("sections", []),
             "shastra_coverage": shastra_coverage,
+            "source_inventory": source_inventory,
             "shastra_condition_matrix": condition_matrix,
             "shastra_evidence": shastra_evidence,
+            "shastra_source_traces": shastra_source_traces,
+            "approved_shastra_citations": approved_shastra_citations,
+            "jhora_parity_suite": jhora_parity_suite,
+            "workflow_interpretation_library": workflow_interpretation_library,
         },
         "report": {
             "review_status": report.get("review_status", "draft"),
@@ -102,17 +120,24 @@ def build_compatibility_analysis_packet(
         citation_search(_compatibility_seed_query(compatibility))
     )
     research_context = _research_context(citation_requests, research_search)
+    source_inventory = source_inventory_payload()
     shastra_coverage = source_coverage_matrix()
     condition_matrix = shastra_condition_matrix()
     shastra_evidence = shastra_evidence_payload()
+    shastra_source_traces = shastra_source_trace_payload()
+    approved_shastra_citations = _approved_shastra_citations_payload(shastra_evidence)
+    jhora_parity_suite = jhora_parity_suite_manifest()
 
     packet = {
         "schema_version": COMPATIBILITY_SCHEMA_VERSION,
         "status": "needs_citation_review",
         "generator_policy": _compatibility_generator_policy(),
         "shastra_coverage": shastra_coverage,
+        "source_inventory": source_inventory,
         "shastra_condition_matrix": condition_matrix,
         "shastra_evidence": shastra_evidence,
+        "shastra_source_traces": shastra_source_traces,
+        "approved_shastra_citations": approved_shastra_citations,
         "citation_requests": citation_requests,
         "context": {
             "person_a": {
@@ -125,8 +150,12 @@ def build_compatibility_analysis_packet(
             },
             "compatibility": compatibility,
             "shastra_coverage": shastra_coverage,
+            "source_inventory": source_inventory,
             "shastra_condition_matrix": condition_matrix,
             "shastra_evidence": shastra_evidence,
+            "shastra_source_traces": shastra_source_traces,
+            "approved_shastra_citations": approved_shastra_citations,
+            "jhora_parity_suite": jhora_parity_suite,
             "source_review_status": "exact_shastra_citations_required_before_public_marriage_guidance",
         },
         "report": {
@@ -223,6 +252,8 @@ def _generator_policy() -> dict[str, Any]:
         ],
         "required_behaviors": [
             "cite_only_packet_citations",
+            "search_all_imported_private_shastra_corpus",
+            "use_research_context_for_private_analysis",
             "compare_multiple_translation_variants",
             "cite_exact_edition_translator_and_reference",
             "flag_translation_conflicts",
@@ -256,7 +287,7 @@ def _research_context(
     items: list[dict[str, object]] = []
     seen: set[tuple[str, str]] = set()
     for query in _research_queries(citation_requests):
-        for raw_item in research_search(query):
+        for raw_item in _run_research_search(research_search, query):
             item = dict(raw_item)
             item["is_public_citation"] = False
             item.setdefault("public_quote_policy", "blocked_until_approved")
@@ -265,7 +296,7 @@ def _research_context(
                 continue
             seen.add(key)
             items.append(item)
-            if len(items) >= 12:
+            if len(items) >= RESEARCH_CONTEXT_MAX_ITEMS:
                 return _research_context_payload(items)
     return _research_context_payload(items)
 
@@ -275,6 +306,8 @@ def _research_context_payload(items: list[dict[str, object]]) -> dict[str, Any]:
         "status": "private_research_not_public_citation",
         "items": items,
         "public_quote_policy": "not_public_citations_until_passage_approved",
+        "search_scope": "all_imported_research_only_source_passages",
+        "max_items": RESEARCH_CONTEXT_MAX_ITEMS,
     }
 
 
@@ -286,9 +319,26 @@ def _research_queries(citation_requests: list[dict[str, Any]]) -> list[str]:
             queries.extend(str(query) for query in search_queries if str(query).strip())
         elif request.get("title"):
             queries.append(str(request["title"]))
-        if len(queries) >= 8:
+        if len(queries) >= RESEARCH_CONTEXT_QUERY_LIMIT:
             break
-    return queries
+    deduped: list[str] = []
+    seen = set()
+    for query in queries:
+        normalized = query.strip().lower()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        deduped.append(query.strip())
+        if len(deduped) >= RESEARCH_CONTEXT_QUERY_LIMIT:
+            break
+    return deduped
+
+
+def _run_research_search(research_search: ResearchSearch, query: str) -> list[dict[str, object]]:
+    try:
+        return list(research_search(query, limit=RESEARCH_CONTEXT_SEARCH_LIMIT))  # type: ignore[misc]
+    except TypeError:
+        return list(research_search(query))
 
 
 def _compatibility_generator_policy() -> dict[str, Any]:
@@ -386,6 +436,64 @@ def _citation_payloads_from_results(results: list[dict[str, object]]) -> list[di
         for result in results[:5]
         if result.get("title") or result.get("work_title")
     ]
+
+
+def _approved_shastra_citations_payload(shastra_evidence: dict[str, Any]) -> dict[str, Any]:
+    items = []
+    for row in shastra_evidence.get("conditions", []):
+        if not isinstance(row, dict):
+            continue
+        for citation in row.get("approved_citations", []) or []:
+            if isinstance(citation, dict):
+                items.append(citation)
+    return {
+        "schema_version": "jyotish-approved-shastra-citations-v1",
+        "summary": {
+            "approved_conditions": len({str(item.get("condition_key")) for item in items}),
+            "approved_evidence_items": len(items),
+        },
+        "items": items,
+    }
+
+
+def _workflow_interpretation_library() -> dict[str, Any]:
+    return {
+        "transits": {
+            "source_anchors": ["gochara", "brhat-jataka", "jataka-parijata"],
+            "required_factors": ["house_from_lagna", "house_from_moon", "natal_promise", "running_dasha"],
+            "output_rule": "transit fact -> natal promise -> timing context -> careful guidance",
+        },
+        "muhurta": {
+            "source_anchors": ["muhurta-chintamani", "kalaprakashika"],
+            "required_factors": ["panchanga", "purpose_profile", "rahu_yamaganda_gulika_avoidance", "lagna_strength"],
+            "output_rule": "candidate window -> support/caution factors -> purpose fit -> Krishna-centered use",
+        },
+        "compatibility": {
+            "source_anchors": ["muhurta-chintamani", "jataka-parijata", "brhat-jataka"],
+            "required_factors": ["ashtakuta", "lagna_lagna", "moon_mind", "seventh_house", "guru_shukra"],
+            "output_rule": "two-chart facts -> support/caution perspectives -> no final marriage verdict without review",
+        },
+        "tithi_pravesha": {
+            "source_anchors": ["tajaka", "tithi-pravesha-tradition"],
+            "required_factors": ["natal_tithi_angle", "annual_chart", "annual_lagna", "annual_panchanga"],
+            "output_rule": "return moment -> annual chart facts -> timing themes",
+        },
+        "tajaka": {
+            "source_anchors": ["tajaka-neelakanthi", "teacher-review"],
+            "required_factors": ["annual_chart", "muntha", "muntha_lord", "sahams", "annual_dashas"],
+            "output_rule": "annual chart -> muntha focus -> timing sequence",
+        },
+        "prashna": {
+            "source_anchors": ["prashna-marga", "daivajna-vallabha"],
+            "required_factors": ["question_lagna", "lagna_lord", "moon", "panchanga"],
+            "output_rule": "question context -> horary anchors -> bounded answer",
+        },
+        "mundane": {
+            "source_anchors": ["brhat-samhita", "mundane-tradition"],
+            "required_factors": ["event_lagna", "sun", "moon", "slow_planets", "fourth_house", "tenth_house"],
+            "output_rule": "event context -> angles/slow planets -> public-scope limits",
+        },
+    }
 
 
 def _required_mapping(data: dict[str, Any], key: str) -> dict[str, Any]:

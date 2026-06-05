@@ -10,18 +10,22 @@
     "timezone": "Asia/Kolkata",
     "latitude": 28.666667,
     "longitude": 77.216667,
+    "calculation_model": "drik_siddhanta",
     "node_type": "mean",
     "ayanamsa": "lahiri",
     "ephemeris": "swiss"
   },
   "jhora_metadata": {
+    "profile_status": "unverified",
     "version_required": "8.0",
+    "siddhanta_model": "drik_siddhanta",
     "source_name": "India.jhd",
     "timezone_offset_hours": 5.5,
     "timezone_compact": -5.3,
     "raw_line_count": 14,
     "ayanamsa": "23-06-37.20",
-    "node_type": "mean"
+    "node_type": "mean",
+    "profile_notes": "JHora calculation preferences are not fully recorded yet; do not treat numeric diffs as final parity failures until house/bhava, varga, sunrise, timezone and shadbala options are captured."
   },
   "expected": {
     "ascendant": {

@@ -1,0 +1,346 @@
+from __future__ import annotations
+
+from collections import Counter
+from typing import Any
+
+SCHEMA_VERSION = "jyotish-jhora-parity-suite-v1"
+
+JHORA_PARITY_CASES: tuple[dict[str, Any], ...] = (
+    {
+        "id": "sterlitamak-1998-04-30-1345",
+        "group": "dst_sensitive",
+        "label": "Sterlitamak user DST case",
+        "input": {
+            "birth_date": "1998-04-30",
+            "birth_time": "13:45:00",
+            "place_name": "Sterlitamak",
+            "timezone": "Asia/Yekaterinburg",
+            "timezone_offset": "+06:00",
+            "latitude": 53.6304,
+            "longitude": 55.9502,
+        },
+        "focus": ["timezone_dst", "lagna", "vargas", "dashas"],
+    },
+    {
+        "id": "vrindavan-1990-08-15-1024",
+        "group": "modern_exact_timezone",
+        "label": "Vrindavan modern baseline",
+        "input": {
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24:00",
+            "place_name": "Vrindavan",
+            "timezone": "Asia/Kolkata",
+            "latitude": 27.5650,
+            "longitude": 77.6593,
+        },
+        "focus": ["panchanga", "d1", "d9", "vimshottari"],
+    },
+    {
+        "id": "delhi-india-1947-08-15-000001",
+        "group": "historical",
+        "label": "India independence chart",
+        "input": {
+            "birth_date": "1947-08-15",
+            "birth_time": "00:00:01",
+            "place_name": "Delhi",
+            "timezone": "Asia/Kolkata",
+            "latitude": 28.6667,
+            "longitude": 77.2167,
+        },
+        "focus": ["historical_timezone", "panchanga", "shadbala"],
+    },
+    {
+        "id": "mayapur-2001-02-03-0910",
+        "group": "modern_exact_timezone",
+        "label": "Mayapur compatibility baseline",
+        "input": {
+            "birth_date": "2001-02-03",
+            "birth_time": "09:10:00",
+            "place_name": "Mayapur",
+            "timezone": "Asia/Kolkata",
+            "latitude": 23.4241,
+            "longitude": 88.3883,
+        },
+        "focus": ["compatibility", "moon_kutas", "vargas"],
+    },
+    {
+        "id": "new-york-2026-03-08-0155",
+        "group": "dst_sensitive",
+        "label": "US DST spring boundary before jump",
+        "input": {
+            "birth_date": "2026-03-08",
+            "birth_time": "01:55:00",
+            "place_name": "New York",
+            "timezone": "America/New_York",
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+        },
+        "focus": ["dst_gap", "lagna_boundary"],
+    },
+    {
+        "id": "new-york-2026-11-01-0130",
+        "group": "dst_sensitive",
+        "label": "US DST fall repeated hour",
+        "input": {
+            "birth_date": "2026-11-01",
+            "birth_time": "01:30:00",
+            "place_name": "New York",
+            "timezone": "America/New_York",
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+        },
+        "focus": ["dst_overlap", "timezone_disambiguation"],
+    },
+    {
+        "id": "london-2026-03-29-0105",
+        "group": "dst_sensitive",
+        "label": "UK DST spring boundary",
+        "input": {
+            "birth_date": "2026-03-29",
+            "birth_time": "01:05:00",
+            "place_name": "London",
+            "timezone": "Europe/London",
+            "latitude": 51.5074,
+            "longitude": -0.1278,
+        },
+        "focus": ["dst_gap", "timezone"],
+    },
+    {
+        "id": "moscow-1899-12-31-2350",
+        "group": "historical",
+        "label": "Moscow pre-1900 local time",
+        "input": {
+            "birth_date": "1899-12-31",
+            "birth_time": "23:50:00",
+            "place_name": "Moscow",
+            "timezone": "Europe/Moscow",
+            "latitude": 55.7558,
+            "longitude": 37.6173,
+        },
+        "focus": ["pre_1900_timezone", "ayanamsa"],
+    },
+    {
+        "id": "kolkata-1880-01-01-0600",
+        "group": "historical",
+        "label": "Kolkata historical offset",
+        "input": {
+            "birth_date": "1880-01-01",
+            "birth_time": "06:00:00",
+            "place_name": "Kolkata",
+            "timezone": "Asia/Kolkata",
+            "latitude": 22.5726,
+            "longitude": 88.3639,
+        },
+        "focus": ["historical_offset", "sunrise", "panchanga"],
+    },
+    {
+        "id": "jagannatha-puri-1922-07-01-1200",
+        "group": "historical",
+        "label": "Puri historical panchanga check",
+        "input": {
+            "birth_date": "1922-07-01",
+            "birth_time": "12:00:00",
+            "place_name": "Jagannatha Puri",
+            "timezone": "Asia/Kolkata",
+            "latitude": 19.8135,
+            "longitude": 85.8312,
+        },
+        "focus": ["panchanga", "solar_day", "upagrahas"],
+    },
+    {
+        "id": "los-angeles-2026-06-21-0001",
+        "group": "boundary_sensitive",
+        "label": "Solstice near midnight",
+        "input": {
+            "birth_date": "2026-06-21",
+            "birth_time": "00:01:00",
+            "place_name": "Los Angeles",
+            "timezone": "America/Los_Angeles",
+            "latitude": 34.0522,
+            "longitude": -118.2437,
+        },
+        "focus": ["date_boundary", "panchanga_boundary"],
+    },
+    {
+        "id": "tokyo-2026-12-31-2359",
+        "group": "boundary_sensitive",
+        "label": "Year boundary",
+        "input": {
+            "birth_date": "2026-12-31",
+            "birth_time": "23:59:00",
+            "place_name": "Tokyo",
+            "timezone": "Asia/Tokyo",
+            "latitude": 35.6762,
+            "longitude": 139.6503,
+        },
+        "focus": ["date_boundary", "dashas"],
+    },
+    {
+        "id": "reykjavik-2026-06-01-0005",
+        "group": "boundary_sensitive",
+        "label": "High latitude sunrise stress",
+        "input": {
+            "birth_date": "2026-06-01",
+            "birth_time": "00:05:00",
+            "place_name": "Reykjavik",
+            "timezone": "Atlantic/Reykjavik",
+            "latitude": 64.1466,
+            "longitude": -21.9426,
+        },
+        "focus": ["high_latitude", "sunrise", "day_periods"],
+    },
+    {
+        "id": "sydney-2026-10-04-0205",
+        "group": "dst_sensitive",
+        "label": "Australia DST spring boundary",
+        "input": {
+            "birth_date": "2026-10-04",
+            "birth_time": "02:05:00",
+            "place_name": "Sydney",
+            "timezone": "Australia/Sydney",
+            "latitude": -33.8688,
+            "longitude": 151.2093,
+        },
+        "focus": ["dst_gap", "southern_hemisphere"],
+    },
+    {
+        "id": "cape-town-2026-04-14-0600",
+        "group": "modern_exact_timezone",
+        "label": "Southern hemisphere baseline",
+        "input": {
+            "birth_date": "2026-04-14",
+            "birth_time": "06:00:00",
+            "place_name": "Cape Town",
+            "timezone": "Africa/Johannesburg",
+            "latitude": -33.9249,
+            "longitude": 18.4241,
+        },
+        "focus": ["southern_hemisphere", "ascendant"],
+    },
+    {
+        "id": "sao-paulo-2018-11-04-0030",
+        "group": "dst_sensitive",
+        "label": "Brazil DST historical rule",
+        "input": {
+            "birth_date": "2018-11-04",
+            "birth_time": "00:30:00",
+            "place_name": "Sao Paulo",
+            "timezone": "America/Sao_Paulo",
+            "latitude": -23.5558,
+            "longitude": -46.6396,
+        },
+        "focus": ["abolished_dst", "historical_timezone"],
+    },
+    {
+        "id": "anchorage-2026-01-15-1200",
+        "group": "boundary_sensitive",
+        "label": "Far north winter daylight",
+        "input": {
+            "birth_date": "2026-01-15",
+            "birth_time": "12:00:00",
+            "place_name": "Anchorage",
+            "timezone": "America/Anchorage",
+            "latitude": 61.2181,
+            "longitude": -149.9003,
+        },
+        "focus": ["high_latitude", "solar_day"],
+    },
+    {
+        "id": "honolulu-2026-05-01-1200",
+        "group": "modern_exact_timezone",
+        "label": "No-DST isolated timezone",
+        "input": {
+            "birth_date": "2026-05-01",
+            "birth_time": "12:00:00",
+            "place_name": "Honolulu",
+            "timezone": "Pacific/Honolulu",
+            "latitude": 21.3099,
+            "longitude": -157.8581,
+        },
+        "focus": ["timezone", "lagna"],
+    },
+    {
+        "id": "paris-2026-10-25-0230",
+        "group": "dst_sensitive",
+        "label": "EU DST fall repeated hour",
+        "input": {
+            "birth_date": "2026-10-25",
+            "birth_time": "02:30:00",
+            "place_name": "Paris",
+            "timezone": "Europe/Paris",
+            "latitude": 48.8566,
+            "longitude": 2.3522,
+        },
+        "focus": ["dst_overlap", "timezone_disambiguation"],
+    },
+    {
+        "id": "ujjain-2026-03-20-0600",
+        "group": "boundary_sensitive",
+        "label": "Equinox panchanga baseline",
+        "input": {
+            "birth_date": "2026-03-20",
+            "birth_time": "06:00:00",
+            "place_name": "Ujjain",
+            "timezone": "Asia/Kolkata",
+            "latitude": 23.1765,
+            "longitude": 75.7885,
+        },
+        "focus": ["panchanga", "sunrise", "traditional_reference"],
+    },
+    {
+        "id": "mayapur-2026-01-01-0000",
+        "group": "modern_exact_timezone",
+        "label": "Calendar start baseline",
+        "input": {
+            "birth_date": "2026-01-01",
+            "birth_time": "00:00:00",
+            "place_name": "Mayapur",
+            "timezone": "Asia/Kolkata",
+            "latitude": 23.4241,
+            "longitude": 88.3883,
+        },
+        "focus": ["date_boundary", "panchanga", "dasha"],
+    },
+)
+
+
+def jhora_parity_suite_manifest() -> dict[str, Any]:
+    groups = Counter(str(case["group"]) for case in JHORA_PARITY_CASES)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "case_count": len(JHORA_PARITY_CASES),
+        "groups": {
+            group: {
+                "count": count,
+                "case_ids": [str(case["id"]) for case in JHORA_PARITY_CASES if case["group"] == group],
+            }
+            for group, count in sorted(groups.items())
+        },
+        "cases": [
+            {
+                "id": str(case["id"]),
+                "group": str(case["group"]),
+                "label": str(case["label"]),
+                "focus": list(case["focus"]),
+                "input": dict(case["input"]),
+            }
+            for case in JHORA_PARITY_CASES
+        ],
+        "capture_policy": {
+            "status": "capture_queue_ready",
+            "required_artifacts": [
+                "jhora_complete_calculations_text",
+                "settings_screenshots",
+                "main_chart_screenshots",
+                "strength_tables",
+            ],
+            "required_settings": [
+                "calculation_model",
+                "ayanamsa",
+                "node_type",
+                "house_system",
+                "varga_scheme",
+                "timezone_offset",
+            ],
+        },
+    }

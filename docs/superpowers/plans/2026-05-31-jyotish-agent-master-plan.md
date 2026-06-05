@@ -449,6 +449,14 @@ Done:
 - muhurta;
 - prashna;
 - stronger report generator;
+- compact JHora-like workspace: multiple vargas visible at once, dense tables, tabbed analytical areas;
+- dual calculation view:
+  - `primary_calculation`;
+  - `jhora_profile_calculation`;
+  - `delta`;
+  - `settings_diff`;
+  - `authority_decision`;
+- JHora screenshot inventory for Basics, Strengths, Dasas, Transits, Ashtakavarga, Muhurta/Prashna and settings dialogs;
 - API для внешних клиентов.
 
 Done:

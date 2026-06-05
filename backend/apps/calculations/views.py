@@ -2,16 +2,28 @@ from __future__ import annotations
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.conf import settings
+
+from apps.accounts.permissions import PrivateAppAccess
 
 from .chart import ChartInputError, build_birth_chart
+from .dual_calculation import build_dual_calculation_report
 from .ephemeris import EphemerisUnavailable, SwissEphemerisProvider
+from .jhora_accuracy_report import load_jhora_accuracy_report
 from .primitives import zodiac_placement
-from .workflows import build_compatibility_report, build_muhurta_report, build_transit_report
+from .workflows import (
+    build_compatibility_report,
+    build_muhurta_report,
+    build_mundane_report,
+    build_prashna_report,
+    build_tajaka_report,
+    build_tithi_pravesha_report,
+    build_transit_report,
+)
 
 
 class ZodiacPlacementView(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    permission_classes = [PrivateAppAccess]
 
     def get(self, request):
         raw_longitude = request.query_params.get("longitude")
@@ -45,8 +57,7 @@ class ZodiacPlacementView(APIView):
 
 
 class EphemerisStatusView(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    permission_classes = [PrivateAppAccess]
 
     def get(self, request):
         provider = SwissEphemerisProvider()
@@ -70,9 +81,21 @@ class EphemerisStatusView(APIView):
         )
 
 
+class JHoraAccuracyReportView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def get(self, request):
+        path = getattr(settings, "JHORA_ACCURACY_REPORT_PATH", "")
+        if not path:
+            path = settings.ROOT_DIR / ".tmp" / "jhora" / "sterlitamak-1998" / "accuracy-report.json"
+        try:
+            return Response(load_jhora_accuracy_report(path))
+        except FileNotFoundError:
+            return Response({"error": "JHora accuracy report is not captured yet"}, status=404)
+
+
 class BirthChartView(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    permission_classes = [PrivateAppAccess]
 
     def post(self, request):
         try:
@@ -83,9 +106,20 @@ class BirthChartView(APIView):
             return Response({"error": str(exc)}, status=503)
 
 
+class DualCalculationView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def post(self, request):
+        try:
+            return Response(build_dual_calculation_report(request.data))
+        except ChartInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
 class TransitView(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    permission_classes = [PrivateAppAccess]
 
     def post(self, request):
         try:
@@ -97,8 +131,7 @@ class TransitView(APIView):
 
 
 class CompatibilityView(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    permission_classes = [PrivateAppAccess]
 
     def post(self, request):
         try:
@@ -110,12 +143,59 @@ class CompatibilityView(APIView):
 
 
 class MuhurtaView(APIView):
-    authentication_classes: list = []
-    permission_classes: list = []
+    permission_classes = [PrivateAppAccess]
 
     def post(self, request):
         try:
             return Response(build_muhurta_report(request.data))
+        except (ChartInputError, ValueError) as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class TithiPraveshaView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def post(self, request):
+        try:
+            return Response(build_tithi_pravesha_report(request.data))
+        except (ChartInputError, ValueError) as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class TajakaView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def post(self, request):
+        try:
+            return Response(build_tajaka_report(request.data))
+        except (ChartInputError, ValueError) as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class PrashnaView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def post(self, request):
+        try:
+            return Response(build_prashna_report(request.data))
+        except (ChartInputError, ValueError) as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class MundaneView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def post(self, request):
+        try:
+            return Response(build_mundane_report(request.data))
         except (ChartInputError, ValueError) as exc:
             return Response({"error": str(exc)}, status=400)
         except EphemerisUnavailable as exc:

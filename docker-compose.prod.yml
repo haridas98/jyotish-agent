@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: jyotish-agent-prod-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-jyotish_agent}
+      POSTGRES_USER: ${POSTGRES_USER:-jyotish}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-postgres-password}
+    volumes:
+      - jyotish_prod_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jyotish} -d ${POSTGRES_DB:-jyotish_agent}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: jyotish-agent-prod-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: jyotish-agent-prod-backend
+    env_file:
+      - .env
+    environment:
+      DJANGO_DEBUG: "false"
+      PRIVATE_APP_REQUIRE_AUTH: "true"
+      DATABASE_URL: postgres://${POSTGRES_USER:-jyotish}:${POSTGRES_PASSWORD:-change-this-postgres-password}@postgres:5432/${POSTGRES_DB:-jyotish_agent}
+      REDIS_URL: redis://redis:6379/0
+      JHORA_ACCURACY_REPORT_PATH: /app/.tmp/jhora/sterlitamak-1998/accuracy-report.json
+      SWISSEPH_EPHE_PATH: /app/ephe
+    volumes:
+      - ./.tmp:/app/.tmp
+      - ./ephe:/app/ephe:ro
+    ports:
+      - "127.0.0.1:${JYOTISH_BACKEND_PORT:-18100}:8100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8100 --workers ${GUNICORN_WORKERS:-3} --timeout ${GUNICORN_TIMEOUT:-600}"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: jyotish-agent-prod-frontend
+    env_file:
+      - .env
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://127.0.0.1:18100}
+      NEXT_PUBLIC_PRIVATE_APP_REQUIRE_AUTH: "true"
+    ports:
+      - "127.0.0.1:${JYOTISH_FRONTEND_PORT:-13130}:3130"
+    depends_on:
+      - backend
+    command: >
+      sh -c "npm run build &&
+             npm run start -- --hostname 0.0.0.0 --port 3130"
+    restart: unless-stopped
+
+volumes:
+  jyotish_prod_postgres_data:

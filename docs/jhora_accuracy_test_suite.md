@@ -9,6 +9,8 @@
 - 20 public teaching examples.
 - 20 manually verified JHora comparison charts.
 
+Current authoritative JHora fixture count: 0. Existing fixtures are smoke/audit material until a recorded JHora export or screenshot packet is attached and reviewed.
+
 ## Metrics
 
 - Planet longitude: arcsecond delta.
@@ -38,6 +40,26 @@ cd C:\Projects\jyotish-agent\backend
   --output-dir .tmp\jhora-input-fixtures
 ```
 
+JHora verification packets can be created before the real export is attached. These packets keep the case in
+`capture_pending`/`draft` status and include our chart, dual-calculation witness, tolerances and a screenshot/export checklist:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_jhora_verification_packet `
+  --id sterlitamak-1998-04-30-1345 `
+  --birth-date 1998-04-30 `
+  --birth-time 13:45:00 `
+  --place-name Sterlitamak `
+  --timezone Asia/Yekaterinburg `
+  --timezone-offset +06:00 `
+  --latitude 53.6304 `
+  --longitude 55.9502 `
+  --calculation-model drik_siddhanta `
+  --ayanamsa lahiri `
+  --node-type mean `
+  --output-dir ..\.tmp\jhora\sterlitamak-1998
+```
+
 ## Required Metadata
 
 Each fixture must include:
@@ -50,6 +72,13 @@ Each fixture must include:
 - JHora version;
 - JHora settings;
 - Jyotish Agent calculation version.
+
+For JHora parity, also record:
+
+- JHora calculation model: Drik Siddhanta or SSS;
+- true or mean nodes;
+- timezone/DST source used by JHora;
+- export/screenshot paths for each captured tab.
 
 Minimal expected data shape:
 

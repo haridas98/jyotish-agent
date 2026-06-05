@@ -45,23 +45,23 @@ def geonamescache_places(query: str, limit: int = 5) -> list[PlaceCandidate]:
     if len(normalized_query) < 3:
         return []
 
+    name_variants = _query_name_variants(query)
+    country_filters = _query_country_filters(query)
     countries = _geonames_countries()
     scored: list[tuple[int, int, PlaceCandidate]] = []
     for city in _geonames_cities().values():
         names = [city.get("name", ""), *city.get("alternatenames", [])]
         normalized_names = [_normalize(str(name)) for name in names if name]
-        if normalized_query in normalized_names:
-            score = 0
-        elif any(name.startswith(normalized_query) for name in normalized_names):
-            score = 1
-        elif any(normalized_query in name for name in normalized_names):
-            score = 2
-        else:
+        score = _best_name_score(name_variants, normalized_names)
+        if score is None:
             continue
 
         country_code = str(city.get("countrycode") or "")
         timezone = str(city.get("timezone") or "")
         if not country_code or not timezone:
+            continue
+        country = countries.get(country_code, {})
+        if country_filters and not _country_matches(country_code, str(country.get("name") or ""), country_filters):
             continue
         scored.append(
             (
@@ -82,6 +82,38 @@ def geonamescache_places(query: str, limit: int = 5) -> list[PlaceCandidate]:
 
     scored.sort(key=lambda item: (item[0], item[1], item[2].name))
     return [candidate for _, _, candidate in scored[:limit]]
+
+
+def _query_name_variants(query: str) -> list[str]:
+    variants = [_normalize(query)]
+    parts = [part.strip() for part in query.split(",") if part.strip()]
+    if parts:
+        variants.append(_normalize(parts[0]))
+    return [variant for index, variant in enumerate(variants) if variant and variant not in variants[:index]]
+
+
+def _query_country_filters(query: str) -> set[str]:
+    parts = [part.strip() for part in query.split(",") if part.strip()]
+    if len(parts) < 2:
+        return set()
+    return {_normalize(part) for part in parts[1:] if _normalize(part)}
+
+
+def _best_name_score(query_variants: list[str], normalized_names: list[str]) -> int | None:
+    scores: list[int] = []
+    for variant in query_variants:
+        if variant in normalized_names:
+            scores.append(0)
+        elif any(name.startswith(variant) for name in normalized_names):
+            scores.append(1)
+        elif any(variant in name for name in normalized_names):
+            scores.append(2)
+    return min(scores) if scores else None
+
+
+def _country_matches(country_code: str, country_name: str, filters: set[str]) -> bool:
+    country_values = {_normalize(country_code), _normalize(country_name)}
+    return bool(country_values & filters)
 
 
 def timezone_name_for_coordinates(latitude: float, longitude: float) -> str:

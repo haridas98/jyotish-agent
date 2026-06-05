@@ -24,6 +24,8 @@ Fail the process on any mismatch:
 
 Only `reviewed`, `jhora_verified`, and `approved` count as authoritative in the runner.
 
+Current state: no fixture is yet `jhora_verified`. The next verification target is a 10-chart packet covering modern, DST-sensitive, India, boundary and public teaching examples.
+
 ## Rule
 
 Do not mark a fixture as `jhora_verified` without recording:
@@ -98,8 +100,8 @@ See `docs/calculation_authority.md` for the authority order.
 
 The app now calculates draft layers that must receive fixture coverage before they can be marked authoritative:
 
-- Bhinna/Sarva Ashtakavarga scores across more reviewed JHora/profile fixtures;
-- Shadbala components beyond the current partial subset;
+- Bhinna/Sarva Ashtakavarga scores across reviewed JHora export fixtures;
+- Shadbala six groups and component subtotals against reviewed JHora export fixtures;
 - Gulika/Mandi exact longitude now uses real sunrise/sunset segmentation but still needs JHora parity fixtures;
 - full ashtakuta compatibility tables;
 - task-specific muhurta scoring.

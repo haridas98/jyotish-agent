@@ -52,6 +52,32 @@ def test_generate_draft_analysis_for_packet_keeps_review_status_draft_and_saves_
     assert record.model == "test-model"
 
 
+def test_normalize_llm_output_extracts_json_markdown_fence():
+    from apps.reports.draft_generation import _normalize_llm_output
+
+    output = _normalize_llm_output(
+        """```json
+{
+  "review_status": "draft",
+  "language": "ru",
+  "sections": [
+    {
+      "title": "Ядро личности",
+      "body": "Разбор.",
+      "source_traces": [
+        {"condition_key": "lagna", "work_title": "Brhat Jataka"}
+      ],
+      "citation_titles": []
+    }
+  ]
+}
+```"""
+    )
+
+    assert output["sections"][0]["title"] == "Ядро личности"
+    assert output["sections"][0]["source_traces"][0]["work_title"] == "Brhat Jataka"
+
+
 @pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_birth_draft_analysis_api_returns_saved_draft(monkeypatch):

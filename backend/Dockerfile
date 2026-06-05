@@ -6,9 +6,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 COPY pyproject.toml ./
-RUN python -m pip install --upgrade pip && python -m pip install -e .
+RUN python -m pip install --upgrade pip && python -m pip install -e ".[swisseph]"
 
 COPY . .
 
 EXPOSE 8100
-

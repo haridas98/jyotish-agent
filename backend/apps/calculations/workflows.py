@@ -6,6 +6,7 @@ from typing import Any
 from .chart import build_birth_chart
 from .constants import RASHIS
 from .ephemeris import EphemerisProvider
+from .primitives import normalize_degrees
 from .solar import moment_hits_periods
 
 VARNA_ORDER = {
@@ -198,6 +199,91 @@ KUTA_ORDER = (
     "nadi",
 )
 
+CALCULATION_SETTING_FIELDS = (
+    "zodiac",
+    "calculation_model",
+    "siddhanta_model",
+    "ayanamsa",
+    "node_type",
+    "ephemeris",
+    "house_system",
+    "bhava_system",
+    "varga_scheme",
+    "sunrise_source",
+    "timezone_source",
+    "shadbala_profile",
+)
+
+MUHURTA_PURPOSE_RULES = {
+    "general": {
+        "label": "General",
+        "supporting_tithis": {"Dvitiya", "Tritiya", "Panchami", "Dashami", "Ekadashi", "Dvadashi", "Trayodashi"},
+        "caution_tithis": {"Chaturthi", "Navami", "Chaturdashi", "Amavasya"},
+        "supporting_nakshatras": set(),
+        "caution_nakshatras": set(),
+        "supporting_yogas": {"Shubha", "Siddha", "Sukarma", "Dhruva", "Brahma", "Indra"},
+        "caution_yogas": {"Vyatipata", "Vaidhriti", "Parigha", "Ganda", "Atiganda", "Vajra"},
+    },
+    "marriage": {
+        "label": "Marriage",
+        "supporting_tithis": {"Dvitiya", "Tritiya", "Panchami", "Saptami", "Dashami", "Trayodashi"},
+        "caution_tithis": {"Chaturthi", "Navami", "Chaturdashi", "Amavasya"},
+        "supporting_nakshatras": {
+            "Rohini",
+            "Mrigashira",
+            "Magha",
+            "Uttara Phalguni",
+            "Hasta",
+            "Swati",
+            "Anuradha",
+            "Mula",
+            "Uttara Ashadha",
+            "Uttara Bhadrapada",
+            "Revati",
+        },
+        "caution_nakshatras": {"Ardra", "Ashlesha", "Jyeshtha"},
+        "supporting_yogas": {"Shubha", "Siddha", "Sukarma", "Dhruva", "Brahma", "Indra"},
+        "caution_yogas": {"Vyatipata", "Vaidhriti", "Parigha", "Ganda", "Atiganda", "Vajra"},
+    },
+    "travel": {
+        "label": "Travel",
+        "supporting_tithis": {"Dvitiya", "Tritiya", "Panchami", "Saptami", "Dashami", "Ekadashi", "Trayodashi"},
+        "caution_tithis": {"Chaturthi", "Navami", "Chaturdashi", "Amavasya"},
+        "supporting_nakshatras": {
+            "Ashwini",
+            "Punarvasu",
+            "Pushya",
+            "Hasta",
+            "Anuradha",
+            "Shravana",
+            "Dhanishta",
+            "Revati",
+        },
+        "caution_nakshatras": {"Bharani", "Ardra", "Ashlesha", "Jyeshtha", "Mula"},
+        "supporting_yogas": {"Siddha", "Sukarma", "Dhruva", "Brahma", "Indra"},
+        "caution_yogas": {"Vyatipata", "Vaidhriti", "Parigha", "Ganda", "Atiganda", "Vajra"},
+    },
+    "study": {
+        "label": "Study",
+        "supporting_tithis": {"Dvitiya", "Tritiya", "Panchami", "Dashami", "Ekadashi"},
+        "caution_tithis": {"Chaturthi", "Navami", "Chaturdashi", "Amavasya"},
+        "supporting_nakshatras": {
+            "Rohini",
+            "Mrigashira",
+            "Punarvasu",
+            "Pushya",
+            "Hasta",
+            "Swati",
+            "Anuradha",
+            "Shravana",
+            "Revati",
+        },
+        "caution_nakshatras": {"Ardra", "Ashlesha", "Jyeshtha", "Mula"},
+        "supporting_yogas": {"Shubha", "Siddha", "Sukarma", "Brahma", "Indra"},
+        "caution_yogas": {"Vyatipata", "Vaidhriti", "Parigha", "Ganda", "Atiganda", "Vajra"},
+    },
+}
+
 
 def build_transit_report(
     data: dict[str, Any],
@@ -213,6 +299,24 @@ def build_transit_report(
     return {
         "status": "calculated",
         "method": "Transit grahas calculated for as-of datetime and compared to natal Lagna/Moon by whole-sign houses.",
+        "interpretation_plan": _workflow_interpretation_plan(
+            "transits",
+            source_anchors=["gochara", "brhat-jataka", "jataka-parijata", "teacher-review"],
+            required_factors=[
+                "house_from_lagna",
+                "house_from_moon",
+                "transit_graha_strength",
+                "natal_promise",
+                "running_dasha",
+            ],
+            client_text_sequence=[
+                "current_transit_facts",
+                "moon_and_lagna_context",
+                "natal_promise_filter",
+                "dasha_timing",
+                "gaudiya_guard",
+            ],
+        ),
         "as_of": {
             "date": transit_input["birth_date"],
             "time": transit_input["birth_time"],
@@ -293,6 +397,32 @@ def build_compatibility_report(
         "kuta": kuta,
         "kuta_rows": kuta_rows,
         "analysis": analysis,
+        "interpretation_plan": _workflow_interpretation_plan(
+            "compatibility",
+            source_anchors=[
+                "muhurta-chintamani",
+                "jataka-parijata",
+                "brhat-jataka",
+                "teacher-review",
+            ],
+            required_factors=[
+                "ashtakuta",
+                "lagna_lagna",
+                "moon_mind",
+                "seventh_house",
+                "shukra_mangala",
+                "guru_shukra",
+                "dasha_context",
+            ],
+            client_text_sequence=[
+                "two_chart_facts",
+                "ashtakuta_score",
+                "relationship_house_analysis",
+                "support_and_caution_factors",
+                "practical_guidance",
+                "gaudiya_guard",
+            ],
+        ),
         "assessment": _compatibility_assessment(total_score, max_score, kuta_rows, vaishnava_note),
         "vaishnava_note": vaishnava_note,
     }
@@ -307,6 +437,7 @@ def build_muhurta_report(
     if end_date < start_date:
         raise ValueError("end_date must be on or after start_date")
     candidate_time = _optional_time(data, "time", default=time(9, 0))
+    purpose = _muhurta_purpose(data)
 
     candidates = []
     day = start_date
@@ -319,18 +450,295 @@ def build_muhurta_report(
                 "timezone": data.get("timezone", ""),
                 "latitude": data.get("latitude", ""),
                 "longitude": data.get("longitude", ""),
+                **_calculation_settings_input(data),
             },
             provider=provider,
         )
-        candidates.append(_muhurta_candidate(day, candidate_time, chart))
+        candidates.append(_muhurta_candidate(day, candidate_time, chart, purpose=purpose))
         day += timedelta(days=1)
 
     candidates.sort(key=lambda item: (-item["score"], item["date"], item["time"]))
     return {
         "status": "calculated_needs_task_review",
-        "method": "Daily panchanga scoring with sunrise-based Rahu/Yamaganda/Gulika avoidance; final muhurta requires task-specific review.",
+        "method": (
+            "Daily panchanga scoring with purpose profile and sunrise-based Rahu/Yamaganda/Gulika avoidance; "
+            "final muhurta requires task-specific review."
+        ),
+        "purpose": purpose,
+        "purpose_profile": MUHURTA_PURPOSE_RULES[purpose]["label"],
+        "interpretation_plan": _workflow_interpretation_plan(
+            "muhurta",
+            source_anchors=["muhurta-chintamani", "kalaprakashika", "teacher-review"],
+            required_factors=[
+                "panchanga",
+                "purpose_profile",
+                "rahu_yamaganda_gulika_avoidance",
+                "lagna_strength",
+                "task_context",
+            ],
+            client_text_sequence=[
+                "candidate_window",
+                "panchanga_support",
+                "blocked_periods",
+                "purpose_fit",
+                "gaudiya_guard",
+            ],
+        ),
         "candidates": candidates,
         "vaishnava_note": "Даже благоприятное время используем для служения Кришне, а не как замену преданию.",
+    }
+
+
+def build_tithi_pravesha_report(
+    data: dict[str, Any],
+    provider: EphemerisProvider | None = None,
+) -> dict[str, Any]:
+    target_year = _required_int(data, "target_year", minimum=1, maximum=9999)
+    search_days = _required_int(data, "search_days", default=45, minimum=1, maximum=120)
+    natal = build_birth_chart(data, provider=provider)
+    target_angle = _solar_lunar_angle(natal)
+    if target_angle is None:
+        raise ValueError("natal Surya and Chandra are required")
+
+    center = _target_year_birth_date(natal["birth"]["date"], target_year)
+    return_base = _return_place_input(data)
+    found = _find_tithi_pravesha_moment(
+        target_angle,
+        center,
+        search_days,
+        return_base,
+        data,
+        provider=provider,
+    )
+    return_chart = build_birth_chart(
+        {
+            **return_base,
+            "birth_date": found["moment"].date().isoformat(),
+            "birth_time": found["moment"].time().replace(microsecond=0).isoformat(timespec="seconds"),
+            **_calculation_settings_input(data),
+        },
+        provider=provider,
+    )
+    return_angle = _solar_lunar_angle(return_chart) or 0.0
+
+    return {
+        "status": "calculated_needs_jhora_audit",
+        "method": "Annual same solar-lunar angle return near the birth date; interpretation remains Tajaka/source gated.",
+        "target_year": target_year,
+        "interpretation_plan": _workflow_interpretation_plan(
+            "tithi_pravesha",
+            source_anchors=["tajaka", "tithi-pravesha-tradition", "teacher-review"],
+            required_factors=[
+                "natal_tithi_angle",
+                "annual_chart",
+                "annual_lagna",
+                "annual_moon",
+                "annual_panchanga",
+            ],
+            client_text_sequence=[
+                "return_moment",
+                "annual_chart_facts",
+                "tajaka_context",
+                "timing_cautions",
+                "gaudiya_guard",
+            ],
+        ),
+        "search": {
+            "center_date": center.isoformat(),
+            "search_days": search_days,
+            "step_hours": found["step_hours"],
+            "tolerance_degrees": 0.01,
+        },
+        "natal": {
+            "birth": natal["birth"],
+            "tithi": natal.get("panchanga", {}).get("tithi"),
+            "solar_lunar_angle": round(target_angle, 6),
+            "sun": _compact_placement(_graha(natal, "Surya")),
+            "moon": _compact_placement(_graha(natal, "Chandra")),
+        },
+        "return": {
+            "date": return_chart["birth"]["date"],
+            "time": return_chart["birth"]["time"],
+            "timezone": return_chart["birth"]["timezone"],
+            "local_datetime": return_chart["birth"]["local_datetime"],
+            "solar_lunar_angle": round(return_angle, 6),
+            "delta_degrees": round(_angle_distance(return_angle, target_angle), 6),
+            "iterations": found["iterations"],
+            "chart": return_chart,
+        },
+        "annual_context": {
+            "lagna": _compact_placement(return_chart.get("ascendant")),
+            "sun": _compact_placement(_graha(return_chart, "Surya")),
+            "moon": _compact_placement(_graha(return_chart, "Chandra")),
+            "panchanga": return_chart.get("panchanga", {}),
+            "tajaka": _tajaka_baseline(natal, return_chart, target_year),
+        },
+        "audit": {
+            "review_status": "research_only",
+            "source_anchors": ["jhora", "tajaka-tradition-review", "teacher-review"],
+            "public_interpretation_status": "blocked_until_jhora_and_shastra_review",
+        },
+    }
+
+
+def build_tajaka_report(
+    data: dict[str, Any],
+    provider: EphemerisProvider | None = None,
+) -> dict[str, Any]:
+    annual = build_tithi_pravesha_report(data, provider=provider)
+    annual_chart = annual["return"]["chart"]
+    return {
+        "status": "baseline_calculated_needs_full_tajaka_audit",
+        "method": "Tajaka shell from Tithi Pravesha annual chart with Muntha and annual chart anchors.",
+        "tithi_pravesha": annual,
+        "interpretation_plan": _workflow_interpretation_plan(
+            "tajaka",
+            source_anchors=["tajaka-neelakanthi", "tithi-pravesha-tradition", "teacher-review"],
+            required_factors=[
+                "annual_chart",
+                "muntha",
+                "muntha_lord",
+                "annual_lagna",
+                "sahams",
+                "annual_dashas",
+            ],
+            client_text_sequence=[
+                "annual_chart_anchor",
+                "muntha_focus",
+                "annual_house_themes",
+                "timing_sequence",
+                "gaudiya_guard",
+            ],
+        ),
+        "tajaka": {
+            "status": "baseline_only",
+            "muntha": annual["annual_context"]["tajaka"].get("muntha"),
+            "annual_lagna": annual["annual_context"]["lagna"],
+            "annual_moon": annual["annual_context"]["moon"],
+            "annual_sun": annual["annual_context"]["sun"],
+            "panchanga": annual["annual_context"]["panchanga"],
+            "open_items": ["tajaka_yogas", "muntha_lord_strength", "sahams", "annual_dashas"],
+        },
+        "audit": {
+            "review_status": "research_only",
+            "public_interpretation_status": "blocked_until_tajaka_text_and_jhora_review",
+            "chart_id": annual_chart.get("birth", {}).get("local_datetime"),
+        },
+    }
+
+
+def build_prashna_report(
+    data: dict[str, Any],
+    provider: EphemerisProvider | None = None,
+) -> dict[str, Any]:
+    chart = build_birth_chart(_event_chart_input(data, date_field="question_date", time_field="question_time"), provider=provider)
+    lagna_index = _rashi_index(chart.get("ascendant"))
+    moon = _graha(chart, "Chandra")
+    moon_index = _rashi_index(moon)
+    lagna_lord = RASHI_LORDS.get(lagna_index) if lagna_index is not None else None
+    return {
+        "status": "baseline_calculated_needs_prashna_tradition_review",
+        "method": "Horary chart at question time with Lagna/Moon/panchanga anchors; final Prashna rules are citation-gated.",
+        "interpretation_plan": _workflow_interpretation_plan(
+            "prashna",
+            source_anchors=["prashna-marga", "daivajna-vallabha", "teacher-review"],
+            required_factors=[
+                "question_lagna",
+                "lagna_lord",
+                "moon",
+                "seventh_house",
+                "panchanga",
+            ],
+            client_text_sequence=[
+                "question_context",
+                "horary_lagna",
+                "moon_and_significators",
+                "answer_limits",
+                "gaudiya_guard",
+            ],
+        ),
+        "question": {
+            "text": str(data.get("question") or "").strip(),
+            "asked_at": chart["birth"],
+            "place": chart["place"],
+        },
+        "chart": chart,
+        "indicators": {
+            "lagna": _compact_placement(chart.get("ascendant")),
+            "lagna_lord": lagna_lord,
+            "lagna_lord_placement": _compact_placement(_graha(chart, lagna_lord)) if lagna_lord else _compact_placement(None),
+            "moon": _compact_placement(moon),
+            "moon_house_from_lagna": _house_from(lagna_index, moon_index),
+            "seventh_house_rashi": RASHIS[(lagna_index + 6) % len(RASHIS)] if lagna_index is not None else None,
+            "panchanga": chart.get("panchanga", {}),
+        },
+        "audit": {
+            "review_status": "research_only",
+            "source_anchors": ["prashna-marga", "jhora", "teacher-review"],
+            "public_interpretation_status": "blocked_until_prashna_text_review",
+        },
+    }
+
+
+def build_mundane_report(
+    data: dict[str, Any],
+    provider: EphemerisProvider | None = None,
+) -> dict[str, Any]:
+    chart = build_birth_chart(_event_chart_input(data, date_field="event_date", time_field="event_time"), provider=provider)
+    lagna_index = _rashi_index(chart.get("ascendant"))
+    slow_planets = []
+    for body in ("Guru", "Shani", "Rahu", "Ketu"):
+        graha = _graha(chart, body)
+        slow_planets.append(
+            {
+                "body": body,
+                "placement": _compact_placement(graha),
+                "house_from_lagna": _house_from(lagna_index, _rashi_index(graha)),
+            }
+        )
+    return {
+        "status": "baseline_event_chart_needs_mundane_rules_review",
+        "method": "Mundane/event chart shell for event time and place; national/event prediction rules are not final.",
+        "interpretation_plan": _workflow_interpretation_plan(
+            "mundane",
+            source_anchors=["brhat-samhita", "mundane-tradition", "teacher-review"],
+            required_factors=[
+                "event_lagna",
+                "sun",
+                "moon",
+                "slow_planets",
+                "fourth_house",
+                "tenth_house",
+            ],
+            client_text_sequence=[
+                "event_context",
+                "chart_angles",
+                "slow_planet_pressure",
+                "public_scope_limits",
+                "gaudiya_guard",
+            ],
+        ),
+        "event": {
+            "type": str(data.get("event_type") or "general").strip().lower(),
+            "description": str(data.get("description") or "").strip(),
+            "occurred_at": chart["birth"],
+            "place": chart["place"],
+        },
+        "chart": chart,
+        "indicators": {
+            "lagna": _compact_placement(chart.get("ascendant")),
+            "sun": _compact_placement(_graha(chart, "Surya")),
+            "moon": _compact_placement(_graha(chart, "Chandra")),
+            "tenth_house_rashi": RASHIS[(lagna_index + 9) % len(RASHIS)] if lagna_index is not None else None,
+            "fourth_house_rashi": RASHIS[(lagna_index + 3) % len(RASHIS)] if lagna_index is not None else None,
+            "slow_planets": slow_planets,
+            "panchanga": chart.get("panchanga", {}),
+        },
+        "audit": {
+            "review_status": "research_only",
+            "source_anchors": ["brhat-samhita", "jhora", "teacher-review"],
+            "public_interpretation_status": "blocked_until_mundane_text_review",
+        },
     }
 
 
@@ -342,33 +750,227 @@ def _as_of_input(data: dict[str, Any]) -> dict[str, Any]:
         "timezone": str(data.get("transit_timezone") or data.get("timezone") or "").strip(),
         "latitude": data.get("transit_latitude", data.get("latitude", "")),
         "longitude": data.get("transit_longitude", data.get("longitude", "")),
+        **_calculation_settings_input(data),
     }
 
 
-def _muhurta_candidate(day: date, candidate_time: time, chart: dict[str, Any]) -> dict[str, Any]:
+def _event_chart_input(data: dict[str, Any], *, date_field: str, time_field: str) -> dict[str, Any]:
+    event_date = str(data.get(date_field) or data.get("birth_date") or "").strip()
+    event_time = str(data.get(time_field) or data.get("birth_time") or "").strip()
+    return {
+        "birth_date": event_date,
+        "birth_time": event_time,
+        "place_name": str(data.get("place_name") or "").strip(),
+        "timezone": str(data.get("timezone") or "").strip(),
+        "latitude": data.get("latitude", ""),
+        "longitude": data.get("longitude", ""),
+        **_calculation_settings_input(data),
+    }
+
+
+def _calculation_settings_input(data: dict[str, Any]) -> dict[str, Any]:
+    return {
+        field: data[field]
+        for field in CALCULATION_SETTING_FIELDS
+        if data.get(field) not in {None, ""}
+    }
+
+
+def _workflow_interpretation_plan(
+    kind: str,
+    *,
+    source_anchors: list[str],
+    required_factors: list[str],
+    client_text_sequence: list[str],
+) -> dict[str, Any]:
+    return {
+        "kind": kind,
+        "source_anchors": source_anchors,
+        "required_factors": required_factors,
+        "client_text_sequence": client_text_sequence,
+        "gaudiya_guard": (
+            "Use calculations as context for responsible Krishna-centered service; "
+            "do not prescribe independent graha or demigod worship."
+        ),
+        "citation_rule": "condition_or_factor -> shastra_reference -> qualified_interpretation",
+    }
+
+
+def _return_place_input(data: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "place_name": str(data.get("return_place_name") or data.get("place_name") or "").strip(),
+        "timezone": str(data.get("return_timezone") or data.get("timezone") or "").strip(),
+        "latitude": data.get("return_latitude", data.get("latitude", "")),
+        "longitude": data.get("return_longitude", data.get("longitude", "")),
+    }
+
+
+def _target_year_birth_date(raw_birth_date: str, target_year: int) -> date:
+    birth_date = date.fromisoformat(raw_birth_date)
+    try:
+        return birth_date.replace(year=target_year)
+    except ValueError:
+        return date(target_year, 2, 28)
+
+
+def _solar_lunar_angle(chart: dict[str, Any]) -> float | None:
+    sun = _graha(chart, "Surya")
+    moon = _graha(chart, "Chandra")
+    if not isinstance(sun, dict) or not isinstance(moon, dict):
+        return None
+    sun_longitude = _float_or_none(sun.get("longitude"))
+    moon_longitude = _float_or_none(moon.get("longitude"))
+    if sun_longitude is None or moon_longitude is None:
+        return None
+    return normalize_degrees(moon_longitude - sun_longitude)
+
+
+def _signed_angle_delta(angle: float, target: float) -> float:
+    return (normalize_degrees(angle) - normalize_degrees(target) + 180.0) % 360.0 - 180.0
+
+
+def _angle_distance(angle: float, target: float) -> float:
+    return abs(_signed_angle_delta(angle, target))
+
+
+def _tajaka_baseline(natal: dict[str, Any], return_chart: dict[str, Any], target_year: int) -> dict[str, Any]:
+    natal_lagna = natal.get("ascendant") or {}
+    return_lagna = return_chart.get("ascendant") or {}
+    natal_lagna_index = _int_or_none(natal_lagna.get("rashi_index"))
+    return_lagna_index = _int_or_none(return_lagna.get("rashi_index"))
+    if natal_lagna_index is None or return_lagna_index is None:
+        return {
+            "status": "missing_lagna",
+            "method": "Muntha requires natal and annual lagna.",
+        }
+    birth_date = date.fromisoformat(str(natal["birth"]["date"]))
+    completed_years = max(0, target_year - birth_date.year)
+    muntha_index = (natal_lagna_index + completed_years) % len(RASHIS)
+    return {
+        "status": "baseline_calculated_needs_tajaka_review",
+        "method": "Muntha progresses one sign per completed year from natal lagna.",
+        "completed_years": completed_years,
+        "muntha": {
+            "rashi_index": muntha_index,
+            "rashi": RASHIS[muntha_index],
+            "house_from_annual_lagna": ((muntha_index - return_lagna_index) % len(RASHIS)) + 1,
+        },
+    }
+
+
+def _find_tithi_pravesha_moment(
+    target_angle: float,
+    center: date,
+    search_days: int,
+    return_base: dict[str, Any],
+    data: dict[str, Any],
+    *,
+    provider: EphemerisProvider | None,
+) -> dict[str, Any]:
+    start = datetime.combine(center - timedelta(days=search_days), time(0, 0))
+    end = datetime.combine(center + timedelta(days=search_days), time(23, 59))
+    step = timedelta(hours=6)
+    previous_moment: datetime | None = None
+    previous_delta: float | None = None
+    best: tuple[float, datetime] | None = None
+    crossings: list[tuple[datetime, datetime]] = []
+    moment = start
+    while moment <= end:
+        delta = _tithi_angle_delta(moment, target_angle, return_base, data, provider=provider)
+        distance = abs(delta)
+        if best is None or distance < best[0]:
+            best = (distance, moment)
+        if previous_moment is not None and previous_delta is not None and (delta == 0 or delta * previous_delta < 0):
+            crossings.append((previous_moment, moment))
+        previous_moment = moment
+        previous_delta = delta
+        moment += step
+    if not crossings:
+        if best is None:
+            raise ValueError("No Tithi Pravesha candidate found")
+        return {"moment": best[1], "iterations": 0, "step_hours": 6}
+
+    center_dt = datetime.combine(center, time(12, 0))
+    left, right = min(crossings, key=lambda pair: abs((pair[0] + (pair[1] - pair[0]) / 2 - center_dt).total_seconds()))
+    iterations = 0
+    left_delta = _tithi_angle_delta(left, target_angle, return_base, data, provider=provider)
+    for _ in range(24):
+        iterations += 1
+        mid = left + (right - left) / 2
+        mid_delta = _tithi_angle_delta(mid, target_angle, return_base, data, provider=provider)
+        if abs(mid_delta) <= 0.01:
+            return {"moment": mid.replace(microsecond=0), "iterations": iterations, "step_hours": 6}
+        if left_delta * mid_delta <= 0:
+            right = mid
+        else:
+            left = mid
+            left_delta = mid_delta
+    return {"moment": (left + (right - left) / 2).replace(microsecond=0), "iterations": iterations, "step_hours": 6}
+
+
+def _tithi_angle_delta(
+    moment: datetime,
+    target_angle: float,
+    return_base: dict[str, Any],
+    data: dict[str, Any],
+    *,
+    provider: EphemerisProvider | None,
+) -> float:
+    chart = build_birth_chart(
+        {
+            **return_base,
+            "birth_date": moment.date().isoformat(),
+            "birth_time": moment.time().replace(microsecond=0).isoformat(timespec="seconds"),
+            **_calculation_settings_input(data),
+        },
+        provider=provider,
+    )
+    angle = _solar_lunar_angle(chart)
+    if angle is None:
+        raise ValueError("candidate Surya and Chandra are required")
+    return _signed_angle_delta(angle, target_angle)
+
+
+def _muhurta_candidate(day: date, candidate_time: time, chart: dict[str, Any], *, purpose: str) -> dict[str, Any]:
     panchanga = chart.get("panchanga", {})
     score = 50
     reasons = []
+    purpose_adjustments = []
+    purpose_rules = MUHURTA_PURPOSE_RULES[purpose]
     day_periods = _day_periods(chart)
     blocked_periods = _blocked_periods(chart, day_periods)
     tithi_name = panchanga.get("tithi", {}).get("name")
+    nakshatra_name = panchanga.get("nakshatra", {}).get("name")
     yoga_name = panchanga.get("yoga", {}).get("name")
     karana_name = panchanga.get("karana", {}).get("name")
 
-    if tithi_name in {"Ekadashi", "Dvadashi", "Trayodashi", "Dvitiya", "Tritiya", "Panchami", "Dashami"}:
+    if tithi_name in purpose_rules["supporting_tithis"]:
         score += 20
+        purpose_adjustments.append({"field": "tithi", "name": tithi_name, "delta": 20, "status": "supporting"})
         reasons.append(f"Поддерживающий титхи: {tithi_name}")
     if tithi_name in {"Ekadashi", "Dvadashi"}:
         score += 10
+        purpose_adjustments.append({"field": "tithi", "name": tithi_name, "delta": 10, "status": "vaishnava_priority"})
         reasons.append(f"Вайшнавский приоритет: {tithi_name}")
-    if tithi_name in {"Chaturthi", "Navami", "Chaturdashi", "Amavasya"}:
+    if tithi_name in purpose_rules["caution_tithis"]:
         score -= 20
+        purpose_adjustments.append({"field": "tithi", "name": tithi_name, "delta": -20, "status": "caution"})
         reasons.append(f"Осторожно с титхи: {tithi_name}")
-    if yoga_name in {"Shubha", "Siddha", "Sukarma", "Dhruva", "Brahma", "Indra"}:
+    if nakshatra_name in purpose_rules["supporting_nakshatras"]:
+        score += 12
+        reasons.append(f"Supporting nakshatra for {purpose}: {nakshatra_name}")
+        purpose_adjustments.append({"field": "nakshatra", "name": nakshatra_name, "delta": 12, "status": "supporting"})
+    if nakshatra_name in purpose_rules["caution_nakshatras"]:
+        score -= 12
+        reasons.append(f"Caution nakshatra for {purpose}: {nakshatra_name}")
+        purpose_adjustments.append({"field": "nakshatra", "name": nakshatra_name, "delta": -12, "status": "caution"})
+    if yoga_name in purpose_rules["supporting_yogas"]:
         score += 10
+        purpose_adjustments.append({"field": "yoga", "name": yoga_name, "delta": 10, "status": "supporting"})
         reasons.append(f"Поддерживающая йога: {yoga_name}")
-    if yoga_name in {"Vyatipata", "Vaidhriti", "Parigha", "Ganda", "Atiganda", "Vajra"}:
+    if yoga_name in purpose_rules["caution_yogas"]:
         score -= 10
+        purpose_adjustments.append({"field": "yoga", "name": yoga_name, "delta": -10, "status": "caution"})
         reasons.append(f"Осторожно с йогой: {yoga_name}")
     if karana_name == "Vishti":
         score -= 15
@@ -388,11 +990,30 @@ def _muhurta_candidate(day: date, candidate_time: time, chart: dict[str, Any]) -
         "date": day.isoformat(),
         "time": candidate_time.isoformat(timespec="minutes"),
         "score": max(0, min(100, score)),
+        "purpose": purpose,
+        "purpose_profile": purpose_rules["label"],
+        "purpose_adjustments": purpose_adjustments,
         "panchanga": panchanga,
         "day_periods": day_periods,
         "blocked_periods": blocked_periods,
         "reasons": reasons,
     }
+
+
+def _muhurta_purpose(data: dict[str, Any]) -> str:
+    raw = str(data.get("purpose") or data.get("task_type") or "general").strip().lower().replace("-", "_")
+    aliases = {
+        "marriage": "marriage",
+        "vivaha": "marriage",
+        "wedding": "marriage",
+        "travel": "travel",
+        "journey": "travel",
+        "study": "study",
+        "education": "study",
+        "learning": "study",
+        "general": "general",
+    }
+    return aliases.get(raw, "general")
 
 
 def _kuta_rows(kuta: dict[str, dict[str, object]]) -> list[dict[str, object]]:
@@ -1016,5 +1637,32 @@ def _optional_time(data: dict[str, Any], field: str, default: time) -> time:
         raise ValueError(f"{field} must be HH:MM") from exc
 
 
+def _required_int(
+    data: dict[str, Any],
+    field: str,
+    *,
+    default: int | None = None,
+    minimum: int,
+    maximum: int,
+) -> int:
+    raw = data.get(field, default)
+    if raw in {None, ""}:
+        raise ValueError(f"{field} is required")
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field} must be an integer") from exc
+    if value < minimum or value > maximum:
+        raise ValueError(f"{field} must be between {minimum} and {maximum}")
+    return value
+
+
 def _int_or_none(value: object) -> int | None:
     return value if isinstance(value, int) else None
+
+
+def _float_or_none(value: object) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None

@@ -85,6 +85,9 @@ def _yoga_row(row: dict[str, Any], coverage: dict[str, Any]) -> dict[str, Any]:
         "category": str(row.get("category") or ""),
         "rarity": str(row.get("rarity") or ""),
         "condition_summary": str(row.get("definition_scope") or ""),
+        "formula": dict(row.get("formula") or {}),
+        "source_anchors": list(row.get("source_anchors") or []),
+        "source_anchor_status": str(row.get("source_anchor_status") or ""),
         "detection_status": str(row.get("detection_status") or ""),
         "source_priority": source_priority,
         "citation_policy": str(row.get("citation_policy") or ""),
@@ -119,6 +122,7 @@ def _yoga_coverage_target(row: dict[str, Any]) -> dict[str, Any]:
         "label": str(row.get("name") or row["key"]),
         "source_priority": _string_list(row.get("source_priority")),
         "source_basis": str(row.get("definition_scope") or ""),
+        "source_anchors": list(row.get("source_anchors") or []),
     }
 
 

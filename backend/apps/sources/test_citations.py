@@ -145,6 +145,56 @@ def test_research_search_api_rejects_invalid_limit():
 
 
 @pytest.mark.django_db
+def test_source_work_list_api_returns_imported_private_corpus_inventory():
+    work = SourceWork.objects.create(
+        slug="bphs-private",
+        title="Brihat Parashara Hora Shastra",
+        source_class=SourceWork.SourceClass.JYOTISH_SHASTRA,
+        review_status=ReviewStatus.RESEARCH_ONLY,
+        metadata={
+            "rights_status": "private_research_only_until_approved",
+            "public_quote_policy": "blocked_until_approved",
+        },
+    )
+    SourcePassage.objects.create(
+        work=work,
+        reference="private full text chunk 0001",
+        body="Lagna and graha source material.",
+        review_status=ReviewStatus.RESEARCH_ONLY,
+    )
+
+    response = APIClient().get("/api/sources/works")
+
+    assert response.status_code == 200
+    assert response.json()["summary"]["total_works"] == 1
+    assert response.json()["works"][0]["slug"] == "bphs-private"
+    assert response.json()["works"][0]["passage_count"] == 1
+
+
+@pytest.mark.django_db
+def test_source_work_passages_api_returns_private_fragments():
+    work = SourceWork.objects.create(
+        slug="phaladipika-private",
+        title="Phaladipika",
+        source_class=SourceWork.SourceClass.JYOTISH_SHASTRA,
+        review_status=ReviewStatus.RESEARCH_ONLY,
+    )
+    SourcePassage.objects.create(
+        work=work,
+        reference="private full text chunk 0001",
+        body="Yoga source fragment.",
+        review_status=ReviewStatus.RESEARCH_ONLY,
+        metadata={"public_quote_policy": "blocked_until_approved"},
+    )
+
+    response = APIClient().get("/api/sources/works/phaladipika-private/passages")
+
+    assert response.status_code == 200
+    assert response.json()["work"]["title"] == "Phaladipika"
+    assert response.json()["items"][0]["body"] == "Yoga source fragment."
+
+
+@pytest.mark.django_db
 def test_source_coverage_matrix_counts_private_chunks_and_missing_sources():
     private_work = SourceWork.objects.create(
         slug="brhat-jataka-aiyar-1905-private",

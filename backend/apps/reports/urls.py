@@ -2,11 +2,15 @@ from django.urls import path
 
 from .views import (
     BirthAnalysisPacketView,
+    BirthCodexAnalysisChatView,
     BirthCodexAnalysisView,
     BirthDraftAnalysisView,
     BirthReportView,
     CompatibilityAnalysisPacketView,
+    CompatibilityCodexAnalysisChatView,
+    CompatibilityCodexAnalysisView,
     ShastraConditionMatrixView,
+    ShastraEvidenceApproveView,
     ShastraEvidenceView,
 )
 
@@ -28,9 +32,24 @@ urlpatterns = [
         name="birth-codex-analysis",
     ),
     path(
+        "reports/birth-chart/codex-analysis/chat",
+        BirthCodexAnalysisChatView.as_view(),
+        name="birth-codex-analysis-chat",
+    ),
+    path(
         "reports/compatibility/analysis-packet",
         CompatibilityAnalysisPacketView.as_view(),
         name="compatibility-analysis-packet",
+    ),
+    path(
+        "reports/compatibility/codex-analysis",
+        CompatibilityCodexAnalysisView.as_view(),
+        name="compatibility-codex-analysis",
+    ),
+    path(
+        "reports/compatibility/codex-analysis/chat",
+        CompatibilityCodexAnalysisChatView.as_view(),
+        name="compatibility-codex-analysis-chat",
     ),
     path(
         "reports/shastra-condition-matrix",
@@ -41,5 +60,10 @@ urlpatterns = [
         "reports/shastra-evidence",
         ShastraEvidenceView.as_view(),
         name="shastra-evidence",
+    ),
+    path(
+        "reports/shastra-evidence/<int:evidence_id>/approve",
+        ShastraEvidenceApproveView.as_view(),
+        name="shastra-evidence-approve",
     ),
 ]

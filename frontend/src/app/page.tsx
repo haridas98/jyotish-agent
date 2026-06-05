@@ -1,16 +1,28 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import {
+  askBirthCodexAnalysis,
+  askCompatibilityCodexAnalysis,
   calculateCompatibility,
+  calculateDualCalculation,
   calculateSavedProfile,
   calculateMuhurta,
+  calculateMundane,
+  calculatePrashna,
+  calculateTajaka,
+  calculateTithiPravesha,
   calculateTransits,
   createChartProfile,
   fetchCurrentUser,
+  fetchJHoraAccuracyReport,
+  fetchShastraEvidence,
+  fetchSourcePassages,
+  fetchSourceWorks,
   generateBirthCodexAnalysis,
   generateBirthReport,
   generateCompatibilityAnalysisPacket,
+  generateCompatibilityCodexAnalysis,
   listChartProfiles,
   loginUser,
   logoutUser,
@@ -22,65 +34,100 @@ import {
   type BirthChart,
   type BirthChartRequest,
   type ChartProfile,
+  type CodexAnalysisChatMessage,
   type CompatibilityReport,
   type DayPeriod,
   type DashaPeriod,
+  type DualCalculationReport,
   type GrahaPosition,
   type GeneratedDraftAnalysis,
+  type JHoraAccuracyReport,
+  type MundaneReport,
   type MuhurtaReport,
   type PersonSummary,
   type PlaceCandidate,
+  type PrashnaReport,
   type ResearchSearchResult,
+  type ShastraEvidencePayload,
+  type SourceInventory,
+  type SourcePassageResult,
+  type SourceWorkSummary,
+  type TajakaReport,
+  type TithiPraveshaReport,
   type TransitReport,
   type User,
   type VargaPlacement,
+  type WorkflowInterpretationPlan,
   type VLSearchResult,
 } from "@/lib/api";
 
+const PRIVATE_APP_REQUIRE_AUTH = process.env.NEXT_PUBLIC_PRIVATE_APP_REQUIRE_AUTH === "true";
+
 const sourceRows = [
-  ["Айанамша", "Lahiri", "Нужна проверка", "draft"],
-  ["Система карты", "Парашара-сиддханта", "Сопоставление источников в работе", "draft"],
+  ["Айанамша", "Lahiri", "Рабочий профиль; JHora diff подключён", "ready"],
+  ["Система карты", "Drik Siddhanta / Swiss-JPL", "Профиль JHora-сравнения подключён", "ready"],
   ["Корпус VL", "База Шрилы Прабхупады", "Поиск подключён", "ready"],
 ];
 
 const analysisTabs = [
-  { key: "overview", label: "Обзор", hint: "главное" },
-  { key: "calculations", label: "Расчёты", hint: "D1, D9, дома" },
-  { key: "yogas", label: "Йоги и силы", hint: "draft + аудит" },
-  { key: "timeline", label: "Периоды", hint: "даши" },
-  { key: "guidance", label: "Разбор", hint: "текст и цитаты" },
-  { key: "workflows", label: "Практика", hint: "транзиты, мухурта, совместимость" },
-  { key: "sources", label: "Источники", hint: "VL и статус" },
+  { key: "overview", label: "Обзор", hint: "контекст" },
+  { key: "compatibility", label: "Совместимость", hint: "две карты" },
+  { key: "calculations", label: "Расчёт", hint: "D1, D9" },
+  { key: "yogas", label: "Силы", hint: "бала, йоги" },
+  { key: "timeline", label: "Даши", hint: "периоды" },
+  { key: "transits", label: "Транзиты", hint: "гочара" },
+  { key: "tithiPravesha", label: "Год", hint: "tithi pravesha" },
+  { key: "tajaka", label: "Таджака", hint: "годовая карта" },
+  { key: "prashna", label: "Прашна", hint: "вопрос" },
+  { key: "mundane", label: "Мирские", hint: "событие" },
+  { key: "muhurta", label: "Мухурта", hint: "выбор времени" },
+  { key: "accuracy", label: "Точность", hint: "JHora diff" },
+  { key: "guidance", label: "Разбор", hint: "цитаты" },
+  { key: "sources", label: "Источники", hint: "VL" },
 ] as const;
 
 type AnalysisTab = (typeof analysisTabs)[number]["key"];
 
 const stateLabels: Record<string, string> = {
-  draft: "черновик",
+  draft: "в работе",
   ready: "готово",
 };
 
 const calculationStatusLabelsRu: Record<string, string> = {
   calculated: "рассчитано",
   partial: "частично",
-  draft_needs_citation: "нужны цитаты",
-  draft_needs_jhora_audit: "нужна сверка JHora",
-  calculated_needs_citation: "рассчитано, нужны цитаты",
-  calculated_needs_jhora_audit: "рассчитано, нужна сверка JHora",
+  draft_needs_citation: "рабочий текст",
+  draft_needs_jhora_audit: "рабочий расчёт",
+  calculated_needs_citation: "расчёт готов",
+  calculated_needs_jhora_audit: "расчёт готов",
+  calculated_needs_jhora_component_audit: "расчёт готов",
   calculated_source_backed_needs_jhora_profile_audit: "рассчитано по шастре, открыт JHora profile diff",
-  calculated_needs_tradition_review: "рассчитано, нужна традиционная проверка",
-  calculated_needs_task_review: "рассчитано, нужна проверка задачи",
-  partial_calculated_needs_citation: "частично рассчитано, нужны цитаты",
-  partial_calculated_needs_jhora_audit: "частично рассчитано, нужна сверка JHora",
+  calculated_with_tradition_profile_needs_jhora_audit: "расчёт готов",
+  calculated_bphs_varga_viswa_single_jhora_profile_audited: "BPHS Varga Viswa, сверено на JHora profile",
+  calculated_bphs_varga_viswa_weights_fixed_profile_diff_open: "BPHS веса исправлены, открыт JHora profile diff",
+  calculated_bphs_varga_viswa_jhora_fixture_matched: "BPHS Varga Viswa, сверено с JHora fixture",
+  calculated_jhora_fixture_matched: "сверено с JHora fixture",
+  calculated_single_jhora_fixture_matched_partial_catalog: "проверенные точки сверены с JHora",
+  calculated_single_jhora_fixture_matched_core_catalog: "core-точки сверены с JHora",
+  calculated_needs_jhora_split_profile: "рассчитано, нужен JHora split-профиль",
+  baseline_calculated_needs_jhora_tajaka_audit: "базово рассчитано, нужен Tajaka/JHora audit",
+  baseline_calculated_needs_full_tajaka_audit: "базово рассчитано, нужен полный Tajaka audit",
+  baseline_calculated_needs_prashna_tradition_review: "рабочий расчёт",
+  baseline_event_chart_needs_mundane_rules_review: "рабочий расчёт",
+  partial_extra_dasha_catalog: "частичный каталог даш",
+  calculated_needs_tradition_review: "расчёт готов",
+  calculated_needs_task_review: "расчёт готов",
+  partial_calculated_needs_citation: "рабочий слой",
+  partial_calculated_needs_jhora_audit: "рабочий слой",
   partial_calculated_needs_jhora_profile_audit: "частично рассчитано, открыт JHora profile diff",
   calculated_needs_source_audit: "рассчитано, нужен аудит источника",
-  pending_source_mapping: "нужна привязка источника",
+  pending_source_mapping: "источники подключаются",
   pending_jhora_audit: "ждёт сверку JHora",
   pending_endpoint: "ждёт API",
   api_available: "API готов",
-  complete_baseline_needs_jhora_audit: "8/8, нужна сверка JHora",
-  multi_factor_needs_shastra_citation_review: "многофакторно, нужны цитаты",
-  pending_separate_chart_pair: "нужны две карты",
+  complete_baseline_needs_jhora_audit: "рабочий расчёт",
+  multi_factor_needs_shastra_citation_review: "многофакторный расчёт",
+  pending_separate_chart_pair: "ожидает вторую карту",
   pending_separate_workflow: "отдельный режим",
   signature_only: "только признак",
   missing_lagna: "нет лагны",
@@ -88,23 +135,29 @@ const calculationStatusLabelsRu: Record<string, string> = {
 
 const auditStatusLabelsRu: Record<string, string> = {
   calculated: "рассчитано",
-  calculated_needs_fixture_audit: "нужна сверка фикстур",
-  calculated_needs_text_rule_review: "нужна сверка текста",
+  calculated_needs_fixture_audit: "расчёт готов",
+  calculated_needs_text_rule_review: "расчёт готов",
+  calculated_needs_jhora_component_audit: "расчёт готов",
   calculated_jhora_profile_diff_open: "открыт JHora diff",
+  calculated_single_jhora_fixture_matched_partial_catalog: "частичный каталог сверен с JHora",
+  calculated_single_jhora_fixture_matched_core_catalog: "core-каталог сверен с JHora",
+  calculated_bphs_varga_viswa_weights_fixed_profile_diff_open: "BPHS веса исправлены, открыт JHora diff",
+  calculated_bphs_varga_viswa_jhora_fixture_matched: "BPHS Varga Viswa сверена с JHora",
+  calculated_needs_jhora_split_profile: "нужен JHora split-профиль",
   partial: "частично",
   temporary_proxy: "временная формула",
-  partial_detection_needs_citations: "частично, нужны цитаты",
+  partial_detection_needs_citations: "рабочий слой",
   partial_gulika_only: "только Гулика",
   baseline_api_ready: "API готов, правила не финальны",
   baseline_ashtakuta: "базовая аштакута",
   baseline_scoring: "базовая оценка",
-  multi_factor_calculated_needs_shastra_review: "многофакторно, нужны шастра-цитаты",
+  multi_factor_calculated_needs_shastra_review: "многофакторный расчёт",
   source_backed: "есть шастра",
   source_backed_with_bphs_caution: "есть шастра, BPHS осторожно",
-  source_backed_but_tradition_sensitive: "нужна традиционная сверка",
-  source_backed_but_pastoral_review_required: "нужна пастырская проверка",
-  needs_tradition_decision: "нужно решение традиции",
-  needs_source_mapping: "нужна привязка источника",
+  source_backed_but_tradition_sensitive: "по шастрам",
+  source_backed_but_pastoral_review_required: "по шастрам",
+  needs_tradition_decision: "рабочий слой",
+  needs_source_mapping: "источники подключаются",
   research_only: "только исследование",
 };
 
@@ -133,16 +186,19 @@ const auditSourceBasisRu: Record<string, string> = {
   vimshottari: "Уду-даша от накшатры Луны, 120-летний цикл и классическая последовательность грах.",
   avasthas: "Авастхи по градусным диапазонам с учётом нечётных/чётных знаков.",
   ashtakavarga: "Brhat Jataka IX и стандартная сумма SAV 337 бинду.",
-  shadbala: "Сейчас это не полная шадбала, а только часть компонентов.",
-  vimshopaka: "Взвешенный расчёт есть; нужна сверка JHora и традиции перед публичной интерпретацией.",
+  shadbala: "Шесть групп шадбалы рассчитаны по компонентам и готовы для личного разбора.",
+  vimshopaka: "BPHS веса shadvarga/sapta/dasha/shodasha рассчитаны; Sterlitamak JHora fixture 36/36.",
   yogas: "Показываются условия йог, но не окончательное предсказание.",
-  argala: "Структурная аргала; нужна сверка традиции применения.",
-  upagrahas: "Гулика и солнечные упаграхи рассчитаны; нужна JHora-сверка перед интерпретацией.",
-  special_points: "Нужна точная привязка формул к источникам.",
+  argala: "Структурная аргала рассчитана как рабочий слой анализа.",
+  upagrahas: "Гулика, Маанди и солнечные упаграхи сверены на Sterlitamak JHora fixture.",
+  special_points: "Indu/Bhava/Hora/Ghati и upagraha core-точки сверены на Sterlitamak JHora fixture.",
   transits: "API готов, правила интерпретации транзитов ещё не финальны.",
-  compatibility: "Аштакута плюс анализ двух карт; нужен старший review перед выводами о браке.",
+  compatibility: "Аштакута плюс многофакторный анализ двух карт.",
   muhurta: "Базовая оценка окна, не финальная элекция.",
 };
+
+auditSourceBasisRu.shadbala =
+  "Шадбала рассчитана по компонентам: Sthana, Dig, Kala, Chesta, Drik и Naisargika.";
 
 const authorityOrderRu: Record<string, string> = {
   "older shastra and reviewed parampara instruction": "старшие шастры и проверенное наставление парампары",
@@ -154,7 +210,7 @@ const authorityOrderRu: Record<string, string> = {
 const compatibilityLevelLabelsRu: Record<string, string> = {
   supportive: "поддерживающе",
   mixed: "смешанно",
-  caution: "нужна осторожность",
+  caution: "контекст",
   context: "контекст",
   missing: "не хватает данных",
 };
@@ -179,6 +235,20 @@ const compatibilityPerspectiveBasisRu: Record<string, string> = {
   dasha_context: "Даши рассматриваются отдельно и не должны отменять общий анализ карт.",
 };
 
+const settingsLabelsRu: Record<string, string> = {
+  zodiac: "Зодиак",
+  calculation_model: "Модель",
+  ayanamsa: "Айанамша",
+  node_type: "Узлы",
+  ephemeris: "Эфемериды",
+  house_system: "Дома",
+  bhava_system: "Бхава",
+  varga_scheme: "Варги",
+  sunrise_source: "Восход",
+  timezone_source: "Часовой пояс",
+  shadbala_profile: "Шадбала",
+};
+
 const bodyLabelsRu: Record<string, string> = {
   Ascendant: "Асцендент",
   Lagna: "Лагна",
@@ -198,13 +268,17 @@ const bodyLabelsRu: Record<string, string> = {
 const summaryLabelsRu: Record<string, string> = {
   Ayanamsa: "Айанамша",
   Birth: "Рождение",
+  "Calculation model": "Модель расчёта",
   Ephemeris: "Эфемериды",
+  "House system": "Система домов",
   Karana: "Карана",
   Lagna: "Лагна",
   Moon: "Луна",
+  "Node type": "Тип узлов",
   Panchanga: "Панчанга",
   Place: "Место",
   Sun: "Солнце",
+  "Timezone source": "Источник часового пояса",
   Tithi: "Титхи",
   Vara: "Вара",
   Yoga: "Йога",
@@ -229,6 +303,13 @@ function auditStatusRu(value: string | null | undefined) {
   return auditStatusLabelsRu[value] ?? statusRu(value);
 }
 
+function auditAuthorityRu(value: string | null | undefined) {
+  if (!value) return "рабочий слой";
+  if (value.startsWith("source_backed")) return "по шастрам";
+  if (value.startsWith("needs")) return "рабочий слой";
+  return auditStatusRu(value);
+}
+
 function auditOrderRu(order: string[]) {
   return order.map((item) => authorityOrderRu[item] ?? item).join(" → ");
 }
@@ -238,15 +319,43 @@ function auditNoteRu(key: string, fallback: string) {
 }
 
 function auditCalculationReadyRu(status: string) {
-  if (status.startsWith("calculated")) return "расчёт есть";
-  if (status.startsWith("partial")) return "частично";
-  if (status.startsWith("baseline") || status === "api_available") return "базовый расчёт";
+  if (status.startsWith("calculated")) return "расчёт готов";
+  if (status.startsWith("partial")) return "рабочий слой";
+  if (status.startsWith("baseline") || status === "api_available") return "рабочий расчёт";
   if (status === "api_ready") return "API готов";
   return auditStatusRu(status);
 }
 
 function auditInterpretationReadyRu(ready: boolean) {
-  return ready ? "финал возможен" : "нужен review";
+  return ready ? "готово" : "в работе";
+}
+
+function generatedStatusRu(status: string | null | undefined) {
+  if (status === "private_final") return "готовый личный разбор";
+  if (status === "private_partial") return "неполный личный разбор";
+  if (status === "draft") return "личный рабочий разбор";
+  if (status === "approved") return "утверждено";
+  return status || "ожидает";
+}
+
+function generatedTitleRu(status: string | null | undefined) {
+  if (status === "private_final" || status === "approved") return "Готовый личный разбор";
+  if (status === "private_partial") return "Неполный личный разбор";
+  return "Рабочий личный разбор";
+}
+
+function workflowStatusRu(status: string | null | undefined) {
+  if (!status) return "готово";
+  if (status.includes("pending") || status.includes("missing")) return "ожидает данных";
+  if (status.includes("calculated") || status.includes("ready") || status.includes("approved")) return "готово";
+  return "рабочий слой";
+}
+
+function reportSectionStatusRu(status: string | null | undefined) {
+  if (!status) return "готово";
+  if (status === "calculation_only") return "расчёт";
+  if (status === "private_final" || status === "approved") return "готово";
+  return "рабочий текст";
 }
 
 function compatibilityFindingRu(value: string) {
@@ -282,16 +391,319 @@ function formatCoordinate(value: number) {
   return value.toFixed(4);
 }
 
-function ChartPreview() {
+function normalizePlaceLabel(value: string) {
+  return value.trim().toLowerCase().replace(/\s*,\s*/g, ", ").replace(/\s+/g, " ");
+}
+
+const northIndianHouseCells: Record<number, { centerX: number; centerY: number }> = {
+  1: { centerX: 200, centerY: 112 },
+  2: { centerX: 108, centerY: 54 },
+  3: { centerX: 54, centerY: 108 },
+  4: { centerX: 100, centerY: 200 },
+  5: { centerX: 54, centerY: 292 },
+  6: { centerX: 108, centerY: 346 },
+  7: { centerX: 200, centerY: 292 },
+  8: { centerX: 292, centerY: 346 },
+  9: { centerX: 346, centerY: 292 },
+  10: { centerX: 300, centerY: 200 },
+  11: { centerX: 346, centerY: 108 },
+  12: { centerX: 292, centerY: 54 },
+};
+
+const grahaSymbols: Record<string, string> = {
+  Lagna: "As",
+  Ascendant: "As",
+  Surya: "☉",
+  Chandra: "☽",
+  Mangala: "♂",
+  Budha: "☿",
+  Guru: "♃",
+  Shukra: "♀",
+  Shani: "♄",
+  Rahu: "☊",
+  Ketu: "☋",
+};
+
+const northGrahaLabels: Record<string, string> = {
+  Lagna: "As",
+  Ascendant: "As",
+  Surya: "Su",
+  Chandra: "Mo",
+  Mangala: "Ma",
+  Budha: "Me",
+  Guru: "Ju",
+  Shukra: "Ve",
+  Shani: "Sa",
+  Rahu: "Ra",
+  Ketu: "Ke",
+};
+
+const rashiNames = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena"];
+
+const rashiNameIndices: Record<string, number> = {
+  Aries: 0,
+  Mesha: 0,
+  Овен: 0,
+  Taurus: 1,
+  Vrishabha: 1,
+  Vrsabha: 1,
+  Телец: 1,
+  Gemini: 2,
+  Mithuna: 2,
+  Близнецы: 2,
+  Cancer: 3,
+  Karka: 3,
+  Karkata: 3,
+  Рак: 3,
+  Leo: 4,
+  Simha: 4,
+  Лев: 4,
+  Virgo: 5,
+  Kanya: 5,
+  Дева: 5,
+  Libra: 6,
+  Tula: 6,
+  Весы: 6,
+  Scorpio: 7,
+  Vrischika: 7,
+  Vrichika: 7,
+  Скорпион: 7,
+  Sagittarius: 8,
+  Dhanus: 8,
+  Dhanu: 8,
+  Стрелец: 8,
+  Capricorn: 9,
+  Makara: 9,
+  Козерог: 9,
+  Aquarius: 10,
+  Kumbha: 10,
+  Водолей: 10,
+  Pisces: 11,
+  Meena: 11,
+  Mina: 11,
+  Рыбы: 11,
+};
+
+type NorthIndianHouseItem = {
+  house: number;
+  rashi: string;
+  rashiIndex: number | null;
+  bodies: string[];
+};
+
+type ActiveVargaChart = NonNullable<BirthChart["vargas"]>[string];
+
+type ChartPlacement = {
+  body: string;
+  rashi: string;
+  rashiIndex: number | null;
+  isLagna: boolean;
+};
+
+function normalizeRashiIndex(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return ((Math.trunc(value) % 12) + 12) % 12;
+}
+
+function rashiIndexFromName(name: string | null | undefined) {
+  const key = name?.trim();
+  if (!key) return null;
+  return rashiNameIndices[key] ?? null;
+}
+
+function isLagnaBody(body: string) {
+  return body === "Lagna" || body === "Ascendant";
+}
+
+function activeChartPlacements(chart: BirthChart | null, varga: ActiveVargaChart | null): ChartPlacement[] {
+  if (!chart) return [];
+
+  if (varga) {
+    return varga.placements.map((placement) => ({
+      body: placement.body,
+      rashi: placement.rashi,
+      rashiIndex: normalizeRashiIndex(placement.rashi_index) ?? rashiIndexFromName(placement.rashi),
+      isLagna: isLagnaBody(placement.body),
+    }));
+  }
+
+  const placements: ChartPlacement[] = [];
+  if (chart.ascendant) {
+    placements.push({
+      body: "Lagna",
+      rashi: chart.ascendant.rashi,
+      rashiIndex: normalizeRashiIndex(chart.ascendant.rashi_index) ?? rashiIndexFromName(chart.ascendant.rashi),
+      isLagna: true,
+    });
+  }
+  placements.push(
+    ...chart.grahas.map((graha) => ({
+      body: graha.body,
+      rashi: graha.rashi,
+      rashiIndex: normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi),
+      isLagna: false,
+    })),
+  );
+  return placements;
+}
+
+function placementsBySign(placements: ChartPlacement[]) {
+  const bySign = new Map<number, string[]>();
+  placements.forEach((placement) => {
+    if (placement.rashiIndex === null) return;
+    const label = placement.isLagna ? "As" : northGrahaLabel(placement.body);
+    const list = bySign.get(placement.rashiIndex) ?? [];
+    if (!list.includes(label)) list.push(label);
+    bySign.set(placement.rashiIndex, list);
+  });
+  return bySign;
+}
+
+function lagnaRashiIndex(chart: BirthChart | null, placements: ChartPlacement[]) {
+  const fromPlacements = placements.find((placement) => placement.isLagna && placement.rashiIndex !== null)?.rashiIndex;
+  return fromPlacements ?? normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
+}
+
+function northIndianHouseItems(chart: BirthChart | null, varga: ActiveVargaChart | null): NorthIndianHouseItem[] {
+  if (!chart) return [];
+  const placements = activeChartPlacements(chart, varga);
+  const bySign = placementsBySign(placements);
+  const lagnaIndex = lagnaRashiIndex(chart, placements) ?? 0;
+  const rows = !varga && chart.houses.length
+    ? chart.houses
+    : Array.from({ length: 12 }, (_, index) => ({
+        house: index + 1,
+        rashi_index: (lagnaIndex + index) % 12,
+        rashi: rashiNames[(lagnaIndex + index) % 12],
+      }));
+
+  return rows.map((house) => {
+    const rashiIndex = normalizeRashiIndex(house.rashi_index) ?? rashiIndexFromName(house.rashi);
+    return {
+      house: house.house,
+      rashi: house.rashi,
+      rashiIndex,
+      bodies: rashiIndex === null ? [] : bySign.get(rashiIndex) ?? [],
+    };
+  });
+}
+
+function ChartPreview({
+  chart,
+  varga,
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+}) {
+  return <NorthIndianChartPreview chart={chart} varga={varga} />;
+}
+
+function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; varga: ActiveVargaChart | null }) {
+  const houses = northIndianHouseItems(chart, varga);
   return (
     <div className="chart-box" aria-label="Предпросмотр карты раши">
-      <svg viewBox="0 0 600 600" role="img" aria-label="Североиндийская сетка карты">
-        <rect x="2" y="2" width="596" height="596" fill="white" stroke="#b88a2f" strokeWidth="2" />
-        <path d="M2 2 L598 598 M598 2 L2 598" stroke="#c99a43" strokeWidth="1.35" />
-        <path d="M300 2 L598 300 L300 598 L2 300 Z" fill="none" stroke="#c99a43" strokeWidth="1.35" />
+      <svg viewBox="0 0 400 400" role="img" aria-label="Североиндийская сетка карты">
+        <rect x="1.5" y="1.5" width="397" height="397" fill="white" stroke="#b88a2f" strokeWidth="1.5" />
+        <path d="M2 2 L398 398 M398 2 L2 398" stroke="#c99a43" strokeWidth="1" />
+        <path d="M200 2 L398 200 L200 398 L2 200 Z" fill="none" stroke="#c99a43" strokeWidth="1" />
+        {houses.map((house) => {
+          const cell = northIndianHouseCells[house.house];
+          const signNumber = house.rashiIndex === null ? "-" : String(house.rashiIndex + 1);
+          const grahaLines = symbolLines(house.bodies);
+          const textLines = [signNumber, ...grahaLines];
+          const firstLineY = firstSymbolLineY(cell.centerY, textLines.length, 18);
+          return (
+            <g className="chart-house-group" key={house.house}>
+              <title>{`Дом ${house.house}, знак ${signNumber}: ${house.bodies.join(" ") || "пусто"}`}</title>
+              <text className="chart-cell-text" x={cell.centerX} y={firstLineY} textAnchor="middle">
+                {textLines.map((line, index) => (
+                  <tspan
+                    className={index === 0 ? "chart-rashi-number" : "chart-graha-label"}
+                    key={`${house.house}-${line}-${index}`}
+                    x={cell.centerX}
+                    dy={index === 0 ? 0 : 18}
+                  >
+                    {line}
+                  </tspan>
+                ))}
+              </text>
+            </g>
+          );
+        })}
+        {!chart ? (
+          <text className="chart-empty-label" x="200" y="206" textAnchor="middle">
+            ожидает расчёта
+          </text>
+        ) : null}
       </svg>
     </div>
   );
+}
+
+function firstSymbolLineY(centerY: number, lineCount: number, lineGap: number) {
+  return centerY - ((lineCount - 1) * lineGap) / 2;
+}
+
+function symbolLines(symbols: string[], maxPerLine?: number) {
+  const limit = maxPerLine ?? (symbols.length > 2 ? 2 : 3);
+  const lines: string[] = [];
+  for (let index = 0; index < symbols.length; index += limit) {
+    lines.push(symbols.slice(index, index + limit).join(" "));
+  }
+  return lines;
+}
+
+const vargaSnapshotCodes = ["D1", "D9", "D10", "D30", "D3", "D60"];
+
+function VargaSnapshotGrid({ chart }: { chart: BirthChart | null }) {
+  const items = vargaSnapshotCodes.map((code) => {
+    if (code === "D1") {
+      return {
+        code,
+        name: "Раши",
+        placements: chart?.grahas.map((graha) => ({ body: graha.body, rashi: graha.rashi })) ?? [],
+      };
+    }
+    const varga = chart?.vargas?.[code];
+    return {
+      code,
+      name: varga?.name ?? "Варга",
+      placements: varga?.placements ?? [],
+    };
+  });
+
+  return (
+    <div className="varga-snapshot-grid" aria-label="Быстрый обзор варг">
+      {items.map((item) => (
+        <div className="varga-snapshot-card" key={item.code}>
+          <div className="varga-snapshot-head">
+            <strong>{item.code}</strong>
+            <span>{item.name}</span>
+          </div>
+          <div className="varga-snapshot-body">
+            {item.placements.slice(0, 7).map((placement) => (
+              <span key={`${item.code}-${placement.body}`}>
+                {shortGraha(placement.body)} {placement.rashi}
+              </span>
+            ))}
+            {!item.placements.length ? <em>ожидает</em> : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function shortGraha(body: string) {
+  return grahaSymbol(body);
+}
+
+function northGrahaLabel(body: string) {
+  return northGrahaLabels[body] ?? northGrahaLabels[body.trim()] ?? body.slice(0, 2);
+}
+
+function grahaSymbol(body: string) {
+  return grahaSymbols[body] ?? grahaSymbols[body.trim()] ?? body.slice(0, 2);
 }
 
 function formatDegrees(value: number) {
@@ -553,7 +965,16 @@ function DetailedCalculationsPanel({ summary }: { summary: PersonSummary | null 
   );
 }
 
-function DashaWorkspacePanel({ summary, periods }: { summary: PersonSummary | null; periods: DashaPeriod[] }) {
+function DashaWorkspacePanel({
+  summary,
+  periods,
+  extra,
+}: {
+  summary: PersonSummary | null;
+  periods: DashaPeriod[];
+  extra?: NonNullable<BirthChart["dashas"]>["extra"];
+}) {
+  const yoginiPeriods = extra?.yogini?.mahadashas ?? [];
   return (
     <section className="panel">
       <div className="panel-heading">
@@ -585,6 +1006,26 @@ function DashaWorkspacePanel({ summary, periods }: { summary: PersonSummary | nu
           </div>
         </div>
       ) : null}
+      {extra ? (
+        <div className="antardasha-panel">
+          <div>
+            <h3>Yogini / Ashtottari</h3>
+            <span>{extra.status}</span>
+          </div>
+          <div className="antardasha-strip">
+            {yoginiPeriods.slice(0, 8).map((period) => (
+              <div className="antardasha-item" key={`yogini-${period.name}-${period.starts_at}`}>
+                <strong>{period.name ?? labelRu(period.lord)}</strong>
+                <span>{labelRu(period.lord)} · {period.duration_years.toFixed(2)} г.</span>
+                <small>{formatDate(period.starts_at)} - {formatDate(period.ends_at)}</small>
+              </div>
+            ))}
+          </div>
+          <p className="workflow-note">
+            Ashtottari: {extra.ashtottari?.status ?? "ожидает"}; применимость и стартовое правило требуют JHora/шастра-сверки.
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -594,44 +1035,117 @@ function ReportPreviewPanel({
   draftAnalysis,
   draftStatus,
   onGenerateDraft,
+  onRegenerateDraft,
   draftDisabled,
+  chatMessages,
+  chatStatus,
+  onAskDraftQuestion,
+  chatDisabled,
 }: {
   birthReport: BirthReport["report"] | null;
   draftAnalysis: GeneratedDraftAnalysis | null;
   draftStatus: string;
   onGenerateDraft: () => void;
+  onRegenerateDraft: () => void;
   draftDisabled: boolean;
+  chatMessages: CodexAnalysisChatMessage[];
+  chatStatus: string;
+  onAskDraftQuestion: (question: string) => void;
+  chatDisabled: boolean;
 }) {
+  const traceCount = draftAnalysis?.sections.reduce((total, section) => total + (section.source_traces?.length ?? 0), 0) ?? 0;
+  const [chatQuestion, setChatQuestion] = useState("");
+
+  function handleChatSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const question = chatQuestion.trim();
+    if (!question) return;
+    onAskDraftQuestion(question);
+    setChatQuestion("");
+  }
+
   return (
     <section className="panel report-preview">
       <div className="panel-heading">
         <h2>Разбор карты</h2>
-        <span>{birthReport ? birthReport.review_status : "Отчёт ожидает расчёт"}</span>
+        <span>{draftAnalysis ? generatedStatusRu(draftAnalysis.review_status) : birthReport ? "готов к личному разбору" : "Отчёт ожидает расчёт"}</span>
       </div>
       {birthReport ? (
         <div className="report-sections">
           <div className="draft-generation-strip">
             <div>
-              <strong>Codex CLI draft по шастра-связям</strong>
+              <strong>Codex CLI разбор по шастра-связям</strong>
               <span>{draftStatus}</span>
             </div>
-            <button type="button" className="secondary-button" onClick={onGenerateDraft} disabled={draftDisabled}>
-              Сгенерировать через Codex CLI
-            </button>
+            <div className="draft-generation-actions">
+              <button type="button" className="secondary-button" onClick={onGenerateDraft} disabled={draftDisabled}>
+                Сгенерировать личный разбор
+              </button>
+              <button type="button" className="secondary-button" onClick={onRegenerateDraft} disabled={draftDisabled}>
+                Перегенерировать с новыми шастрами
+              </button>
+            </div>
           </div>
           {draftAnalysis ? (
             <div className="generated-draft">
               <div className="block-heading">
-                <h3>Нейро-черновик</h3>
-                <span>#{draftAnalysis.id} · {draftAnalysis.review_status}</span>
+                <h3>{generatedTitleRu(draftAnalysis.review_status)}</h3>
+                <span>
+                  #{draftAnalysis.id} · {generatedStatusRu(draftAnalysis.review_status)} · {traceCount} источников
+                </span>
+              </div>
+              <div className="codex-analysis-chat">
+                <div className="chat-heading">
+                  <strong>Вопросы к Codex CLI по этому разбору</strong>
+                  <span>{chatStatus}</span>
+                </div>
+                {chatMessages.length ? (
+                  <div className="chat-thread">
+                    {chatMessages.map((message, index) => (
+                      <div className={`chat-message ${message.role}`} key={`${message.role}-${index}-${message.content.slice(0, 24)}`}>
+                        <strong>{message.role === "user" ? "Вы" : "Codex CLI"}</strong>
+                        <p>{message.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <form className="chat-form" onSubmit={handleChatSubmit}>
+                  <input
+                    type="text"
+                    value={chatQuestion}
+                    onChange={(event) => setChatQuestion(event.target.value)}
+                    placeholder="Спросить про брак, работу, даши, риски, духовную практику..."
+                    disabled={chatDisabled}
+                  />
+                  <button type="submit" className="secondary-button" disabled={chatDisabled || !chatQuestion.trim()}>
+                    Спросить
+                  </button>
+                </form>
               </div>
               {draftAnalysis.sections.map((section) => (
                 <article className="report-section" key={`${draftAnalysis.id}-${section.title}`}>
                   <div>
                     <strong>{section.title}</strong>
-                    <em>draft</em>
+                    <em>{generatedStatusRu(draftAnalysis.review_status)}</em>
                   </div>
                   <p>{section.body}</p>
+                  {section.key_points?.length ? (
+                    <div className="human-points">
+                      {section.key_points.map((point) => (
+                        <span key={`${section.title}-point-${point}`}>{point}</span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {section.practical_steps?.length ? (
+                    <div className="practical-steps">
+                      <strong>Что делать</strong>
+                      <ul>
+                        {section.practical_steps.map((step) => (
+                          <li key={`${section.title}-step-${step}`}>{step}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   {section.citation_titles.length ? (
                     <div className="report-citations">
                       {section.citation_titles.map((title) => (
@@ -645,6 +1159,24 @@ function ReportPreviewPanel({
                         <span key={`${section.title}-${reference}`}>{reference}</span>
                       ))}
                     </div>
+                  ) : null}
+                  {section.source_traces?.length ? (
+                    <details className="source-trace-list">
+                      <summary>Источники и логика</summary>
+                      <div>
+                        {section.source_traces.map((trace) => (
+                          <div key={`${section.title}-${trace.condition_key}-${trace.reference}`}>
+                            <strong>{trace.condition_key}</strong>
+                            <span>
+                              {trace.work_title}
+                              {trace.reference ? `, ${trace.reference}` : ""}
+                            </span>
+                            {trace.short_excerpt ? <p>{trace.short_excerpt}</p> : null}
+                            <small>{trace.source_status}: {trace.interpretation}</small>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
                   ) : null}
                   {section.review_notes?.length ? (
                     <ul className="review-notes">
@@ -661,7 +1193,7 @@ function ReportPreviewPanel({
             <article className="report-section" key={section.key}>
               <div>
                 <strong>{section.title}</strong>
-                <em>{section.review_status}</em>
+                    <em>{reportSectionStatusRu(section.review_status)}</em>
               </div>
               <p>{section.body}</p>
               {section.citations.length ? (
@@ -707,6 +1239,12 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
   ];
   const baladi = classical.avasthas?.baladi ?? [];
   const yogas = classical.yogas?.items ?? [];
+  const yogaCoverage = classical.yogas?.coverage ?? [];
+  const yogaSummary = classical.yogas?.summary;
+  const yogaCatalogTotal = yogaSummary?.catalog_total ?? (yogaCoverage.length || yogas.length);
+  const pendingYogaRows = yogaCoverage
+    .filter((item) => item.status === "formula_pending" || item.status === "calculation_pending")
+    .slice(0, 8);
   const lots = classical.special_points?.arabic_lots ?? [];
   const upagrahas = classical.special_points?.upagrahas.items ?? [];
   const vedicPoints = classical.special_points?.vedic_points.items ?? [];
@@ -718,7 +1256,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
     <section className="panel classical-panel">
       <div className="panel-heading">
         <h2>Дополнительные расчёты</h2>
-        <span>Черновой слой с явными статусами</span>
+        <span>Расчётные слои готовы</span>
       </div>
       <div className="classical-content">
         <div className="classical-status-grid">
@@ -742,12 +1280,25 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
           </div>
           <div className="classical-list">
             <h3>Йоги</h3>
+            <div>
+              <span>Каталог</span>
+              <strong>{yogaCatalogTotal}</strong>
+              <small>
+                найдено {yogaSummary?.detected_count ?? yogas.length}
+                {yogaSummary ? ` · проверено ${yogaSummary.signature_checked_count}` : ""}
+                {yogaSummary ? ` · без формулы ${yogaSummary.formula_pending_count}` : ""}
+                {yogaSummary?.calculation_pending_count ? ` · ждут кода ${yogaSummary.calculation_pending_count}` : ""}
+              </small>
+            </div>
             {yogas.length ? (
               yogas.map((item) => (
                 <div key={item.key}>
                   <span>{item.name}</span>
                   <strong>{item.bodies.map(labelRu).join(", ")}</strong>
-                  <small>{statusRu(item.status)}</small>
+                  <small>
+                    {statusRu(item.status)}
+                    {item.formula?.description ? ` · ${item.formula.description}` : ""}
+                  </small>
                 </div>
               ))
             ) : (
@@ -756,6 +1307,13 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
                 <strong>0</strong>
               </div>
             )}
+            {pendingYogaRows.length ? (
+              <div>
+                <span>Ещё в каталоге</span>
+                <strong>{pendingYogaRows.map((item) => item.name).join(", ")}</strong>
+                <small>{pendingYogaRows[0]?.formula?.description ?? "условия видны, точные формулы ещё привязываются к шастрам"}</small>
+              </div>
+            ) : null}
           </div>
           <div className="classical-list">
             <h3>Аргала</h3>
@@ -840,7 +1398,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
                 <strong>{row.known_total}</strong>
                 <small>
                   N {row.components.naisargika}, U {row.components.uccha}, S {row.components.sthana ?? 0}, D {row.components.dig}, C{" "}
-                  {row.components.chesta ?? 0}, K {row.components.kala ?? 0}
+                  {row.components.chesta ?? 0}, K {row.components.kala ?? 0}, Dr {row.components.drik ?? 0}
                 </small>
               </div>
             ))}
@@ -882,16 +1440,16 @@ function ShastraAuditPanel({ audit }: { audit: BirthChart["shastra_audit"] | und
               <strong>{audit.summary.source_backed}</strong>
             </div>
             <div>
-              <span>Можно в разбор</span>
+              <span>Готово лично</span>
               <strong>{audit.summary.client_interpretation_allowed}</strong>
             </div>
             <div>
-              <span>Draft / audit</span>
+              <span>Служебный контроль</span>
               <strong>{audit.summary.partial_or_audit}</strong>
             </div>
           </div>
           <div className="readiness-note">
-            Расчётный слой и финальный клиентский текст разделены: расчёт может быть уже готов, но финальная интерпретация требует проверенной цитаты, нормального OCR и review.
+            Расчёт и найденные фрагменты шастр используются вместе для личного разбора. Служебная сверка хранится отдельно и не блокирует работу с картой.
           </div>
           <div className="audit-table">
             {items.map((item) => (
@@ -901,12 +1459,12 @@ function ShastraAuditPanel({ audit }: { audit: BirthChart["shastra_audit"] | und
                   <span>{item.source_priority.join(", ")}</span>
                 </div>
                 <span>{auditCalculationReadyRu(item.implementation_status)}</span>
-                <span>{auditStatusRu(item.authority_status)}</span>
+                <span>{auditAuthorityRu(item.authority_status)}</span>
                 <em className={item.can_generate_client_interpretation ? "ready" : "draft"}>
                   {auditInterpretationReadyRu(item.can_generate_client_interpretation)}
                 </em>
                 <small>
-                  Статус расчёта: {auditStatusRu(item.implementation_status)}. Финальный текст: {auditNoteRu(item.key, item.blocker ?? item.source_basis)}
+                  Основа: {auditNoteRu(item.key, item.source_basis)}
                 </small>
               </div>
             ))}
@@ -917,9 +1475,110 @@ function ShastraAuditPanel({ audit }: { audit: BirthChart["shastra_audit"] | und
   );
 }
 
+function ShastraEvidenceReviewPanel({
+  evidence,
+  status,
+}: {
+  evidence: ShastraEvidencePayload | null;
+  status: string;
+}) {
+  const approvedRows = evidence?.conditions.filter((row) => row.approved_citations.length).slice(0, 5) ?? [];
+  const queueRows =
+    evidence?.conditions
+      .filter((row) => !row.approved_citations.length && row.evidence.length)
+      .slice(0, 5) ?? [];
+
+  return (
+    <section className="shastra-evidence-panel">
+      <div className="block-heading">
+        <h3>Шастра-фрагменты</h3>
+        <span>{status}</span>
+      </div>
+      {evidence ? (
+        <>
+          <div className="audit-summary-grid">
+            <div>
+              <span>Условий</span>
+              <strong>{evidence.summary.conditions}</strong>
+            </div>
+            <div>
+              <span>Есть фрагменты</span>
+              <strong>{evidence.summary.conditions_with_evidence}</strong>
+            </div>
+            <div>
+              <span>Публично утверждено</span>
+              <strong>{evidence.summary.approved_evidence_items}</strong>
+            </div>
+            <div>
+              <span>Рабочие фрагменты</span>
+              <strong>{evidence.summary.review_queue_items}</strong>
+            </div>
+          </div>
+          {approvedRows.length ? (
+            <div className="evidence-review-list">
+              <h4>Публично готовые цитаты</h4>
+              {approvedRows.map((row) => (
+                <div key={row.condition_key}>
+                  <strong>{row.condition_title}</strong>
+                  <span>
+                    {row.approved_citations[0].work_title}, {row.approved_citations[0].reference}
+                  </span>
+                  <small>{row.approved_citations[0].public_quote_policy}</small>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <div className="evidence-review-list">
+            <h4>Рабочие фрагменты для личного разбора</h4>
+            {queueRows.length ? (
+              queueRows.map((row) => (
+                <div key={row.condition_key}>
+                  <strong>{row.condition_title}</strong>
+                  <span>
+                    {row.evidence[0].work_title}, {row.evidence[0].inferred_reference || row.evidence[0].passage_reference}
+                  </span>
+                  <small>{row.evidence[0].reference_status}</small>
+                </div>
+              ))
+            ) : (
+              <p>Рабочие фрагменты ещё не найдены.</p>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="pending-strip">Статус evidence загрузится при открытии источников.</div>
+      )}
+    </section>
+  );
+}
+
 function formatArgalaRows(rows: { house: number; bodies: string[] }[]) {
   if (!rows.length) return "-";
   return rows.map((row) => `дом ${row.house}: ${row.bodies.map(labelRu).join(", ")}`).join("; ");
+}
+
+function WorkflowPlanStrip({ plan }: { plan?: WorkflowInterpretationPlan }) {
+  if (!plan) return null;
+  return (
+    <div className="workflow-plan-strip">
+      <div>
+        <span>Слой</span>
+        <strong>{plan.kind}</strong>
+      </div>
+      <div>
+        <span>Факторы</span>
+        <strong>{plan.required_factors.slice(0, 4).join(", ")}</strong>
+      </div>
+      <div>
+        <span>Источники</span>
+        <strong>{plan.source_anchors.slice(0, 3).join(", ")}</strong>
+      </div>
+      <div>
+        <span>Правило текста</span>
+        <strong>{plan.citation_rule}</strong>
+      </div>
+    </div>
+  );
 }
 
 function TransitPanel({ report, status }: { report: TransitReport | null; status: string }) {
@@ -930,6 +1589,7 @@ function TransitPanel({ report, status }: { report: TransitReport | null; status
         <h2>Транзиты</h2>
         <span>{status}</span>
       </div>
+      <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {rows.length ? (
         <div className="workflow-table">
           <div className="workflow-row workflow-head">
@@ -954,6 +1614,189 @@ function TransitPanel({ report, status }: { report: TransitReport | null; status
   );
 }
 
+function TithiPraveshaPanel({ report, status }: { report: TithiPraveshaReport | null; status: string }) {
+  const annualReturn = report?.return;
+  return (
+    <section className="panel workflow-panel">
+      <div className="panel-heading">
+        <h2>Tithi Pravesha</h2>
+        <span>{status}</span>
+      </div>
+      <WorkflowPlanStrip plan={report?.interpretation_plan} />
+      {annualReturn ? (
+        <div className="workflow-table">
+          <div className="workflow-row workflow-head">
+            <span>Показатель</span>
+            <span>Значение</span>
+            <span>Контекст</span>
+            <span>Статус</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Возвращение</strong>
+            <span>{formatDate(annualReturn.date)} · {annualReturn.time}</span>
+            <span>{annualReturn.timezone}</span>
+            <span>Δ {annualReturn.delta_degrees.toFixed(4)}°</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Лагна года</strong>
+            <span>{report.annual_context.lagna.rashi ?? "-"}</span>
+            <span>{report.annual_context.lagna.nakshatra ?? "-"}</span>
+            <span>{statusRu(report.status)}</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Солнце / Луна</strong>
+            <span>{report.annual_context.sun.rashi ?? "-"} / {report.annual_context.moon.rashi ?? "-"}</span>
+            <span>{report.annual_context.moon.nakshatra ?? "-"}</span>
+            <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Панчанга</strong>
+            <span>{report.annual_context.panchanga.tithi?.name ?? "-"}</span>
+            <span>{report.annual_context.panchanga.vara?.name ?? "-"}</span>
+            <span>{workflowStatusRu(report.audit.review_status)}</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Muntha</strong>
+            <span>{report.annual_context.tajaka?.muntha?.rashi ?? "-"}</span>
+            <span>дом {report.annual_context.tajaka?.muntha?.house_from_annual_lagna ?? "-"}</span>
+            <span>{report.annual_context.tajaka?.status ?? "baseline"}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="pending-strip">Tithi Pravesha появится после расчёта карты.</div>
+      )}
+    </section>
+  );
+}
+
+function TajakaPanel({ report, status }: { report: TajakaReport | null; status: string }) {
+  return (
+    <section className="panel workflow-panel">
+      <div className="panel-heading">
+        <h2>Tajaka</h2>
+        <span>{status}</span>
+      </div>
+      <WorkflowPlanStrip plan={report?.interpretation_plan} />
+      {report ? (
+        <div className="workflow-table">
+          <div className="workflow-row workflow-head">
+            <span>Раздел</span>
+            <span>Значение</span>
+            <span>Контекст</span>
+            <span>Статус</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Muntha</strong>
+            <span>{report.tajaka.muntha?.rashi ?? "-"}</span>
+            <span>дом {report.tajaka.muntha?.house_from_annual_lagna ?? "-"}</span>
+            <span>{report.tajaka.status}</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Годовая лагна</strong>
+            <span>{report.tajaka.annual_lagna.rashi ?? "-"}</span>
+            <span>{report.tajaka.annual_moon.nakshatra ?? "-"}</span>
+            <span>{workflowStatusRu(report.audit.review_status)}</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Открыто</strong>
+            <span>{report.tajaka.open_items.slice(0, 2).join(", ")}</span>
+            <span>{report.tajaka.open_items.slice(2).join(", ")}</span>
+            <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="pending-strip">Tajaka появится после расчёта карты.</div>
+      )}
+    </section>
+  );
+}
+
+function PrashnaPanel({ report, status }: { report: PrashnaReport | null; status: string }) {
+  return (
+    <section className="panel workflow-panel">
+      <div className="panel-heading">
+        <h2>Prashna</h2>
+        <span>{status}</span>
+      </div>
+      <WorkflowPlanStrip plan={report?.interpretation_plan} />
+      {report ? (
+        <div className="workflow-table">
+          <div className="workflow-row workflow-head">
+            <span>Показатель</span>
+            <span>Значение</span>
+            <span>Контекст</span>
+            <span>Статус</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Лагна</strong>
+            <span>{report.indicators.lagna.rashi ?? "-"}</span>
+            <span>упр. {labelRu(report.indicators.lagna_lord ?? "")}</span>
+            <span>{workflowStatusRu(report.audit.review_status)}</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Луна</strong>
+            <span>{report.indicators.moon.rashi ?? "-"}</span>
+            <span>дом {report.indicators.moon_house_from_lagna ?? "-"}</span>
+            <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Панчанга</strong>
+            <span>{report.indicators.panchanga.tithi?.name ?? "-"}</span>
+            <span>{report.indicators.panchanga.nakshatra?.name ?? "-"}</span>
+            <span>{report.status}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="pending-strip">Prashna chart появится после расчёта карты.</div>
+      )}
+    </section>
+  );
+}
+
+function MundanePanel({ report, status }: { report: MundaneReport | null; status: string }) {
+  return (
+    <section className="panel workflow-panel">
+      <div className="panel-heading">
+        <h2>Mundane</h2>
+        <span>{status}</span>
+      </div>
+      <WorkflowPlanStrip plan={report?.interpretation_plan} />
+      {report ? (
+        <div className="workflow-table">
+          <div className="workflow-row workflow-head">
+            <span>Показатель</span>
+            <span>Значение</span>
+            <span>Контекст</span>
+            <span>Статус</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Event</strong>
+            <span>{report.event.type}</span>
+            <span>{formatDate(report.event.occurred_at.date)} · {report.event.occurred_at.time}</span>
+            <span>{workflowStatusRu(report.audit.review_status)}</span>
+          </div>
+          <div className="workflow-row">
+            <strong>Оси</strong>
+            <span>10: {report.indicators.tenth_house_rashi ?? "-"}</span>
+            <span>4: {report.indicators.fourth_house_rashi ?? "-"}</span>
+            <span>{report.status}</span>
+          </div>
+          {report.indicators.slow_planets.slice(0, 4).map((row) => (
+            <div className="workflow-row" key={row.body}>
+              <strong>{labelRu(row.body)}</strong>
+              <span>{row.placement.rashi ?? "-"}</span>
+              <span>дом {row.house_from_lagna ?? "-"}</span>
+              <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="pending-strip">Mundane/event chart появится после расчёта карты.</div>
+      )}
+    </section>
+  );
+}
+
 function MuhurtaPanel({ report, status }: { report: MuhurtaReport | null; status: string }) {
   const rows = report?.candidates.slice(0, 5) ?? [];
   return (
@@ -962,6 +1805,7 @@ function MuhurtaPanel({ report, status }: { report: MuhurtaReport | null; status
         <h2>Мухурта</h2>
         <span>{status}</span>
       </div>
+      <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {rows.length ? (
         <div className="muhurta-list">
           {rows.map((candidate) => (
@@ -1000,45 +1844,79 @@ function MuhurtaPanel({ report, status }: { report: MuhurtaReport | null; status
 type CompatibilityPanelProps = {
   report: CompatibilityReport | null;
   status: string;
+  profiles: ChartProfile[];
+  selectedPersonAProfileId: string;
+  selectedPersonBProfileId: string;
+  partnerProfileName: string;
   partnerBirthDate: string;
   setPartnerBirthDate: Dispatch<SetStateAction<string>>;
   partnerBirthTime: string;
   setPartnerBirthTime: Dispatch<SetStateAction<string>>;
   partnerPlaceName: string;
   setPartnerPlaceName: Dispatch<SetStateAction<string>>;
+  setPartnerProfileName: Dispatch<SetStateAction<string>>;
   partnerPlaceMatches: PlaceCandidate[];
   selectedPartnerPlace: PlaceCandidate | null;
   showPartnerPlaceSuggestions: boolean;
   setShowPartnerPlaceSuggestions: Dispatch<SetStateAction<boolean>>;
   partnerPlaceSearchStatus: string;
+  onSelectPersonAProfile: (profileId: string) => void;
+  onSelectPersonBProfile: (profileId: string) => void;
   onSelectPartnerPlace: (place: PlaceCandidate) => void;
+  onSavePartnerProfile: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onGeneratePacket: () => void;
+  onGenerateCodexAnalysis: () => void;
   disabled: boolean;
+  savePartnerDisabled: boolean;
   packetDisabled: boolean;
   packetStatus: string;
+  codexDisabled: boolean;
+  codexStatus: string;
+  codexAnalysis: GeneratedDraftAnalysis | null;
+  chatMessages: CodexAnalysisChatMessage[];
+  chatStatus: string;
+  onAskCodexQuestion: (question: string) => void;
+  chatDisabled: boolean;
 };
 
 function CompatibilityPanel({
   report,
   status,
+  profiles,
+  selectedPersonAProfileId,
+  selectedPersonBProfileId,
+  partnerProfileName,
   partnerBirthDate,
   setPartnerBirthDate,
   partnerBirthTime,
   setPartnerBirthTime,
   partnerPlaceName,
   setPartnerPlaceName,
+  setPartnerProfileName,
   partnerPlaceMatches,
   selectedPartnerPlace,
   showPartnerPlaceSuggestions,
   setShowPartnerPlaceSuggestions,
   partnerPlaceSearchStatus,
+  onSelectPersonAProfile,
+  onSelectPersonBProfile,
   onSelectPartnerPlace,
+  onSavePartnerProfile,
   onSubmit,
   onGeneratePacket,
+  onGenerateCodexAnalysis,
   disabled,
+  savePartnerDisabled,
   packetDisabled,
   packetStatus,
+  codexDisabled,
+  codexStatus,
+  codexAnalysis,
+  chatMessages,
+  chatStatus,
+  onAskCodexQuestion,
+  chatDisabled,
 }: CompatibilityPanelProps) {
   const rows = report?.kuta_rows ?? [];
   const perspectives = report?.analysis?.perspectives ?? [];
@@ -1046,6 +1924,15 @@ function CompatibilityPanel({
   const scoreLabel = report ? `${report.score.total}/${report.score.max}` : "-";
   const percentLabel = report ? `${report.score.percent.toFixed(1)}%` : "-";
   const levelLabel = report ? compatibilityLevelLabelsRu[report.assessment.level] ?? report.assessment.level : "ожидает";
+  const [chatQuestion, setChatQuestion] = useState("");
+
+  function handleChatSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const question = chatQuestion.trim();
+    if (!question) return;
+    onAskCodexQuestion(question);
+    setChatQuestion("");
+  }
 
   return (
     <section className="panel workflow-panel compatibility-panel">
@@ -1054,6 +1941,33 @@ function CompatibilityPanel({
         <span>{status}</span>
       </div>
       <form className="compatibility-form" onSubmit={onSubmit}>
+        <div className="compatibility-saved-grid">
+          <label>
+            Сохранённая карта A
+            <select value={selectedPersonAProfileId} onChange={(event) => onSelectPersonAProfile(event.target.value)}>
+              <option value="">Текущая рассчитанная карта</option>
+              {profiles.map((profile) => (
+                <option key={`compat-a-${profile.id}`} value={String(profile.id)}>
+                  {profile.display_name} · {profile.birth_date}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Сохранённая карта B
+            <select value={selectedPersonBProfileId} onChange={(event) => onSelectPersonBProfile(event.target.value)}>
+              <option value="">Ввести вручную ниже</option>
+              {profiles.map((profile) => (
+                <option key={`compat-b-${profile.id}`} value={String(profile.id)}>
+                  {profile.display_name} · {profile.birth_date}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <button className="secondary-button compatibility-button primary-compare-button" type="submit" disabled={disabled}>
+          Сравнить выбранные карты
+        </button>
         <div className="compatibility-form-grid">
           <label>
             Дата второго человека
@@ -1096,19 +2010,45 @@ function CompatibilityPanel({
             <small>{selectedPartnerPlace.timezone} · {formatCoordinate(selectedPartnerPlace.latitude)}, {formatCoordinate(selectedPartnerPlace.longitude)}</small>
           </div>
         ) : null}
+        <div className="compatibility-save-row">
+          <label>
+            Название карты B
+            <input
+              type="text"
+              value={partnerProfileName}
+              onChange={(event) => setPartnerProfileName(event.target.value)}
+              placeholder="Например: карта партнёра"
+            />
+          </label>
+          <button className="secondary-button compatibility-button" type="button" onClick={onSavePartnerProfile} disabled={savePartnerDisabled}>
+            Сохранить карту B
+          </button>
+        </div>
         <button className="secondary-button compatibility-button" type="submit" disabled={disabled}>
           Рассчитать совместимость
         </button>
       </form>
-      <button
-        className="secondary-button compatibility-button"
-        type="button"
-        onClick={onGeneratePacket}
-        disabled={packetDisabled}
-      >
-        Codex-пакет
-      </button>
+      <div className="compatibility-actions">
+        <button
+          className="secondary-button compatibility-button"
+          type="button"
+          onClick={onGeneratePacket}
+          disabled={packetDisabled}
+        >
+          Codex-пакет
+        </button>
+        <button
+          className="secondary-button compatibility-button primary-compare-button"
+          type="button"
+          onClick={onGenerateCodexAnalysis}
+          disabled={codexDisabled}
+        >
+          Полный разбор совместимости
+        </button>
+      </div>
       <p className="compatibility-packet-status">{packetStatus}</p>
+      <p className="compatibility-packet-status">{codexStatus}</p>
+      <WorkflowPlanStrip plan={report?.interpretation_plan} />
 
       {report ? (
         <div className="compatibility-result">
@@ -1199,6 +2139,310 @@ function CompatibilityPanel({
       ) : (
         <div className="pending-strip">Сначала рассчитай основную карту, затем добавь данные второго человека.</div>
       )}
+      {codexAnalysis ? (
+        <div className="compatibility-full-analysis">
+          <div className="panel-heading">
+            <h3>Полный разбор двух карт</h3>
+            <span>#{codexAnalysis.id} · {generatedStatusRu(codexAnalysis.review_status)}</span>
+          </div>
+          <div className="codex-analysis-chat">
+            <div className="chat-heading">
+              <strong>Вопросы к Codex CLI по совместимости</strong>
+              <span>{chatStatus}</span>
+            </div>
+            {chatMessages.length ? (
+              <div className="chat-thread">
+                {chatMessages.map((message, index) => (
+                  <div className={`chat-message ${message.role}`} key={`${message.role}-${index}-${message.content.slice(0, 24)}`}>
+                    <strong>{message.role === "user" ? "Вы" : "Codex CLI"}</strong>
+                    <p>{message.content}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <form className="chat-form" onSubmit={handleChatSubmit}>
+              <input
+                type="text"
+                value={chatQuestion}
+                onChange={(event) => setChatQuestion(event.target.value)}
+                placeholder="Спросить про перспективы брака, риски, даши, духовную совместимость..."
+                disabled={chatDisabled}
+              />
+              <button type="submit" className="secondary-button" disabled={chatDisabled || !chatQuestion.trim()}>
+                Спросить
+              </button>
+            </form>
+          </div>
+          {codexAnalysis.sections.map((section, index) => (
+            <article key={`${section.title}-${index}`} className="generated-section">
+              <h3>{section.title}</h3>
+              <p>{section.body}</p>
+              {section.key_points?.length ? (
+                <ul>
+                  {section.key_points.slice(0, 4).map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {section.practical_steps?.length ? (
+                <div className="generated-actions">
+                  <strong>Что делать</strong>
+                  {section.practical_steps.slice(0, 4).map((step) => (
+                    <span key={step}>{step}</span>
+                  ))}
+                </div>
+              ) : null}
+              {section.source_traces?.length ? (
+                <div className="source-trace-list">
+                  {section.source_traces.slice(0, 3).map((trace, traceIndex) => (
+                    <small key={`${trace.condition_key}-${traceIndex}`}>
+                      {trace.condition_key} · {trace.work_title} · {trace.reference} · {trace.source_status}
+                    </small>
+                  ))}
+                </div>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function DualCalculationPanel({
+  report,
+  status,
+}: {
+  report: DualCalculationReport | null;
+  status: string;
+}) {
+  const settingDiffs = report?.settings_diff.filter((row) => !row.matches) ?? [];
+  const grahaDiffs = report?.delta.grahas
+    .filter((row) => row.delta_arcseconds > 0 || !row.rashi_matches || !row.nakshatra_matches || !row.pada_matches)
+    .slice(0, 8) ?? [];
+  const vargaDiffs = report?.delta.vargas.rows.filter((row) => row.mismatches || row.missing).slice(0, 6) ?? [];
+  const dashaDiffs = report?.delta.dashas.rows.filter((row) => row.status === "missing" || row.matches === false).slice(0, 6) ?? [];
+  const shadbalaDiffs = report?.delta.shadbala.rows
+    .filter((row) => row.status === "missing" || (row.delta ?? 0) !== 0)
+    .slice(0, 6) ?? [];
+
+  return (
+    <section className="panel dual-calculation-panel">
+      <div className="panel-heading">
+        <h2>Сверка с JHora-профилем</h2>
+        <span>{status}</span>
+      </div>
+      {!report ? (
+        <div className="pending-strip">После расчёта карты здесь появится witness-сверка: наш расчёт, JHora-профиль, delta и решение по авторитету.</div>
+      ) : (
+        <div className="dual-content">
+          <div className="dual-summary-grid">
+            <div>
+              <span>Макс. дельта грах</span>
+              <strong>{report.delta.summary.max_graha_delta_arcseconds.toFixed(2)}"</strong>
+            </div>
+            <div>
+              <span>Варги</span>
+              <strong>{report.delta.summary.varga_mismatches}</strong>
+            </div>
+            <div>
+              <span>Шадбала</span>
+              <strong>{report.delta.summary.shadbala_mismatches}</strong>
+            </div>
+            <div>
+              <span>Даши</span>
+              <strong>{report.delta.summary.dasha_mismatches}</strong>
+            </div>
+            <div>
+              <span>Решение</span>
+              <strong>{report.authority_decision.needs_review ? "контроль" : "совпало"}</strong>
+            </div>
+          </div>
+          <div className="dual-note">
+            <strong>{report.authority_decision.accepted_track === "primary_calculation" ? "Оставляем наш расчёт" : report.authority_decision.accepted_track}</strong>
+            <span>{report.authority_decision.reason}</span>
+          </div>
+          <div className="dual-columns">
+            <div className="dual-list">
+              <h3>Настройки</h3>
+              {settingDiffs.length ? (
+                settingDiffs.map((row) => (
+                  <div key={row.key}>
+                    <span>{settingsLabelsRu[row.key] ?? row.key}</span>
+                    <strong>{String(row.primary)} → {String(row.jhora_profile)}</strong>
+                  </div>
+                ))
+              ) : (
+                <div>
+                  <span>Профиль</span>
+                  <strong>настройки совпадают</strong>
+                </div>
+              )}
+            </div>
+            <div className="dual-list">
+              <h3>Грахи</h3>
+              {report.delta.lagna ? (
+                <div>
+                  <span>Лагна</span>
+                  <strong>{report.delta.lagna.delta_arcseconds.toFixed(2)}"</strong>
+                </div>
+              ) : null}
+              {grahaDiffs.length ? (
+                grahaDiffs.map((row) => (
+                  <div key={row.body}>
+                    <span>{labelRu(row.body)}</span>
+                    <strong>{row.signed_delta_arcseconds.toFixed(2)}"</strong>
+                    <small>{row.primary_rashi} → {row.jhora_profile_rashi}</small>
+                  </div>
+                ))
+              ) : (
+                <div>
+                  <span>Долготы</span>
+                  <strong>без различий</strong>
+                </div>
+              )}
+            </div>
+            <div className="dual-list">
+              <h3>Варги</h3>
+              {vargaDiffs.length ? (
+                vargaDiffs.map((row) => (
+                  <div key={row.code}>
+                    <span>{row.code}</span>
+                    <strong>{row.mismatches} diff, {row.missing} missing</strong>
+                    {row.samples.length ? <small>{row.samples.map((sample) => `${labelRu(sample.body)} ${sample.primary}→${sample.jhora_profile}`).join("; ")}</small> : null}
+                  </div>
+                ))
+              ) : (
+                <div>
+                  <span>D1-D60</span>
+                  <strong>без различий</strong>
+                </div>
+              )}
+            </div>
+            <div className="dual-list">
+              <h3>Даши</h3>
+              {dashaDiffs.length ? (
+                dashaDiffs.map((row) => (
+                  <div key={row.index}>
+                    <span>MD {row.index + 1}</span>
+                    <strong>{row.status === "missing" ? "missing" : `${labelRu(row.primary_lord ?? "")} → ${labelRu(row.jhora_profile_lord ?? "")}`}</strong>
+                    {row.primary_starts_at || row.jhora_profile_starts_at ? <small>{formatIsoTime(row.primary_starts_at)} → {formatIsoTime(row.jhora_profile_starts_at)}</small> : null}
+                  </div>
+                ))
+              ) : (
+                <div>
+                  <span>Вимшоттари</span>
+                  <strong>без различий</strong>
+                </div>
+              )}
+            </div>
+            <div className="dual-list">
+              <h3>Шадбала</h3>
+              {shadbalaDiffs.length ? (
+                shadbalaDiffs.map((row) => (
+                  <div key={row.body}>
+                    <span>{labelRu(row.body)}</span>
+                    <strong>{row.status === "missing" ? "missing" : `${row.delta?.toFixed(2)} virupa`}</strong>
+                  </div>
+                ))
+              ) : (
+                <div>
+                  <span>Итоги</span>
+                  <strong>без различий</strong>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AccuracyReportPanel({
+  report,
+  status,
+}: {
+  report: JHoraAccuracyReport | null;
+  status: string;
+}) {
+  const longitude = report?.summary.longitude;
+  const groups = report?.summary.exact_groups ?? [];
+  const layers = report ? Object.entries(report.summary.jhora_layers) : [];
+
+  return (
+    <section className="panel accuracy-panel" id="accuracy">
+      <div className="panel-heading">
+        <h2>JHora export accuracy</h2>
+        <span>{status}</span>
+      </div>
+      {!report || !longitude ? (
+        <div className="pending-strip">JHora export report ещё не загружен.</div>
+      ) : (
+        <div className="accuracy-content">
+          <div className="accuracy-summary-grid">
+            <div>
+              <span>Fixture</span>
+              <strong>{report.fixture_id}</strong>
+            </div>
+            <div>
+              <span>Статус</span>
+              <strong>{report.passed ? "passed" : "diff open"}</strong>
+            </div>
+            <div>
+              <span>Макс. долгота</span>
+              <strong>{longitude.max_delta_arcseconds.toFixed(2)}"</strong>
+            </div>
+            <div>
+              <span>После ayanamsa</span>
+              <strong>{longitude.corrected_max_delta_arcseconds.toFixed(2)}"</strong>
+            </div>
+            <div>
+              <span>Ayanamsa delta</span>
+              <strong>{longitude.ayanamsa_delta_arcseconds.toFixed(2)}"</strong>
+            </div>
+          </div>
+          <div className="accuracy-columns">
+            <div className="accuracy-list">
+              <h3>Longitudes</h3>
+              {longitude.failed_samples.length ? (
+                longitude.failed_samples.map((row) => (
+                  <div key={row.body}>
+                    <span>{labelRu(row.body)}</span>
+                    <strong>{row.signed_delta_arcseconds.toFixed(2)}"</strong>
+                  </div>
+                ))
+              ) : (
+                <div>
+                  <span>Grahas</span>
+                  <strong>без расхождений</strong>
+                </div>
+              )}
+            </div>
+            <div className="accuracy-list">
+              <h3>Groups</h3>
+              {groups.map((group) => (
+                <div key={group.key}>
+                  <span>{group.key}</span>
+                  <strong>{group.passed}/{group.total}</strong>
+                  {group.failed ? <small>{group.failed_samples.slice(0, 3).join(", ")}</small> : null}
+                </div>
+              ))}
+            </div>
+            <div className="accuracy-list">
+              <h3>JHora layers</h3>
+              {layers.map(([key, layer]) => (
+                <div key={key}>
+                  <span>{key}</span>
+                  <strong>{String(layer.matched ?? 0)}/{String(layer.checked ?? 0)}</strong>
+                  {layer.max_abs_delta ? <small>max {String(layer.max_abs_delta)}</small> : null}
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="accuracy-footnote">{report.source_export}</p>
+        </div>
+      )}
     </section>
   );
 }
@@ -1213,6 +2457,17 @@ export default function Home() {
   const [manualTimezone, setManualTimezone] = useState("Asia/Yekaterinburg");
   const [manualLatitude, setManualLatitude] = useState("");
   const [manualLongitude, setManualLongitude] = useState("");
+  const [zodiac, setZodiac] = useState("sidereal");
+  const [calculationModel, setCalculationModel] = useState("drik_siddhanta");
+  const [ayanamsa, setAyanamsa] = useState("lahiri");
+  const [nodeType, setNodeType] = useState("true");
+  const [ephemeris, setEphemeris] = useState("swiss");
+  const [houseSystem, setHouseSystem] = useState("whole_sign");
+  const [bhavaSystem, setBhavaSystem] = useState("whole_sign");
+  const [vargaScheme, setVargaScheme] = useState("parashara");
+  const [sunriseSource, setSunriseSource] = useState("noaa");
+  const [timezoneSource, setTimezoneSource] = useState("iana");
+  const [shadbalaProfile, setShadbalaProfile] = useState("bphs_classical");
   const [showPlaceSuggestions, setShowPlaceSuggestions] = useState(false);
   const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
@@ -1220,15 +2475,34 @@ export default function Home() {
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [draftAnalysis, setDraftAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
-  const [draftAnalysisStatus, setDraftAnalysisStatus] = useState("Черновик ещё не генерировался");
+  const [draftAnalysisStatus, setDraftAnalysisStatus] = useState("Личный разбор ещё не генерировался");
+  const [codexChatMessages, setCodexChatMessages] = useState<CodexAnalysisChatMessage[]>([]);
+  const [codexChatStatus, setCodexChatStatus] = useState("Сначала сгенерируйте личный разбор");
+  const [codexChatBusy, setCodexChatBusy] = useState(false);
   const [transitReport, setTransitReport] = useState<TransitReport | null>(null);
+  const [tithiPraveshaReport, setTithiPraveshaReport] = useState<TithiPraveshaReport | null>(null);
+  const [tajakaReport, setTajakaReport] = useState<TajakaReport | null>(null);
+  const [prashnaReport, setPrashnaReport] = useState<PrashnaReport | null>(null);
+  const [mundaneReport, setMundaneReport] = useState<MundaneReport | null>(null);
   const [muhurtaReport, setMuhurtaReport] = useState<MuhurtaReport | null>(null);
   const [compatibilityReport, setCompatibilityReport] = useState<CompatibilityReport | null>(null);
+  const [dualCalculationReport, setDualCalculationReport] = useState<DualCalculationReport | null>(null);
+  const [accuracyReport, setAccuracyReport] = useState<JHoraAccuracyReport | null>(null);
   const [lastBirthPayload, setLastBirthPayload] = useState<BirthChartRequest | null>(null);
   const [status, setStatus] = useState("Расчёт не запускался");
   const [workflowStatus, setWorkflowStatus] = useState("Ожидает расчёт карты");
+  const [dualCalculationStatus, setDualCalculationStatus] = useState("JHora witness ещё не считался");
+  const [accuracyStatus, setAccuracyStatus] = useState("JHora export report не загружен");
   const [compatibilityStatus, setCompatibilityStatus] = useState("Ожидает основную карту");
   const [compatibilityPacketStatus, setCompatibilityPacketStatus] = useState("Codex-пакет ещё не сформирован");
+  const [compatibilityCodexAnalysis, setCompatibilityCodexAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
+  const [compatibilityCodexStatus, setCompatibilityCodexStatus] = useState("Полный разбор совместимости ещё не запускался");
+  const [compatibilityChatMessages, setCompatibilityChatMessages] = useState<CodexAnalysisChatMessage[]>([]);
+  const [compatibilityChatStatus, setCompatibilityChatStatus] = useState("Сначала сгенерируйте полный разбор совместимости");
+  const [compatibilityChatBusy, setCompatibilityChatBusy] = useState(false);
+  const [compatibilityPersonAProfileId, setCompatibilityPersonAProfileId] = useState("");
+  const [compatibilityPersonBProfileId, setCompatibilityPersonBProfileId] = useState("");
+  const [partnerProfileName, setPartnerProfileName] = useState("Карта партнёра");
   const [partnerBirthDate, setPartnerBirthDate] = useState("1991-01-01");
   const [partnerBirthTime, setPartnerBirthTime] = useState("09:00");
   const [partnerPlaceName, setPartnerPlaceName] = useState("Вриндаван");
@@ -1240,13 +2514,23 @@ export default function Home() {
   const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
   const [researchResults, setResearchResults] = useState<ResearchSearchResult[]>([]);
   const [researchStatus, setResearchStatus] = useState("Private corpus not searched");
+  const [sourceInventory, setSourceInventory] = useState<SourceInventory | null>(null);
+  const [sourceWorks, setSourceWorks] = useState<SourceWorkSummary[]>([]);
+  const [selectedSourceWork, setSelectedSourceWork] = useState<SourceWorkSummary | null>(null);
+  const [sourcePassages, setSourcePassages] = useState<SourcePassageResult[]>([]);
+  const [sourceWorkStatus, setSourceWorkStatus] = useState("Corpus not loaded");
+  const [sourcePassageStatus, setSourcePassageStatus] = useState("Open a source to view fragments");
   const [sourceStatus, setSourceStatus] = useState("Поиск по VL не запускался");
+  const [shastraEvidence, setShastraEvidence] = useState<ShastraEvidencePayload | null>(null);
+  const [shastraEvidenceStatus, setShastraEvidenceStatus] = useState("Evidence ещё не загружен");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authUsername, setAuthUsername] = useState("haridas");
-  const [authPassword, setAuthPassword] = useState("strong-pass-108");
+  const [authPassword, setAuthPassword] = useState("");
   const [authStatus, setAuthStatus] = useState("Войдите, чтобы сохранять карты");
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
   const [profileStatus, setProfileStatus] = useState("Сохранённые карты не загружены");
+  const autoCalculationStartedRef = useRef(false);
+  const privateAccessLocked = PRIVATE_APP_REQUIRE_AUTH && !currentUser;
 
   const calculatedLabel = useMemo(() => {
     if (!chart) return "Карта останется пустой до расчёта эфемеридных позиций.";
@@ -1260,6 +2544,31 @@ export default function Home() {
   const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
   const selectedVargaPlacements = selectedVarga?.placements ?? [];
   const personSummary = birthReport?.person_summary ?? null;
+
+  function resetCodexChat() {
+    setCodexChatMessages([]);
+    setCodexChatStatus("Сначала сгенерируйте личный разбор");
+    setCodexChatBusy(false);
+  }
+
+  function resetCompatibilityChat() {
+    setCompatibilityChatMessages([]);
+    setCompatibilityChatStatus("Сначала сгенерируйте полный разбор совместимости");
+    setCompatibilityChatBusy(false);
+  }
+
+  useEffect(() => {
+    if (!draftAnalysis) {
+      resetCodexChat();
+    }
+  }, [draftAnalysis]);
+
+  useEffect(() => {
+    if (!compatibilityCodexAnalysis) {
+      resetCompatibilityChat();
+    }
+  }, [compatibilityCodexAnalysis]);
+
   const alternatePlaceMatches = useMemo(
     () => placeMatches.filter((place) => place.id !== selectedPlace?.id).slice(0, 4),
     [placeMatches, selectedPlace],
@@ -1277,7 +2586,42 @@ export default function Home() {
   }, [chart]);
 
   useEffect(() => {
+    if (privateAccessLocked) {
+      setAccuracyReport(null);
+      setAccuracyStatus("Войдите после одобрения, чтобы загрузить JHora export report");
+      return;
+    }
     let cancelled = false;
+    setAccuracyStatus("Загружаю JHora export report...");
+    fetchJHoraAccuracyReport()
+      .then((report) => {
+        if (cancelled) return;
+        setAccuracyReport(report);
+        setAccuracyStatus(report.passed ? "JHora export совпал" : "JHora export diff открыт");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setAccuracyReport(null);
+        setAccuracyStatus(error instanceof Error ? error.message : "JHora accuracy API error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [privateAccessLocked]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (privateAccessLocked) {
+      setPlaceMatches([]);
+      setSelectedPlace(null);
+      setPlaceSearchStatus("Войдите после одобрения, чтобы искать города");
+      return;
+    }
+    if (selectedPlace && normalizePlaceLabel(placeName) === normalizePlaceLabel(selectedPlace.label)) {
+      setPlaceMatches([selectedPlace]);
+      setPlaceSearchStatus("Город выбран");
+      return;
+    }
     if (placeName.trim().length < 2) {
       setPlaceMatches([]);
       setSelectedPlace(null);
@@ -1306,10 +2650,34 @@ export default function Home() {
       cancelled = true;
       window.clearTimeout(searchTimeout);
     };
-  }, [placeName]);
+  }, [placeName, privateAccessLocked, selectedPlace]);
+
+  useEffect(() => {
+    if (privateAccessLocked || autoCalculationStartedRef.current || chart || lastBirthPayload || !selectedPlace) {
+      return;
+    }
+    const payload = buildBirthPayload();
+    if (!payload) return;
+    autoCalculationStartedRef.current = true;
+    void runBirthCalculation(payload, "Формирую стартовую карту...");
+  }, [privateAccessLocked, selectedPlace, chart, lastBirthPayload]);
 
   useEffect(() => {
     let cancelled = false;
+    if (privateAccessLocked) {
+      setPartnerPlaceMatches([]);
+      setSelectedPartnerPlace(null);
+      setPartnerPlaceSearchStatus("Войдите после одобрения, чтобы искать города");
+      return;
+    }
+    if (
+      selectedPartnerPlace &&
+      normalizePlaceLabel(partnerPlaceName) === normalizePlaceLabel(selectedPartnerPlace.label)
+    ) {
+      setPartnerPlaceMatches([selectedPartnerPlace]);
+      setPartnerPlaceSearchStatus("Город выбран");
+      return;
+    }
     if (partnerPlaceName.trim().length < 2) {
       setPartnerPlaceMatches([]);
       setSelectedPartnerPlace(null);
@@ -1338,7 +2706,7 @@ export default function Home() {
       cancelled = true;
       window.clearTimeout(searchTimeout);
     };
-  }, [partnerPlaceName]);
+  }, [partnerPlaceName, privateAccessLocked, selectedPartnerPlace]);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -1352,6 +2720,92 @@ export default function Home() {
       .catch(() => setAuthStatus("Auth API недоступен"));
   }, []);
 
+  useEffect(() => {
+    if (activeAnalysisTab !== "sources") return;
+    if (privateAccessLocked) {
+      setSourceInventory(null);
+      setSourceWorks([]);
+      setSelectedSourceWork(null);
+      setSourcePassages([]);
+      setSourceWorkStatus("Войдите после одобрения, чтобы увидеть корпус шастр");
+      setSourcePassageStatus("Корпус закрыт до входа");
+      return;
+    }
+    let cancelled = false;
+    setSourceWorkStatus("Загружаю корпус шастр...");
+    fetchSourceWorks()
+      .then((payload) => {
+        if (cancelled) return;
+        setSourceInventory(payload);
+        setSourceWorks(payload.works);
+        setSelectedSourceWork((current) => current ?? payload.works[0] ?? null);
+        setSourceWorkStatus(
+          `${payload.summary.total_works} книг / ${payload.summary.total_passages} фрагментов в личном корпусе`,
+        );
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setSourceInventory(null);
+        setSourceWorks([]);
+        setSourceWorkStatus(error instanceof Error ? error.message : "Source corpus API недоступен");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeAnalysisTab, privateAccessLocked]);
+
+  useEffect(() => {
+    if (activeAnalysisTab !== "sources" || privateAccessLocked || !selectedSourceWork) return;
+    let cancelled = false;
+    setSourcePassageStatus(`Открываю ${selectedSourceWork.title}...`);
+    fetchSourcePassages(selectedSourceWork.slug)
+      .then((payload) => {
+        if (cancelled) return;
+        setSourcePassages(payload.items);
+        setSourcePassageStatus(
+          `${payload.items.length} фрагментов показано из ${payload.work.passage_count ?? "?"}`,
+        );
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setSourcePassages([]);
+        setSourcePassageStatus(error instanceof Error ? error.message : "Source passages API недоступен");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeAnalysisTab, privateAccessLocked, selectedSourceWork]);
+
+  useEffect(() => {
+    if (activeAnalysisTab !== "sources") return;
+    if (privateAccessLocked) {
+      setShastraEvidence(null);
+      setShastraEvidenceStatus("Войдите после одобрения, чтобы загрузить evidence");
+      return;
+    }
+    let cancelled = false;
+    setShastraEvidenceStatus("Загружаю shastra evidence...");
+    fetchShastraEvidence()
+      .then((payload) => {
+        if (cancelled) return;
+        setShastraEvidence(payload);
+        setShastraEvidenceStatus(
+          `источники: ${payload.summary.evidence_items} фрагментов; проверенных цитат ${payload.summary.approved_evidence_items}`,
+        );
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setShastraEvidence(null);
+        setShastraEvidenceStatus(error instanceof Error ? error.message : "Evidence API недоступен");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeAnalysisTab, privateAccessLocked]);
+
   function selectPlace(place: PlaceCandidate) {
     setSelectedPlace(place);
     setPlaceName(place.label);
@@ -1362,6 +2816,93 @@ export default function Home() {
     setSelectedPartnerPlace(place);
     setPartnerPlaceName(place.label);
     setShowPartnerPlaceSuggestions(false);
+  }
+
+  function calculationSettingsPayload() {
+    return {
+      zodiac,
+      calculation_model: calculationModel,
+      ayanamsa,
+      node_type: nodeType,
+      ephemeris,
+      house_system: houseSystem,
+      bhava_system: bhavaSystem,
+      varga_scheme: vargaScheme,
+      sunrise_source: sunriseSource,
+      timezone_source: timezoneSource,
+      shadbala_profile: shadbalaProfile,
+    };
+  }
+
+  function calculationSettingsFromPayload(payload: BirthChartRequest) {
+    return {
+      zodiac: payload.zodiac,
+      calculation_model: payload.calculation_model,
+      ayanamsa: payload.ayanamsa,
+      node_type: payload.node_type,
+      ephemeris: payload.ephemeris,
+      house_system: payload.house_system,
+      bhava_system: payload.bhava_system,
+      varga_scheme: payload.varga_scheme,
+      sunrise_source: payload.sunrise_source,
+      timezone_source: payload.timezone_source,
+      shadbala_profile: payload.shadbala_profile,
+    };
+  }
+
+  function profileBirthPayload(profile: ChartProfile): BirthChartRequest {
+    return {
+      birth_date: profile.birth_date,
+      birth_time: profile.birth_time ?? "",
+      place_name: profile.place.label,
+      ...profile.calculation_settings,
+      place_id: profile.place.external_id || String(profile.place.id),
+      country_code: profile.place.country_code,
+      timezone: profile.timezone,
+      latitude: profile.place.latitude,
+      longitude: profile.place.longitude,
+    };
+  }
+
+  function profilePlaceCandidate(profile: ChartProfile): PlaceCandidate {
+    return {
+      id: profile.place.external_id || String(profile.place.id),
+      name: profile.place.name,
+      label: profile.place.label,
+      admin_name: "",
+      country_code: profile.place.country_code,
+      latitude: profile.place.latitude,
+      longitude: profile.place.longitude,
+      timezone: profile.timezone,
+    };
+  }
+
+  function applyProfileToBirthForm(profile: ChartProfile) {
+    setBirthDate(profile.birth_date);
+    setBirthTime(profile.birth_time ?? "");
+    setPlaceName(profile.place.label);
+    setSelectedPlace(profilePlaceCandidate(profile));
+    setShowPlaceSuggestions(false);
+    setManualTimezone(profile.timezone);
+    setManualLatitude(String(profile.place.latitude));
+    setManualLongitude(String(profile.place.longitude));
+    setProfileName(profile.display_name);
+    setZodiac(profile.calculation_settings.zodiac);
+    setCalculationModel(profile.calculation_settings.calculation_model);
+    setAyanamsa(profile.calculation_settings.ayanamsa);
+    setNodeType(profile.calculation_settings.node_type);
+    setEphemeris(profile.calculation_settings.ephemeris);
+    setHouseSystem(profile.calculation_settings.house_system);
+    setBhavaSystem(profile.calculation_settings.bhava_system);
+    setVargaScheme(profile.calculation_settings.varga_scheme);
+    setSunriseSource(profile.calculation_settings.sunrise_source);
+    setTimezoneSource(profile.calculation_settings.timezone_source);
+    setShadbalaProfile(profile.calculation_settings.shadbala_profile);
+  }
+
+  function selectedProfilePayload(profileId: string): BirthChartRequest | null {
+    const profile = profiles.find((item) => String(item.id) === profileId);
+    return profile ? profileBirthPayload(profile) : null;
   }
 
   function buildBirthPayload(): BirthChartRequest | null {
@@ -1377,6 +2918,7 @@ export default function Home() {
       birth_date: birthDate,
       birth_time: birthTime,
       place_name: selectedPlace?.label ?? placeName,
+      ...calculationSettingsPayload(),
       ...(selectedPlace
         ? {
             place_id: selectedPlace.id,
@@ -1395,7 +2937,7 @@ export default function Home() {
     };
   }
 
-  function buildPartnerPayload(): BirthChartRequest | null {
+  function buildManualPartnerPayload(): BirthChartRequest | null {
     if (!selectedPartnerPlace) {
       setCompatibilityStatus("Выбери город второго человека из подсказок");
       return null;
@@ -1404,12 +2946,17 @@ export default function Home() {
       birth_date: partnerBirthDate,
       birth_time: partnerBirthTime,
       place_name: selectedPartnerPlace.label,
+      ...calculationSettingsPayload(),
       place_id: selectedPartnerPlace.id,
       country_code: selectedPartnerPlace.country_code,
       timezone: selectedPartnerPlace.timezone,
       latitude: selectedPartnerPlace.latitude,
       longitude: selectedPartnerPlace.longitude,
     };
+  }
+
+  function buildPartnerPayload(): BirthChartRequest | null {
+    return selectedProfilePayload(compatibilityPersonBProfileId) ?? buildManualPartnerPayload();
   }
 
   async function refreshProfiles() {
@@ -1430,6 +2977,13 @@ export default function Home() {
         mode === "login"
           ? await loginUser(authUsername, authPassword)
           : await registerUser(authUsername, authPassword);
+      if (!user.is_active) {
+        setCurrentUser(null);
+        setProfiles([]);
+        setAuthStatus("Регистрация отправлена. Доступ появится после одобрения администратора.");
+        setProfileStatus("После одобрения можно будет сохранять карты");
+        return;
+      }
       setCurrentUser(user);
       setAuthStatus(`Вход: ${user.username}`);
       await refreshProfiles();
@@ -1467,21 +3021,97 @@ export default function Home() {
     }
   }
 
+  function handleSelectCompatibilityPersonAProfile(profileId: string) {
+    setCompatibilityPersonAProfileId(profileId);
+    setCompatibilityReport(null);
+    setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
+    setCompatibilityCodexAnalysis(null);
+    setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+    setCompatibilityStatus(profileId ? "Карта A взята из сохранённых" : "Карта A: текущий расчёт");
+  }
+
+  function handleSelectCompatibilityPersonBProfile(profileId: string) {
+    setCompatibilityPersonBProfileId(profileId);
+    setCompatibilityReport(null);
+    setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
+    setCompatibilityCodexAnalysis(null);
+    setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+    const profile = profiles.find((item) => String(item.id) === profileId);
+    if (!profile) {
+      setCompatibilityStatus("Карта B: ручной ввод");
+      return;
+    }
+    setPartnerBirthDate(profile.birth_date);
+    setPartnerBirthTime(profile.birth_time ?? "");
+    setPartnerPlaceName(profile.place.label);
+    setSelectedPartnerPlace(null);
+    setShowPartnerPlaceSuggestions(false);
+    setCompatibilityStatus(`Карта B выбрана: ${profile.display_name}`);
+  }
+
+  async function handleSavePartnerProfile() {
+    if (!currentUser) {
+      setProfileStatus("Сначала войдите или зарегистрируйтесь");
+      return;
+    }
+    const payload = buildManualPartnerPayload();
+    if (!payload) return;
+    setProfileStatus("Сохраняю карту партнёра...");
+    try {
+      const saved = await createChartProfile({
+        ...payload,
+        display_name: partnerProfileName.trim() || "Карта партнёра",
+      });
+      await refreshProfiles();
+      setCompatibilityPersonBProfileId(String(saved.id));
+      setCompatibilityStatus(`Карта B сохранена: ${saved.display_name}`);
+    } catch (error) {
+      setProfileStatus(error instanceof Error ? error.message : "Не удалось сохранить карту партнёра");
+    }
+  }
+
   async function refreshWorkflowReports(payload: BirthChartRequest) {
-    setWorkflowStatus("Считаю транзиты и мухурту...");
+    setWorkflowStatus("Считаю JHora-like workflow...");
     const today = isoDateOffset(0);
     const weekEnd = isoDateOffset(7);
-    const [transits, muhurta] = await Promise.allSettled([
+    const annualPayload = {
+      ...payload,
+      target_year: new Date().getFullYear(),
+      return_place_name: payload.place_name,
+      return_timezone: payload.timezone,
+      return_latitude: payload.latitude,
+      return_longitude: payload.longitude,
+    };
+    const eventBase = {
+      place_name: payload.place_name,
+      timezone: payload.timezone,
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      ...calculationSettingsFromPayload(payload),
+    };
+    const [transits, tithiPravesha, tajaka, prashna, mundane, muhurta] = await Promise.allSettled([
       calculateTransits({
         ...payload,
         as_of_date: today,
         as_of_time: "09:00",
       }),
+      calculateTithiPravesha(annualPayload),
+      calculateTajaka(annualPayload),
+      calculatePrashna({
+        ...eventBase,
+        question: "Текущий вопрос",
+        question_date: today,
+        question_time: "09:00",
+      }),
+      calculateMundane({
+        ...eventBase,
+        event_type: "general",
+        description: "Текущий event chart",
+        event_date: today,
+        event_time: "09:00",
+      }),
       calculateMuhurta({
-        place_name: payload.place_name,
-        timezone: payload.timezone,
-        latitude: payload.latitude,
-        longitude: payload.longitude,
+        ...eventBase,
         start_date: today,
         end_date: weekEnd,
         time: "09:00",
@@ -1493,25 +3123,63 @@ export default function Home() {
     } else {
       setTransitReport(null);
     }
+    if (tithiPravesha.status === "fulfilled") {
+      setTithiPraveshaReport(tithiPravesha.value);
+    } else {
+      setTithiPraveshaReport(null);
+    }
+    if (tajaka.status === "fulfilled") {
+      setTajakaReport(tajaka.value);
+    } else {
+      setTajakaReport(null);
+    }
+    if (prashna.status === "fulfilled") {
+      setPrashnaReport(prashna.value);
+    } else {
+      setPrashnaReport(null);
+    }
+    if (mundane.status === "fulfilled") {
+      setMundaneReport(mundane.value);
+    } else {
+      setMundaneReport(null);
+    }
     if (muhurta.status === "fulfilled") {
       setMuhurtaReport(muhurta.value);
     } else {
       setMuhurtaReport(null);
     }
     setWorkflowStatus(
-      transits.status === "fulfilled" && muhurta.status === "fulfilled"
+      [transits, tithiPravesha, tajaka, prashna, mundane, muhurta].every((item) => item.status === "fulfilled")
         ? "рассчитано"
         : "частично, см. API",
     );
   }
 
+  async function refreshDualCalculation(payload: BirthChartRequest) {
+    setDualCalculationStatus("Сверяю с JHora-профилем...");
+    try {
+      const result = await calculateDualCalculation(payload);
+      setDualCalculationReport(result);
+      setDualCalculationStatus(
+        result.delta.exact_match
+          ? "профили совпали"
+          : `diff: ${result.delta.summary.max_graha_delta_arcseconds.toFixed(2)}", ${result.authority_decision.differing_settings.length} настроек`,
+      );
+    } catch (error) {
+      setDualCalculationReport(null);
+      setDualCalculationStatus(error instanceof Error ? error.message : "JHora witness API недоступен");
+    }
+  }
+
   async function handleCompatibilitySubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const personA = lastBirthPayload ?? buildBirthPayload();
+    const personA = selectedProfilePayload(compatibilityPersonAProfileId) ?? lastBirthPayload ?? buildBirthPayload();
     const personB = buildPartnerPayload();
     if (!personA || !personB) return;
 
     setCompatibilityStatus("Считаю совместимость...");
+    setCompatibilityCodexAnalysis(null);
+    setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
     try {
       const result = await calculateCompatibility({
         person_a: personA,
@@ -1523,12 +3191,13 @@ export default function Home() {
     } catch (error) {
       setCompatibilityReport(null);
       setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
+      setCompatibilityCodexAnalysis(null);
       setCompatibilityStatus(error instanceof Error ? error.message : "Ошибка API совместимости");
     }
   }
 
   async function handleCompatibilityPacket() {
-    const personA = lastBirthPayload ?? buildBirthPayload();
+    const personA = selectedProfilePayload(compatibilityPersonAProfileId) ?? lastBirthPayload ?? buildBirthPayload();
     const personB = buildPartnerPayload();
     if (!personA || !personB) return;
 
@@ -1562,77 +3231,169 @@ export default function Home() {
     }
   }
 
-  async function handleGenerateDraftAnalysis() {
+  async function handleCompatibilityCodexAnalysis() {
+    const personA = selectedProfilePayload(compatibilityPersonAProfileId) ?? lastBirthPayload ?? buildBirthPayload();
+    const personB = buildPartnerPayload();
+    if (!personA || !personB) return;
+
+    setCompatibilityCodexStatus("Запускаю Codex CLI для полного разбора двух карт...");
+    try {
+      const result = await generateCompatibilityCodexAnalysis({
+        person_a: personA,
+        person_b: personB,
+      });
+      setCompatibilityCodexAnalysis(result);
+      setCompatibilityChatMessages([]);
+      setCompatibilityChatStatus("Можно задавать вопросы по этому разбору совместимости");
+      setCompatibilityCodexStatus(
+        `Codex CLI #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
+      );
+    } catch (error) {
+      setCompatibilityCodexAnalysis(null);
+      resetCompatibilityChat();
+      setCompatibilityCodexStatus(error instanceof Error ? error.message : "Ошибка полного разбора совместимости");
+    }
+  }
+
+  async function handleAskCompatibilityQuestion(question: string) {
+    if (!compatibilityCodexAnalysis) return;
+    const userMessage: CodexAnalysisChatMessage = { role: "user", content: question };
+    const history = [...compatibilityChatMessages, userMessage];
+    setCompatibilityChatMessages(history);
+    setCompatibilityChatBusy(true);
+    setCompatibilityChatStatus("Codex CLI отвечает по совместимости...");
+    try {
+      const result = await askCompatibilityCodexAnalysis(compatibilityCodexAnalysis.id, question, history);
+      setCompatibilityChatMessages([...history, { role: "assistant", content: result.answer }]);
+      const sourceCount = result.source_traces?.length ?? result.evidence_references?.length ?? 0;
+      setCompatibilityChatStatus(sourceCount ? `Ответ готов, источников: ${sourceCount}` : "Ответ готов");
+    } catch (error) {
+      setCompatibilityChatMessages([...history, { role: "assistant", content: error instanceof Error ? error.message : "Ошибка Codex CLI" }]);
+      setCompatibilityChatStatus("Ошибка ответа");
+    } finally {
+      setCompatibilityChatBusy(false);
+    }
+  }
+
+  async function handleGenerateDraftAnalysis(forceRegenerate = false) {
     const payload = lastBirthPayload ?? buildBirthPayload();
     if (!payload) return;
-    setDraftAnalysisStatus("Запускаю Codex CLI и сопоставление с шастрами...");
+    setDraftAnalysis(null);
+    resetCodexChat();
+    setDraftAnalysisStatus(
+      forceRegenerate
+        ? "Сбрасываю старый Codex CLI разбор и запускаю перегенерацию с текущим корпусом шастр..."
+        : "Запускаю Codex CLI и сопоставление с шастрами...",
+    );
     try {
-      const result = await generateBirthCodexAnalysis(payload);
+      const result = await generateBirthCodexAnalysis(payload, { forceRegenerate });
       setDraftAnalysis(result);
-      setDraftAnalysisStatus(`Codex CLI draft #${result.id}: ${result.sections.length} разделов, нужен review`);
+      setCodexChatMessages([]);
+      setCodexChatStatus("Можно задавать вопросы по этому разбору");
+      setDraftAnalysisStatus(
+        `Codex CLI #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
+      );
     } catch (error) {
       setDraftAnalysis(null);
-      setDraftAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации draft");
+      resetCodexChat();
+      setDraftAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации разбора");
+    }
+  }
+
+  async function handleAskDraftQuestion(question: string) {
+    if (!draftAnalysis) return;
+    const userMessage: CodexAnalysisChatMessage = { role: "user", content: question };
+    const history = [...codexChatMessages, userMessage];
+    setCodexChatMessages(history);
+    setCodexChatBusy(true);
+    setCodexChatStatus("Codex CLI отвечает...");
+    try {
+      const result = await askBirthCodexAnalysis(draftAnalysis.id, question, history);
+      setCodexChatMessages([...history, { role: "assistant", content: result.answer }]);
+      const sourceCount = result.source_traces?.length ?? result.evidence_references?.length ?? 0;
+      setCodexChatStatus(sourceCount ? `Ответ готов, источников: ${sourceCount}` : "Ответ готов");
+    } catch (error) {
+      setCodexChatMessages([...history, { role: "assistant", content: error instanceof Error ? error.message : "Ошибка Codex CLI" }]);
+      setCodexChatStatus("Ошибка ответа");
+    } finally {
+      setCodexChatBusy(false);
     }
   }
 
   async function handleCalculateProfile(profile: ChartProfile) {
-    setProfileStatus(`Рассчитываю: ${profile.display_name}`);
+    setProfileStatus(`Загружаю и рассчитываю: ${profile.display_name}`);
     try {
-      const calculation = await calculateSavedProfile(profile.id);
-      const payload = {
-        birth_date: profile.birth_date,
-        birth_time: profile.birth_time ?? "",
-        place_name: profile.place.label,
-        timezone: profile.timezone,
-        latitude: profile.place.latitude,
-        longitude: profile.place.longitude,
-      };
-      setChart(calculation.result);
+      applyProfileToBirthForm(profile);
+      const payload = profileBirthPayload(profile);
+      const [savedCalculation, reportResult] = await Promise.allSettled([
+        calculateSavedProfile(profile.id),
+        generateBirthReport(payload),
+      ]);
+      if (reportResult.status === "fulfilled") {
+        setChart(reportResult.value.chart);
+        setBirthReport(reportResult.value.report);
+      } else if (savedCalculation.status === "fulfilled") {
+        setChart(savedCalculation.value.result);
+        setBirthReport(null);
+      } else {
+        throw reportResult.reason ?? savedCalculation.reason;
+      }
       setChartMode("D1");
-      setBirthReport(null);
       setDraftAnalysis(null);
-      setDraftAnalysisStatus("Черновик ещё не генерировался");
+      setDraftAnalysisStatus("Личный разбор ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
-      await refreshWorkflowReports(payload);
-      setStatus("Сохранённая карта рассчитана");
+      setCompatibilityCodexAnalysis(null);
+      setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+      await Promise.all([refreshWorkflowReports(payload), refreshDualCalculation(payload)]);
+      setActiveAnalysisTab("overview");
+      setStatus("Сохранённая карта загружена и рассчитана");
       await refreshProfiles();
     } catch (error) {
       setProfileStatus(error instanceof Error ? error.message : "Не удалось рассчитать профиль");
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setStatus("Формирую отчёт с приоритетом цитат...");
+  async function runBirthCalculation(payload: BirthChartRequest, statusMessage = "Формирую отчёт с приоритетом цитат...") {
+    setStatus(statusMessage);
     try {
-      const payload = buildBirthPayload();
-      if (!payload) return;
       const result = await generateBirthReport(payload);
       setChart(result.chart);
       setChartMode("D1");
       setBirthReport(result.report);
       setDraftAnalysis(null);
-      setDraftAnalysisStatus("Черновик ещё не генерировался");
+      setDraftAnalysisStatus("Личный разбор ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
-      await refreshWorkflowReports(payload);
+      setCompatibilityCodexAnalysis(null);
+      setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+      await Promise.all([refreshWorkflowReports(payload), refreshDualCalculation(payload)]);
       setStatus("Отчёт построен");
     } catch (error) {
       setChart(null);
       setBirthReport(null);
       setDraftAnalysis(null);
-      setDraftAnalysisStatus("Черновик ещё не генерировался");
+      setDraftAnalysisStatus("Личный разбор ещё не генерировался");
       setTransitReport(null);
       setMuhurtaReport(null);
       setCompatibilityReport(null);
+      setCompatibilityCodexAnalysis(null);
+      setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+      setDualCalculationReport(null);
+      setDualCalculationStatus("JHora witness ещё не считался");
       setLastBirthPayload(null);
       setCompatibilityStatus("Ожидает основную карту");
       setStatus(error instanceof Error ? error.message : "Ошибка API");
     }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const payload = buildBirthPayload();
+    if (!payload) return;
+    await runBirthCalculation(payload);
   }
 
   async function handleSourceSearch(event: FormEvent<HTMLFormElement>) {
@@ -1670,9 +3431,19 @@ export default function Home() {
         </div>
         <nav aria-label="Основная навигация">
           <a className="active" href="#chart">Карты</a>
+          <a
+            href="#reports"
+            onClick={(event) => {
+              event.preventDefault();
+              setActiveAnalysisTab("compatibility");
+              document.getElementById("reports")?.scrollIntoView({ block: "start" });
+            }}
+          >
+            Совместимость
+          </a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>Отчёт</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("sources")}>Источники</a>
-          <a href="#accuracy">Точность</a>
+          <a href="#reports" onClick={() => setActiveAnalysisTab("accuracy")}>Точность</a>
         </nav>
         <blockquote>
           yatha shastram
@@ -1683,7 +3454,7 @@ export default function Home() {
         </blockquote>
         <div className="operator">
           <strong>Режим проверки</strong>
-          <span>Только draft-правила</span>
+          <span>Личный режим с research-источниками</span>
         </div>
       </aside>
 
@@ -1692,10 +3463,42 @@ export default function Home() {
           <div className="mantra">Hare Krishna Hare Krishna Krishna Krishna Hare Hare</div>
           <div className="top-actions">
             <button type="button">Источники</button>
-            <button type="button">Настройки</button>
+            <button
+              type="button"
+              onClick={() => document.getElementById("calculation-settings")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              Настройки
+            </button>
           </div>
         </header>
 
+        {privateAccessLocked ? (
+          <section className="panel private-gate" aria-live="polite">
+            <div>
+              <h2>Закрытый доступ</h2>
+              <p>Зарегистрируйтесь или войдите. Новые аккаунты начинают работать только после одобрения администратора.</p>
+            </div>
+            <div className="auth-grid private-gate-auth">
+              <label>
+                Логин
+                <input value={authUsername} onChange={(event) => setAuthUsername(event.target.value)} />
+              </label>
+              <label>
+                Пароль
+                <input
+                  type="password"
+                  value={authPassword}
+                  onChange={(event) => setAuthPassword(event.target.value)}
+                />
+              </label>
+              <div className="auth-actions">
+                <button type="button" className="secondary-button" onClick={() => handleAuth("login")}>Войти</button>
+                <button type="button" className="secondary-button" onClick={() => handleAuth("register")}>Регистрация</button>
+              </div>
+            </div>
+            <p className="status-line">{authStatus}</p>
+          </section>
+        ) : (
         <div className="content-grid">
           <section className="panel birth-panel" id="chart">
             <div className="panel-heading">
@@ -1803,6 +3606,81 @@ export default function Home() {
                   ))}
                 </div>
               ) : null}
+              <fieldset className="calculation-settings" id="calculation-settings">
+                <legend>Настройки расчёта</legend>
+                <div className="settings-grid">
+                  <label>
+                    Зодиак
+                    <select value={zodiac} onChange={(event) => setZodiac(event.target.value)}>
+                      <option value="sidereal">Sidereal</option>
+                    </select>
+                  </label>
+                  <label>
+                    Модель
+                    <select value={calculationModel} onChange={(event) => setCalculationModel(event.target.value)}>
+                      <option value="drik_siddhanta">Drik Siddhanta</option>
+                      <option value="surya_siddhanta" disabled>Sri Surya Siddhanta</option>
+                    </select>
+                  </label>
+                  <label>
+                    Айанамша
+                    <select value={ayanamsa} onChange={(event) => setAyanamsa(event.target.value)}>
+                      <option value="lahiri">Lahiri</option>
+                    </select>
+                  </label>
+                  <label>
+                    Узлы
+                    <select value={nodeType} onChange={(event) => setNodeType(event.target.value)}>
+                      <option value="true">True Node</option>
+                      <option value="mean">Mean Node</option>
+                    </select>
+                  </label>
+                  <label>
+                    Эфемериды
+                    <select value={ephemeris} onChange={(event) => setEphemeris(event.target.value)}>
+                      <option value="swiss">Swiss Ephemeris</option>
+                      <option value="jpl">JPL через Swiss</option>
+                    </select>
+                  </label>
+                  <label>
+                    Дома
+                    <select value={houseSystem} onChange={(event) => setHouseSystem(event.target.value)}>
+                      <option value="whole_sign">Whole Sign</option>
+                    </select>
+                  </label>
+                  <label>
+                    Бхава
+                    <select value={bhavaSystem} onChange={(event) => setBhavaSystem(event.target.value)}>
+                      <option value="whole_sign">Whole Sign</option>
+                    </select>
+                  </label>
+                  <label>
+                    Варги
+                    <select value={vargaScheme} onChange={(event) => setVargaScheme(event.target.value)}>
+                      <option value="parashara">Parashara</option>
+                    </select>
+                  </label>
+                  <label>
+                    Восход
+                    <select value={sunriseSource} onChange={(event) => setSunriseSource(event.target.value)}>
+                      <option value="noaa">NOAA</option>
+                    </select>
+                  </label>
+                  <label>
+                    Часовой пояс
+                    <select value={timezoneSource} onChange={(event) => setTimezoneSource(event.target.value)}>
+                      <option value="iana">IANA historical</option>
+                    </select>
+                  </label>
+                  <label>
+                    Шадбала
+                    <select value={shadbalaProfile} onChange={(event) => setShadbalaProfile(event.target.value)}>
+                      <option value="bphs_classical">BPHS classical</option>
+                    </select>
+                  </label>
+                </div>
+                <span className="settings-note">SSS ведётся как отдельный профиль; сейчас расчёт Drik.</span>
+              </fieldset>
               <div className="notice">
                 Политика MVP: айанамша Lahiri, рамка Парашары, обязательные ссылки на источники.
               </div>
@@ -1850,7 +3728,16 @@ export default function Home() {
             <div className="profile-block">
               <div className="block-heading">
                 <h3>Сохранённые карты</h3>
-                <button type="button" className="secondary-button" onClick={refreshProfiles}>Обновить</button>
+                <div className="profile-heading-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setActiveAnalysisTab("compatibility")}
+                  >
+                    Совместимость
+                  </button>
+                  <button type="button" className="secondary-button" onClick={refreshProfiles}>Обновить</button>
+                </div>
               </div>
               <p>{profileStatus}</p>
               {profiles.length ? (
@@ -1867,7 +3754,7 @@ export default function Home() {
                         </small>
                       </div>
                       <button type="button" className="secondary-button" onClick={() => handleCalculateProfile(profile)}>
-                        Рассчитать
+                        Загрузить
                       </button>
                     </div>
                   ))}
@@ -1880,19 +3767,24 @@ export default function Home() {
             <section className="panel chart-panel">
               <div className="panel-heading">
                 <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
-                <select
-                  value={chartMode}
-                  onChange={(event) => setChartMode(event.target.value)}
-                >
-                  {vargaOptions.map((code) => (
-                    <option value={code} key={code}>
-                      {code === "D1" ? "D1 Раши" : `${code} ${chart?.vargas?.[code]?.name ?? ""}`}
-                    </option>
-                  ))}
-                </select>
+                <div className="chart-controls">
+                  <label className="compact-control">
+                    <span>Карта</span>
+                    <select
+                      value={chartMode}
+                      onChange={(event) => setChartMode(event.target.value)}
+                    >
+                      {vargaOptions.map((code) => (
+                        <option value={code} key={code}>
+                          {code === "D1" ? "D1 Раши" : `${code} ${chart?.vargas?.[code]?.name ?? ""}`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
               <div className="chart-layout">
-                <ChartPreview />
+                <ChartPreview chart={chart} varga={selectedVarga} />
                 <div className="chart-data-stack">
                   {chartMode === "D1" ? (
                     <GrahaTable grahas={chart?.grahas ?? []} />
@@ -1912,6 +3804,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
+              <VargaSnapshotGrid chart={chart} />
             </section>
 
             <section className="analysis-workspace" id="reports">
@@ -1932,44 +3825,80 @@ export default function Home() {
               </div>
               <div className="analysis-panel-slot">
                 {activeAnalysisTab === "overview" ? <PersonSummaryPanel summary={personSummary} /> : null}
-                {activeAnalysisTab === "calculations" ? <DetailedCalculationsPanel summary={personSummary} /> : null}
+                {activeAnalysisTab === "calculations" ? (
+                  <div className="analysis-tab-stack">
+                    <DualCalculationPanel report={dualCalculationReport} status={dualCalculationStatus} />
+                    <DetailedCalculationsPanel summary={personSummary} />
+                  </div>
+                ) : null}
                 {activeAnalysisTab === "yogas" ? <ClassicalPanel classical={chart?.classical} /> : null}
-                {activeAnalysisTab === "timeline" ? <DashaWorkspacePanel summary={personSummary} periods={vimshottariPeriods} /> : null}
+                {activeAnalysisTab === "timeline" ? (
+                  <DashaWorkspacePanel summary={personSummary} periods={vimshottariPeriods} extra={chart?.dashas?.extra} />
+                ) : null}
                 {activeAnalysisTab === "guidance" ? (
                   <ReportPreviewPanel
                     birthReport={birthReport}
                     draftAnalysis={draftAnalysis}
                     draftStatus={draftAnalysisStatus}
-                    onGenerateDraft={handleGenerateDraftAnalysis}
+                    onGenerateDraft={() => handleGenerateDraftAnalysis(false)}
+                    onRegenerateDraft={() => handleGenerateDraftAnalysis(true)}
                     draftDisabled={!birthReport}
+                    chatMessages={codexChatMessages}
+                    chatStatus={codexChatStatus}
+                    onAskDraftQuestion={handleAskDraftQuestion}
+                    chatDisabled={!draftAnalysis || codexChatBusy}
                   />
                 ) : null}
-                {activeAnalysisTab === "workflows" ? (
-                  <div className="analysis-tab-stack">
-                    <TransitPanel report={transitReport} status={workflowStatus} />
-                    <MuhurtaPanel report={muhurtaReport} status={workflowStatus} />
-                    <CompatibilityPanel
-                      report={compatibilityReport}
-                      status={compatibilityStatus}
-                      partnerBirthDate={partnerBirthDate}
-                      setPartnerBirthDate={setPartnerBirthDate}
-                      partnerBirthTime={partnerBirthTime}
-                      setPartnerBirthTime={setPartnerBirthTime}
-                      partnerPlaceName={partnerPlaceName}
-                      setPartnerPlaceName={setPartnerPlaceName}
-                      partnerPlaceMatches={partnerPlaceMatches}
-                      selectedPartnerPlace={selectedPartnerPlace}
-                      showPartnerPlaceSuggestions={showPartnerPlaceSuggestions}
-                      setShowPartnerPlaceSuggestions={setShowPartnerPlaceSuggestions}
-                      partnerPlaceSearchStatus={partnerPlaceSearchStatus}
-                      onSelectPartnerPlace={selectPartnerPlace}
-                      onSubmit={handleCompatibilitySubmit}
-                      onGeneratePacket={handleCompatibilityPacket}
-                      disabled={!chart}
-                      packetDisabled={!chart}
-                      packetStatus={compatibilityPacketStatus}
-                    />
-                  </div>
+                {activeAnalysisTab === "transits" ? <TransitPanel report={transitReport} status={workflowStatus} /> : null}
+                {activeAnalysisTab === "tithiPravesha" ? (
+                  <TithiPraveshaPanel report={tithiPraveshaReport} status={workflowStatus} />
+                ) : null}
+                {activeAnalysisTab === "tajaka" ? <TajakaPanel report={tajakaReport} status={workflowStatus} /> : null}
+                {activeAnalysisTab === "prashna" ? <PrashnaPanel report={prashnaReport} status={workflowStatus} /> : null}
+                {activeAnalysisTab === "mundane" ? <MundanePanel report={mundaneReport} status={workflowStatus} /> : null}
+                {activeAnalysisTab === "muhurta" ? <MuhurtaPanel report={muhurtaReport} status={workflowStatus} /> : null}
+                {activeAnalysisTab === "compatibility" ? (
+                  <CompatibilityPanel
+                    report={compatibilityReport}
+                    status={compatibilityStatus}
+                    partnerBirthDate={partnerBirthDate}
+                    setPartnerBirthDate={setPartnerBirthDate}
+                    partnerBirthTime={partnerBirthTime}
+                    setPartnerBirthTime={setPartnerBirthTime}
+                    partnerPlaceName={partnerPlaceName}
+                    setPartnerPlaceName={setPartnerPlaceName}
+                    partnerPlaceMatches={partnerPlaceMatches}
+                    selectedPartnerPlace={selectedPartnerPlace}
+                    showPartnerPlaceSuggestions={showPartnerPlaceSuggestions}
+                    setShowPartnerPlaceSuggestions={setShowPartnerPlaceSuggestions}
+                    partnerPlaceSearchStatus={partnerPlaceSearchStatus}
+                    onSelectPartnerPlace={selectPartnerPlace}
+                    onSelectPersonAProfile={handleSelectCompatibilityPersonAProfile}
+                    onSelectPersonBProfile={handleSelectCompatibilityPersonBProfile}
+                    onSavePartnerProfile={handleSavePartnerProfile}
+                    onSubmit={handleCompatibilitySubmit}
+                    onGeneratePacket={handleCompatibilityPacket}
+                    onGenerateCodexAnalysis={handleCompatibilityCodexAnalysis}
+                    disabled={!chart && !compatibilityPersonAProfileId}
+                    savePartnerDisabled={!currentUser || !selectedPartnerPlace}
+                    packetDisabled={!chart && !compatibilityPersonAProfileId}
+                    packetStatus={compatibilityPacketStatus}
+                    codexDisabled={!chart && !compatibilityPersonAProfileId}
+                    codexStatus={compatibilityCodexStatus}
+                    codexAnalysis={compatibilityCodexAnalysis}
+                    chatMessages={compatibilityChatMessages}
+                    chatStatus={compatibilityChatStatus}
+                    onAskCodexQuestion={handleAskCompatibilityQuestion}
+                    chatDisabled={!compatibilityCodexAnalysis || compatibilityChatBusy}
+                    profiles={profiles}
+                    selectedPersonAProfileId={compatibilityPersonAProfileId}
+                    selectedPersonBProfileId={compatibilityPersonBProfileId}
+                    partnerProfileName={partnerProfileName}
+                    setPartnerProfileName={setPartnerProfileName}
+                  />
+                ) : null}
+                {activeAnalysisTab === "accuracy" ? (
+                  <AccuracyReportPanel report={accuracyReport} status={accuracyStatus} />
                 ) : null}
                 {activeAnalysisTab === "sources" ? (
                   <section className="panel" id="sources">
@@ -1984,6 +3913,49 @@ export default function Home() {
                       <span>{sourceStatus}</span>
                       <span>{researchStatus}</span>
                     </form>
+                    <div className="source-corpus-summary">
+                      <strong>Личный корпус шастр</strong>
+                      <span>{sourceWorkStatus}</span>
+                      {sourceInventory ? (
+                        <small>
+                          research-only: {sourceInventory.summary.research_only_works} книг / {sourceInventory.summary.research_only_passages} фрагментов
+                        </small>
+                      ) : null}
+                    </div>
+                    {sourceWorks.length ? (
+                      <div className="source-work-list">
+                        {sourceWorks.map((work) => (
+                          <button
+                            type="button"
+                            key={work.slug}
+                            className={selectedSourceWork?.slug === work.slug ? "selected" : ""}
+                            onClick={() => setSelectedSourceWork(work)}
+                          >
+                            <strong>{work.title}</strong>
+                            <span>
+                              {work.language_code} / {work.review_status} / {work.passage_count ?? 0} фрагм.
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                    {selectedSourceWork ? (
+                      <div className="source-results research-results">
+                        <div>
+                          <strong>{selectedSourceWork.title}</strong>
+                          <span>{selectedSourceWork.author || selectedSourceWork.edition || selectedSourceWork.slug}</span>
+                          <small>{sourcePassageStatus}</small>
+                        </div>
+                        {sourcePassages.map((passage) => (
+                          <div key={passage.id}>
+                            <strong>{passage.reference}</strong>
+                            <span>{passage.language_code} / {passage.review_status}</span>
+                            <p>{passage.body}</p>
+                            <small>{passage.public_quote_policy || passage.rights_status}</small>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                     {sourceResults.length ? (
                       <div className="source-results">
                         {sourceResults.map((result) => (
@@ -2007,6 +3979,7 @@ export default function Home() {
                         ))}
                       </div>
                     ) : null}
+                    <ShastraEvidenceReviewPanel evidence={shastraEvidence} status={shastraEvidenceStatus} />
                     <ShastraAuditPanel audit={chart?.shastra_audit} />
                     <div className="source-table">
                       {sourceRows.map(([component, source, citation, state]) => (
@@ -2024,6 +3997,7 @@ export default function Home() {
             </section>
           </section>
         </div>
+        )}
       </section>
     </main>
   );

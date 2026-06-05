@@ -21,6 +21,26 @@ Jyotish Agent is a Gaudiya Vaishnava astrology service. The goal is accurate jyo
 
 ## Local Start
 
+Fast start after dependencies are installed:
+
+```powershell
+.\start-dev.ps1
+```
+
+First local setup or reinstall:
+
+```powershell
+.\start-dev.ps1 -Install
+```
+
+Then open:
+
+```text
+http://127.0.0.1:3130/
+```
+
+Manual setup:
+
 ```powershell
 Copy-Item .env.example .env
 docker compose up -d postgres redis

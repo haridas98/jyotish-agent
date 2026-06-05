@@ -41,6 +41,7 @@ class BirthProfile(models.Model):
     )
     place = models.ForeignKey(Place, on_delete=models.PROTECT)
     timezone_name = models.CharField(max_length=128)
+    calculation_settings = models.JSONField(default=dict, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -146,4 +147,3 @@ class DashaPeriod(models.Model):
             models.Index(fields=["system", "level"]),
             models.Index(fields=["starts_at", "ends_at"]),
         ]
-

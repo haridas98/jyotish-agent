@@ -46,3 +46,25 @@ def test_even_sign_d30_reverses_trimsamsa_sequence():
     assert divisional_placement(31.0, "D30") == (1, "Vrishabha")
     assert divisional_placement(37.0, "D30") == (5, "Kanya")
     assert divisional_placement(45.0, "D30") == (11, "Meena")
+
+
+def test_jhora_uma_shambhu_hora_uses_two_cycles_and_even_sign_reversal():
+    assert divisional_placement(14.0, "D2", scheme="jhora_uma_shambhu") == (0, "Mesha")
+    assert divisional_placement(16.0, "D2", scheme="jhora_uma_shambhu") == (1, "Vrishabha")
+    assert divisional_placement(31.0, "D2", scheme="jhora_uma_shambhu") == (3, "Karka")
+    assert divisional_placement(46.0, "D2", scheme="jhora_uma_shambhu") == (2, "Mithuna")
+
+    assert divisional_placement(15.96, "D2", scheme="jhora_uma_shambhu") == (1, "Vrishabha")
+    assert divisional_placement(133.59, "D2", scheme="jhora_uma_shambhu") == (8, "Dhanu")
+
+
+def test_d20_uses_jhora_parashara_movable_fixed_dual_starts():
+    assert divisional_placement(325.573663, "D20") == (1, "Vrishabha")
+    assert divisional_placement(68.368149, "D20") == (9, "Makara")
+    assert divisional_placement(133.574927, "D20") == (5, "Kanya")
+
+
+def test_d27_uses_elemental_fire_earth_air_water_starts():
+    assert divisional_placement(115.401188, "D27") == (7, "Vrischika")
+    assert divisional_placement(133.574927, "D27") == (0, "Mesha")
+    assert divisional_placement(349.859617, "D27") == (2, "Mithuna")
