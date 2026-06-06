@@ -19,6 +19,7 @@ def build_witness_summary(
     parashara_light_visible_settings_capture_path: str | Path = "",
     parashara_light_calculation_options_report_path: str | Path = "",
     parashara_light_settings_aware_forensic_path: str | Path = "",
+    parashara_light_preferences_inventory_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
@@ -30,6 +31,7 @@ def build_witness_summary(
         visible_settings_capture_path=parashara_light_visible_settings_capture_path,
         calculation_options_report_path=parashara_light_calculation_options_report_path,
         settings_aware_forensic_path=parashara_light_settings_aware_forensic_path,
+        preferences_inventory_path=parashara_light_preferences_inventory_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -83,6 +85,7 @@ def _parashara_light_summary(
     visible_settings_capture_path: str | Path = "",
     calculation_options_report_path: str | Path = "",
     settings_aware_forensic_path: str | Path = "",
+    preferences_inventory_path: str | Path = "",
 ) -> dict[str, Any]:
     profile = _parashara_light_profile_summary(profile_report_path)
     forensic = _parashara_light_forensic_summary(forensic_report_path)
@@ -90,6 +93,7 @@ def _parashara_light_summary(
     visible_settings_capture = _parashara_light_visible_settings_capture_summary(visible_settings_capture_path)
     calculation_options = _parashara_light_calculation_options_summary(calculation_options_report_path)
     settings_aware_forensic = _parashara_light_settings_aware_forensic_summary(settings_aware_forensic_path)
+    preferences_inventory = _parashara_light_preferences_inventory_summary(preferences_inventory_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -110,6 +114,7 @@ def _parashara_light_summary(
             "visible_settings_capture": visible_settings_capture,
             "calculation_options": calculation_options,
             "settings_aware_forensic": settings_aware_forensic,
+            "preferences_inventory": preferences_inventory,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -131,6 +136,7 @@ def _parashara_light_summary(
         "visible_settings_capture": visible_settings_capture,
         "calculation_options": calculation_options,
         "settings_aware_forensic": settings_aware_forensic,
+        "preferences_inventory": preferences_inventory,
     }
 
 
@@ -477,6 +483,55 @@ def _missing_parashara_light_settings_aware_forensic(path: str) -> dict[str, Any
         "engine_swiss_status": "",
         "uniform_offset_status": "",
         "time_shift_status": "",
+        "next_action": "",
+    }
+
+
+def _parashara_light_preferences_inventory_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_preferences_inventory("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_preferences_inventory(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "error": str(exc),
+            "tabs_count": 0,
+            "visible_ayanamsha_controls": False,
+            "visible_graph_ephemeris_display_option": False,
+            "visible_system_paths": False,
+            "internal_ephemeris_mode_visible": False,
+            "next_action": "",
+        }
+
+    return {
+        "available": True,
+        "status": report.get("status", ""),
+        "source_report": str(source),
+        "tabs_count": int(report.get("tabs_count") or 0),
+        "visible_ayanamsha_controls": bool(report.get("visible_ayanamsha_controls")),
+        "visible_graph_ephemeris_display_option": bool(report.get("visible_graph_ephemeris_display_option")),
+        "visible_system_paths": bool(report.get("visible_system_paths")),
+        "internal_ephemeris_mode_visible": bool(report.get("internal_ephemeris_mode_visible")),
+        "next_action": report.get("next_action", ""),
+    }
+
+
+def _missing_parashara_light_preferences_inventory(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "tabs_count": 0,
+        "visible_ayanamsha_controls": False,
+        "visible_graph_ephemeris_display_option": False,
+        "visible_system_paths": False,
+        "internal_ephemeris_mode_visible": False,
         "next_action": "",
     }
 

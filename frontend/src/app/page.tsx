@@ -2619,6 +2619,7 @@ function AccuracyReportPanel({
   const plVisibleSettingsCapture = witnessSummary?.parashara_light.visible_settings_capture ?? null;
   const plCalculationOptions = witnessSummary?.parashara_light.calculation_options ?? null;
   const plSettingsAwareForensic = witnessSummary?.parashara_light.settings_aware_forensic ?? null;
+  const plPreferencesInventory = witnessSummary?.parashara_light.preferences_inventory ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2767,6 +2768,26 @@ function AccuracyReportPanel({
                   offset {plSettingsAwareForensic.uniform_offset_status || "n/a"}, time{" "}
                   {plSettingsAwareForensic.time_shift_status || "n/a"}
                 </small>
+              </div>
+            </div>
+          ) : null}
+          {plPreferencesInventory?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL preferences inventory</h3>
+              <div>
+                <span>Status</span>
+                <strong>{plPreferencesInventory.status || "captured"}</strong>
+                <small>{plPreferencesInventory.next_action || "review"}</small>
+              </div>
+              <div>
+                <span>Visible controls</span>
+                <strong>{plPreferencesInventory.visible_ayanamsha_controls ? "ayanamsha visible" : "ayanamsha missing"}</strong>
+                <small>{plPreferencesInventory.visible_system_paths ? "system paths visible" : "system paths missing"}</small>
+              </div>
+              <div>
+                <span>Ephemeris mode</span>
+                <strong>{plPreferencesInventory.internal_ephemeris_mode_visible ? "visible" : "not visible"}</strong>
+                <small>{plPreferencesInventory.tabs_count} tabs/states reviewed</small>
               </div>
             </div>
           ) : null}

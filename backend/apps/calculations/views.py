@@ -148,6 +148,11 @@ class WitnessSummaryView(APIView):
                     "PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH",
                     "",
                 ),
+                parashara_light_preferences_inventory_path=getattr(
+                    settings,
+                    "PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH",
+                    "",
+                ),
             )
         )
 

@@ -205,3 +205,7 @@ PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH = os.getenv(
     "PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-settings-aware-forensic.json"),
 )
+PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH = os.getenv(
+    "PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH",
+    str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-preferences-inventory.json"),
+)
