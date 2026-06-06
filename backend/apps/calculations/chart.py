@@ -159,6 +159,9 @@ def _offset_label(total_minutes: int) -> str:
 
 
 def _resolve_place_or_custom(data: dict[str, Any], place_name: str) -> PlaceCandidate:
+    if str(data.get("place_id") or "").strip() and _has_custom_place_data(data):
+        return _custom_place_from_input(data, place_name)
+
     try:
         return resolve_place(place_name)
     except PlaceNotFound as exc:
@@ -174,7 +177,7 @@ def _resolve_place_or_custom(data: dict[str, Any], place_name: str) -> PlaceCand
 def _custom_place_from_input(data: dict[str, Any], place_name: str) -> PlaceCandidate:
     name, admin_name, country_code = _parse_place_label(place_name)
     return PlaceCandidate(
-        id=str(data.get("place_id") or f"custom:{place_name}").strip(),
+        id=str(data.get("place_id") or "custom").strip(),
         name=name,
         admin_name=str(data.get("admin_name") or admin_name).strip(),
         country_code=str(data.get("country_code") or country_code).strip().upper(),

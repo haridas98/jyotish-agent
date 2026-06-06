@@ -71,6 +71,35 @@ def test_calculate_profile_chart_persists_positions_and_all_vargas():
 
 
 @pytest.mark.django_db
+def test_calculate_profile_chart_preserves_saved_place_external_id():
+    user = get_user_model().objects.create_user(username="place-user", password="strong-pass-108")
+    place = Place.objects.create(
+        external_id="custom:sterlitamak-1998",
+        name="Sterlitamak",
+        country_code="RU",
+        latitude=Decimal("53.630400"),
+        longitude=Decimal("55.930800"),
+        timezone_name="Asia/Yekaterinburg",
+        metadata={"label": "Sterlitamak, Bashkortostan, RU"},
+    )
+    profile = BirthProfile.objects.create(
+        user=user,
+        display_name="Saved place chart",
+        birth_date=date(1998, 4, 30),
+        birth_time=time(13, 45),
+        birth_time_accuracy=BirthProfile.TimeAccuracy.EXACT,
+        place=place,
+        timezone_name="Asia/Yekaterinburg",
+    )
+
+    calculation = calculate_profile_chart(profile, provider=FakeProvider())
+
+    assert calculation.status == calculation.Status.COMPLETE
+    assert calculation.input_snapshot["place_id"] == "custom:sterlitamak-1998"
+    assert calculation.result["place"]["id"] == "custom:sterlitamak-1998"
+
+
+@pytest.mark.django_db
 def test_calculate_profile_chart_uses_saved_calculation_settings():
     user = get_user_model().objects.create_user(username="settings-user", password="strong-pass-108")
     place = Place.objects.create(
