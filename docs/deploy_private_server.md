@@ -40,6 +40,29 @@ Then install nginx config, replace `jyotish.example.com`, enable site, and issue
 - For DeepSeek overview generation, run FreeDeepseekAPI and set `FREE_DEEPSEEK_API_BASE_URL` in the server `.env`, usually `http://127.0.0.1:9655/v1`.
 - After deploy, run `cd /srv/jyotish-agent/app/backend && ./.venv/bin/python manage.py smoke_free_deepseek` to verify server-side FreeDeepseekAPI access.
 
+## FreeDeepseekAPI service
+
+Install the proxy outside the app tree, then authenticate the DeepSeek Web session on the server:
+
+```bash
+git clone https://github.com/ForgetMeAI/FreeDeepseekAPI.git /opt/FreeDeepseekAPI
+cd /opt/FreeDeepseekAPI
+npm run auth
+```
+
+Then install the service template:
+
+```bash
+cp /srv/jyotish-agent/app/deploy/free-deepseek-api.service.example /etc/systemd/system/free-deepseek-api.service
+systemctl daemon-reload
+systemctl enable --now free-deepseek-api.service
+curl -fsS http://127.0.0.1:9655/health
+cd /srv/jyotish-agent/app/backend
+./.venv/bin/python manage.py smoke_free_deepseek
+```
+
+Do not commit `deepseek-auth.json`; it is a server-local browser session secret.
+
 ## Codex CLI analysis
 
 By default AI analysis path calls:
