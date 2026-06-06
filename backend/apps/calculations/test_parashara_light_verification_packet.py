@@ -177,3 +177,57 @@ def test_parashara_light_verification_packet_records_capture_file_fingerprints(t
     assert fingerprints["ui_state"]["bytes"] == len('{"source":"parashara_light_ui_state"}')
     assert fingerprints["screenshots"][0]["sha256"]
     assert fingerprints["screenshots"][0]["bytes"] == 3
+
+
+def test_build_manual_witness_template_command_reads_packet_chart(tmp_path):
+    packet_path = tmp_path / "packet.json"
+    output_path = tmp_path / "manual-values-template.json"
+    packet_path.write_text(
+        json.dumps(
+            {
+                "jyotish_agent_chart": {
+                    "ascendant": {
+                        "body": "Lagna",
+                        "longitude": 115.414369,
+                        "rashi": "Karka",
+                        "rashi_index": 3,
+                        "nakshatra": "Ashlesha",
+                        "pada": 3,
+                    },
+                    "grahas": [
+                        {
+                            "body": "Surya",
+                            "longitude": 15.942392,
+                            "rashi": "Mesha",
+                            "rashi_index": 0,
+                            "nakshatra": "Bharani",
+                            "pada": 1,
+                        }
+                    ],
+                    "houses": [
+                        {"house": 1, "rashi": "Karka", "rashi_index": 3},
+                        {"house": 10, "rashi": "Mesha", "rashi_index": 0},
+                    ],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    call_command(
+        "build_manual_witness_template",
+        "--packet",
+        str(packet_path),
+        "--source",
+        "pl7",
+        "--output",
+        str(output_path),
+    )
+
+    template = json.loads(output_path.read_text(encoding="utf-8"))
+    assert template[0]["source"] == "pl7"
+    assert template[0]["body"] == "Lagna"
+    assert template[0]["witness"]["status"] == "pending"
+    assert template[0]["calculated_reference"]["rashi"] == "Karka"
+    assert template[1]["body"] == "Surya"
+    assert template[1]["calculated_reference"]["house"] == 10

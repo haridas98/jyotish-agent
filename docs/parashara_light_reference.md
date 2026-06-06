@@ -72,6 +72,16 @@ This is a `draft` black-box witness packet. It does not mark PL values as verifi
 
 When PL exposes values through clickable text, copy/export or manual transcription, keep them in a private JSON array and pass it with `--manual-witness-values`.
 
+Create an editable template from the current packet:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_manual_witness_template `
+  --packet ..\.tmp\pl7\haridas-verification-packet\packet.json `
+  --source pl7 `
+  --output ..\.tmp\pl7\haridas-manual-values-template.json
+```
+
 Minimal format:
 
 ```json
@@ -79,25 +89,28 @@ Minimal format:
   {
     "source": "pl7",
     "body": "Lagna",
-    "rashi": "Karka",
-    "nakshatra": "Ashlesha",
-    "pada": 3,
-    "house": 1,
-    "longitude_dms": "25:24:52"
-  },
-  {
-    "source": "pl7",
-    "body": "Surya",
-    "rashi": "Mesha",
-    "nakshatra": "Bharani",
-    "pada": 1,
-    "house": 10,
-    "longitude_dms": "15:56:33"
+    "witness": {
+      "status": "pending",
+      "rashi": null,
+      "nakshatra": null,
+      "pada": null,
+      "house": null,
+      "longitude_dms": null,
+      "notes": ""
+    },
+    "calculated_reference": {
+      "rashi": "Karka",
+      "nakshatra": "Ashlesha",
+      "pada": 3,
+      "house": 1,
+      "longitude": 115.414369,
+      "longitude_dms": "25:24:51.73"
+    }
   }
 ]
 ```
 
-Supported fields for comparison: `body`, `rashi`, `nakshatra`, `pada`, `house`, `longitude` or `longitude_dms`. If `longitude_dms` is supplied with a `rashi`, it is treated as degrees inside that sign. The Accuracy tab shows `matched`, `diff_open`, `no_manual_values` or missing fields.
+Supported witness fields for comparison: `rashi`, `nakshatra`, `pada`, `house`, `longitude` or `longitude_dms`. Null or empty witness fields are skipped, so a fresh template does not create false diffs. If `longitude_dms` is supplied with a `rashi`, it is treated as degrees inside that sign. The Accuracy tab shows `matched`, `diff_open`, `no_manual_values` or missing fields.
 
 ## Next Capture Targets
 

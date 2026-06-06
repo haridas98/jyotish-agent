@@ -132,6 +132,52 @@ def test_manual_witness_values_compare_against_chart_fields():
     ]
 
 
+def test_manual_witness_template_uses_nested_empty_values_without_false_diffs():
+    from apps.calculations.manual_witness_comparison import (
+        compare_manual_witness_values,
+        manual_witness_template_from_chart,
+    )
+
+    chart = {
+        "ascendant": {
+            "body": "Lagna",
+            "longitude": 115.414369,
+            "rashi": "Karka",
+            "rashi_index": 3,
+            "nakshatra": "Ashlesha",
+            "pada": 3,
+        },
+        "grahas": [
+            {
+                "body": "Surya",
+                "longitude": 15.942392,
+                "rashi": "Mesha",
+                "rashi_index": 0,
+                "nakshatra": "Bharani",
+                "pada": 1,
+            },
+        ],
+        "houses": [
+            {"house": 1, "rashi": "Karka", "rashi_index": 3},
+            {"house": 10, "rashi": "Mesha", "rashi_index": 0},
+        ],
+    }
+
+    template = manual_witness_template_from_chart(chart, source="pl7")
+    template[1]["witness"]["rashi"] = "Vrishabha"
+
+    report = compare_manual_witness_values(chart, template)
+
+    assert template[0]["body"] == "Lagna"
+    assert template[0]["witness"]["rashi"] is None
+    assert template[0]["calculated_reference"]["rashi"] == "Karka"
+    assert template[1]["calculated_reference"]["house"] == 10
+    assert report["summary"]["manual_values_count"] == 2
+    assert report["summary"]["checked_count"] == 1
+    assert report["summary"]["failed_count"] == 1
+    assert report["diffs"][0]["field"] == "rashi"
+
+
 def test_packet_report_includes_manual_witness_comparison(tmp_path):
     from apps.calculations.parashara_light_packet_report import load_parashara_light_packet_report
 

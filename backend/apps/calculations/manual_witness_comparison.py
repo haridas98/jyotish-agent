@@ -31,6 +31,33 @@ BODY_ALIASES = {
 EXACT_FIELDS = ("rashi", "nakshatra", "pada", "house")
 
 
+def manual_witness_template_from_chart(chart: dict[str, Any], *, source: str = "pl7") -> list[dict[str, Any]]:
+    bodies = _chart_body_index(chart)
+    houses_by_rashi = _houses_by_rashi(chart)
+    rows: list[dict[str, Any]] = []
+    for body in ["Lagna", *[item.get("body") for item in chart.get("grahas") or [] if isinstance(item, dict)]]:
+        if not body or str(body) not in bodies:
+            continue
+        calculated = bodies[str(body)]
+        rows.append(
+            {
+                "source": source,
+                "body": str(body),
+                "witness": {
+                    "status": "pending",
+                    "rashi": None,
+                    "nakshatra": None,
+                    "pada": None,
+                    "house": None,
+                    "longitude_dms": None,
+                    "notes": "",
+                },
+                "calculated_reference": _calculated_reference(str(body), calculated, houses_by_rashi),
+            }
+        )
+    return rows
+
+
 def compare_manual_witness_values(
     chart: dict[str, Any],
     witness_values: list[dict[str, Any]],
@@ -60,7 +87,8 @@ def compare_manual_witness_values(
 
     for witness in values:
         source = str(witness.get("source") or "")
-        body = _normalize_body(witness.get("body"))
+        payload = _witness_payload(witness)
+        body = _normalize_body(witness.get("body") or payload.get("body"))
         calculated = bodies.get(body)
         if calculated is None:
             missing += 1
@@ -81,10 +109,10 @@ def compare_manual_witness_values(
         calculated_with_house["house"] = _calculated_house(body, calculated, houses_by_rashi)
 
         for field in EXACT_FIELDS:
-            if field not in witness:
+            if field not in payload or not _provided(payload.get(field)):
                 continue
             checked += 1
-            witness_value = witness.get(field)
+            witness_value = payload.get(field)
             calculated_value = calculated_with_house.get(field)
             if _normalize_exact(witness_value) == _normalize_exact(calculated_value):
                 passed += 1
@@ -100,7 +128,7 @@ def compare_manual_witness_values(
                 }
             )
 
-        witness_longitude = _witness_longitude(witness)
+        witness_longitude = _witness_longitude(payload)
         if witness_longitude is None:
             continue
         actual_longitude = _float_or_none(calculated.get("longitude"))
@@ -119,7 +147,7 @@ def compare_manual_witness_values(
             )
             continue
         checked += 1
-        tolerance = _float_or_none(witness.get("longitude_tolerance_arcseconds"))
+        tolerance = _float_or_none(payload.get("longitude_tolerance_arcseconds"))
         comparison = compare_longitude(
             body,
             expected_degrees=witness_longitude,
@@ -166,6 +194,32 @@ def _chart_body_index(chart: dict[str, Any]) -> dict[str, dict[str, Any]]:
         if isinstance(graha, dict) and graha.get("body"):
             bodies[str(graha["body"])] = graha
     return bodies
+
+
+def _calculated_reference(body: str, calculated: dict[str, Any], houses_by_rashi: dict[int, int]) -> dict[str, Any]:
+    longitude = _float_or_none(calculated.get("longitude"))
+    return {
+        "rashi": calculated.get("rashi"),
+        "nakshatra": calculated.get("nakshatra"),
+        "pada": calculated.get("pada"),
+        "house": _calculated_house(body, calculated, houses_by_rashi),
+        "longitude": round(longitude, 6) if longitude is not None else None,
+        "longitude_dms": _degrees_in_sign_dms(longitude) if longitude is not None else None,
+    }
+
+
+def _witness_payload(witness: dict[str, Any]) -> dict[str, Any]:
+    nested = witness.get("witness")
+    if isinstance(nested, dict):
+        return nested
+    manual = witness.get("manual")
+    if isinstance(manual, dict):
+        return manual
+    return witness
+
+
+def _provided(value: object) -> bool:
+    return value is not None and value != ""
 
 
 def _houses_by_rashi(chart: dict[str, Any]) -> dict[int, int]:
@@ -223,6 +277,15 @@ def _parse_dms(value: object) -> float | None:
     minutes = float(pieces[1]) if len(pieces) > 1 else 0.0
     seconds = float(pieces[2]) if len(pieces) > 2 else 0.0
     return degrees + minutes / 60.0 + seconds / 3600.0
+
+
+def _degrees_in_sign_dms(value: float) -> str:
+    degrees_in_sign = value % 30.0
+    degrees = int(degrees_in_sign)
+    minutes_float = (degrees_in_sign - degrees) * 60.0
+    minutes = int(minutes_float)
+    seconds = (minutes_float - minutes) * 60.0
+    return f"{degrees:02d}:{minutes:02d}:{seconds:05.2f}"
 
 
 def _rashi_index(row: dict[str, Any]) -> int | None:
