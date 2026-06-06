@@ -26,6 +26,6 @@
 | Compact JHora-like workspace | partial | Phase 2 | First pass implemented: dense tabs, compact rows, multi-varga snapshot, less vertical whitespace. More JHora screens still need capture. |
 | Dual calculation view | partial+ | Phase 2 | Backend endpoint and frontend compact panel show primary calculation, JHora-profile reproduction, settings diff, graha/varga/dasha/shadbala deltas, and authority decision. It still needs real JHora export fixtures. |
 | JHora screenshot inventory | partial | Phase 2 | Main JHora window captured locally; remaining tabs/screens still need systematic capture. |
-| Parashara Light witness inventory | started | Phase 2 | PL7 UI metadata capture command exists for the running `PL7.exe` session; Qt panes expose mostly generic `QWidget`, so PL artifacts are metadata/screenshot/manual-export witnesses until copyable tables are identified. |
+| Parashara Light witness inventory | packet-ready | Phase 2 | PL7 UI metadata/screenshot capture and verification-packet command exist for the running `PL7.exe` session. Qt panes expose mostly generic `QWidget`, so PL artifacts remain draft metadata/screenshot/manual-export witnesses until copyable tables are identified. |
 | Authoritative JHora fixtures | packet-ready | Phase 2 | Capture-packet command exists and Sterlitamak 1998 packet is generated locally; fixture becomes `jhora_verified` only after real export/screens/settings/reviewer are attached. |
 | Reports | partial | MVP | Citation-first, no free hallucination. |

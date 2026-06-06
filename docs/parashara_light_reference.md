@@ -29,6 +29,7 @@ The JSON includes:
 - `artifact_policy=private_audit_only_do_not_commit`;
 - screenshot path or `screenshot_error`;
 - `screenshot_blank` so black/empty PrintWindow captures are visible in review.
+- SHA256/byte fingerprints in the verification packet so UI JSON and screenshots cannot be mixed silently.
 
 If Pillow is not installed, metadata capture still succeeds and records `screenshot_error`. Keep `.tmp/pl7/` out of git.
 
@@ -36,6 +37,35 @@ Current local smoke artifact:
 
 - `.tmp/pl7/haridas-ui-state.json`;
 - `.tmp/pl7/haridas-ui-state.png` - verified nonblank PL7 birth chart screenshot.
+
+## Verification Packet
+
+Build a PL witness packet from the UI-state JSON, screenshots and the same birth input used by the app:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_parashara_light_verification_packet `
+  --id pl7-haridas-1998 `
+  --birth-date 1998-04-30 `
+  --birth-time 13:45:00 `
+  --place-name Sterlitamak `
+  --timezone Asia/Yekaterinburg `
+  --timezone-offset +06:00 `
+  --latitude 53.6304 `
+  --longitude 55.9502 `
+  --pl-ui-state ..\.tmp\pl7\haridas-ui-state.json `
+  --screenshot ..\.tmp\pl7\haridas-ui-state.png `
+  --output-dir ..\.tmp\pl7\haridas-verification-packet
+```
+
+Current local packet smoke:
+
+- `.tmp/pl7/haridas-verification-packet/packet.json`;
+- `.tmp/pl7/haridas-verification-packet/fixture.json`;
+- `.tmp/pl7/haridas-verification-packet/jyotish-agent-chart.json`;
+- `.tmp/pl7/haridas-verification-packet/pl-capture-checklist.md`.
+
+This is a `draft` black-box witness packet. It does not mark PL values as verified and does not parse proprietary internals.
 
 ## Next Capture Targets
 
