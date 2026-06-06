@@ -60,6 +60,20 @@ cd C:\Projects\jyotish-agent\backend
   --output-dir ..\.tmp\jhora\sterlitamak-1998
 ```
 
+For copied/clicked JHora values that are not part of a full export yet, use the shared manual witness flow:
+
+```powershell
+.\.venv\Scripts\python manage.py build_manual_witness_template `
+  --packet .tmp\jhora\sterlitamak-1998\verification-packet\packet.json `
+  --source jhora `
+  --output .tmp\jhora\sterlitamak-1998\manual-values-template.json
+
+.\.venv\Scripts\python manage.py compare_manual_witness_values `
+  --packet .tmp\jhora\sterlitamak-1998\verification-packet\packet.json `
+  --manual-witness-values .tmp\jhora\sterlitamak-1998\manual-values-template.json `
+  --output .tmp\jhora\sterlitamak-1998\manual-witness-report.json
+```
+
 ## Required Metadata
 
 Each fixture must include:

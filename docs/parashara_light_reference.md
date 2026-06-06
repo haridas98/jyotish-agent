@@ -112,6 +112,16 @@ Minimal format:
 
 Supported witness fields for comparison: `rashi`, `nakshatra`, `pada`, `house`, `longitude` or `longitude_dms`. Null or empty witness fields are skipped, so a fresh template does not create false diffs. If `longitude_dms` is supplied with a `rashi`, it is treated as degrees inside that sign. The Accuracy tab shows `matched`, `diff_open`, `no_manual_values` or missing fields.
 
+Compare the filled file without rebuilding the packet:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py compare_manual_witness_values `
+  --packet ..\.tmp\pl7\haridas-verification-packet\packet.json `
+  --manual-witness-values ..\.tmp\pl7\haridas-manual-values-template.json `
+  --output ..\.tmp\pl7\haridas-manual-witness-report.json
+```
+
 ## Next Capture Targets
 
 - Birth data/settings screen: date, time, timezone, coordinates, ayanamsa, nodes, house system.

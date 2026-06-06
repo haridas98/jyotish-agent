@@ -231,3 +231,61 @@ def test_build_manual_witness_template_command_reads_packet_chart(tmp_path):
     assert template[0]["calculated_reference"]["rashi"] == "Karka"
     assert template[1]["body"] == "Surya"
     assert template[1]["calculated_reference"]["house"] == 10
+
+
+def test_compare_manual_witness_values_command_writes_diff_report(tmp_path):
+    packet_path = tmp_path / "packet.json"
+    manual_values_path = tmp_path / "manual-values.json"
+    output_path = tmp_path / "manual-witness-report.json"
+    packet_path.write_text(
+        json.dumps(
+            {
+                "jyotish_agent_chart": {
+                    "ascendant": {"body": "Lagna", "rashi": "Karka", "rashi_index": 3},
+                    "grahas": [{"body": "Surya", "rashi": "Mesha", "rashi_index": 0}],
+                    "houses": [
+                        {"house": 1, "rashi": "Karka", "rashi_index": 3},
+                        {"house": 10, "rashi": "Mesha", "rashi_index": 0},
+                    ],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    manual_values_path.write_text(
+        json.dumps(
+            [
+                {
+                    "source": "jhora",
+                    "body": "Surya",
+                    "witness": {"rashi": "Vrishabha", "house": 10},
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    call_command(
+        "compare_manual_witness_values",
+        "--packet",
+        str(packet_path),
+        "--manual-witness-values",
+        str(manual_values_path),
+        "--output",
+        str(output_path),
+    )
+
+    report = json.loads(output_path.read_text(encoding="utf-8"))
+    assert report["status"] == "diff_open"
+    assert report["summary"]["checked_count"] == 2
+    assert report["summary"]["failed_count"] == 1
+    assert report["diffs"] == [
+        {
+            "source": "jhora",
+            "body": "Surya",
+            "field": "rashi",
+            "witness": "Vrishabha",
+            "calculated": "Mesha",
+            "passed": False,
+        }
+    ]
