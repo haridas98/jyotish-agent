@@ -144,6 +144,7 @@ Current Haridas PL witness status:
 - Failed PL fields: Surya longitude, Mangala longitude, Budha pada/longitude, Guru longitude, Shukra longitude.
 - Swiss forensic dump: `.tmp/pl7/swiss-raw-vs-engine-vs-pl7-screenshot.json`.
 - Current finding: jyotish-agent graha longitudes match direct Swiss Lahiri sidereal output exactly for this input. The repeatable forensic command reports `engine_swiss_diff_count=0`, `pl_diff_count=5` for longitudes, and `conclusion=engine_matches_swiss_pl_profile_diff_open`; the sixth manual diff is Mercury pada caused by the longitude crossing the Revati pada boundary. The next audit target is PL7 calculation/profile settings rather than the local Swiss wrapper.
+- The same forensic dump now rejects simple global offset and time-shift hypotheses: `uniform_offset.status=rejected`, `time_shift.status=rejected`, `next_action=capture_parashara_light_profile_settings`.
 
 ## Next Capture Targets
 

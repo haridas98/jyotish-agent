@@ -55,6 +55,7 @@ def build_parashara_light_forensic_dump(
                 "body": body,
                 "swiss_tropical": _round_or_none(swiss.get("tropical")),
                 "swiss_lahiri_sidereal": round(swiss_sidereal, 9),
+                "swiss_sidereal_speed_deg_per_day": _round_or_none(swiss.get("sidereal_speed")),
                 "engine_longitude": round(engine_longitude, 9),
                 "pl_witness_longitude": round(pl_longitude, 9),
                 "engine_minus_swiss_arcsec": round(engine_minus_swiss, 6),
@@ -84,6 +85,7 @@ def build_parashara_light_forensic_dump(
             "pl_engine_max_abs_arcsec": round(max(pl_engine_abs, default=0.0), 6),
             "conclusion": _conclusion(engine_swiss_diff_count, pl_diff_count),
         },
+        "diagnostics": _diagnostics(rows, tolerance_arcseconds=tolerance_arcseconds),
         "rows": rows,
     }
 
@@ -129,12 +131,17 @@ def _direct_swiss_lahiri_longitudes(chart: dict[str, Any]) -> dict[str, dict[str
     }
     flags = swe.FLG_SWIEPH | swe.FLG_SPEED
     for body, body_id in body_ids.items():
-        tropical = swe.calc_ut(jd_ut, body_id, flags)[0][0] % 360.0
-        sidereal = swe.calc_ut(jd_ut, body_id, flags | swe.FLG_SIDEREAL)[0][0] % 360.0
-        output[body] = {"tropical": tropical, "sidereal": sidereal}
+        tropical_row = swe.calc_ut(jd_ut, body_id, flags)[0]
+        sidereal_row = swe.calc_ut(jd_ut, body_id, flags | swe.FLG_SIDEREAL)[0]
+        output[body] = {
+            "tropical": tropical_row[0] % 360.0,
+            "sidereal": sidereal_row[0] % 360.0,
+            "sidereal_speed": sidereal_row[3],
+        }
     output["Ketu"] = {
         "tropical": (output["Rahu"]["tropical"] + 180.0) % 360.0,
         "sidereal": (output["Rahu"]["sidereal"] + 180.0) % 360.0,
+        "sidereal_speed": output["Rahu"]["sidereal_speed"],
     }
     return output
 
@@ -158,3 +165,94 @@ def _conclusion(engine_swiss_diff_count: int, pl_diff_count: int) -> str:
     if pl_diff_count == 0:
         return "matched"
     return "pl_profile_diff_open"
+
+
+def _diagnostics(rows: list[dict[str, Any]], *, tolerance_arcseconds: float) -> dict[str, Any]:
+    observed = [float(row["pl_minus_engine_arcsec"]) for row in rows]
+    uniform = _uniform_offset_diagnostic(observed, tolerance_arcseconds=tolerance_arcseconds)
+    time_shift = _time_shift_diagnostic(rows, tolerance_arcseconds=tolerance_arcseconds)
+    return {
+        "uniform_offset": uniform,
+        "time_shift": time_shift,
+        "next_action": _next_action(uniform, time_shift),
+    }
+
+
+def _uniform_offset_diagnostic(
+    observed_arcseconds: list[float],
+    *,
+    tolerance_arcseconds: float,
+) -> dict[str, Any]:
+    if not observed_arcseconds:
+        return {"status": "insufficient_data", "reason": "no observed PL deltas"}
+    mean = sum(observed_arcseconds) / len(observed_arcseconds)
+    residuals = [value - mean for value in observed_arcseconds]
+    max_residual = max(abs(value) for value in residuals)
+    return {
+        "status": "rejected" if max_residual > tolerance_arcseconds else "possible",
+        "mean_offset_arcsec": round(mean, 6),
+        "max_residual_arcsec": round(max_residual, 6),
+        "tolerance_arcseconds": tolerance_arcseconds,
+    }
+
+
+def _time_shift_diagnostic(
+    rows: list[dict[str, Any]],
+    *,
+    tolerance_arcseconds: float,
+) -> dict[str, Any]:
+    usable = []
+    for row in rows:
+        speed = _float_or_none(row.get("swiss_sidereal_speed_deg_per_day"))
+        if speed is None or abs(speed) < 1e-9:
+            continue
+        observed = float(row["pl_minus_engine_arcsec"])
+        speed_arcsec_per_second = speed * 3600.0 / 86400.0
+        usable.append(
+            {
+                "body": row["body"],
+                "observed_arcsec": observed,
+                "speed_arcsec_per_second": speed_arcsec_per_second,
+                "inferred_seconds": observed / speed_arcsec_per_second,
+            }
+        )
+    if len(usable) < 2:
+        return {"status": "insufficient_data", "reason": "need at least two body speeds"}
+    inferred = sorted(item["inferred_seconds"] for item in usable)
+    mid = len(inferred) // 2
+    median_seconds = inferred[mid] if len(inferred) % 2 else (inferred[mid - 1] + inferred[mid]) / 2.0
+    residuals = [
+        item["observed_arcsec"] - item["speed_arcsec_per_second"] * median_seconds
+        for item in usable
+    ]
+    max_residual = max(abs(value) for value in residuals)
+    return {
+        "status": "rejected" if max_residual > tolerance_arcseconds else "possible",
+        "median_inferred_seconds": round(median_seconds, 6),
+        "max_residual_arcsec": round(max_residual, 6),
+        "tolerance_arcseconds": tolerance_arcseconds,
+        "samples": [
+            {
+                "body": item["body"],
+                "inferred_seconds": round(item["inferred_seconds"], 6),
+            }
+            for item in usable
+        ],
+    }
+
+
+def _next_action(uniform: dict[str, Any], time_shift: dict[str, Any]) -> str:
+    if uniform.get("status") == "rejected" and time_shift.get("status") == "rejected":
+        return "capture_parashara_light_profile_settings"
+    if uniform.get("status") == "possible":
+        return "verify_parashara_light_ayanamsa_value"
+    if time_shift.get("status") == "possible":
+        return "verify_parashara_light_birth_time_timezone"
+    return "capture_parashara_light_profile_settings"
+
+
+def _float_or_none(value: object) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
