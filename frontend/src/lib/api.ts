@@ -618,6 +618,7 @@ export type ParasharaLightPacketReport = {
   status: string;
   source_packet: string;
   checklist_count: number;
+  manual_witness_source: string;
   manual_witness_comparison: {
     status: string;
     summary: {

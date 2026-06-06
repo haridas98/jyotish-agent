@@ -102,8 +102,14 @@ class ParasharaLightPacketReportView(APIView):
         path = getattr(settings, "PARASHARA_LIGHT_PACKET_PATH", "")
         if not path:
             path = settings.ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"
+        manual_witness_values_path = getattr(settings, "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH", "")
         try:
-            return Response(load_parashara_light_packet_report(path))
+            return Response(
+                load_parashara_light_packet_report(
+                    path,
+                    manual_witness_values_path=manual_witness_values_path,
+                )
+            )
         except FileNotFoundError:
             return Response({"error": "Parashara Light verification packet is not captured yet"}, status=404)
 

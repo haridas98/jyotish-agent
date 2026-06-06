@@ -122,6 +122,8 @@ cd C:\Projects\jyotish-agent\backend
   --output ..\.tmp\pl7\haridas-manual-witness-report.json
 ```
 
+The Accuracy tab reads this file through `PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH`. If the file is absent, the backend falls back to `fixture.manual_witness_values` inside the packet.
+
 ## Next Capture Targets
 
 - Birth data/settings screen: date, time, timezone, coordinates, ayanamsa, nodes, house system.

@@ -2763,6 +2763,10 @@ function AccuracyReportPanel({
                 <span>Status</span>
                 <strong>{manualComparison?.status ?? "no_manual_values"}</strong>
               </div>
+              <div>
+                <span>Source</span>
+                <strong>{plReport.manual_witness_source || "none"}</strong>
+              </div>
               {manualComparison?.diffs.slice(0, 4).map((diff) => (
                 <div key={`${diff.source}-${diff.body}-${diff.field}`}>
                   <span>{diff.body}.{diff.field}</span>

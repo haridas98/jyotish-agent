@@ -177,3 +177,7 @@ PARASHARA_LIGHT_PACKET_PATH = os.getenv(
     "PARASHARA_LIGHT_PACKET_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"),
 )
+PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = os.getenv(
+    "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH",
+    str(ROOT_DIR / ".tmp" / "pl7" / "haridas-manual-values-template.json"),
+)

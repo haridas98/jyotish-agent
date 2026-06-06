@@ -7,7 +7,11 @@ from typing import Any
 from .manual_witness_comparison import compare_manual_witness_values
 
 
-def load_parashara_light_packet_report(path: str | Path) -> dict[str, Any]:
+def load_parashara_light_packet_report(
+    path: str | Path,
+    *,
+    manual_witness_values_path: str | Path = "",
+) -> dict[str, Any]:
     source = Path(path)
     packet = json.loads(source.read_text(encoding="utf-8-sig"))
     fixture = packet.get("fixture") if isinstance(packet.get("fixture"), dict) else {}
@@ -15,9 +19,7 @@ def load_parashara_light_packet_report(path: str | Path) -> dict[str, Any]:
     capture_files = fixture.get("capture_files") if isinstance(fixture.get("capture_files"), dict) else {}
     chart = packet.get("jyotish_agent_chart") if isinstance(packet.get("jyotish_agent_chart"), dict) else {}
     ascendant = chart.get("ascendant") if isinstance(chart.get("ascendant"), dict) else {}
-    manual_values = fixture.get("manual_witness_values")
-    if not isinstance(manual_values, list):
-        manual_values = []
+    manual_values, manual_witness_source = _manual_witness_values(fixture, manual_witness_values_path)
     manual_witness_comparison = compare_manual_witness_values(chart, manual_values)
 
     summary = {
@@ -39,7 +41,25 @@ def load_parashara_light_packet_report(path: str | Path) -> dict[str, Any]:
         "id": packet.get("id", ""),
         "status": packet.get("status", ""),
         "summary": summary,
+        "manual_witness_source": manual_witness_source,
         "manual_witness_comparison": manual_witness_comparison,
         "checklist_count": len(packet.get("pl_capture_checklist") or []),
         "source_packet": str(source),
     }
+
+
+def _manual_witness_values(
+    fixture: dict[str, Any],
+    manual_witness_values_path: str | Path,
+) -> tuple[list[dict[str, Any]], str]:
+    if manual_witness_values_path:
+        source = Path(manual_witness_values_path)
+        if source.exists():
+            data = json.loads(source.read_text(encoding="utf-8-sig"))
+            if isinstance(data, list):
+                return [row for row in data if isinstance(row, dict)], str(source)
+
+    fixture_values = fixture.get("manual_witness_values")
+    if isinstance(fixture_values, list):
+        return [row for row in fixture_values if isinstance(row, dict)], "fixture.manual_witness_values"
+    return [], "none"

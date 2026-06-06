@@ -216,6 +216,129 @@ def test_packet_report_includes_manual_witness_comparison(tmp_path):
     assert report["manual_witness_comparison"]["diffs"][0]["body"] == "Surya"
 
 
+def test_packet_report_prefers_external_manual_witness_values_file(tmp_path):
+    from apps.calculations.parashara_light_packet_report import load_parashara_light_packet_report
+
+    packet_path = tmp_path / "packet.json"
+    manual_values_path = tmp_path / "manual-values.json"
+    packet_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-parashara-light-verification-packet-v1",
+                "id": "pl7-external-values",
+                "status": "pl_ui_state_captured",
+                "fixture": {
+                    "review_status": "draft",
+                    "pl_metadata": {},
+                    "capture_files": {"screenshots": []},
+                    "manual_witness_values": [
+                        {"source": "pl7", "body": "Surya", "rashi": "Mesha"},
+                    ],
+                },
+                "pl_capture_checklist": [],
+                "jyotish_agent_chart": {
+                    "ascendant": {"body": "Lagna", "rashi": "Karka", "rashi_index": 3},
+                    "grahas": [{"body": "Surya", "rashi": "Mesha", "rashi_index": 0}],
+                    "houses": [{"house": 10, "rashi": "Mesha", "rashi_index": 0}],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    manual_values_path.write_text(
+        json.dumps(
+            [
+                {"source": "pl7", "body": "Surya", "witness": {"rashi": "Vrishabha", "house": 10}},
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    report = load_parashara_light_packet_report(
+        packet_path,
+        manual_witness_values_path=manual_values_path,
+    )
+
+    assert report["summary"]["manual_values_count"] == 1
+    assert report["summary"]["manual_failed_count"] == 1
+    assert report["manual_witness_source"] == str(manual_values_path)
+    assert report["manual_witness_comparison"]["diffs"][0]["witness"] == "Vrishabha"
+
+
+def test_packet_report_falls_back_to_fixture_when_external_manual_values_missing(tmp_path):
+    from apps.calculations.parashara_light_packet_report import load_parashara_light_packet_report
+
+    packet_path = tmp_path / "packet.json"
+    packet_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-parashara-light-verification-packet-v1",
+                "id": "pl7-fixture-values",
+                "status": "pl_ui_state_captured",
+                "fixture": {
+                    "review_status": "draft",
+                    "pl_metadata": {},
+                    "capture_files": {"screenshots": []},
+                    "manual_witness_values": [
+                        {"source": "pl7", "body": "Surya", "rashi": "Mesha"},
+                    ],
+                },
+                "pl_capture_checklist": [],
+                "jyotish_agent_chart": {
+                    "grahas": [{"body": "Surya", "rashi": "Mesha", "rashi_index": 0}],
+                    "houses": [{"house": 10, "rashi": "Mesha", "rashi_index": 0}],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = load_parashara_light_packet_report(
+        packet_path,
+        manual_witness_values_path=tmp_path / "missing.json",
+    )
+
+    assert report["manual_witness_source"] == "fixture.manual_witness_values"
+    assert report["manual_witness_comparison"]["status"] == "matched"
+
+
+def test_parashara_light_packet_report_api_reads_configured_manual_values(settings, tmp_path):
+    packet_path = tmp_path / "packet.json"
+    manual_values_path = tmp_path / "manual-values.json"
+    packet_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-parashara-light-verification-packet-v1",
+                "id": "pl7-api-external-values",
+                "status": "pl_ui_state_captured",
+                "fixture": {
+                    "review_status": "draft",
+                    "pl_metadata": {},
+                    "capture_files": {"screenshots": []},
+                },
+                "pl_capture_checklist": [],
+                "jyotish_agent_chart": {
+                    "grahas": [{"body": "Surya", "rashi": "Mesha", "rashi_index": 0}],
+                    "houses": [{"house": 10, "rashi": "Mesha", "rashi_index": 0}],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    manual_values_path.write_text(
+        json.dumps([{"source": "pl7", "body": "Surya", "witness": {"rashi": "Vrishabha"}}]),
+        encoding="utf-8",
+    )
+    settings.PARASHARA_LIGHT_PACKET_PATH = packet_path
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = manual_values_path
+
+    response = APIClient().get(reverse("parashara-light-packet"))
+
+    assert response.status_code == 200
+    assert response.data["manual_witness_source"] == str(manual_values_path)
+    assert response.data["manual_witness_comparison"]["summary"]["failed_count"] == 1
+
+
 def test_parashara_light_packet_report_api_reads_configured_packet(settings, tmp_path):
     path = tmp_path / "packet.json"
     path.write_text(
