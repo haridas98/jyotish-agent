@@ -28,6 +28,7 @@ def build_parashara_light_verification_packet(
     pl_ui_state: dict[str, Any] | None = None,
     pl_ui_state_path: str = "",
     screenshot_paths: list[str] | None = None,
+    manual_witness_values: list[dict[str, Any]] | None = None,
     reviewer: str = "",
     reviewed_at: str = "",
     pl_version: str = "7.0.1",
@@ -41,6 +42,7 @@ def build_parashara_light_verification_packet(
         packet_id=packet_id,
         pl_ui_state_path=pl_ui_state_path,
         screenshot_paths=screenshot_paths or [],
+        manual_witness_values=manual_witness_values or [],
         reviewer=reviewer,
         reviewed_at=reviewed_at,
         pl_version=pl_version,
@@ -110,6 +112,7 @@ def _fixture_payload(
     packet_id: str,
     pl_ui_state_path: str,
     screenshot_paths: list[str],
+    manual_witness_values: list[dict[str, Any]],
     reviewer: str,
     reviewed_at: str,
     pl_version: str,
@@ -152,6 +155,7 @@ def _fixture_payload(
                 "screenshots": [_file_fingerprint(path) for path in screenshot_paths],
             },
         },
+        "manual_witness_values": manual_witness_values,
         "pl_expected": _pl_expected_payload(pl_ui_state),
     }
 

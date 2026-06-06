@@ -55,6 +55,7 @@ cd C:\Projects\jyotish-agent\backend
   --longitude 55.9502 `
   --pl-ui-state ..\.tmp\pl7\haridas-ui-state.json `
   --screenshot ..\.tmp\pl7\haridas-ui-state.png `
+  --manual-witness-values ..\.tmp\pl7\haridas-manual-values.json `
   --output-dir ..\.tmp\pl7\haridas-verification-packet
 ```
 
@@ -66,6 +67,37 @@ Current local packet smoke:
 - `.tmp/pl7/haridas-verification-packet/pl-capture-checklist.md`.
 
 This is a `draft` black-box witness packet. It does not mark PL values as verified and does not parse proprietary internals.
+
+## Manual Witness Values
+
+When PL exposes values through clickable text, copy/export or manual transcription, keep them in a private JSON array and pass it with `--manual-witness-values`.
+
+Minimal format:
+
+```json
+[
+  {
+    "source": "pl7",
+    "body": "Lagna",
+    "rashi": "Karka",
+    "nakshatra": "Ashlesha",
+    "pada": 3,
+    "house": 1,
+    "longitude_dms": "25:24:52"
+  },
+  {
+    "source": "pl7",
+    "body": "Surya",
+    "rashi": "Mesha",
+    "nakshatra": "Bharani",
+    "pada": 1,
+    "house": 10,
+    "longitude_dms": "15:56:33"
+  }
+]
+```
+
+Supported fields for comparison: `body`, `rashi`, `nakshatra`, `pada`, `house`, `longitude` or `longitude_dms`. If `longitude_dms` is supplied with a `rashi`, it is treated as degrees inside that sign. The Accuracy tab shows `matched`, `diff_open`, `no_manual_values` or missing fields.
 
 ## Next Capture Targets
 

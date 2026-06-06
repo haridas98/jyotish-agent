@@ -36,12 +36,14 @@ class Command(BaseCommand):
         parser.add_argument("--pl-version", default="7.0.1")
         parser.add_argument("--pl-ui-state", default="")
         parser.add_argument("--screenshot", action="append", default=[])
+        parser.add_argument("--manual-witness-values", default="")
         parser.add_argument("--reviewer", default="")
         parser.add_argument("--reviewed-at", default="")
         parser.add_argument("--output-dir", required=True)
 
     def handle(self, *args, **options):
         pl_ui_state = _read_optional_json(options["pl_ui_state"])
+        manual_witness_values = _read_optional_json_list(options["manual_witness_values"])
         birth_input = {
             "birth_date": options["birth_date"],
             "birth_time": options["birth_time"],
@@ -67,6 +69,7 @@ class Command(BaseCommand):
             pl_ui_state=pl_ui_state,
             pl_ui_state_path=options["pl_ui_state"],
             screenshot_paths=options["screenshot"],
+            manual_witness_values=manual_witness_values,
             reviewer=options["reviewer"],
             reviewed_at=options["reviewed_at"],
             pl_version=options["pl_version"],
@@ -82,3 +85,15 @@ def _read_optional_json(path: str):
     if not source.exists():
         raise CommandError(f"Parashara's Light UI state file not found: {path}")
     return json.loads(source.read_text(encoding="utf-8"))
+
+
+def _read_optional_json_list(path: str):
+    if not path:
+        return []
+    source = Path(path)
+    if not source.exists():
+        raise CommandError(f"Manual witness values file not found: {path}")
+    data = json.loads(source.read_text(encoding="utf-8"))
+    if not isinstance(data, list):
+        raise CommandError("Manual witness values file must contain a JSON array")
+    return data

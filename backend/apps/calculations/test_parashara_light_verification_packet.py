@@ -56,6 +56,10 @@ def test_build_parashara_light_verification_packet_keeps_pl_witness_draft():
         },
         pl_ui_state_path=".tmp/pl7/haridas-ui-state.json",
         screenshot_paths=[".tmp/pl7/haridas-ui-state.png"],
+        manual_witness_values=[
+            {"source": "pl7", "body": "Lagna", "rashi": "Karka", "house": 1},
+            {"source": "pl7", "body": "Surya", "rashi": "Mesha", "house": 10},
+        ],
         provider=PacketProvider(),
     )
 
@@ -67,12 +71,15 @@ def test_build_parashara_light_verification_packet_keeps_pl_witness_draft():
     assert packet["fixture"]["pl_metadata"]["screenshot_blank"] is False
     assert packet["fixture"]["capture_files"]["screenshots"] == [".tmp/pl7/haridas-ui-state.png"]
     assert packet["fixture"]["pl_expected"]["ui_state"]["artifact_policy"] == "private_audit_only_do_not_commit"
+    assert packet["fixture"]["manual_witness_values"][0]["body"] == "Lagna"
+    assert packet["fixture"]["manual_witness_values"][1]["house"] == 10
     assert packet["jyotish_agent_chart"]["ascendant"]["rashi"] == "Karka"
     assert "PL settings" in packet["pl_capture_checklist"][-1]
 
 
 def test_build_parashara_light_verification_packet_command_writes_packet_files(monkeypatch, tmp_path):
     ui_state_path = tmp_path / "pl-ui-state.json"
+    manual_values_path = tmp_path / "manual-values.json"
     output_dir = tmp_path / "packet"
     ui_state_path.write_text(
         json.dumps(
@@ -83,6 +90,10 @@ def test_build_parashara_light_verification_packet_command_writes_packet_files(m
                 "screenshot_blank": False,
             }
         ),
+        encoding="utf-8",
+    )
+    manual_values_path.write_text(
+        json.dumps([{"source": "pl7", "body": "Lagna", "rashi": "Karka"}]),
         encoding="utf-8",
     )
 
@@ -96,6 +107,7 @@ def test_build_parashara_light_verification_packet_command_writes_packet_files(m
                 "id": kwargs["packet_id"],
                 "review_status": "draft",
                 "pl_metadata": {"version_required": kwargs["pl_version"]},
+                "manual_witness_values": kwargs["manual_witness_values"],
             },
             "jyotish_agent_chart": {"birth": {"date": data["birth_date"]}},
             "pl_capture_checklist": ["Capture PL settings"],
@@ -122,12 +134,15 @@ def test_build_parashara_light_verification_packet_command_writes_packet_files(m
         str(ui_state_path),
         "--screenshot",
         ".tmp/pl7/haridas-ui-state.png",
+        "--manual-witness-values",
+        str(manual_values_path),
         "--output-dir",
         str(output_dir),
     )
 
     fixture = json.loads((output_dir / "fixture.json").read_text(encoding="utf-8"))
     assert fixture["review_status"] == "draft"
+    assert fixture["manual_witness_values"] == [{"source": "pl7", "body": "Lagna", "rashi": "Karka"}]
     assert (output_dir / "packet.json").exists()
     assert "Capture PL settings" in (output_dir / "pl-capture-checklist.md").read_text(encoding="utf-8")
 

@@ -2600,6 +2600,7 @@ function AccuracyReportPanel({
   const groups = report?.summary.exact_groups ?? [];
   const layers = report ? Object.entries(report.summary.jhora_layers) : [];
   const plSummary = plReport?.summary ?? null;
+  const manualComparison = plReport?.manual_witness_comparison ?? null;
   const screenshotFingerprint = plSummary?.fingerprints.screenshots?.[0];
 
   return (
@@ -2716,6 +2717,14 @@ function AccuracyReportPanel({
               <span>Lagna</span>
               <strong>{plSummary.jyotish_agent_lagna || "unknown"}</strong>
             </div>
+            <div>
+              <span>Manual values</span>
+              <strong>{manualComparison?.summary.manual_values_count ?? 0}</strong>
+            </div>
+            <div>
+              <span>Manual diff</span>
+              <strong>{manualComparison?.summary.failed_count ?? 0}</strong>
+            </div>
           </div>
           <div className="accuracy-columns">
             <div className="accuracy-list">
@@ -2747,6 +2756,20 @@ function AccuracyReportPanel({
                 <strong>{shortHash(screenshotFingerprint?.sha256)}</strong>
                 {screenshotFingerprint?.bytes ? <small>{screenshotFingerprint.bytes} bytes</small> : null}
               </div>
+            </div>
+            <div className="accuracy-list">
+              <h3>Manual witness</h3>
+              <div>
+                <span>Status</span>
+                <strong>{manualComparison?.status ?? "no_manual_values"}</strong>
+              </div>
+              {manualComparison?.diffs.slice(0, 4).map((diff) => (
+                <div key={`${diff.source}-${diff.body}-${diff.field}`}>
+                  <span>{diff.body}.{diff.field}</span>
+                  <strong>{String(diff.witness)} / {String(diff.calculated)}</strong>
+                  {diff.delta_arcseconds ? <small>{diff.delta_arcseconds.toFixed(2)}"</small> : null}
+                </div>
+              ))}
             </div>
             <div className="accuracy-list">
               <h3>Checklist</h3>
@@ -2938,7 +2961,13 @@ export default function Home() {
       .then((report) => {
         if (cancelled) return;
         setPlPacketReport(report);
-        setPlPacketStatus(report.summary.screenshot_blank ? "PL screenshot требует пересъёмки" : "PL packet загружен");
+        if (report.summary.screenshot_blank) {
+          setPlPacketStatus("PL screenshot требует пересъёмки");
+        } else if (report.manual_witness_comparison.status === "diff_open") {
+          setPlPacketStatus("PL manual diff открыт");
+        } else {
+          setPlPacketStatus("PL packet загружен");
+        }
       })
       .catch((error) => {
         if (cancelled) return;

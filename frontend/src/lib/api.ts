@@ -618,6 +618,27 @@ export type ParasharaLightPacketReport = {
   status: string;
   source_packet: string;
   checklist_count: number;
+  manual_witness_comparison: {
+    status: string;
+    summary: {
+      manual_values_count: number;
+      checked_count: number;
+      passed_count: number;
+      failed_count: number;
+      missing_count: number;
+    };
+    diffs: Array<{
+      source: string;
+      body: string;
+      field: string;
+      witness: string | number | boolean | null;
+      calculated: string | number | boolean | null;
+      delta_arcseconds?: number;
+      tolerance_arcseconds?: number;
+      passed: boolean;
+      missing?: boolean;
+    }>;
+  };
   summary: {
     review_status: string;
     capture_status: string;
@@ -642,6 +663,8 @@ export type ParasharaLightPacketReport = {
       }>;
     };
     jyotish_agent_lagna: string;
+    manual_values_count: number;
+    manual_failed_count: number;
   };
 };
 
