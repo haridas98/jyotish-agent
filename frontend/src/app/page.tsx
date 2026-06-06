@@ -2618,6 +2618,7 @@ function AccuracyReportPanel({
   const plSettingsEvidence = witnessSummary?.parashara_light.settings_evidence ?? null;
   const plVisibleSettingsCapture = witnessSummary?.parashara_light.visible_settings_capture ?? null;
   const plCalculationOptions = witnessSummary?.parashara_light.calculation_options ?? null;
+  const plSettingsAwareForensic = witnessSummary?.parashara_light.settings_aware_forensic ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2743,6 +2744,29 @@ function AccuracyReportPanel({
                 <span>Controls</span>
                 <strong>{plCalculationOptions.offset_value || "offset missing"}</strong>
                 <small>{plCalculationOptions.selected_miscellaneous_item_label || "misc selection missing"}</small>
+              </div>
+            </div>
+          ) : null}
+          {plSettingsAwareForensic?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL settings-aware forensic</h3>
+              <div>
+                <span>Status</span>
+                <strong>{plSettingsAwareForensic.status || "captured"}</strong>
+                <small>{plSettingsAwareForensic.next_action || "review"}</small>
+              </div>
+              <div>
+                <span>Visible settings</span>
+                <strong>{plSettingsAwareForensic.ayanamsha_status || "unknown"}</strong>
+                <small>{plSettingsAwareForensic.offset_status || "offset unknown"}</small>
+              </div>
+              <div>
+                <span>Forensic gates</span>
+                <strong>{plSettingsAwareForensic.engine_swiss_status || "unknown"}</strong>
+                <small>
+                  offset {plSettingsAwareForensic.uniform_offset_status || "n/a"}, time{" "}
+                  {plSettingsAwareForensic.time_shift_status || "n/a"}
+                </small>
               </div>
             </div>
           ) : null}

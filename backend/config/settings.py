@@ -201,3 +201,7 @@ PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = os.getenv(
     "PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-calculation-options-report.json"),
 )
+PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH = os.getenv(
+    "PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH",
+    str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-settings-aware-forensic.json"),
+)

@@ -18,6 +18,7 @@ def build_witness_summary(
     parashara_light_settings_evidence_path: str | Path = "",
     parashara_light_visible_settings_capture_path: str | Path = "",
     parashara_light_calculation_options_report_path: str | Path = "",
+    parashara_light_settings_aware_forensic_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
@@ -28,6 +29,7 @@ def build_witness_summary(
         settings_evidence_path=parashara_light_settings_evidence_path,
         visible_settings_capture_path=parashara_light_visible_settings_capture_path,
         calculation_options_report_path=parashara_light_calculation_options_report_path,
+        settings_aware_forensic_path=parashara_light_settings_aware_forensic_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -80,12 +82,14 @@ def _parashara_light_summary(
     settings_evidence_path: str | Path = "",
     visible_settings_capture_path: str | Path = "",
     calculation_options_report_path: str | Path = "",
+    settings_aware_forensic_path: str | Path = "",
 ) -> dict[str, Any]:
     profile = _parashara_light_profile_summary(profile_report_path)
     forensic = _parashara_light_forensic_summary(forensic_report_path)
     settings_evidence = _parashara_light_settings_evidence_summary(settings_evidence_path)
     visible_settings_capture = _parashara_light_visible_settings_capture_summary(visible_settings_capture_path)
     calculation_options = _parashara_light_calculation_options_summary(calculation_options_report_path)
+    settings_aware_forensic = _parashara_light_settings_aware_forensic_summary(settings_aware_forensic_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -105,6 +109,7 @@ def _parashara_light_summary(
             "settings_evidence": settings_evidence,
             "visible_settings_capture": visible_settings_capture,
             "calculation_options": calculation_options,
+            "settings_aware_forensic": settings_aware_forensic,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -125,6 +130,7 @@ def _parashara_light_summary(
         "settings_evidence": settings_evidence,
         "visible_settings_capture": visible_settings_capture,
         "calculation_options": calculation_options,
+        "settings_aware_forensic": settings_aware_forensic,
     }
 
 
@@ -421,6 +427,57 @@ def _missing_parashara_light_calculation_options(path: str) -> dict[str, Any]:
         "selected_miscellaneous_item_label": "",
         "offset_control_visible": False,
         "miscellaneous_list_visible": False,
+    }
+
+
+def _parashara_light_settings_aware_forensic_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_settings_aware_forensic("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_settings_aware_forensic(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "error": str(exc),
+            "ayanamsha_status": "",
+            "offset_status": "",
+            "engine_swiss_status": "",
+            "uniform_offset_status": "",
+            "time_shift_status": "",
+            "next_action": "",
+        }
+
+    visible_settings = report.get("visible_settings") if isinstance(report.get("visible_settings"), dict) else {}
+    diagnostic_gates = report.get("diagnostic_gates") if isinstance(report.get("diagnostic_gates"), dict) else {}
+    return {
+        "available": True,
+        "status": report.get("status", ""),
+        "source_report": str(source),
+        "ayanamsha_status": visible_settings.get("ayanamsha_status", ""),
+        "offset_status": visible_settings.get("offset_status", ""),
+        "engine_swiss_status": diagnostic_gates.get("engine_swiss_status", ""),
+        "uniform_offset_status": diagnostic_gates.get("uniform_offset_status", ""),
+        "time_shift_status": diagnostic_gates.get("time_shift_status", ""),
+        "next_action": report.get("next_action", ""),
+    }
+
+
+def _missing_parashara_light_settings_aware_forensic(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "ayanamsha_status": "",
+        "offset_status": "",
+        "engine_swiss_status": "",
+        "uniform_offset_status": "",
+        "time_shift_status": "",
+        "next_action": "",
     }
 
 

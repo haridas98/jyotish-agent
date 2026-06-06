@@ -152,6 +152,27 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = calculation_options_path
+    settings_aware_forensic_path = tmp_path / "pl-settings-aware-forensic.json"
+    settings_aware_forensic_path.write_text(
+        json.dumps(
+            {
+                "source": "parashara_light_settings_aware_forensic",
+                "status": "visible_settings_do_not_explain_pl_diff",
+                "visible_settings": {
+                    "ayanamsha_status": "matches_engine_lahiri",
+                    "offset_status": "zero_offset",
+                },
+                "diagnostic_gates": {
+                    "engine_swiss_status": "matched",
+                    "uniform_offset_status": "rejected",
+                    "time_shift_status": "rejected",
+                },
+                "next_action": "capture_pl_internal_ayanamsha_value_or_ephemeris_mode",
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings.PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH = settings_aware_forensic_path
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -198,6 +219,12 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert calculation_options["offset_value"] == "00:00:00"
     assert calculation_options["selected_miscellaneous_item_label"] == "Drekkana Bala method"
     assert calculation_options["offset_control_visible"] is True
+    settings_aware_forensic = response.data["parashara_light"]["settings_aware_forensic"]
+    assert settings_aware_forensic["available"] is True
+    assert settings_aware_forensic["status"] == "visible_settings_do_not_explain_pl_diff"
+    assert settings_aware_forensic["ayanamsha_status"] == "matches_engine_lahiri"
+    assert settings_aware_forensic["offset_status"] == "zero_offset"
+    assert settings_aware_forensic["next_action"] == "capture_pl_internal_ayanamsha_value_or_ephemeris_mode"
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
 
@@ -211,6 +238,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = tmp_path / "missing-pl-settings-evidence.json"
     settings.PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = tmp_path / "missing-pl-visible-settings.json"
     settings.PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = tmp_path / "missing-pl-calculation-options.json"
+    settings.PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH = tmp_path / "missing-pl-settings-aware-forensic.json"
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -223,6 +251,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     assert response.data["parashara_light"]["settings_evidence"]["available"] is False
     assert response.data["parashara_light"]["visible_settings_capture"]["available"] is False
     assert response.data["parashara_light"]["calculation_options"]["available"] is False
+    assert response.data["parashara_light"]["settings_aware_forensic"]["available"] is False
 
 
 def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
@@ -236,6 +265,7 @@ def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
     settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = tmp_path / "missing-pl-settings-evidence.json"
     settings.PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = tmp_path / "missing-pl-visible-settings.json"
     settings.PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = tmp_path / "missing-pl-calculation-options.json"
+    settings.PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH = tmp_path / "missing-pl-settings-aware-forensic.json"
 
     response = APIClient().get(reverse("witness-summary"))
 

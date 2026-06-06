@@ -772,6 +772,18 @@ export type WitnessSummary = {
       miscellaneous_list_visible: boolean;
       error?: string;
     };
+    settings_aware_forensic: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      ayanamsha_status: string;
+      offset_status: string;
+      engine_swiss_status: string;
+      uniform_offset_status: string;
+      time_shift_status: string;
+      next_action: string;
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;
