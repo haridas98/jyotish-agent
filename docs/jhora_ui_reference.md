@@ -25,6 +25,7 @@ Birth input used for this session:
 - comparison report for API: `.tmp/jhora/sterlitamak-1998/accuracy-report.json`;
 - full fixture-run envelope: `.tmp/jhora/sterlitamak-1998/accuracy-run.json`.
 - API/UI summary: `GET /api/calculations/jhora-accuracy`, shown in the web app `Accuracy` tab.
+- Combined PL/JHora status: `GET /api/calculations/witness-summary`, shown at the top of the same `Accuracy` tab.
 - Django default report path now points to this local report unless `JHORA_ACCURACY_REPORT_PATH` overrides it.
 
 ## JHora Screenshot/Export Inventory

@@ -1345,6 +1345,7 @@ select {
 }
 
 .accuracy-summary-grid span,
+.accuracy-summary-grid small,
 .accuracy-list span,
 .accuracy-list small,
 .accuracy-footnote {
@@ -1358,6 +1359,10 @@ select {
   font-size: 13px;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+.witness-open-items {
+  max-width: 640px;
 }
 
 .accuracy-footnote {

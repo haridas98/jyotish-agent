@@ -20,6 +20,7 @@ import {
   fetchShastraEvidence,
   fetchSourcePassages,
   fetchSourceWorks,
+  fetchWitnessSummary,
   generateBirthCodexAnalysis,
   generateBirthNemotronAnalysis,
   generateBirthQwenAnalysis,
@@ -61,6 +62,7 @@ import {
   type TransitReport,
   type User,
   type VargaPlacement,
+  type WitnessSummary,
   type WorkflowInterpretationPlan,
   type VLSearchResult,
 } from "@/lib/api";
@@ -2586,11 +2588,15 @@ function shortHash(value?: string) {
 }
 
 function AccuracyReportPanel({
+  witnessSummary,
+  witnessStatus,
   report,
   status,
   plReport,
   plStatus,
 }: {
+  witnessSummary: WitnessSummary | null;
+  witnessStatus: string;
   report: JHoraAccuracyReport | null;
   status: string;
   plReport: ParasharaLightPacketReport | null;
@@ -2605,6 +2611,52 @@ function AccuracyReportPanel({
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
+      <div className="panel-heading">
+        <h2>Witness summary</h2>
+        <span>{witnessStatus}</span>
+      </div>
+      {witnessSummary ? (
+        <div className="accuracy-content">
+          <div className="accuracy-summary-grid witness-summary-grid">
+            <div>
+              <span>Overall</span>
+              <strong>{witnessSummary.overall_status}</strong>
+            </div>
+            <div>
+              <span>JHora</span>
+              <strong>{witnessSummary.jhora.available ? witnessSummary.jhora.status : "missing"}</strong>
+              {witnessSummary.jhora.available ? <small>{witnessSummary.jhora.failed_checks} failed</small> : null}
+            </div>
+            <div>
+              <span>PL</span>
+              <strong>{witnessSummary.parashara_light.available ? witnessSummary.parashara_light.status : "missing"}</strong>
+              {witnessSummary.parashara_light.available ? (
+                <small>{witnessSummary.parashara_light.manual_completion_percent}% filled</small>
+              ) : null}
+            </div>
+            <div>
+              <span>Open items</span>
+              <strong>{witnessSummary.open_items.length}</strong>
+            </div>
+          </div>
+          {witnessSummary.open_items.length ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>Open witness work</h3>
+              {witnessSummary.open_items.map((item) => (
+                <div key={`${item.source}-${item.status}-${item.label}`}>
+                  <span>{item.source}</span>
+                  <strong>{item.label}</strong>
+                  <small>
+                    {item.failed_checks !== undefined ? `${item.failed_checks} failed` : `${item.completion_percent ?? 0}% filled`}
+                  </small>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="pending-strip">Witness summary ещё не загружен.</div>
+      )}
       <div className="panel-heading">
         <h2>JHora export accuracy</h2>
         <span>{status}</span>
@@ -2857,12 +2909,14 @@ export default function Home() {
   const [dualCalculationReport, setDualCalculationReport] = useState<DualCalculationReport | null>(null);
   const [accuracyReport, setAccuracyReport] = useState<JHoraAccuracyReport | null>(null);
   const [plPacketReport, setPlPacketReport] = useState<ParasharaLightPacketReport | null>(null);
+  const [witnessSummary, setWitnessSummary] = useState<WitnessSummary | null>(null);
   const [lastBirthPayload, setLastBirthPayload] = useState<BirthChartRequest | null>(null);
   const [status, setStatus] = useState("Расчёт не запускался");
   const [workflowStatus, setWorkflowStatus] = useState("Ожидает расчёт карты");
   const [dualCalculationStatus, setDualCalculationStatus] = useState("JHora witness ещё не считался");
   const [accuracyStatus, setAccuracyStatus] = useState("JHora export report не загружен");
   const [plPacketStatus, setPlPacketStatus] = useState("Parashara Light packet не загружен");
+  const [witnessSummaryStatus, setWitnessSummaryStatus] = useState("Witness summary не загружен");
   const [compatibilityStatus, setCompatibilityStatus] = useState("Ожидает основную карту");
   const [compatibilityPacketStatus, setCompatibilityPacketStatus] = useState("Codex-пакет ещё не сформирован");
   const [compatibilityCodexAnalysis, setCompatibilityCodexAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
@@ -2959,13 +3013,27 @@ export default function Home() {
     if (privateAccessLocked) {
       setAccuracyReport(null);
       setPlPacketReport(null);
+      setWitnessSummary(null);
       setAccuracyStatus("Войдите после одобрения, чтобы загрузить JHora export report");
       setPlPacketStatus("Войдите после одобрения, чтобы загрузить Parashara Light packet");
+      setWitnessSummaryStatus("Войдите после одобрения, чтобы загрузить witness summary");
       return;
     }
     let cancelled = false;
     setAccuracyStatus("Загружаю JHora export report...");
     setPlPacketStatus("Загружаю Parashara Light packet...");
+    setWitnessSummaryStatus("Загружаю witness summary...");
+    fetchWitnessSummary()
+      .then((summary) => {
+        if (cancelled) return;
+        setWitnessSummary(summary);
+        setWitnessSummaryStatus(`Witness summary: ${summary.overall_status}`);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setWitnessSummary(null);
+        setWitnessSummaryStatus(error instanceof Error ? error.message : "Witness summary API error");
+      });
     fetchJHoraAccuracyReport()
       .then((report) => {
         if (cancelled) return;
@@ -4352,6 +4420,8 @@ export default function Home() {
                 ) : null}
                 {activeAnalysisTab === "accuracy" ? (
                   <AccuracyReportPanel
+                    witnessSummary={witnessSummary}
+                    witnessStatus={witnessSummaryStatus}
                     report={accuracyReport}
                     status={accuracyStatus}
                     plReport={plPacketReport}

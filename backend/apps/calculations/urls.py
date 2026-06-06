@@ -13,6 +13,7 @@ from .views import (
     TajakaView,
     TithiPraveshaView,
     TransitView,
+    WitnessSummaryView,
     ZodiacPlacementView,
 )
 
@@ -29,6 +30,7 @@ urlpatterns = [
     path("calculations/zodiac-placement", ZodiacPlacementView.as_view(), name="zodiac-placement"),
     path("calculations/ephemeris/status", EphemerisStatusView.as_view(), name="ephemeris-status"),
     path("calculations/jhora-accuracy", JHoraAccuracyReportView.as_view(), name="jhora-accuracy"),
+    path("calculations/witness-summary", WitnessSummaryView.as_view(), name="witness-summary"),
     path(
         "calculations/parashara-light-packet",
         ParasharaLightPacketReportView.as_view(),

@@ -12,6 +12,7 @@ from .ephemeris import EphemerisUnavailable, SwissEphemerisProvider
 from .jhora_accuracy_report import load_jhora_accuracy_report
 from .parashara_light_packet_report import load_parashara_light_packet_report
 from .primitives import zodiac_placement
+from .witness_summary import build_witness_summary
 from .workflows import (
     build_compatibility_report,
     build_muhurta_report,
@@ -112,6 +113,25 @@ class ParasharaLightPacketReportView(APIView):
             )
         except FileNotFoundError:
             return Response({"error": "Parashara Light verification packet is not captured yet"}, status=404)
+
+
+class WitnessSummaryView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def get(self, request):
+        jhora_path = getattr(settings, "JHORA_ACCURACY_REPORT_PATH", "")
+        if not jhora_path:
+            jhora_path = settings.ROOT_DIR / ".tmp" / "jhora" / "sterlitamak-1998" / "accuracy-report.json"
+        pl_packet_path = getattr(settings, "PARASHARA_LIGHT_PACKET_PATH", "")
+        if not pl_packet_path:
+            pl_packet_path = settings.ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"
+        return Response(
+            build_witness_summary(
+                jhora_report_path=jhora_path,
+                parashara_light_packet_path=pl_packet_path,
+                parashara_light_manual_values_path=getattr(settings, "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH", ""),
+            )
+        )
 
 
 class BirthChartView(APIView):

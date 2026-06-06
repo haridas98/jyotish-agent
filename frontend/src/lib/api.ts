@@ -680,6 +680,40 @@ export type ParasharaLightPacketReport = {
   };
 };
 
+export type WitnessSummary = {
+  overall_status: string;
+  jhora: {
+    available: boolean;
+    status: string;
+    fixture_id: string;
+    source_report: string;
+    failed_checks: number;
+    missing_fields_count: number;
+    max_delta_arcseconds?: number;
+    corrected_max_delta_arcseconds?: number;
+    layers?: Record<string, Record<string, number | string | null>>;
+  };
+  parashara_light: {
+    available: boolean;
+    status: string;
+    id: string;
+    source_packet: string;
+    manual_witness_source?: string;
+    manual_values_count: number;
+    manual_failed_count: number;
+    manual_completion_percent: number;
+    capture_status?: string;
+    review_status?: string;
+  };
+  open_items: Array<{
+    source: string;
+    status: string;
+    label: string;
+    failed_checks?: number;
+    completion_percent?: number;
+  }>;
+};
+
 export type ReportCitation = {
   title: string;
   work_title: string;
@@ -1454,6 +1488,19 @@ export async function fetchJHoraAccuracyReport(): Promise<JHoraAccuracyReport> {
 
 export async function fetchParasharaLightPacketReport(): Promise<ParasharaLightPacketReport> {
   const response = await apiFetch("/api/calculations/parashara-light-packet", {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function fetchWitnessSummary(): Promise<WitnessSummary> {
+  const response = await apiFetch("/api/calculations/witness-summary", {
     cache: "no-store",
   });
 
