@@ -15,6 +15,7 @@ def build_witness_summary(
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
     parashara_light_forensic_report_path: str | Path = "",
+    parashara_light_settings_evidence_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
@@ -22,6 +23,7 @@ def build_witness_summary(
         manual_witness_values_path=parashara_light_manual_values_path,
         profile_report_path=parashara_light_profile_report_path,
         forensic_report_path=parashara_light_forensic_report_path,
+        settings_evidence_path=parashara_light_settings_evidence_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -71,9 +73,11 @@ def _parashara_light_summary(
     manual_witness_values_path: str | Path = "",
     profile_report_path: str | Path = "",
     forensic_report_path: str | Path = "",
+    settings_evidence_path: str | Path = "",
 ) -> dict[str, Any]:
     profile = _parashara_light_profile_summary(profile_report_path)
     forensic = _parashara_light_forensic_summary(forensic_report_path)
+    settings_evidence = _parashara_light_settings_evidence_summary(settings_evidence_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -90,6 +94,7 @@ def _parashara_light_summary(
             "manual_completion_percent": 0,
             "profile": profile,
             "forensic": forensic,
+            "settings_evidence": settings_evidence,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -107,6 +112,7 @@ def _parashara_light_summary(
         "review_status": summary.get("review_status", ""),
         "profile": profile,
         "forensic": forensic,
+        "settings_evidence": settings_evidence,
     }
 
 
@@ -221,6 +227,72 @@ def _missing_parashara_light_forensic(path: str) -> dict[str, Any]:
         "uniform_offset_status": "",
         "time_shift_status": "",
         "row_health": {"total": 0, "matched": 0, "diff_open": 0},
+    }
+
+
+def _parashara_light_settings_evidence_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_settings_evidence("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_settings_evidence(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "error": str(exc),
+            "proprietary_binary_policy": "",
+            "artifact_policy": "",
+            "options_files_count": 0,
+            "text_artifacts_count": 0,
+            "session_tokens_count": 0,
+            "runtime_build": "",
+            "next_action": "",
+        }
+
+    text_artifacts = report.get("text_artifacts") if isinstance(report.get("text_artifacts"), list) else []
+    return {
+        "available": True,
+        "status": "loaded",
+        "source_report": str(source),
+        "proprietary_binary_policy": report.get("proprietary_binary_policy", ""),
+        "artifact_policy": report.get("artifact_policy", ""),
+        "options_files_count": _count_list(report.get("options_manifest")),
+        "text_artifacts_count": len(text_artifacts),
+        "session_tokens_count": _count_list(report.get("session_token_manifest")),
+        "runtime_build": _runtime_build_from_text_artifacts(text_artifacts),
+        "next_action": report.get("next_action", ""),
+    }
+
+
+def _runtime_build_from_text_artifacts(text_artifacts: list[Any]) -> str:
+    for item in text_artifacts:
+        if not isinstance(item, dict):
+            continue
+        if item.get("relative_path") == "Temp/htpl.log":
+            return str(item.get("content_preview") or "")
+    return ""
+
+
+def _count_list(value: object) -> int:
+    return len(value) if isinstance(value, list) else 0
+
+
+def _missing_parashara_light_settings_evidence(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "proprietary_binary_policy": "",
+        "artifact_policy": "",
+        "options_files_count": 0,
+        "text_artifacts_count": 0,
+        "session_tokens_count": 0,
+        "runtime_build": "",
+        "next_action": "",
     }
 
 

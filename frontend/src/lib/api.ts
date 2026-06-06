@@ -733,6 +733,19 @@ export type WitnessSummary = {
       };
       error?: string;
     };
+    settings_evidence: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      proprietary_binary_policy: string;
+      artifact_policy: string;
+      options_files_count: number;
+      text_artifacts_count: number;
+      session_tokens_count: number;
+      runtime_build: string;
+      next_action: string;
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;

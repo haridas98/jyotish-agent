@@ -95,6 +95,24 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.PARASHARA_LIGHT_FORENSIC_REPORT_PATH = forensic_report_path
+    settings_evidence_path = tmp_path / "pl-settings-evidence.json"
+    settings_evidence_path.write_text(
+        json.dumps(
+            {
+                "source": "parashara_light_settings_evidence",
+                "artifact_policy": "private_audit_only_do_not_commit",
+                "proprietary_binary_policy": "hash_only_do_not_parse",
+                "next_action": "capture_visible_pl_profile_settings",
+                "text_artifacts": [
+                    {"relative_path": "Temp/htpl.log", "content_preview": "PL7.0, build B.08.01.06"}
+                ],
+                "options_manifest": [{"relative_path": "popts1.dat"}],
+                "session_token_manifest": [{"relative_path": "Temp/20501.e31"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = settings_evidence_path
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -120,6 +138,13 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert forensic["time_shift_status"] == "rejected"
     assert forensic["next_action"] == "capture_parashara_light_profile_settings"
     assert forensic["row_health"] == {"total": 3, "matched": 1, "diff_open": 2}
+    settings_evidence = response.data["parashara_light"]["settings_evidence"]
+    assert settings_evidence["available"] is True
+    assert settings_evidence["status"] == "loaded"
+    assert settings_evidence["proprietary_binary_policy"] == "hash_only_do_not_parse"
+    assert settings_evidence["options_files_count"] == 1
+    assert settings_evidence["session_tokens_count"] == 1
+    assert settings_evidence["runtime_build"] == "PL7.0, build B.08.01.06"
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
 
@@ -130,6 +155,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
     settings.PARASHARA_LIGHT_PROFILE_REPORT_PATH = tmp_path / "missing-pl-profile.json"
     settings.PARASHARA_LIGHT_FORENSIC_REPORT_PATH = tmp_path / "missing-pl-forensic.json"
+    settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = tmp_path / "missing-pl-settings-evidence.json"
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -139,6 +165,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     assert response.data["parashara_light"]["available"] is False
     assert response.data["parashara_light"]["profile"]["available"] is False
     assert response.data["parashara_light"]["forensic"]["available"] is False
+    assert response.data["parashara_light"]["settings_evidence"]["available"] is False
 
 
 def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
@@ -149,6 +176,7 @@ def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
     profile_path.write_text("{broken", encoding="utf-8")
     settings.PARASHARA_LIGHT_PROFILE_REPORT_PATH = profile_path
     settings.PARASHARA_LIGHT_FORENSIC_REPORT_PATH = tmp_path / "missing-pl-forensic.json"
+    settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = tmp_path / "missing-pl-settings-evidence.json"
 
     response = APIClient().get(reverse("witness-summary"))
 

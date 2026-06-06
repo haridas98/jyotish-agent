@@ -147,6 +147,25 @@ Current Haridas PL witness status:
 - The same forensic dump now rejects simple global offset and time-shift hypotheses: `uniform_offset.status=rejected`, `time_shift.status=rejected`, `next_action=capture_parashara_light_profile_settings`.
 - The Accuracy tab now includes the forensic dump through `GET /api/calculations/witness-summary` under `parashara_light.forensic`. It exposes only aggregate audit signals: conclusion, PL diff count, max deviation, rejected hypotheses and next action.
 
+Build a safe PL7 settings evidence manifest without parsing proprietary option/session formats:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_parashara_light_settings_evidence `
+  --chart-xml C:\GeoVision\GeoVisionCharts\Haridas.xml `
+  --options-dir C:\GeoVision\GeoVisionOptions `
+  --pl7-dir C:\GeoVision\PL7 `
+  --session-token-limit 40 `
+  --output ..\.tmp\pl7\haridas-pl-settings-evidence.json
+```
+
+Current local settings evidence:
+
+- Report: `.tmp/pl7/haridas-pl-settings-evidence.json`.
+- Captured 238 option-file hashes, 40 opaque `.e31` session-token hashes and 4 safe text runtime artifacts.
+- Policy: `hash_only_do_not_parse` for proprietary `.dat`, `.bin`, `.wsl` and `.e31` artifacts.
+- The Accuracy tab exposes only aggregate counts and PL runtime build under `parashara_light.settings_evidence`; raw manifests remain private.
+
 Build a PL7 birth XML profile report from the installed chart file:
 
 ```powershell

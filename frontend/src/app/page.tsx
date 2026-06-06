@@ -2615,6 +2615,7 @@ function AccuracyReportPanel({
   const plForensicMaxDeviation =
     typeof plForensic?.pl_swiss_max_abs_arcsec === "number" ? plForensic.pl_swiss_max_abs_arcsec : null;
   const plForensicRowHealth = plForensic?.row_health ?? { total: 0, matched: 0, diff_open: 0 };
+  const plSettingsEvidence = witnessSummary?.parashara_light.settings_evidence ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2676,6 +2677,28 @@ function AccuracyReportPanel({
                 <small>
                   rows {plForensicRowHealth.matched}/{plForensicRowHealth.total} matched
                 </small>
+              </div>
+            </div>
+          ) : null}
+          {plSettingsEvidence?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL settings evidence</h3>
+              <div>
+                <span>Runtime</span>
+                <strong>{plSettingsEvidence.runtime_build || "captured"}</strong>
+                <small>{plSettingsEvidence.proprietary_binary_policy || "hash-only"}</small>
+              </div>
+              <div>
+                <span>Manifests</span>
+                <strong>{plSettingsEvidence.options_files_count} option files</strong>
+                <small>
+                  {plSettingsEvidence.session_tokens_count} sessions, {plSettingsEvidence.text_artifacts_count} text artifacts
+                </small>
+              </div>
+              <div>
+                <span>Next action</span>
+                <strong>{plSettingsEvidence.next_action || "capture_visible_pl_profile_settings"}</strong>
+                <small>{plSettingsEvidence.artifact_policy || "private audit"}</small>
               </div>
             </div>
           ) : null}
