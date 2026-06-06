@@ -162,6 +162,13 @@ QWEN_API_BASE_URL = os.getenv("QWEN_API_BASE_URL", "http://localhost:3264/api").
 QWEN_API_KEY = os.getenv("QWEN_API_KEY", "dummy-key")
 QWEN_MODEL = os.getenv("QWEN_MODEL", "qwen3.7-max")
 QWEN_TIMEOUT_SECONDS = int(os.getenv("QWEN_TIMEOUT_SECONDS", "420"))
+OPENROUTER_API_BASE_URL = os.getenv("OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_NEMOTRON_MODEL = os.getenv("OPENROUTER_NEMOTRON_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")
+OPENROUTER_HTTP_REFERER = os.getenv("OPENROUTER_HTTP_REFERER", "")
+OPENROUTER_APP_TITLE = os.getenv("OPENROUTER_APP_TITLE", "Jyotish Agent")
+OPENROUTER_TIMEOUT_SECONDS = int(os.getenv("OPENROUTER_TIMEOUT_SECONDS", "420"))
+OPENROUTER_NEMOTRON_MAX_TOKENS = int(os.getenv("OPENROUTER_NEMOTRON_MAX_TOKENS", "5000"))
 JHORA_ACCURACY_REPORT_PATH = os.getenv(
     "JHORA_ACCURACY_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "jhora" / "sterlitamak-1998" / "accuracy-report.json"),

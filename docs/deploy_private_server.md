@@ -37,6 +37,7 @@ Then install nginx config, replace `jyotish.example.com`, enable site, and issue
 - `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `NEXT_PUBLIC_API_BASE_URL` must match the actual domain.
 - `VL_DATABASE_URL` must point to the Prabhupada/VL database if source search must work on the server.
 - Swiss/JPL ephemeris files must be placed in `./ephe` if JPL mode is needed.
+- For Nemotron overview generation, set `OPENROUTER_API_KEY` in the server `.env`. The backend calls OpenRouter directly; the local helper at `C:\Projects\useful-tools\openrouter-nemotron` is useful for smoke tests but is not required as a runtime service.
 
 ## Codex CLI analysis
 

@@ -1497,6 +1497,23 @@ export async function generateBirthQwenAnalysis(payload: BirthChartRequest): Pro
   });
 }
 
+export async function generateBirthNemotronAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
+  return retryNetworkFetch(async () => {
+    const response = await apiFetch("/api/reports/birth-chart/nemotron-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error ?? `API returned ${response.status}`);
+    }
+
+    return data;
+  });
+}
+
 export async function askBirthCodexAnalysis(
   analysisId: number,
   question: string,

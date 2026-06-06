@@ -5,6 +5,7 @@ from .views import (
     BirthCodexAnalysisChatView,
     BirthCodexAnalysisView,
     BirthDraftAnalysisView,
+    BirthNemotronAnalysisView,
     BirthQwenAnalysisView,
     BirthReportView,
     CompatibilityAnalysisPacketView,
@@ -36,6 +37,11 @@ urlpatterns = [
         "reports/birth-chart/qwen-analysis",
         BirthQwenAnalysisView.as_view(),
         name="birth-qwen-analysis",
+    ),
+    path(
+        "reports/birth-chart/nemotron-analysis",
+        BirthNemotronAnalysisView.as_view(),
+        name="birth-nemotron-analysis",
     ),
     path(
         "reports/birth-chart/codex-analysis/chat",

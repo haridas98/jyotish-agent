@@ -30,6 +30,17 @@ POST /api/reports/birth-chart/draft-analysis
 
 The generated text is saved as `GeneratedAnalysisDraft` with `review_status=draft`.
 
+Alternative local/private providers:
+
+```http
+POST /api/reports/birth-chart/qwen-analysis
+POST /api/reports/birth-chart/nemotron-analysis
+```
+
+- Qwen uses local FreeQwenApi at `QWEN_API_BASE_URL`.
+- Nemotron uses OpenRouter directly with `OPENROUTER_API_KEY` and stores `provider=openrouter_nemotron`.
+- Nemotron is intentionally a compact overview, not the full Codex/Qwen report path.
+
 ```powershell
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py seed_shastra_catalog
