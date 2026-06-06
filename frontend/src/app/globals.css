@@ -678,15 +678,20 @@ select {
   pointer-events: none;
 }
 
-.chart-graha-label {
+.chart-graha-detail {
   fill: var(--green);
   font-family: Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 10.8px;
+  font-weight: 700;
   paint-order: stroke;
   stroke: #fffefa;
   stroke-linejoin: round;
-  stroke-width: 3px;
+  stroke-width: 2.2px;
+}
+
+.chart-cell-text.dense .chart-graha-detail {
+  font-size: 9.5px;
+  stroke-width: 1.8px;
 }
 
 .chart-empty-label {
@@ -694,15 +699,20 @@ select {
   font-size: 16px;
 }
 
-.chart-rashi-number {
+.chart-rashi-label {
   fill: #8b6f28;
   font-family: Arial, sans-serif;
-  font-size: 17px;
+  font-size: 12.5px;
   font-weight: 800;
   paint-order: stroke;
   stroke: #fffefa;
   stroke-linejoin: round;
-  stroke-width: 3px;
+  stroke-width: 2.4px;
+}
+
+.chart-cell-text.dense .chart-rashi-label {
+  font-size: 11px;
+  stroke-width: 2px;
 }
 
 .chart-data-stack {
@@ -1757,6 +1767,11 @@ select {
   gap: 12px;
   justify-content: space-between;
   padding: 14px 18px;
+}
+
+.qwen-generation-strip {
+  background: #f6f8fb;
+  border-top: 1px solid #c7d3e8;
 }
 
 .draft-generation-strip div,

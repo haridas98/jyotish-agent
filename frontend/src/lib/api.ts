@@ -38,6 +38,7 @@ export type CalculationSettingsRequest = {
 export type BirthChartRequest = CalculationSettingsRequest & {
   birth_date: string;
   birth_time: string;
+  gender?: "male" | "female" | "unknown";
   place_name: string;
   place_id?: string;
   country_code?: string;
@@ -771,6 +772,9 @@ export type GeneratedDraftAnalysis = {
   review_status: string;
   coverage_status?: string;
   source_policy: string;
+  provider?: string;
+  model?: string;
+  engine_label?: string;
   language?: string;
   sections: {
     title: string;
@@ -1465,6 +1469,23 @@ export async function generateBirthCodexAnalysis(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(options.forceRegenerate ? { ...payload, force_regenerate: true } : payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error ?? `API returned ${response.status}`);
+    }
+
+    return data;
+  });
+}
+
+export async function generateBirthQwenAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
+  return retryNetworkFetch(async () => {
+    const response = await apiFetch("/api/reports/birth-chart/qwen-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();

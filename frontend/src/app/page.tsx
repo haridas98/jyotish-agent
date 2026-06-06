@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import {
   askBirthCodexAnalysis,
   askCompatibilityCodexAnalysis,
@@ -20,6 +20,7 @@ import {
   fetchSourcePassages,
   fetchSourceWorks,
   generateBirthCodexAnalysis,
+  generateBirthQwenAnalysis,
   generateBirthReport,
   generateCompatibilityAnalysisPacket,
   generateCompatibilityCodexAnalysis,
@@ -439,6 +440,37 @@ const northGrahaLabels: Record<string, string> = {
 };
 
 const rashiNames = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena"];
+const rashiChartLabels = ["Mesha", "Vrish", "Mith", "Karka", "Simha", "Kanya", "Tula", "Vrisch", "Dhanu", "Makara", "Kumbh", "Meena"];
+
+const nakshatraChartLabels: Record<string, string> = {
+  Ashwini: "Ashw",
+  Bharani: "Bhar",
+  Krittika: "Krit",
+  Rohini: "Rohi",
+  Mrigashira: "Mrig",
+  Ardra: "Ardr",
+  Punarvasu: "Puna",
+  Pushya: "Push",
+  Ashlesha: "Ashl",
+  Magha: "Magh",
+  "Purva Phalguni": "PPha",
+  "Uttara Phalguni": "UPha",
+  Hasta: "Hast",
+  Chitra: "Chit",
+  Swati: "Swat",
+  Vishakha: "Visa",
+  Anuradha: "Anu",
+  Jyeshtha: "Jye",
+  Mula: "Mula",
+  "Purva Ashadha": "PSha",
+  "Uttara Ashadha": "USha",
+  Shravana: "Srav",
+  Dhanishtha: "Dhan",
+  Shatabhisha: "Sata",
+  "Purva Bhadrapada": "PBha",
+  "Uttara Bhadrapada": "UBha",
+  Revati: "Reva",
+};
 
 const rashiNameIndices: Record<string, number> = {
   Aries: 0,
@@ -488,7 +520,7 @@ type NorthIndianHouseItem = {
   house: number;
   rashi: string;
   rashiIndex: number | null;
-  bodies: string[];
+  placements: ChartPlacement[];
 };
 
 type ActiveVargaChart = NonNullable<BirthChart["vargas"]>[string];
@@ -498,6 +530,9 @@ type ChartPlacement = {
   rashi: string;
   rashiIndex: number | null;
   isLagna: boolean;
+  longitude: number | null;
+  nakshatra: string | null;
+  pada: number | null;
 };
 
 function normalizeRashiIndex(value: number | null | undefined) {
@@ -524,6 +559,9 @@ function activeChartPlacements(chart: BirthChart | null, varga: ActiveVargaChart
       rashi: placement.rashi,
       rashiIndex: normalizeRashiIndex(placement.rashi_index) ?? rashiIndexFromName(placement.rashi),
       isLagna: isLagnaBody(placement.body),
+      longitude: null,
+      nakshatra: null,
+      pada: null,
     }));
   }
 
@@ -534,6 +572,9 @@ function activeChartPlacements(chart: BirthChart | null, varga: ActiveVargaChart
       rashi: chart.ascendant.rashi,
       rashiIndex: normalizeRashiIndex(chart.ascendant.rashi_index) ?? rashiIndexFromName(chart.ascendant.rashi),
       isLagna: true,
+      longitude: chart.ascendant.longitude,
+      nakshatra: chart.ascendant.nakshatra,
+      pada: chart.ascendant.pada,
     });
   }
   placements.push(
@@ -542,18 +583,20 @@ function activeChartPlacements(chart: BirthChart | null, varga: ActiveVargaChart
       rashi: graha.rashi,
       rashiIndex: normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi),
       isLagna: false,
+      longitude: graha.longitude,
+      nakshatra: graha.nakshatra,
+      pada: graha.pada,
     })),
   );
   return placements;
 }
 
 function placementsBySign(placements: ChartPlacement[]) {
-  const bySign = new Map<number, string[]>();
+  const bySign = new Map<number, ChartPlacement[]>();
   placements.forEach((placement) => {
     if (placement.rashiIndex === null) return;
-    const label = placement.isLagna ? "As" : northGrahaLabel(placement.body);
     const list = bySign.get(placement.rashiIndex) ?? [];
-    if (!list.includes(label)) list.push(label);
+    if (!list.some((item) => item.body === placement.body)) list.push(placement);
     bySign.set(placement.rashiIndex, list);
   });
   return bySign;
@@ -583,7 +626,7 @@ function northIndianHouseItems(chart: BirthChart | null, varga: ActiveVargaChart
       house: house.house,
       rashi: house.rashi,
       rashiIndex,
-      bodies: rashiIndex === null ? [] : bySign.get(rashiIndex) ?? [],
+      placements: rashiIndex === null ? [] : bySign.get(rashiIndex) ?? [],
     };
   });
 }
@@ -608,20 +651,25 @@ function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; v
         <path d="M200 2 L398 200 L200 398 L2 200 Z" fill="none" stroke="#c99a43" strokeWidth="1" />
         {houses.map((house) => {
           const cell = northIndianHouseCells[house.house];
-          const signNumber = house.rashiIndex === null ? "-" : String(house.rashiIndex + 1);
-          const grahaLines = symbolLines(house.bodies);
-          const textLines = [signNumber, ...grahaLines];
-          const firstLineY = firstSymbolLineY(cell.centerY, textLines.length, 18);
+          const signLabel = rashiChartLabel(house.rashiIndex, house.rashi);
+          const textLines = northIndianCellLines(house);
+          const lineGap = textLines.length > 5 ? 11 : 13;
+          const firstLineY = firstSymbolLineY(cell.centerY, textLines.length, lineGap);
           return (
             <g className="chart-house-group" key={house.house}>
-              <title>{`Дом ${house.house}, знак ${signNumber}: ${house.bodies.join(" ") || "пусто"}`}</title>
-              <text className="chart-cell-text" x={cell.centerX} y={firstLineY} textAnchor="middle">
+              <title>{`Знак ${signLabel}: ${house.placements.map(fullPlacementTitle).join("; ") || "пусто"}`}</title>
+              <text
+                className={`chart-cell-text${textLines.length > 5 ? " dense" : ""}`}
+                x={cell.centerX}
+                y={firstLineY}
+                textAnchor="middle"
+              >
                 {textLines.map((line, index) => (
                   <tspan
-                    className={index === 0 ? "chart-rashi-number" : "chart-graha-label"}
+                    className={index === 0 ? "chart-rashi-label" : "chart-graha-detail"}
                     key={`${house.house}-${line}-${index}`}
                     x={cell.centerX}
-                    dy={index === 0 ? 0 : 18}
+                    dy={index === 0 ? 0 : lineGap}
                   >
                     {line}
                   </tspan>
@@ -638,6 +686,45 @@ function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; v
       </svg>
     </div>
   );
+}
+
+function northIndianCellLines(house: NorthIndianHouseItem) {
+  return [
+    rashiChartLabel(house.rashiIndex, house.rashi),
+    ...house.placements.map(compactPlacementLine),
+  ];
+}
+
+function compactPlacementLine(placement: ChartPlacement) {
+  const label = placement.isLagna ? "As" : northGrahaLabel(placement.body);
+  if (placement.longitude === null) return label;
+  const nakshatra = placement.nakshatra ? ` ${shortNakshatra(placement.nakshatra)}${placement.pada ?? ""}` : "";
+  return `${label} ${formatSignDegrees(placement.longitude)}${nakshatra}`;
+}
+
+function fullPlacementTitle(placement: ChartPlacement) {
+  const label = placement.isLagna ? "Lagna" : labelRu(placement.body);
+  if (placement.longitude === null) return label;
+  const nakshatra = placement.nakshatra ? `, ${placement.nakshatra} ${placement.pada ?? ""}` : "";
+  return `${label}: ${formatSignDegrees(placement.longitude)}${nakshatra}`;
+}
+
+function rashiChartLabel(index: number | null, fallback: string) {
+  return index === null ? fallback || "-" : rashiChartLabels[index] ?? fallback;
+}
+
+function shortNakshatra(name: string) {
+  return nakshatraChartLabels[name] ?? name.replace(/\s+/g, "").slice(0, 4);
+}
+
+function formatSignDegrees(value: number) {
+  const normalized = ((value % 360) + 360) % 360;
+  const withinSign = normalized % 30;
+  const degrees = Math.floor(withinSign);
+  const minutes = Math.round((withinSign - degrees) * 60);
+  const displayDegrees = minutes === 60 ? degrees + 1 : degrees;
+  const displayMinutes = minutes === 60 ? 0 : minutes;
+  return `${String(displayDegrees).padStart(2, "0")}°${String(displayMinutes).padStart(2, "0")}'`;
 }
 
 function firstSymbolLineY(centerY: number, lineCount: number, lineGap: number) {
@@ -1030,13 +1117,105 @@ function DashaWorkspacePanel({
   );
 }
 
+function GeneratedAnalysisDetails({
+  analysis,
+  assistantLabel,
+  chatSlot,
+}: {
+  analysis: GeneratedDraftAnalysis;
+  assistantLabel: string;
+  chatSlot?: ReactNode;
+}) {
+  const traceCount = analysis.sections.reduce((total, section) => total + (section.source_traces?.length ?? 0), 0);
+  return (
+    <div className="generated-draft">
+      <div className="block-heading">
+        <h3>{analysis.engine_label ?? generatedTitleRu(analysis.review_status)}</h3>
+        <span>
+          #{analysis.id} · {assistantLabel} · {generatedStatusRu(analysis.review_status)} · {traceCount} источников
+        </span>
+      </div>
+      {chatSlot}
+      {analysis.sections.map((section) => (
+        <article className="report-section" key={`${analysis.id}-${section.title}`}>
+          <div>
+            <strong>{section.title}</strong>
+            <em>{generatedStatusRu(analysis.review_status)}</em>
+          </div>
+          <p>{section.body}</p>
+          {section.key_points?.length ? (
+            <div className="human-points">
+              {section.key_points.map((point) => (
+                <span key={`${section.title}-point-${point}`}>{point}</span>
+              ))}
+            </div>
+          ) : null}
+          {section.practical_steps?.length ? (
+            <div className="practical-steps">
+              <strong>Что делать</strong>
+              <ul>
+                {section.practical_steps.map((step) => (
+                  <li key={`${section.title}-step-${step}`}>{step}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {section.citation_titles?.length ? (
+            <div className="report-citations">
+              {section.citation_titles.map((title) => (
+                <span key={`${section.title}-${title}`}>{title}</span>
+              ))}
+            </div>
+          ) : null}
+          {section.evidence_references?.length ? (
+            <div className="report-citations evidence-citations">
+              {section.evidence_references.map((reference) => (
+                <span key={`${section.title}-${reference}`}>{reference}</span>
+              ))}
+            </div>
+          ) : null}
+          {section.source_traces?.length ? (
+            <details className="source-trace-list">
+              <summary>Источники и логика</summary>
+              <div>
+                {section.source_traces.map((trace) => (
+                  <div key={`${section.title}-${trace.condition_key}-${trace.reference}`}>
+                    <strong>{trace.condition_key}</strong>
+                    <span>
+                      {trace.work_title}
+                      {trace.reference ? `, ${trace.reference}` : ""}
+                    </span>
+                    {trace.short_excerpt ? <p>{trace.short_excerpt}</p> : null}
+                    <small>{trace.source_status}: {trace.interpretation}</small>
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
+          {section.review_notes?.length ? (
+            <ul className="review-notes">
+              {section.review_notes.map((note) => (
+                <li key={`${section.title}-${note}`}>{note}</li>
+              ))}
+            </ul>
+          ) : null}
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function ReportPreviewPanel({
   birthReport,
   draftAnalysis,
+  qwenAnalysis,
   draftStatus,
+  qwenStatus,
   onGenerateDraft,
   onRegenerateDraft,
+  onGenerateQwen,
   draftDisabled,
+  qwenDisabled,
   chatMessages,
   chatStatus,
   onAskDraftQuestion,
@@ -1044,10 +1223,14 @@ function ReportPreviewPanel({
 }: {
   birthReport: BirthReport["report"] | null;
   draftAnalysis: GeneratedDraftAnalysis | null;
+  qwenAnalysis: GeneratedDraftAnalysis | null;
   draftStatus: string;
+  qwenStatus: string;
   onGenerateDraft: () => void;
   onRegenerateDraft: () => void;
+  onGenerateQwen: () => void;
   draftDisabled: boolean;
+  qwenDisabled: boolean;
   chatMessages: CodexAnalysisChatMessage[];
   chatStatus: string;
   onAskDraftQuestion: (question: string) => void;
@@ -1083,6 +1266,17 @@ function ReportPreviewPanel({
               </button>
               <button type="button" className="secondary-button" onClick={onRegenerateDraft} disabled={draftDisabled}>
                 Перегенерировать с новыми шастрами
+              </button>
+            </div>
+          </div>
+          <div className="draft-generation-strip qwen-generation-strip">
+            <div>
+              <strong>Альтернативный разбор QWEN</strong>
+              <span>{qwenStatus}</span>
+            </div>
+            <div className="draft-generation-actions">
+              <button type="button" className="secondary-button" onClick={onGenerateQwen} disabled={qwenDisabled}>
+                Сгенерировать с помощью QWEN
               </button>
             </div>
           </div>
@@ -1188,6 +1382,9 @@ function ReportPreviewPanel({
                 </article>
               ))}
             </div>
+          ) : null}
+          {qwenAnalysis ? (
+            <GeneratedAnalysisDetails analysis={qwenAnalysis} assistantLabel="QWEN" />
           ) : null}
           {birthReport.sections.map((section) => (
             <article className="report-section" key={section.key}>
@@ -2448,15 +2645,16 @@ function AccuracyReportPanel({
 }
 
 export default function Home() {
-  const [birthDate, setBirthDate] = useState("1990-08-15");
-  const [birthTime, setBirthTime] = useState("10:24");
-  const [placeName, setPlaceName] = useState("Вриндаван");
-  const [profileName, setProfileName] = useState("Моя карта");
+  const [birthDate, setBirthDate] = useState("1998-04-30");
+  const [birthTime, setBirthTime] = useState("13:45");
+  const [gender, setGender] = useState<"male" | "female" | "unknown">("male");
+  const [placeName, setPlaceName] = useState("Стерлитамак");
+  const [profileName, setProfileName] = useState("Моя карта 30.04.1998");
   const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
   const [manualTimezone, setManualTimezone] = useState("Asia/Yekaterinburg");
-  const [manualLatitude, setManualLatitude] = useState("");
-  const [manualLongitude, setManualLongitude] = useState("");
+  const [manualLatitude, setManualLatitude] = useState("53.6304");
+  const [manualLongitude, setManualLongitude] = useState("55.9308");
   const [zodiac, setZodiac] = useState("sidereal");
   const [calculationModel, setCalculationModel] = useState("drik_siddhanta");
   const [ayanamsa, setAyanamsa] = useState("lahiri");
@@ -2476,6 +2674,8 @@ export default function Home() {
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [draftAnalysis, setDraftAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
   const [draftAnalysisStatus, setDraftAnalysisStatus] = useState("Личный разбор ещё не генерировался");
+  const [qwenAnalysis, setQwenAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
+  const [qwenAnalysisStatus, setQwenAnalysisStatus] = useState("QWEN разбор ещё не генерировался");
   const [codexChatMessages, setCodexChatMessages] = useState<CodexAnalysisChatMessage[]>([]);
   const [codexChatStatus, setCodexChatStatus] = useState("Сначала сгенерируйте личный разбор");
   const [codexChatBusy, setCodexChatBusy] = useState(false);
@@ -2917,6 +3117,7 @@ export default function Home() {
     return {
       birth_date: birthDate,
       birth_time: birthTime,
+      gender,
       place_name: selectedPlace?.label ?? placeName,
       ...calculationSettingsPayload(),
       ...(selectedPlace
@@ -3300,6 +3501,23 @@ export default function Home() {
     }
   }
 
+  async function handleGenerateQwenAnalysis() {
+    const payload = lastBirthPayload ?? buildBirthPayload();
+    if (!payload) return;
+    setQwenAnalysis(null);
+    setQwenAnalysisStatus("Запускаю QWEN через локальный FreeQwenApi...");
+    try {
+      const result = await generateBirthQwenAnalysis(payload);
+      setQwenAnalysis(result);
+      setQwenAnalysisStatus(
+        `QWEN #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
+      );
+    } catch (error) {
+      setQwenAnalysis(null);
+      setQwenAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации QWEN-разбора");
+    }
+  }
+
   async function handleAskDraftQuestion(question: string) {
     if (!draftAnalysis) return;
     const userMessage: CodexAnalysisChatMessage = { role: "user", content: question };
@@ -3341,6 +3559,8 @@ export default function Home() {
       setChartMode("D1");
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
+      setQwenAnalysis(null);
+      setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
@@ -3364,6 +3584,8 @@ export default function Home() {
       setBirthReport(result.report);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
+      setQwenAnalysis(null);
+      setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
@@ -3376,6 +3598,8 @@ export default function Home() {
       setBirthReport(null);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
+      setQwenAnalysis(null);
+      setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setTransitReport(null);
       setMuhurtaReport(null);
       setCompatibilityReport(null);
@@ -3513,6 +3737,14 @@ export default function Home() {
               <label>
                 Время рождения
                 <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
+              </label>
+              <label>
+                Пол
+                <select value={gender} onChange={(event) => setGender(event.target.value as "male" | "female" | "unknown")}>
+                  <option value="male">Мужской</option>
+                  <option value="female">Женский</option>
+                  <option value="unknown">Не указан</option>
+                </select>
               </label>
               <label>
                 Место рождения
@@ -3839,10 +4071,14 @@ export default function Home() {
                   <ReportPreviewPanel
                     birthReport={birthReport}
                     draftAnalysis={draftAnalysis}
+                    qwenAnalysis={qwenAnalysis}
                     draftStatus={draftAnalysisStatus}
+                    qwenStatus={qwenAnalysisStatus}
                     onGenerateDraft={() => handleGenerateDraftAnalysis(false)}
                     onRegenerateDraft={() => handleGenerateDraftAnalysis(true)}
+                    onGenerateQwen={handleGenerateQwenAnalysis}
                     draftDisabled={!birthReport}
+                    qwenDisabled={!birthReport}
                     chatMessages={codexChatMessages}
                     chatStatus={codexChatStatus}
                     onAskDraftQuestion={handleAskDraftQuestion}

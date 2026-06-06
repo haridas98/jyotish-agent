@@ -24,6 +24,7 @@ from .codex_cli_generation import (
 )
 from .draft_generation import DraftGenerationUnavailable, generate_birth_chart_draft_analysis
 from .models import GeneratedAnalysisDraft
+from .qwen_generation import generate_birth_chart_qwen_analysis
 
 
 class BirthReportView(APIView):
@@ -99,6 +100,26 @@ class BirthCodexAnalysisView(APIView):
                     interpretation_provider=public_interpretation_sections_for_chart,
                     refresh_evidence=False,
                     force_regenerate=force_regenerate,
+                )
+            )
+        except ChartInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        except (EphemerisUnavailable, DraftGenerationUnavailable) as exc:
+            return Response({"error": str(exc)}, status=503)
+
+
+class BirthQwenAnalysisView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def post(self, request):
+        try:
+            return Response(
+                generate_birth_chart_qwen_analysis(
+                    request.data,
+                    citation_search=vl_citation_search,
+                    research_search=local_research_corpus_search,
+                    interpretation_provider=public_interpretation_sections_for_chart,
+                    refresh_evidence=False,
                 )
             )
         except ChartInputError as exc:

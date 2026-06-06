@@ -122,7 +122,7 @@ def _person_summary(
     chart_facts: dict[str, Any],
 ) -> dict[str, Any]:
     return {
-        "birth_context": _birth_context(chart),
+        "birth_context": _birth_context(data, chart),
         "core_factors": _core_factors(chart, chart_facts),
         "graha_houses": _graha_house_rows(chart_facts),
         "detailed_positions": chart_facts.get("detailed_positions", []),
@@ -132,11 +132,11 @@ def _person_summary(
     }
 
 
-def _birth_context(chart: dict[str, Any]) -> list[dict[str, object]]:
+def _birth_context(data: dict[str, Any], chart: dict[str, Any]) -> list[dict[str, object]]:
     birth = chart.get("birth", {})
     place = chart.get("place", {})
     settings = chart.get("settings", {})
-    return [
+    rows = [
         {"label": "Birth", "value": birth.get("local_datetime", "")},
         {"label": "Place", "value": place.get("label") or place.get("name", "")},
         {"label": "Calculation model", "value": settings.get("calculation_model", "")},
@@ -146,6 +146,10 @@ def _birth_context(chart: dict[str, Any]) -> list[dict[str, object]]:
         {"label": "House system", "value": settings.get("house_system", "")},
         {"label": "Timezone source", "value": settings.get("timezone_source", "")},
     ]
+    gender = str(data.get("gender") or "").strip().lower()
+    if gender:
+        rows.insert(2, {"label": "Gender", "value": gender})
+    return rows
 
 
 def _core_factors(chart: dict[str, Any], chart_facts: dict[str, Any]) -> list[dict[str, object]]:
