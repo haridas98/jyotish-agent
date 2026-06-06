@@ -612,6 +612,39 @@ export type JHoraAccuracyReport = {
   diagnostics: Record<string, unknown>;
 };
 
+export type ParasharaLightPacketReport = {
+  schema_version: string;
+  id: string;
+  status: string;
+  source_packet: string;
+  checklist_count: number;
+  summary: {
+    review_status: string;
+    capture_status: string;
+    version_required: string;
+    window_title: string;
+    control_count: number | null;
+    screenshot_blank: boolean | null;
+    screenshot_error: string | null;
+    screenshots_count: number;
+    fingerprints: {
+      ui_state?: {
+        path?: string;
+        bytes?: number;
+        sha256?: string;
+        missing?: boolean;
+      };
+      screenshots?: Array<{
+        path?: string;
+        bytes?: number;
+        sha256?: string;
+        missing?: boolean;
+      }>;
+    };
+    jyotish_agent_lagna: string;
+  };
+};
+
 export type ReportCitation = {
   title: string;
   work_title: string;
@@ -1373,6 +1406,19 @@ export async function calculateDualCalculation(payload: BirthChartRequest): Prom
 
 export async function fetchJHoraAccuracyReport(): Promise<JHoraAccuracyReport> {
   const response = await apiFetch("/api/calculations/jhora-accuracy", {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function fetchParasharaLightPacketReport(): Promise<ParasharaLightPacketReport> {
+  const response = await apiFetch("/api/calculations/parashara-light-packet", {
     cache: "no-store",
   });
 

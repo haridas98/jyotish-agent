@@ -16,6 +16,7 @@ import {
   createChartProfile,
   fetchCurrentUser,
   fetchJHoraAccuracyReport,
+  fetchParasharaLightPacketReport,
   fetchShastraEvidence,
   fetchSourcePassages,
   fetchSourceWorks,
@@ -46,6 +47,7 @@ import {
   type JHoraAccuracyReport,
   type MundaneReport,
   type MuhurtaReport,
+  type ParasharaLightPacketReport,
   type PersonSummary,
   type PlaceCandidate,
   type PrashnaReport,
@@ -2579,16 +2581,26 @@ function DualCalculationPanel({
   );
 }
 
+function shortHash(value?: string) {
+  return value ? value.slice(0, 12) : "missing";
+}
+
 function AccuracyReportPanel({
   report,
   status,
+  plReport,
+  plStatus,
 }: {
   report: JHoraAccuracyReport | null;
   status: string;
+  plReport: ParasharaLightPacketReport | null;
+  plStatus: string;
 }) {
   const longitude = report?.summary.longitude;
   const groups = report?.summary.exact_groups ?? [];
   const layers = report ? Object.entries(report.summary.jhora_layers) : [];
+  const plSummary = plReport?.summary ?? null;
+  const screenshotFingerprint = plSummary?.fingerprints.screenshots?.[0];
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2663,6 +2675,94 @@ function AccuracyReportPanel({
           <p className="accuracy-footnote">{report.source_export}</p>
         </div>
       )}
+      <div className="panel-heading accuracy-subheading">
+        <h2>Parashara Light witness packet</h2>
+        <span>{plStatus}</span>
+      </div>
+      {!plReport || !plSummary ? (
+        <div className="pending-strip">Parashara Light packet ещё не загружен.</div>
+      ) : (
+        <div className="accuracy-content">
+          <div className="accuracy-summary-grid">
+            <div>
+              <span>Packet</span>
+              <strong>{plReport.id}</strong>
+            </div>
+            <div>
+              <span>Status</span>
+              <strong>{plReport.status}</strong>
+            </div>
+            <div>
+              <span>Review</span>
+              <strong>{plSummary.review_status || "unknown"}</strong>
+            </div>
+            <div>
+              <span>PL version</span>
+              <strong>{plSummary.version_required || "unknown"}</strong>
+            </div>
+            <div>
+              <span>Controls</span>
+              <strong>{plSummary.control_count ?? "unknown"}</strong>
+            </div>
+            <div>
+              <span>Screenshots</span>
+              <strong>{plSummary.screenshots_count}</strong>
+            </div>
+            <div>
+              <span>Blank shot</span>
+              <strong>{plSummary.screenshot_blank ? "yes" : "no"}</strong>
+            </div>
+            <div>
+              <span>Lagna</span>
+              <strong>{plSummary.jyotish_agent_lagna || "unknown"}</strong>
+            </div>
+          </div>
+          <div className="accuracy-columns">
+            <div className="accuracy-list">
+              <h3>Capture</h3>
+              <div>
+                <span>Window</span>
+                <strong>{plSummary.window_title || "unknown"}</strong>
+              </div>
+              <div>
+                <span>Capture status</span>
+                <strong>{plSummary.capture_status || "unknown"}</strong>
+              </div>
+              {plSummary.screenshot_error ? (
+                <div>
+                  <span>Screenshot error</span>
+                  <strong>{plSummary.screenshot_error}</strong>
+                </div>
+              ) : null}
+            </div>
+            <div className="accuracy-list">
+              <h3>Fingerprints</h3>
+              <div>
+                <span>UI state</span>
+                <strong>{shortHash(plSummary.fingerprints.ui_state?.sha256)}</strong>
+                {plSummary.fingerprints.ui_state?.bytes ? <small>{plSummary.fingerprints.ui_state.bytes} bytes</small> : null}
+              </div>
+              <div>
+                <span>Screenshot</span>
+                <strong>{shortHash(screenshotFingerprint?.sha256)}</strong>
+                {screenshotFingerprint?.bytes ? <small>{screenshotFingerprint.bytes} bytes</small> : null}
+              </div>
+            </div>
+            <div className="accuracy-list">
+              <h3>Checklist</h3>
+              <div>
+                <span>Items</span>
+                <strong>{plReport.checklist_count}</strong>
+              </div>
+              <div>
+                <span>Schema</span>
+                <strong>{plReport.schema_version}</strong>
+              </div>
+            </div>
+          </div>
+          <p className="accuracy-footnote">{plReport.source_packet}</p>
+        </div>
+      )}
     </section>
   );
 }
@@ -2713,11 +2813,13 @@ export default function Home() {
   const [compatibilityReport, setCompatibilityReport] = useState<CompatibilityReport | null>(null);
   const [dualCalculationReport, setDualCalculationReport] = useState<DualCalculationReport | null>(null);
   const [accuracyReport, setAccuracyReport] = useState<JHoraAccuracyReport | null>(null);
+  const [plPacketReport, setPlPacketReport] = useState<ParasharaLightPacketReport | null>(null);
   const [lastBirthPayload, setLastBirthPayload] = useState<BirthChartRequest | null>(null);
   const [status, setStatus] = useState("Расчёт не запускался");
   const [workflowStatus, setWorkflowStatus] = useState("Ожидает расчёт карты");
   const [dualCalculationStatus, setDualCalculationStatus] = useState("JHora witness ещё не считался");
   const [accuracyStatus, setAccuracyStatus] = useState("JHora export report не загружен");
+  const [plPacketStatus, setPlPacketStatus] = useState("Parashara Light packet не загружен");
   const [compatibilityStatus, setCompatibilityStatus] = useState("Ожидает основную карту");
   const [compatibilityPacketStatus, setCompatibilityPacketStatus] = useState("Codex-пакет ещё не сформирован");
   const [compatibilityCodexAnalysis, setCompatibilityCodexAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
@@ -2813,11 +2915,14 @@ export default function Home() {
   useEffect(() => {
     if (privateAccessLocked) {
       setAccuracyReport(null);
+      setPlPacketReport(null);
       setAccuracyStatus("Войдите после одобрения, чтобы загрузить JHora export report");
+      setPlPacketStatus("Войдите после одобрения, чтобы загрузить Parashara Light packet");
       return;
     }
     let cancelled = false;
     setAccuracyStatus("Загружаю JHora export report...");
+    setPlPacketStatus("Загружаю Parashara Light packet...");
     fetchJHoraAccuracyReport()
       .then((report) => {
         if (cancelled) return;
@@ -2828,6 +2933,17 @@ export default function Home() {
         if (cancelled) return;
         setAccuracyReport(null);
         setAccuracyStatus(error instanceof Error ? error.message : "JHora accuracy API error");
+      });
+    fetchParasharaLightPacketReport()
+      .then((report) => {
+        if (cancelled) return;
+        setPlPacketReport(report);
+        setPlPacketStatus(report.summary.screenshot_blank ? "PL screenshot требует пересъёмки" : "PL packet загружен");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setPlPacketReport(null);
+        setPlPacketStatus(error instanceof Error ? error.message : "Parashara Light packet API error");
       });
     return () => {
       cancelled = true;
@@ -4186,7 +4302,12 @@ export default function Home() {
                   />
                 ) : null}
                 {activeAnalysisTab === "accuracy" ? (
-                  <AccuracyReportPanel report={accuracyReport} status={accuracyStatus} />
+                  <AccuracyReportPanel
+                    report={accuracyReport}
+                    status={accuracyStatus}
+                    plReport={plPacketReport}
+                    plStatus={plPacketStatus}
+                  />
                 ) : null}
                 {activeAnalysisTab === "sources" ? (
                   <section className="panel" id="sources">

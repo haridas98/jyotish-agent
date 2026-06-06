@@ -10,6 +10,7 @@ from .chart import ChartInputError, build_birth_chart
 from .dual_calculation import build_dual_calculation_report
 from .ephemeris import EphemerisUnavailable, SwissEphemerisProvider
 from .jhora_accuracy_report import load_jhora_accuracy_report
+from .parashara_light_packet_report import load_parashara_light_packet_report
 from .primitives import zodiac_placement
 from .workflows import (
     build_compatibility_report,
@@ -92,6 +93,19 @@ class JHoraAccuracyReportView(APIView):
             return Response(load_jhora_accuracy_report(path))
         except FileNotFoundError:
             return Response({"error": "JHora accuracy report is not captured yet"}, status=404)
+
+
+class ParasharaLightPacketReportView(APIView):
+    permission_classes = [PrivateAppAccess]
+
+    def get(self, request):
+        path = getattr(settings, "PARASHARA_LIGHT_PACKET_PATH", "")
+        if not path:
+            path = settings.ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"
+        try:
+            return Response(load_parashara_light_packet_report(path))
+        except FileNotFoundError:
+            return Response({"error": "Parashara Light verification packet is not captured yet"}, status=404)
 
 
 class BirthChartView(APIView):

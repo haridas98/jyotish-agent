@@ -173,3 +173,7 @@ JHORA_ACCURACY_REPORT_PATH = os.getenv(
     "JHORA_ACCURACY_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "jhora" / "sterlitamak-1998" / "accuracy-report.json"),
 )
+PARASHARA_LIGHT_PACKET_PATH = os.getenv(
+    "PARASHARA_LIGHT_PACKET_PATH",
+    str(ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"),
+)

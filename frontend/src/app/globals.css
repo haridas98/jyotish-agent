@@ -1284,6 +1284,11 @@ select {
   padding: 12px;
 }
 
+.accuracy-panel .accuracy-subheading {
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+
 .accuracy-content {
   border-top: 1px solid var(--line);
   display: grid;
@@ -1352,6 +1357,7 @@ select {
   color: var(--green);
   font-size: 13px;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .accuracy-footnote {
