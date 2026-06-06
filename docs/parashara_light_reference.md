@@ -146,6 +146,24 @@ Current Haridas PL witness status:
 - Current finding: jyotish-agent graha longitudes match direct Swiss Lahiri sidereal output exactly for this input. The repeatable forensic command reports `engine_swiss_diff_count=0`, `pl_diff_count=5` for longitudes, and `conclusion=engine_matches_swiss_pl_profile_diff_open`; the sixth manual diff is Mercury pada caused by the longitude crossing the Revati pada boundary. The next audit target is PL7 calculation/profile settings rather than the local Swiss wrapper.
 - The same forensic dump now rejects simple global offset and time-shift hypotheses: `uniform_offset.status=rejected`, `time_shift.status=rejected`, `next_action=capture_parashara_light_profile_settings`.
 
+Build a PL7 birth XML profile report from the installed chart file:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_parashara_light_profile_report `
+  --birth-xml C:\GeoVision\GeoVisionCharts\Haridas.xml `
+  --packet ..\.tmp\pl7\haridas-verification-packet\packet.json `
+  --output ..\.tmp\pl7\haridas-pl-profile-report.json
+```
+
+Current local profile report:
+
+- Report: `.tmp/pl7/haridas-pl-profile-report.json`.
+- PL raw XML stores `Longitude=-55.9666667`, `Latitude=53.6166667`, `TimeZone=-5`, `DST=1`.
+- Candidate normalization records `longitude_east_candidate=55.9666667` and `timezone_offset_hours_candidate=6.0`; these are convention candidates, not silent corrections.
+- Compared with the app packet, timezone delta is `0.0h`; coordinate deltas are `+0.016467°` longitude and `-0.013733°` latitude.
+- Finding: the PL chart XML explains PL's east-negative storage convention and a small coordinate variance, but it does not explain the observed graha longitude differences. Detailed PL7 calculation/profile settings remain the next audit target.
+
 ## Next Capture Targets
 
 - Birth data/settings screen: date, time, timezone, coordinates, ayanamsa, nodes, house system.
