@@ -1,6 +1,8 @@
+import io
 import json
 
 import pytest
+from django.core.management import call_command
 from django.test import override_settings
 from rest_framework.test import APIClient
 
@@ -98,6 +100,36 @@ Body: Держать садхану и служение.
     assert output["sections"][0]["key_points"] == ["Солнце в 10 доме", "Луна в 12 доме"]
     assert output["sections"][0]["practical_steps"] == ["Проверить в JHora"]
     assert output["sections"][0]["review_notes"] == ["Не финальный вывод"]
+
+
+@override_settings(OPENROUTER_API_KEY="test-key", OPENROUTER_NEMOTRON_MODEL="test/nemotron")
+def test_smoke_nemotron_openrouter_command_outputs_provider_json(monkeypatch):
+    calls = []
+
+    def fake_chat_client():
+        def runner(prompt):
+            calls.append(prompt)
+            return json.dumps(
+                {
+                    "language": "ru",
+                    "sections": [{"title": "Smoke", "body": "ok", "citation_titles": []}],
+                }
+            )
+
+        return runner
+
+    monkeypatch.setattr("apps.reports.nemotron_generation.openrouter_nemotron_chat_client", fake_chat_client)
+
+    stdout = io.StringIO()
+    call_command("smoke_nemotron_openrouter", "--prompt", "ping", stdout=stdout)
+
+    payload = json.loads(stdout.getvalue())
+    assert payload["status"] == "ok"
+    assert payload["provider"] == "openrouter_nemotron"
+    assert payload["model"] == "test/nemotron"
+    assert payload["section_count"] == 1
+    assert payload["message_excerpt"] == "ok"
+    assert calls == ["ping"]
 
 
 def test_nemotron_client_wraps_timeout(monkeypatch):

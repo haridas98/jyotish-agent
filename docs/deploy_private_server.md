@@ -38,6 +38,7 @@ Then install nginx config, replace `jyotish.example.com`, enable site, and issue
 - `VL_DATABASE_URL` must point to the Prabhupada/VL database if source search must work on the server.
 - Swiss/JPL ephemeris files must be placed in `./ephe` if JPL mode is needed.
 - For Nemotron overview generation, set `OPENROUTER_API_KEY` in the server `.env`. The backend calls OpenRouter directly; the local helper at `C:\Projects\useful-tools\openrouter-nemotron` is useful for smoke tests but is not required as a runtime service.
+- After deploy, run `cd /srv/jyotish-agent/app/backend && ./.venv/bin/python manage.py smoke_nemotron_openrouter` to verify server-side OpenRouter/Nemotron access.
 
 ## Codex CLI analysis
 

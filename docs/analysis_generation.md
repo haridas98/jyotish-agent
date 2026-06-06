@@ -41,6 +41,13 @@ POST /api/reports/birth-chart/nemotron-analysis
 - Nemotron uses OpenRouter directly with `OPENROUTER_API_KEY` and stores `provider=openrouter_nemotron`.
 - Nemotron is intentionally a compact overview, not the full Codex/Qwen report path.
 
+Nemotron server smoke:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py smoke_nemotron_openrouter
+```
+
 ```powershell
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py seed_shastra_catalog
