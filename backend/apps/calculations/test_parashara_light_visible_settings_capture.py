@@ -50,6 +50,40 @@ def test_build_parashara_light_visible_settings_capture_records_fingerprints_wit
     assert report["ui_states"][0]["window_title"].startswith("Parashara")
 
 
+def test_build_parashara_light_visible_settings_capture_detects_pl7_calculation_dialog_object_names(tmp_path):
+    from apps.calculations.parashara_light_visible_settings_capture import build_parashara_light_visible_settings_capture
+
+    calculation_dialog_state = tmp_path / "calculation-options-dialog-ui-state.json"
+    calculation_dialog_state.write_text(
+        json.dumps(
+            {
+                "window_title": "User Preferences",
+                "control_count": 60,
+                "screenshot_blank": False,
+                "controls": [
+                    {"text": "FormOptionsCalculations"},
+                    {"text": "calculations_ayanamshaFrame"},
+                    {"text": "calculations_lahiriRadio"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    screenshot = tmp_path / "calculation-options-dialog.png"
+    screenshot.write_bytes(b"png-dialog")
+
+    report = build_parashara_light_visible_settings_capture(
+        capture_id="pl7-haridas-visible-settings",
+        ui_state_paths=[calculation_dialog_state],
+        screenshot_paths=[screenshot],
+    )
+
+    assert report["status"] == "settings_dialog_captured"
+    assert report["settings_dialog_captured"] is True
+    assert report["next_action"] == "review_visible_calculation_options"
+    assert "formoptionscalculations" in report["ui_states"][0]["matched_terms"]
+
+
 def test_build_parashara_light_visible_settings_capture_command_writes_json(monkeypatch, tmp_path):
     output_path = tmp_path / "visible-settings.json"
     ui_state = tmp_path / "ui-state.json"

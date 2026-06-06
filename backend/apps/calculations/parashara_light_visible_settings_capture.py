@@ -9,8 +9,13 @@ from typing import Any
 
 SETTINGS_DIALOG_TERMS = (
     "calculation options",
+    "formoptionscalculations",
+    "calculations_ayanamsha",
+    "calculations_lahiri",
+    "ayanamsha",
     "system options",
     "ayanamsa",
+    "lahiri",
     "node",
     "house system",
 )
@@ -95,6 +100,8 @@ def _surface_from_path(path: Path) -> str:
     name = path.name.lower()
     if "options-menu" in name or ("options" in name and "menu" in name):
         return "options_menu"
+    if "calculation-options-dialog" in name:
+        return "calculation_options_dialog"
     if "calculation-options" in name:
         return "calculation_options_attempt"
     if "visible-settings" in name:
