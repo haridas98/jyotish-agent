@@ -173,6 +173,10 @@ def test_manual_witness_template_uses_nested_empty_values_without_false_diffs():
     assert template[0]["calculated_reference"]["rashi"] == "Karka"
     assert template[1]["calculated_reference"]["house"] == 10
     assert report["summary"]["manual_values_count"] == 2
+    assert report["completion"]["filled_fields_count"] == 1
+    assert report["completion"]["empty_fields_count"] == 9
+    assert report["completion"]["completion_percent"] == 10
+    assert "Lagna.rashi" in report["completion"]["empty_field_sample"]
     assert report["summary"]["checked_count"] == 1
     assert report["summary"]["failed_count"] == 1
     assert report["diffs"][0]["field"] == "rashi"
@@ -248,7 +252,18 @@ def test_packet_report_prefers_external_manual_witness_values_file(tmp_path):
     manual_values_path.write_text(
         json.dumps(
             [
-                {"source": "pl7", "body": "Surya", "witness": {"rashi": "Vrishabha", "house": 10}},
+                {
+                    "source": "pl7",
+                    "body": "Surya",
+                    "witness": {
+                        "status": "pending",
+                        "rashi": "Vrishabha",
+                        "nakshatra": None,
+                        "pada": None,
+                        "house": None,
+                        "longitude_dms": None,
+                    },
+                },
             ]
         ),
         encoding="utf-8",
@@ -261,6 +276,8 @@ def test_packet_report_prefers_external_manual_witness_values_file(tmp_path):
 
     assert report["summary"]["manual_values_count"] == 1
     assert report["summary"]["manual_failed_count"] == 1
+    assert report["summary"]["manual_empty_fields_count"] == 4
+    assert report["manual_witness_comparison"]["completion"]["completion_percent"] == 20
     assert report["manual_witness_source"] == str(manual_values_path)
     assert report["manual_witness_comparison"]["diffs"][0]["witness"] == "Vrishabha"
 

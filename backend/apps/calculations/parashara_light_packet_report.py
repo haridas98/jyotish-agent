@@ -35,6 +35,9 @@ def load_parashara_light_packet_report(
         "jyotish_agent_lagna": ascendant.get("rashi", ""),
         "manual_values_count": manual_witness_comparison["summary"]["manual_values_count"],
         "manual_failed_count": manual_witness_comparison["summary"]["failed_count"],
+        "manual_filled_fields_count": manual_witness_comparison["completion"]["filled_fields_count"],
+        "manual_empty_fields_count": manual_witness_comparison["completion"]["empty_fields_count"],
+        "manual_completion_percent": manual_witness_comparison["completion"]["completion_percent"],
     }
     return {
         "schema_version": packet.get("schema_version", ""),

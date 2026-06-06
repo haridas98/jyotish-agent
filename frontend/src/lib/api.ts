@@ -628,6 +628,14 @@ export type ParasharaLightPacketReport = {
       failed_count: number;
       missing_count: number;
     };
+    completion: {
+      fillable_fields_count: number;
+      filled_fields_count: number;
+      empty_fields_count: number;
+      completion_percent: number;
+      completed_rows_count: number;
+      empty_field_sample: string[];
+    };
     diffs: Array<{
       source: string;
       body: string;
@@ -666,6 +674,9 @@ export type ParasharaLightPacketReport = {
     jyotish_agent_lagna: string;
     manual_values_count: number;
     manual_failed_count: number;
+    manual_filled_fields_count: number;
+    manual_empty_fields_count: number;
+    manual_completion_percent: number;
   };
 };
 

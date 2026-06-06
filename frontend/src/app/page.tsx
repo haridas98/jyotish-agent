@@ -2725,6 +2725,10 @@ function AccuracyReportPanel({
               <span>Manual diff</span>
               <strong>{manualComparison?.summary.failed_count ?? 0}</strong>
             </div>
+            <div>
+              <span>Manual filled</span>
+              <strong>{manualComparison ? `${manualComparison.completion.completion_percent}%` : "0%"}</strong>
+            </div>
           </div>
           <div className="accuracy-columns">
             <div className="accuracy-list">
@@ -2767,6 +2771,18 @@ function AccuracyReportPanel({
                 <span>Source</span>
                 <strong>{plReport.manual_witness_source || "none"}</strong>
               </div>
+              <div>
+                <span>Filled / empty</span>
+                <strong>
+                  {manualComparison?.completion.filled_fields_count ?? 0} / {manualComparison?.completion.empty_fields_count ?? 0}
+                </strong>
+              </div>
+              {manualComparison?.completion.empty_field_sample.length ? (
+                <div>
+                  <span>Missing sample</span>
+                  <strong>{manualComparison.completion.empty_field_sample.slice(0, 4).join(", ")}</strong>
+                </div>
+              ) : null}
               {manualComparison?.diffs.slice(0, 4).map((diff) => (
                 <div key={`${diff.source}-${diff.body}-${diff.field}`}>
                   <span>{diff.body}.{diff.field}</span>

@@ -29,6 +29,7 @@ BODY_ALIASES = {
 }
 
 EXACT_FIELDS = ("rashi", "nakshatra", "pada", "house")
+COMPLETION_FIELDS = ("rashi", "nakshatra", "pada", "house", "longitude_dms")
 
 
 def manual_witness_template_from_chart(chart: dict[str, Any], *, source: str = "pl7") -> list[dict[str, Any]]:
@@ -75,9 +76,11 @@ def compare_manual_witness_values(
                 "failed_count": 0,
                 "missing_count": 0,
             },
+            "completion": _completion_summary([]),
             "diffs": [],
         }
 
+    completion = _completion_summary(values)
     bodies = _chart_body_index(chart)
     houses_by_rashi = _houses_by_rashi(chart)
     diffs: list[dict[str, Any]] = []
@@ -181,7 +184,42 @@ def compare_manual_witness_values(
             "failed_count": failed,
             "missing_count": missing,
         },
+        "completion": completion,
         "diffs": diffs,
+    }
+
+
+def _completion_summary(values: list[dict[str, Any]]) -> dict[str, Any]:
+    fillable = 0
+    filled = 0
+    empty_sample: list[str] = []
+    completed_rows = 0
+    for row in values:
+        payload = _witness_payload(row)
+        body = _normalize_body(row.get("body") or payload.get("body"))
+        row_fillable = 0
+        row_filled = 0
+        for field in COMPLETION_FIELDS:
+            if field not in payload:
+                continue
+            row_fillable += 1
+            fillable += 1
+            if _provided(payload.get(field)):
+                row_filled += 1
+                filled += 1
+            elif len(empty_sample) < 20:
+                empty_sample.append(f"{body}.{field}")
+        if row_fillable and row_filled == row_fillable:
+            completed_rows += 1
+    empty = fillable - filled
+    percent = int(round((filled / fillable) * 100)) if fillable else 0
+    return {
+        "fillable_fields_count": fillable,
+        "filled_fields_count": filled,
+        "empty_fields_count": empty,
+        "completion_percent": percent,
+        "completed_rows_count": completed_rows,
+        "empty_field_sample": empty_sample,
     }
 
 

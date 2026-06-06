@@ -123,6 +123,7 @@ cd C:\Projects\jyotish-agent\backend
 ```
 
 The Accuracy tab reads this file through `PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH`. If the file is absent, the backend falls back to `fixture.manual_witness_values` inside the packet.
+The same panel shows manual completion percent, filled/empty field counts and a short sample of still-empty fields.
 
 ## Next Capture Targets
 
