@@ -7,6 +7,7 @@ Purpose: use Parashara's Light as an additional black-box witness beside JHora. 
 - Executable: `C:\GeoVision\PL7\PL7.exe`.
 - Current observed window: `Parashara's Light 7.0.1 - [Haridas ,  [C:/GeoVision/GeoVisionCharts/Haridas.xml]]`.
 - PL7 is a Qt app. Win32/UIA automation exposes most chart panes as generic `QWidget`, so reliable capture starts with window metadata, visible control texts/rectangles, screenshots, and manual/exported calculation text when available.
+- Screenshot capture uses Windows `PrintWindow` through pywin32 plus Pillow. This captures the PL window itself even when another app is in front.
 
 ## Capture Command
 
@@ -26,9 +27,15 @@ The JSON includes:
 - control class/type summary;
 - visible control text and rectangles;
 - `artifact_policy=private_audit_only_do_not_commit`;
-- screenshot path or `screenshot_error`.
+- screenshot path or `screenshot_error`;
+- `screenshot_blank` so black/empty PrintWindow captures are visible in review.
 
 If Pillow is not installed, metadata capture still succeeds and records `screenshot_error`. Keep `.tmp/pl7/` out of git.
+
+Current local smoke artifact:
+
+- `.tmp/pl7/haridas-ui-state.json`;
+- `.tmp/pl7/haridas-ui-state.png` - verified nonblank PL7 birth chart screenshot.
 
 ## Next Capture Targets
 

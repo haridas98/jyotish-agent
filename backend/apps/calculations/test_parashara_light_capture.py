@@ -67,14 +67,63 @@ def test_parashara_light_class_summary_counts_control_types_and_classes():
 def test_parashara_light_screenshot_failure_is_recorded(tmp_path):
     from apps.calculations.management.commands.capture_parashara_light_ui_state import _attach_screenshot
 
-    class BrokenWindow:
-        def capture_as_image(self):
-            raise RuntimeError("PIL missing")
-
     payload = {}
-    _attach_screenshot(payload, BrokenWindow(), tmp_path / "pl.png")
+    _attach_screenshot(
+        payload,
+        object(),
+        tmp_path / "pl.png",
+        image_factory=lambda window: (_ for _ in ()).throw(RuntimeError("PIL missing")),
+    )
 
     assert payload["screenshot_error"] == "PIL missing"
+
+
+def test_parashara_light_screenshot_success_records_path_and_closes_image(tmp_path):
+    from apps.calculations.management.commands.capture_parashara_light_ui_state import _attach_screenshot
+
+    class FakeImage:
+        def __init__(self):
+            self.saved_to = None
+            self.closed = False
+
+        def save(self, target):
+            self.saved_to = target
+
+        def close(self):
+            self.closed = True
+
+        def getextrema(self):
+            return ((0, 255), (0, 255), (0, 255))
+
+    image = FakeImage()
+    target = tmp_path / "pl.png"
+    payload = {}
+
+    _attach_screenshot(payload, object(), target, image_factory=lambda window: image)
+
+    assert payload["screenshot"] == str(target)
+    assert payload["screenshot_blank"] is False
+    assert image.saved_to == target
+    assert image.closed is True
+
+
+def test_parashara_light_screenshot_records_blank_image(tmp_path):
+    from apps.calculations.management.commands.capture_parashara_light_ui_state import _attach_screenshot
+
+    class BlankImage:
+        def save(self, target):
+            pass
+
+        def close(self):
+            pass
+
+        def getextrema(self):
+            return ((0, 0), (0, 0), (0, 0))
+
+    payload = {}
+    _attach_screenshot(payload, object(), tmp_path / "blank.png", image_factory=lambda window: BlankImage())
+
+    assert payload["screenshot_blank"] is True
 
 
 def test_parashara_light_capture_controls_respects_limit():

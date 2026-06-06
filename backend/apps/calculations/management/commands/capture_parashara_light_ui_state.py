@@ -4,7 +4,7 @@ import json
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -108,12 +108,87 @@ def _class_summary(controls: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
-def _attach_screenshot(payload: dict[str, Any], window, target: Path) -> None:
+ImageFactory = Callable[[Any], Any]
+
+
+def _attach_screenshot(
+    payload: dict[str, Any],
+    window,
+    target: Path,
+    *,
+    image_factory: ImageFactory | None = None,
+) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
+    image = None
     try:
-        image = window.capture_as_image()
+        image_factory = image_factory or _print_window_image
+        image = image_factory(window)
         image.save(target)
+        payload["screenshot_blank"] = _image_is_blank(image)
     except Exception as exc:
         payload["screenshot_error"] = str(exc)
         return
+    finally:
+        close = getattr(image, "close", None)
+        if callable(close):
+            close()
     payload["screenshot"] = str(target)
+
+
+def _image_is_blank(image) -> bool:
+    getextrema = getattr(image, "getextrema", None)
+    if not callable(getextrema):
+        return False
+    extrema = getextrema()
+    if not isinstance(extrema, tuple):
+        return False
+    channels = extrema if extrema and isinstance(extrema[0], tuple) else (extrema,)
+    return all(isinstance(channel, tuple) and len(channel) >= 2 and channel[0] == channel[1] for channel in channels)
+
+
+def _print_window_image(window):
+    try:
+        import ctypes
+
+        import win32con
+        import win32gui
+        import win32ui
+        from PIL import Image
+    except ImportError:
+        return window.capture_as_image()
+
+    hwnd = int(getattr(window, "handle"))
+    left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+    width = right - left
+    height = bottom - top
+    if width <= 0 or height <= 0:
+        raise RuntimeError("window has empty bounds")
+
+    window_dc = win32gui.GetWindowDC(hwnd)
+    source_dc = win32ui.CreateDCFromHandle(window_dc)
+    memory_dc = source_dc.CreateCompatibleDC()
+    bitmap = win32ui.CreateBitmap()
+    bitmap.CreateCompatibleBitmap(source_dc, width, height)
+    memory_dc.SelectObject(bitmap)
+    try:
+        result = ctypes.windll.user32.PrintWindow(hwnd, memory_dc.GetSafeHdc(), 2)
+        if result != 1:
+            result = ctypes.windll.user32.PrintWindow(hwnd, memory_dc.GetSafeHdc(), 0)
+        if result != 1:
+            raise RuntimeError("PrintWindow failed")
+        bitmap_info = bitmap.GetInfo()
+        bitmap_bits = bitmap.GetBitmapBits(True)
+        return Image.frombuffer(
+            "RGB",
+            (bitmap_info["bmWidth"], bitmap_info["bmHeight"]),
+            bitmap_bits,
+            "raw",
+            "BGRX",
+            0,
+            1,
+        )
+    finally:
+        win32gui.DeleteObject(bitmap.GetHandle())
+        memory_dc.DeleteDC()
+        source_dc.DeleteDC()
+        win32gui.ReleaseDC(hwnd, window_dc)
