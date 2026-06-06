@@ -125,6 +125,15 @@ cd C:\Projects\jyotish-agent\backend
 The Accuracy tab reads this file through `PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH`. If the file is absent, the backend falls back to `fixture.manual_witness_values` inside the packet.
 The same panel shows manual completion percent, filled/empty field counts and a short sample of still-empty fields.
 
+Current Haridas PL witness status:
+
+- Filled screenshot transcription: `.tmp/pl7/haridas-manual-values-from-screenshot.json`.
+- Compare report: `.tmp/pl7/haridas-manual-witness-from-screenshot-report.json`.
+- Result: 50 checked fields, 44 passed, 6 failed, 100% manual completion.
+- Failed PL fields: Surya longitude, Mangala longitude, Budha pada/longitude, Guru longitude, Shukra longitude.
+- Swiss forensic dump: `.tmp/pl7/swiss-raw-vs-engine-vs-pl7-screenshot.json`.
+- Current finding: jyotish-agent graha longitudes match direct Swiss Lahiri sidereal output exactly for this input; the open PL diffs are against the PL7 profile/screenshot values, so the next audit target is PL7 calculation/profile settings rather than the local Swiss wrapper.
+
 ## Next Capture Targets
 
 - Birth data/settings screen: date, time, timezone, coordinates, ayanamsa, nodes, house system.
