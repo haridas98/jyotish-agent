@@ -2741,8 +2741,8 @@ function AccuracyReportPanel({
               </div>
               <div>
                 <span>Controls</span>
-                <strong>{plCalculationOptions.offset_control_visible ? "offset visible" : "offset missing"}</strong>
-                <small>{plCalculationOptions.miscellaneous_list_visible ? "misc list visible" : "misc list missing"}</small>
+                <strong>{plCalculationOptions.offset_value || "offset missing"}</strong>
+                <small>{plCalculationOptions.selected_miscellaneous_item_label || "misc selection missing"}</small>
               </div>
             </div>
           ) : null}

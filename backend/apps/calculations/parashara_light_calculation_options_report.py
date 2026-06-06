@@ -23,6 +23,19 @@ CALCULATION_METHOD_RADIOS = (
     ("parashara_male_neuter_female", "Parashara (male/neuter/female)", "calculations_option2Radio"),
 )
 
+VISIBLE_MISCELLANEOUS_ROWS = (
+    ("ekadhipatya_reductions", "Ekadhipatya reductions"),
+    ("varshaphala", "Varshaphala"),
+    ("rashi_multiplier_for_virgo", "Rashi multiplier for Virgo"),
+    ("gulik_method", "Gulik method"),
+    ("ashtakavarga", "Ashtakavarga"),
+    ("sunrise", "Sunrise"),
+    ("karakas", "Karakas"),
+    ("rahu_and_ketu", "Rahu & Ketu"),
+    ("muhurta_dates", "Muhurta dates"),
+    ("drekkana_bala_method", "Drekkana Bala method"),
+)
+
 DARK_PIXEL_THRESHOLD = 6
 
 
@@ -47,9 +60,11 @@ def build_parashara_light_calculation_options_report(
     ]
     selected_ayanamsha = _selected_option(ayanamsha_options)
     selected_method = _selected_option(method_options)
+    offset_value = _offset_value_payload(controls, window_rect, screenshot)
+    selected_miscellaneous_item = _selected_miscellaneous_item_payload(controls, window_rect, screenshot)
     status = (
         "calculation_options_reviewed"
-        if selected_ayanamsha and selected_method
+        if selected_ayanamsha and selected_method and offset_value.get("value") and selected_miscellaneous_item.get("label")
         else "calculation_options_partial"
     )
     return {
@@ -62,6 +77,8 @@ def build_parashara_light_calculation_options_report(
         "source_screenshot": _file_fingerprint(screenshot, classification="pl_calculation_options_screenshot"),
         "selected_ayanamsha": selected_ayanamsha or {},
         "selected_calculation_method": selected_method or {},
+        "offset_value": offset_value,
+        "selected_miscellaneous_item": selected_miscellaneous_item,
         "ayanamsha_options": ayanamsha_options,
         "calculation_method_options": method_options,
         "offset_control_visible": "calculations_offsetEdit" in controls,
@@ -153,6 +170,128 @@ def _radio_pixel_probe(screenshot_path: Path, *, rect: dict[str, int], window_re
         pixels = crop.getdata()
         dark_pixel_count = sum(1 for pixel in pixels if max(pixel) < 80)
     return {"center": {"x": cx, "y": cy}, "dark_pixel_count": dark_pixel_count}
+
+
+def _offset_value_payload(
+    controls: dict[str, dict[str, Any]],
+    window_rect: dict[str, int],
+    screenshot_path: Path,
+) -> dict[str, Any]:
+    control = controls.get("calculations_offsetEdit")
+    if not control:
+        return {"value": "", "confidence": "missing_control", "pattern": []}
+    rect = _rect(control["rect"])
+    pattern = _offset_dark_column_pattern(screenshot_path, rect=rect, window_rect=window_rect)
+    value = "00:00:00" if _looks_like_zero_offset_pattern(pattern) else ""
+    return {
+        "value": value,
+        "confidence": "visual_digit_template" if value else "unrecognized_visual_pattern",
+        "pattern": pattern,
+    }
+
+
+def _offset_dark_column_pattern(screenshot_path: Path, *, rect: dict[str, int], window_rect: dict[str, int]) -> list[int]:
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise RuntimeError("Pillow is required for PL7 offset pixel probing") from exc
+
+    left = rect["left"] - window_rect["left"]
+    top = rect["top"] - window_rect["top"]
+    right = rect["right"] - window_rect["left"]
+    bottom = rect["bottom"] - window_rect["top"]
+    with Image.open(screenshot_path) as image:
+        gray = image.convert("L").crop((left, top, right, bottom))
+        width, height = gray.size
+        rows = range(4, max(4, height - 4))
+        column_counts = [
+            sum(1 for y in rows if gray.getpixel((x, y)) < 120)
+            for x in range(min(width, 80))
+        ]
+
+    groups: list[list[int]] = []
+    for x, count in enumerate(column_counts):
+        if x <= 2 or count == 0:
+            continue
+        if not groups or x > groups[-1][-1] + 1:
+            groups.append([x])
+        else:
+            groups[-1].append(x)
+    return [len(group) for group in groups]
+
+
+def _looks_like_zero_offset_pattern(pattern: list[int]) -> bool:
+    return pattern == [4, 4, 1, 4, 4, 1, 4, 4]
+
+
+def _selected_miscellaneous_item_payload(
+    controls: dict[str, dict[str, Any]],
+    window_rect: dict[str, int],
+    screenshot_path: Path,
+) -> dict[str, Any]:
+    control = controls.get("calculations_miscListBox")
+    if not control:
+        return {"key": "", "label": "", "confidence": "missing_control"}
+    rect = _rect(control["rect"])
+    selected_row = _selected_miscellaneous_row(screenshot_path, rect=rect, window_rect=window_rect)
+    row_index = selected_row.get("visible_row_index", -1)
+    if 0 <= row_index < len(VISIBLE_MISCELLANEOUS_ROWS):
+        key, label = VISIBLE_MISCELLANEOUS_ROWS[row_index]
+        return {
+            "key": key,
+            "label": label,
+            "visible_row_index": row_index,
+            "highlight_center_y": selected_row.get("highlight_center_y"),
+            "confidence": "visual_highlight_row_probe",
+        }
+    return {
+        "key": "",
+        "label": "",
+        "visible_row_index": row_index,
+        "highlight_center_y": selected_row.get("highlight_center_y"),
+        "confidence": "unrecognized_highlight_row",
+    }
+
+
+def _selected_miscellaneous_row(
+    screenshot_path: Path,
+    *,
+    rect: dict[str, int],
+    window_rect: dict[str, int],
+) -> dict[str, Any]:
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise RuntimeError("Pillow is required for PL7 miscellaneous list pixel probing") from exc
+
+    left = rect["left"] - window_rect["left"]
+    top = rect["top"] - window_rect["top"]
+    right = rect["right"] - window_rect["left"]
+    bottom = rect["bottom"] - window_rect["top"]
+    with Image.open(screenshot_path) as image:
+        rgb = image.convert("RGB").crop((left, top, right, bottom))
+        width, height = rgb.size
+        scores = []
+        for y in range(height):
+            sample_width = max(1, min(width - 25, 292))
+            pixels = [rgb.getpixel((x, y)) for x in range(5, sample_width)]
+            average = sum(sum(pixel) / 3 for pixel in pixels) / len(pixels)
+            scores.append(average)
+
+    selected_rows = [y for y, average in enumerate(scores) if average < 240]
+    groups: list[list[int]] = []
+    for y in selected_rows:
+        if not groups or y > groups[-1][-1] + 1:
+            groups.append([y])
+        else:
+            groups[-1].append(y)
+    candidates = [group for group in groups if len(group) >= 8]
+    if not candidates:
+        return {"visible_row_index": -1, "highlight_center_y": None}
+    best = max(candidates, key=len)
+    center_y = round((best[0] + best[-1]) / 2)
+    visible_row_index = round((center_y - 18) / 19)
+    return {"visible_row_index": visible_row_index, "highlight_center_y": center_y}
 
 
 def _selected_option(options: list[dict[str, Any]]) -> dict[str, Any] | None:

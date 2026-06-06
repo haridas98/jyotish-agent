@@ -372,6 +372,9 @@ def _parashara_light_calculation_options_summary(path: str | Path) -> dict[str, 
             "selected_ayanamsha_label": "",
             "selected_calculation_method_key": "",
             "selected_calculation_method_label": "",
+            "offset_value": "",
+            "selected_miscellaneous_item_key": "",
+            "selected_miscellaneous_item_label": "",
             "offset_control_visible": False,
             "miscellaneous_list_visible": False,
         }
@@ -382,6 +385,12 @@ def _parashara_light_calculation_options_summary(path: str | Path) -> dict[str, 
         if isinstance(report.get("selected_calculation_method"), dict)
         else {}
     )
+    offset = report.get("offset_value") if isinstance(report.get("offset_value"), dict) else {}
+    miscellaneous_item = (
+        report.get("selected_miscellaneous_item")
+        if isinstance(report.get("selected_miscellaneous_item"), dict)
+        else {}
+    )
     return {
         "available": True,
         "status": report.get("status", ""),
@@ -390,6 +399,9 @@ def _parashara_light_calculation_options_summary(path: str | Path) -> dict[str, 
         "selected_ayanamsha_label": ayanamsha.get("label", ""),
         "selected_calculation_method_key": method.get("key", ""),
         "selected_calculation_method_label": method.get("label", ""),
+        "offset_value": offset.get("value", ""),
+        "selected_miscellaneous_item_key": miscellaneous_item.get("key", ""),
+        "selected_miscellaneous_item_label": miscellaneous_item.get("label", ""),
         "offset_control_visible": bool(report.get("offset_control_visible")),
         "miscellaneous_list_visible": bool(report.get("miscellaneous_list_visible")),
     }
@@ -404,6 +416,9 @@ def _missing_parashara_light_calculation_options(path: str) -> dict[str, Any]:
         "selected_ayanamsha_label": "",
         "selected_calculation_method_key": "",
         "selected_calculation_method_label": "",
+        "offset_value": "",
+        "selected_miscellaneous_item_key": "",
+        "selected_miscellaneous_item_label": "",
         "offset_control_visible": False,
         "miscellaneous_list_visible": False,
     }

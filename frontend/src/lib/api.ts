@@ -765,6 +765,9 @@ export type WitnessSummary = {
       selected_ayanamsha_label: string;
       selected_calculation_method_key: string;
       selected_calculation_method_label: string;
+      offset_value: string;
+      selected_miscellaneous_item_key: string;
+      selected_miscellaneous_item_label: string;
       offset_control_visible: boolean;
       miscellaneous_list_visible: boolean;
       error?: string;

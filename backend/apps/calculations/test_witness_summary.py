@@ -140,6 +140,11 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
                     "key": "parashara_male_neuter_female",
                     "label": "Parashara (male/neuter/female)",
                 },
+                "offset_value": {"value": "00:00:00", "confidence": "visual_digit_template"},
+                "selected_miscellaneous_item": {
+                    "key": "drekkana_bala_method",
+                    "label": "Drekkana Bala method",
+                },
                 "offset_control_visible": True,
                 "miscellaneous_list_visible": True,
             }
@@ -190,6 +195,8 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert calculation_options["status"] == "calculation_options_reviewed"
     assert calculation_options["selected_ayanamsha_label"] == "Lahiri"
     assert calculation_options["selected_calculation_method_label"] == "Parashara (male/neuter/female)"
+    assert calculation_options["offset_value"] == "00:00:00"
+    assert calculation_options["selected_miscellaneous_item_label"] == "Drekkana Bala method"
     assert calculation_options["offset_control_visible"] is True
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
