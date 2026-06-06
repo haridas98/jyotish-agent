@@ -197,3 +197,7 @@ PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = os.getenv(
     "PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-visible-settings-capture.json"),
 )
+PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = os.getenv(
+    "PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH",
+    str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-calculation-options-report.json"),
+)

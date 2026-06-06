@@ -138,6 +138,11 @@ class WitnessSummaryView(APIView):
                     "PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH",
                     "",
                 ),
+                parashara_light_calculation_options_report_path=getattr(
+                    settings,
+                    "PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH",
+                    "",
+                ),
             )
         )
 

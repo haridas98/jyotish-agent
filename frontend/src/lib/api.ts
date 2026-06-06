@@ -757,6 +757,18 @@ export type WitnessSummary = {
       next_action: string;
       error?: string;
     };
+    calculation_options: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      selected_ayanamsha_key: string;
+      selected_ayanamsha_label: string;
+      selected_calculation_method_key: string;
+      selected_calculation_method_label: string;
+      offset_control_visible: boolean;
+      miscellaneous_list_visible: boolean;
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;

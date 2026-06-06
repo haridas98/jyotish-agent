@@ -2617,6 +2617,7 @@ function AccuracyReportPanel({
   const plForensicRowHealth = plForensic?.row_health ?? { total: 0, matched: 0, diff_open: 0 };
   const plSettingsEvidence = witnessSummary?.parashara_light.settings_evidence ?? null;
   const plVisibleSettingsCapture = witnessSummary?.parashara_light.visible_settings_capture ?? null;
+  const plCalculationOptions = witnessSummary?.parashara_light.calculation_options ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2722,6 +2723,26 @@ function AccuracyReportPanel({
               <div>
                 <span>Next action</span>
                 <strong>{plVisibleSettingsCapture.next_action || "capture_calculation_options_dialog_or_native_export"}</strong>
+              </div>
+            </div>
+          ) : null}
+          {plCalculationOptions?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL calculation options</h3>
+              <div>
+                <span>Ayanamsha</span>
+                <strong>{plCalculationOptions.selected_ayanamsha_label || "not captured"}</strong>
+                <small>{plCalculationOptions.status || "captured"}</small>
+              </div>
+              <div>
+                <span>Method</span>
+                <strong>{plCalculationOptions.selected_calculation_method_label || "not captured"}</strong>
+                <small>pixel-probed from PL7 dialog</small>
+              </div>
+              <div>
+                <span>Controls</span>
+                <strong>{plCalculationOptions.offset_control_visible ? "offset visible" : "offset missing"}</strong>
+                <small>{plCalculationOptions.miscellaneous_list_visible ? "misc list visible" : "misc list missing"}</small>
               </div>
             </div>
           ) : null}

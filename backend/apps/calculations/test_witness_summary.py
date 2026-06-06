@@ -129,6 +129,24 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = visible_capture_path
+    calculation_options_path = tmp_path / "pl-calculation-options.json"
+    calculation_options_path.write_text(
+        json.dumps(
+            {
+                "source": "parashara_light_calculation_options_report",
+                "status": "calculation_options_reviewed",
+                "selected_ayanamsha": {"key": "lahiri", "label": "Lahiri"},
+                "selected_calculation_method": {
+                    "key": "parashara_male_neuter_female",
+                    "label": "Parashara (male/neuter/female)",
+                },
+                "offset_control_visible": True,
+                "miscellaneous_list_visible": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings.PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = calculation_options_path
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -167,6 +185,12 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert visible_capture["settings_dialog_captured"] is False
     assert visible_capture["screenshots_count"] == 3
     assert visible_capture["next_action"] == "capture_calculation_options_dialog_or_native_export"
+    calculation_options = response.data["parashara_light"]["calculation_options"]
+    assert calculation_options["available"] is True
+    assert calculation_options["status"] == "calculation_options_reviewed"
+    assert calculation_options["selected_ayanamsha_label"] == "Lahiri"
+    assert calculation_options["selected_calculation_method_label"] == "Parashara (male/neuter/female)"
+    assert calculation_options["offset_control_visible"] is True
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
 
@@ -179,6 +203,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     settings.PARASHARA_LIGHT_FORENSIC_REPORT_PATH = tmp_path / "missing-pl-forensic.json"
     settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = tmp_path / "missing-pl-settings-evidence.json"
     settings.PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = tmp_path / "missing-pl-visible-settings.json"
+    settings.PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = tmp_path / "missing-pl-calculation-options.json"
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -190,6 +215,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     assert response.data["parashara_light"]["forensic"]["available"] is False
     assert response.data["parashara_light"]["settings_evidence"]["available"] is False
     assert response.data["parashara_light"]["visible_settings_capture"]["available"] is False
+    assert response.data["parashara_light"]["calculation_options"]["available"] is False
 
 
 def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
@@ -202,6 +228,7 @@ def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
     settings.PARASHARA_LIGHT_FORENSIC_REPORT_PATH = tmp_path / "missing-pl-forensic.json"
     settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = tmp_path / "missing-pl-settings-evidence.json"
     settings.PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = tmp_path / "missing-pl-visible-settings.json"
+    settings.PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = tmp_path / "missing-pl-calculation-options.json"
 
     response = APIClient().get(reverse("witness-summary"))
 

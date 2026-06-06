@@ -17,6 +17,7 @@ def build_witness_summary(
     parashara_light_forensic_report_path: str | Path = "",
     parashara_light_settings_evidence_path: str | Path = "",
     parashara_light_visible_settings_capture_path: str | Path = "",
+    parashara_light_calculation_options_report_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
@@ -26,6 +27,7 @@ def build_witness_summary(
         forensic_report_path=parashara_light_forensic_report_path,
         settings_evidence_path=parashara_light_settings_evidence_path,
         visible_settings_capture_path=parashara_light_visible_settings_capture_path,
+        calculation_options_report_path=parashara_light_calculation_options_report_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -77,11 +79,13 @@ def _parashara_light_summary(
     forensic_report_path: str | Path = "",
     settings_evidence_path: str | Path = "",
     visible_settings_capture_path: str | Path = "",
+    calculation_options_report_path: str | Path = "",
 ) -> dict[str, Any]:
     profile = _parashara_light_profile_summary(profile_report_path)
     forensic = _parashara_light_forensic_summary(forensic_report_path)
     settings_evidence = _parashara_light_settings_evidence_summary(settings_evidence_path)
     visible_settings_capture = _parashara_light_visible_settings_capture_summary(visible_settings_capture_path)
+    calculation_options = _parashara_light_calculation_options_summary(calculation_options_report_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -100,6 +104,7 @@ def _parashara_light_summary(
             "forensic": forensic,
             "settings_evidence": settings_evidence,
             "visible_settings_capture": visible_settings_capture,
+            "calculation_options": calculation_options,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -119,6 +124,7 @@ def _parashara_light_summary(
         "forensic": forensic,
         "settings_evidence": settings_evidence,
         "visible_settings_capture": visible_settings_capture,
+        "calculation_options": calculation_options,
     }
 
 
@@ -345,6 +351,61 @@ def _missing_parashara_light_visible_settings_capture(path: str) -> dict[str, An
         "surfaces_count": 0,
         "screenshots_count": 0,
         "next_action": "",
+    }
+
+
+def _parashara_light_calculation_options_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_calculation_options("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_calculation_options(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "error": str(exc),
+            "selected_ayanamsha_key": "",
+            "selected_ayanamsha_label": "",
+            "selected_calculation_method_key": "",
+            "selected_calculation_method_label": "",
+            "offset_control_visible": False,
+            "miscellaneous_list_visible": False,
+        }
+
+    ayanamsha = report.get("selected_ayanamsha") if isinstance(report.get("selected_ayanamsha"), dict) else {}
+    method = (
+        report.get("selected_calculation_method")
+        if isinstance(report.get("selected_calculation_method"), dict)
+        else {}
+    )
+    return {
+        "available": True,
+        "status": report.get("status", ""),
+        "source_report": str(source),
+        "selected_ayanamsha_key": ayanamsha.get("key", ""),
+        "selected_ayanamsha_label": ayanamsha.get("label", ""),
+        "selected_calculation_method_key": method.get("key", ""),
+        "selected_calculation_method_label": method.get("label", ""),
+        "offset_control_visible": bool(report.get("offset_control_visible")),
+        "miscellaneous_list_visible": bool(report.get("miscellaneous_list_visible")),
+    }
+
+
+def _missing_parashara_light_calculation_options(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "selected_ayanamsha_key": "",
+        "selected_ayanamsha_label": "",
+        "selected_calculation_method_key": "",
+        "selected_calculation_method_label": "",
+        "offset_control_visible": False,
+        "miscellaneous_list_visible": False,
     }
 
 
