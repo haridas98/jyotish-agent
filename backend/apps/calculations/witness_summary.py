@@ -21,6 +21,7 @@ def build_witness_summary(
     parashara_light_settings_aware_forensic_path: str | Path = "",
     parashara_light_preferences_inventory_path: str | Path = "",
     parashara_light_hidden_option_store_path: str | Path = "",
+    parashara_light_option_store_diff_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
@@ -34,6 +35,7 @@ def build_witness_summary(
         settings_aware_forensic_path=parashara_light_settings_aware_forensic_path,
         preferences_inventory_path=parashara_light_preferences_inventory_path,
         hidden_option_store_path=parashara_light_hidden_option_store_path,
+        option_store_diff_path=parashara_light_option_store_diff_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -89,6 +91,7 @@ def _parashara_light_summary(
     settings_aware_forensic_path: str | Path = "",
     preferences_inventory_path: str | Path = "",
     hidden_option_store_path: str | Path = "",
+    option_store_diff_path: str | Path = "",
 ) -> dict[str, Any]:
     profile = _parashara_light_profile_summary(profile_report_path)
     forensic = _parashara_light_forensic_summary(forensic_report_path)
@@ -98,6 +101,7 @@ def _parashara_light_summary(
     settings_aware_forensic = _parashara_light_settings_aware_forensic_summary(settings_aware_forensic_path)
     preferences_inventory = _parashara_light_preferences_inventory_summary(preferences_inventory_path)
     hidden_option_store = _parashara_light_hidden_option_store_summary(hidden_option_store_path)
+    option_store_diff = _parashara_light_option_store_diff_summary(option_store_diff_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -120,6 +124,7 @@ def _parashara_light_summary(
             "settings_aware_forensic": settings_aware_forensic,
             "preferences_inventory": preferences_inventory,
             "hidden_option_store": hidden_option_store,
+            "option_store_diff": option_store_diff,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -143,6 +148,7 @@ def _parashara_light_summary(
         "settings_aware_forensic": settings_aware_forensic,
         "preferences_inventory": preferences_inventory,
         "hidden_option_store": hidden_option_store,
+        "option_store_diff": option_store_diff,
     }
 
 
@@ -586,6 +592,55 @@ def _missing_parashara_light_hidden_option_store(path: str) -> dict[str, Any]:
         "primary_candidate": "",
         "option_store_candidates_count": 0,
         "session_token_candidates_count": 0,
+        "next_action": "",
+    }
+
+
+def _parashara_light_option_store_diff_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_option_store_diff("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_option_store_diff(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "error": str(exc),
+            "proprietary_binary_policy": "",
+            "visible_setting": "",
+            "primary_candidate": "",
+            "changed_candidates_count": 0,
+            "restore_verified": False,
+            "next_action": "",
+        }
+
+    return {
+        "available": True,
+        "status": report.get("status", ""),
+        "source_report": str(source),
+        "proprietary_binary_policy": report.get("proprietary_binary_policy", ""),
+        "visible_setting": report.get("visible_setting", ""),
+        "primary_candidate": report.get("primary_candidate", ""),
+        "changed_candidates_count": int(report.get("changed_candidates_count") or 0),
+        "restore_verified": bool(report.get("restore_verified")),
+        "next_action": report.get("next_action", ""),
+    }
+
+
+def _missing_parashara_light_option_store_diff(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "proprietary_binary_policy": "",
+        "visible_setting": "",
+        "primary_candidate": "",
+        "changed_candidates_count": 0,
+        "restore_verified": False,
         "next_action": "",
     }
 

@@ -213,3 +213,7 @@ PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH = os.getenv(
     "PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-hidden-option-store.json"),
 )
+PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH = os.getenv(
+    "PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH",
+    str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-option-store-diff.json"),
+)

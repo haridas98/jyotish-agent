@@ -807,6 +807,18 @@ export type WitnessSummary = {
       next_action: string;
       error?: string;
     };
+    option_store_diff: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      proprietary_binary_policy: string;
+      visible_setting: string;
+      primary_candidate: string;
+      changed_candidates_count: number;
+      restore_verified: boolean;
+      next_action: string;
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;

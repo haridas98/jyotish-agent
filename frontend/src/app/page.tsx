@@ -2621,6 +2621,7 @@ function AccuracyReportPanel({
   const plSettingsAwareForensic = witnessSummary?.parashara_light.settings_aware_forensic ?? null;
   const plPreferencesInventory = witnessSummary?.parashara_light.preferences_inventory ?? null;
   const plHiddenOptionStore = witnessSummary?.parashara_light.hidden_option_store ?? null;
+  const plOptionStoreDiff = witnessSummary?.parashara_light.option_store_diff ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2811,6 +2812,29 @@ function AccuracyReportPanel({
               <div>
                 <span>Next action</span>
                 <strong>{plHiddenOptionStore.next_action || "review"}</strong>
+              </div>
+            </div>
+          ) : null}
+          {plOptionStoreDiff?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL option store diff</h3>
+              <div>
+                <span>Status</span>
+                <strong>{plOptionStoreDiff.status || "captured"}</strong>
+                <small>{plOptionStoreDiff.proprietary_binary_policy || "hash-only"}</small>
+              </div>
+              <div>
+                <span>Changed</span>
+                <strong>{plOptionStoreDiff.primary_candidate || "none"}</strong>
+                <small>
+                  {plOptionStoreDiff.changed_candidates_count} candidates, restore{" "}
+                  {plOptionStoreDiff.restore_verified ? "verified" : "not verified"}
+                </small>
+              </div>
+              <div>
+                <span>Setting</span>
+                <strong>{plOptionStoreDiff.visible_setting || "not captured"}</strong>
+                <small>{plOptionStoreDiff.next_action || "review"}</small>
               </div>
             </div>
           ) : null}
