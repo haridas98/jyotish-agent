@@ -1,0 +1,85 @@
+from __future__ import annotations
+
+
+class FakeRect:
+    left = 1
+    top = 2
+    right = 101
+    bottom = 202
+
+
+class FakeControl:
+    def __init__(self, *, text: str, class_name: str, control_type: str = ""):
+        self._text = text
+        self._class_name = class_name
+        self.element_info = type("Info", (), {"control_type": control_type, "class_name": class_name})()
+
+    def window_text(self):
+        return self._text
+
+    def class_name(self):
+        return self._class_name
+
+    def rectangle(self):
+        return FakeRect()
+
+
+class FakeWindow:
+    def descendants(self):
+        return [
+            FakeControl(text="one", class_name="QWidget", control_type="Pane"),
+            FakeControl(text="two", class_name="QWidget", control_type="Pane"),
+            FakeControl(text="three", class_name="QWidget", control_type="Pane"),
+        ]
+
+
+def test_parashara_light_control_payload_keeps_text_class_type_and_rect():
+    from apps.calculations.management.commands.capture_parashara_light_ui_state import _control_payload
+
+    payload = _control_payload(FakeControl(text="Haridas", class_name="QWidget", control_type="Pane"), index=3)
+
+    assert payload == {
+        "index": 3,
+        "text": "Haridas",
+        "class_name": "QWidget",
+        "control_type": "Pane",
+        "rect": {"left": 1, "top": 2, "right": 101, "bottom": 202},
+    }
+
+
+def test_parashara_light_class_summary_counts_control_types_and_classes():
+    from apps.calculations.management.commands.capture_parashara_light_ui_state import _class_summary
+
+    summary = _class_summary(
+        [
+            {"control_type": "Pane", "class_name": "QWidget"},
+            {"control_type": "Pane", "class_name": "QWidget"},
+            {"control_type": "Button", "class_name": ""},
+        ]
+    )
+
+    assert summary == [
+        {"control_type": "Pane", "class_name": "QWidget", "count": 2},
+        {"control_type": "Button", "class_name": "", "count": 1},
+    ]
+
+
+def test_parashara_light_screenshot_failure_is_recorded(tmp_path):
+    from apps.calculations.management.commands.capture_parashara_light_ui_state import _attach_screenshot
+
+    class BrokenWindow:
+        def capture_as_image(self):
+            raise RuntimeError("PIL missing")
+
+    payload = {}
+    _attach_screenshot(payload, BrokenWindow(), tmp_path / "pl.png")
+
+    assert payload["screenshot_error"] == "PIL missing"
+
+
+def test_parashara_light_capture_controls_respects_limit():
+    from apps.calculations.management.commands.capture_parashara_light_ui_state import _capture_controls
+
+    controls = _capture_controls(FakeWindow(), max_controls=2)
+
+    assert [control["text"] for control in controls] == ["one", "two"]
