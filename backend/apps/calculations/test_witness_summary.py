@@ -113,6 +113,22 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = settings_evidence_path
+    visible_capture_path = tmp_path / "pl-visible-settings.json"
+    visible_capture_path.write_text(
+        json.dumps(
+            {
+                "source": "parashara_light_visible_settings_capture",
+                "status": "menu_path_captured_settings_dialog_pending",
+                "settings_dialog_captured": False,
+                "options_menu_captured": True,
+                "surfaces_count": 3,
+                "screenshots_count": 3,
+                "next_action": "capture_calculation_options_dialog_or_native_export",
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings.PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = visible_capture_path
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -145,6 +161,12 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert settings_evidence["options_files_count"] == 1
     assert settings_evidence["session_tokens_count"] == 1
     assert settings_evidence["runtime_build"] == "PL7.0, build B.08.01.06"
+    visible_capture = response.data["parashara_light"]["visible_settings_capture"]
+    assert visible_capture["available"] is True
+    assert visible_capture["status"] == "menu_path_captured_settings_dialog_pending"
+    assert visible_capture["settings_dialog_captured"] is False
+    assert visible_capture["screenshots_count"] == 3
+    assert visible_capture["next_action"] == "capture_calculation_options_dialog_or_native_export"
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
 
@@ -156,6 +178,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     settings.PARASHARA_LIGHT_PROFILE_REPORT_PATH = tmp_path / "missing-pl-profile.json"
     settings.PARASHARA_LIGHT_FORENSIC_REPORT_PATH = tmp_path / "missing-pl-forensic.json"
     settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = tmp_path / "missing-pl-settings-evidence.json"
+    settings.PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = tmp_path / "missing-pl-visible-settings.json"
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -166,6 +189,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     assert response.data["parashara_light"]["profile"]["available"] is False
     assert response.data["parashara_light"]["forensic"]["available"] is False
     assert response.data["parashara_light"]["settings_evidence"]["available"] is False
+    assert response.data["parashara_light"]["visible_settings_capture"]["available"] is False
 
 
 def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
@@ -177,6 +201,7 @@ def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
     settings.PARASHARA_LIGHT_PROFILE_REPORT_PATH = profile_path
     settings.PARASHARA_LIGHT_FORENSIC_REPORT_PATH = tmp_path / "missing-pl-forensic.json"
     settings.PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH = tmp_path / "missing-pl-settings-evidence.json"
+    settings.PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH = tmp_path / "missing-pl-visible-settings.json"
 
     response = APIClient().get(reverse("witness-summary"))
 

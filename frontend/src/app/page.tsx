@@ -2616,6 +2616,7 @@ function AccuracyReportPanel({
     typeof plForensic?.pl_swiss_max_abs_arcsec === "number" ? plForensic.pl_swiss_max_abs_arcsec : null;
   const plForensicRowHealth = plForensic?.row_health ?? { total: 0, matched: 0, diff_open: 0 };
   const plSettingsEvidence = witnessSummary?.parashara_light.settings_evidence ?? null;
+  const plVisibleSettingsCapture = witnessSummary?.parashara_light.visible_settings_capture ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2699,6 +2700,28 @@ function AccuracyReportPanel({
                 <span>Next action</span>
                 <strong>{plSettingsEvidence.next_action || "capture_visible_pl_profile_settings"}</strong>
                 <small>{plSettingsEvidence.artifact_policy || "private audit"}</small>
+              </div>
+            </div>
+          ) : null}
+          {plVisibleSettingsCapture?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL visible settings capture</h3>
+              <div>
+                <span>Status</span>
+                <strong>{plVisibleSettingsCapture.status || "captured"}</strong>
+                <small>
+                  dialog {plVisibleSettingsCapture.settings_dialog_captured ? "yes" : "pending"}, menu{" "}
+                  {plVisibleSettingsCapture.options_menu_captured ? "yes" : "no"}
+                </small>
+              </div>
+              <div>
+                <span>Artifacts</span>
+                <strong>{plVisibleSettingsCapture.screenshots_count} screenshots</strong>
+                <small>{plVisibleSettingsCapture.surfaces_count} UI states</small>
+              </div>
+              <div>
+                <span>Next action</span>
+                <strong>{plVisibleSettingsCapture.next_action || "capture_calculation_options_dialog_or_native_export"}</strong>
               </div>
             </div>
           ) : null}

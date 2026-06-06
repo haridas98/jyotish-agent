@@ -166,6 +166,28 @@ Current local settings evidence:
 - Policy: `hash_only_do_not_parse` for proprietary `.dat`, `.bin`, `.wsl` and `.e31` artifacts.
 - The Accuracy tab exposes only aggregate counts and PL runtime build under `parashara_light.settings_evidence`; raw manifests remain private.
 
+Build a visible PL7 settings capture packet from UI-state JSON and screenshots:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_parashara_light_visible_settings_capture `
+  --id pl7-haridas-visible-settings-20260606 `
+  --ui-state ..\.tmp\pl7\visible-settings-attempt-ui-state.json `
+  --ui-state ..\.tmp\pl7\options-coordinate-menu-ui-state.json `
+  --ui-state ..\.tmp\pl7\calculation-options-keyboard-ui-state.json `
+  --screenshot ..\.tmp\pl7\visible-settings-attempt.png `
+  --screenshot ..\.tmp\pl7\options-coordinate-menu.png `
+  --screenshot ..\.tmp\pl7\calculation-options-keyboard.png `
+  --output ..\.tmp\pl7\haridas-pl-visible-settings-capture.json
+```
+
+Current visible settings capture:
+
+- Report: `.tmp/pl7/haridas-pl-visible-settings-capture.json`.
+- Status: `menu_path_captured_settings_dialog_pending`.
+- Captured 3 screenshots and 3 UI-state files, including the visible `Options` menu path.
+- The `Calculation options` dialog still needs either reliable UI capture or a native PL export; the packet keeps that as `next_action=capture_calculation_options_dialog_or_native_export`.
+
 Build a PL7 birth XML profile report from the installed chart file:
 
 ```powershell

@@ -746,6 +746,17 @@ export type WitnessSummary = {
       next_action: string;
       error?: string;
     };
+    visible_settings_capture: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      settings_dialog_captured: boolean;
+      options_menu_captured: boolean;
+      surfaces_count: number;
+      screenshots_count: number;
+      next_action: string;
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;

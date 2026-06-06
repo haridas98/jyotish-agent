@@ -16,6 +16,7 @@ def build_witness_summary(
     parashara_light_profile_report_path: str | Path = "",
     parashara_light_forensic_report_path: str | Path = "",
     parashara_light_settings_evidence_path: str | Path = "",
+    parashara_light_visible_settings_capture_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
@@ -24,6 +25,7 @@ def build_witness_summary(
         profile_report_path=parashara_light_profile_report_path,
         forensic_report_path=parashara_light_forensic_report_path,
         settings_evidence_path=parashara_light_settings_evidence_path,
+        visible_settings_capture_path=parashara_light_visible_settings_capture_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -74,10 +76,12 @@ def _parashara_light_summary(
     profile_report_path: str | Path = "",
     forensic_report_path: str | Path = "",
     settings_evidence_path: str | Path = "",
+    visible_settings_capture_path: str | Path = "",
 ) -> dict[str, Any]:
     profile = _parashara_light_profile_summary(profile_report_path)
     forensic = _parashara_light_forensic_summary(forensic_report_path)
     settings_evidence = _parashara_light_settings_evidence_summary(settings_evidence_path)
+    visible_settings_capture = _parashara_light_visible_settings_capture_summary(visible_settings_capture_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -95,6 +99,7 @@ def _parashara_light_summary(
             "profile": profile,
             "forensic": forensic,
             "settings_evidence": settings_evidence,
+            "visible_settings_capture": visible_settings_capture,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -113,6 +118,7 @@ def _parashara_light_summary(
         "profile": profile,
         "forensic": forensic,
         "settings_evidence": settings_evidence,
+        "visible_settings_capture": visible_settings_capture,
     }
 
 
@@ -292,6 +298,52 @@ def _missing_parashara_light_settings_evidence(path: str) -> dict[str, Any]:
         "text_artifacts_count": 0,
         "session_tokens_count": 0,
         "runtime_build": "",
+        "next_action": "",
+    }
+
+
+def _parashara_light_visible_settings_capture_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_visible_settings_capture("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_visible_settings_capture(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "error": str(exc),
+            "settings_dialog_captured": False,
+            "options_menu_captured": False,
+            "surfaces_count": 0,
+            "screenshots_count": 0,
+            "next_action": "",
+        }
+
+    return {
+        "available": True,
+        "status": report.get("status", ""),
+        "source_report": str(source),
+        "settings_dialog_captured": bool(report.get("settings_dialog_captured")),
+        "options_menu_captured": bool(report.get("options_menu_captured")),
+        "surfaces_count": int(report.get("surfaces_count") or 0),
+        "screenshots_count": int(report.get("screenshots_count") or 0),
+        "next_action": report.get("next_action", ""),
+    }
+
+
+def _missing_parashara_light_visible_settings_capture(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "settings_dialog_captured": False,
+        "options_menu_captured": False,
+        "surfaces_count": 0,
+        "screenshots_count": 0,
         "next_action": "",
     }
 
