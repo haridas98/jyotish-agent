@@ -185,3 +185,7 @@ PARASHARA_LIGHT_PROFILE_REPORT_PATH = os.getenv(
     "PARASHARA_LIGHT_PROFILE_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-profile-report.json"),
 )
+PARASHARA_LIGHT_FORENSIC_REPORT_PATH = os.getenv(
+    "PARASHARA_LIGHT_FORENSIC_REPORT_PATH",
+    str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-swiss-forensic-dump.json"),
+)

@@ -715,6 +715,24 @@ export type WitnessSummary = {
       candidate_normalization: Record<string, number | string | null>;
       error?: string;
     };
+    forensic: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      conclusion: string;
+      next_action: string;
+      engine_swiss_diff_count: number;
+      pl_diff_count: number;
+      pl_swiss_max_abs_arcsec: number;
+      uniform_offset_status: string;
+      time_shift_status: string;
+      row_health: {
+        total: number;
+        matched: number;
+        diff_open: number;
+      };
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;

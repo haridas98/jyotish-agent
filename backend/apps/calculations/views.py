@@ -131,6 +131,7 @@ class WitnessSummaryView(APIView):
                 parashara_light_packet_path=pl_packet_path,
                 parashara_light_manual_values_path=getattr(settings, "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH", ""),
                 parashara_light_profile_report_path=getattr(settings, "PARASHARA_LIGHT_PROFILE_REPORT_PATH", ""),
+                parashara_light_forensic_report_path=getattr(settings, "PARASHARA_LIGHT_FORENSIC_REPORT_PATH", ""),
             )
         )
 

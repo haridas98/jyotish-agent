@@ -2611,6 +2611,10 @@ function AccuracyReportPanel({
   const plProfile = witnessSummary?.parashara_light.profile ?? null;
   const plProfileFlags = Array.isArray(plProfile?.data_quality_flags) ? plProfile.data_quality_flags : [];
   const plProfileComparison = plProfile?.packet_comparison ?? {};
+  const plForensic = witnessSummary?.parashara_light.forensic ?? null;
+  const plForensicMaxDeviation =
+    typeof plForensic?.pl_swiss_max_abs_arcsec === "number" ? plForensic.pl_swiss_max_abs_arcsec : null;
+  const plForensicRowHealth = plForensic?.row_health ?? { total: 0, matched: 0, diff_open: 0 };
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2651,6 +2655,30 @@ function AccuracyReportPanel({
               <strong>{witnessSummary.open_items.length}</strong>
             </div>
           </div>
+          {plForensic?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL forensic dump</h3>
+              <div>
+                <span>Conclusion</span>
+                <strong>{plForensic.conclusion || "not set"}</strong>
+                <small>{plForensic.pl_diff_count} PL diffs</small>
+              </div>
+              <div>
+                <span>Hypotheses</span>
+                <strong>
+                  offset {plForensic.uniform_offset_status || "n/a"}, time {plForensic.time_shift_status || "n/a"}
+                </strong>
+                <small>max {plForensicMaxDeviation !== null ? plForensicMaxDeviation.toFixed(2) : "n/a"}"</small>
+              </div>
+              <div>
+                <span>Next action</span>
+                <strong>{plForensic.next_action || "none"}</strong>
+                <small>
+                  rows {plForensicRowHealth.matched}/{plForensicRowHealth.total} matched
+                </small>
+              </div>
+            </div>
+          ) : null}
           {plProfile?.available ? (
             <div className="accuracy-list witness-open-items">
               <h3>PL birth XML profile</h3>

@@ -14,12 +14,14 @@ def build_witness_summary(
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
+    parashara_light_forensic_report_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
         parashara_light_packet_path,
         manual_witness_values_path=parashara_light_manual_values_path,
         profile_report_path=parashara_light_profile_report_path,
+        forensic_report_path=parashara_light_forensic_report_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -68,8 +70,10 @@ def _parashara_light_summary(
     *,
     manual_witness_values_path: str | Path = "",
     profile_report_path: str | Path = "",
+    forensic_report_path: str | Path = "",
 ) -> dict[str, Any]:
     profile = _parashara_light_profile_summary(profile_report_path)
+    forensic = _parashara_light_forensic_summary(forensic_report_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -85,6 +89,7 @@ def _parashara_light_summary(
             "manual_failed_count": 0,
             "manual_completion_percent": 0,
             "profile": profile,
+            "forensic": forensic,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -101,6 +106,7 @@ def _parashara_light_summary(
         "capture_status": summary.get("capture_status", ""),
         "review_status": summary.get("review_status", ""),
         "profile": profile,
+        "forensic": forensic,
     }
 
 
@@ -149,6 +155,72 @@ def _missing_parashara_light_profile(path: str) -> dict[str, Any]:
         "data_quality_flags": [],
         "packet_comparison": {},
         "candidate_normalization": {},
+    }
+
+
+def _parashara_light_forensic_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_forensic("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_forensic(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "error": str(exc),
+            "conclusion": "",
+            "next_action": "",
+            "engine_swiss_diff_count": 0,
+            "pl_diff_count": 0,
+            "pl_swiss_max_abs_arcsec": 0.0,
+            "uniform_offset_status": "",
+            "time_shift_status": "",
+            "row_health": {"total": 0, "matched": 0, "diff_open": 0},
+        }
+
+    summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
+    diagnostics = report.get("diagnostics") if isinstance(report.get("diagnostics"), dict) else {}
+    uniform_offset = diagnostics.get("uniform_offset") if isinstance(diagnostics.get("uniform_offset"), dict) else {}
+    time_shift = diagnostics.get("time_shift") if isinstance(diagnostics.get("time_shift"), dict) else {}
+    rows = report.get("rows") if isinstance(report.get("rows"), list) else []
+    matched_count = sum(1 for row in rows if isinstance(row, dict) and row.get("status") == "matched")
+    diff_open_count = sum(1 for row in rows if isinstance(row, dict) and row.get("status") == "diff_open")
+    return {
+        "available": True,
+        "status": "loaded",
+        "source_report": str(source),
+        "conclusion": summary.get("conclusion", ""),
+        "next_action": diagnostics.get("next_action", ""),
+        "engine_swiss_diff_count": int(summary.get("engine_swiss_diff_count") or 0),
+        "pl_diff_count": int(summary.get("pl_diff_count") or 0),
+        "pl_swiss_max_abs_arcsec": float(summary.get("pl_swiss_max_abs_arcsec") or 0.0),
+        "uniform_offset_status": uniform_offset.get("status", ""),
+        "time_shift_status": time_shift.get("status", ""),
+        "row_health": {
+            "total": len([row for row in rows if isinstance(row, dict)]),
+            "matched": matched_count,
+            "diff_open": diff_open_count,
+        },
+    }
+
+
+def _missing_parashara_light_forensic(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "conclusion": "",
+        "next_action": "",
+        "engine_swiss_diff_count": 0,
+        "pl_diff_count": 0,
+        "pl_swiss_max_abs_arcsec": 0.0,
+        "uniform_offset_status": "",
+        "time_shift_status": "",
+        "row_health": {"total": 0, "matched": 0, "diff_open": 0},
     }
 
 

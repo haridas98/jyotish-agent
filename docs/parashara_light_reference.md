@@ -145,6 +145,7 @@ Current Haridas PL witness status:
 - Swiss forensic dump: `.tmp/pl7/swiss-raw-vs-engine-vs-pl7-screenshot.json`.
 - Current finding: jyotish-agent graha longitudes match direct Swiss Lahiri sidereal output exactly for this input. The repeatable forensic command reports `engine_swiss_diff_count=0`, `pl_diff_count=5` for longitudes, and `conclusion=engine_matches_swiss_pl_profile_diff_open`; the sixth manual diff is Mercury pada caused by the longitude crossing the Revati pada boundary. The next audit target is PL7 calculation/profile settings rather than the local Swiss wrapper.
 - The same forensic dump now rejects simple global offset and time-shift hypotheses: `uniform_offset.status=rejected`, `time_shift.status=rejected`, `next_action=capture_parashara_light_profile_settings`.
+- The Accuracy tab now includes the forensic dump through `GET /api/calculations/witness-summary` under `parashara_light.forensic`. It exposes only aggregate audit signals: conclusion, PL diff count, max deviation, rejected hypotheses and next action.
 
 Build a PL7 birth XML profile report from the installed chart file:
 
