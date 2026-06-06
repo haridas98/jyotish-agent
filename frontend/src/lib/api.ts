@@ -826,6 +826,7 @@ export type WitnessSummary = {
     label: string;
     failed_checks?: number;
     completion_percent?: number;
+    next_action?: string;
   }>;
 };
 

@@ -299,6 +299,7 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert option_store_diff["next_action"] == "inspect_pl_native_export_or_ephemeris_mode"
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
+    assert response.data["open_items"][1]["next_action"] == "capture_pl_internal_ayanamsha_value_or_ephemeris_mode"
 
 
 def test_witness_summary_api_reports_missing_sources(settings, tmp_path):

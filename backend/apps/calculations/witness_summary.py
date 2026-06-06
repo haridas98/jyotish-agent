@@ -675,6 +675,7 @@ def _open_items(jhora: dict[str, Any], parashara_light: dict[str, Any]) -> list[
                 "status": "diff_open",
                 "label": "Parashara Light manual diff",
                 "failed_checks": parashara_light["manual_failed_count"],
+                "next_action": _parashara_light_next_action(parashara_light),
             }
         )
     if parashara_light["status"] in {"no_manual_values", "no_checked_fields"}:
@@ -687,3 +688,19 @@ def _open_items(jhora: dict[str, Any], parashara_light: dict[str, Any]) -> list[
             }
         )
     return items
+
+
+def _parashara_light_next_action(parashara_light: dict[str, Any]) -> str:
+    for section in (
+        "settings_aware_forensic",
+        "option_store_diff",
+        "hidden_option_store",
+        "preferences_inventory",
+        "forensic",
+        "visible_settings_capture",
+        "settings_evidence",
+    ):
+        report = parashara_light.get(section)
+        if isinstance(report, dict) and report.get("available") and report.get("next_action"):
+            return str(report["next_action"])
+    return ""

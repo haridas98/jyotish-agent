@@ -2883,7 +2883,11 @@ function AccuracyReportPanel({
                   <span>{item.source}</span>
                   <strong>{item.label}</strong>
                   <small>
-                    {item.failed_checks !== undefined ? `${item.failed_checks} failed` : `${item.completion_percent ?? 0}% filled`}
+                    {item.next_action
+                      ? `${item.next_action}${item.failed_checks !== undefined ? `, ${item.failed_checks} failed` : ""}`
+                      : item.failed_checks !== undefined
+                        ? `${item.failed_checks} failed`
+                        : `${item.completion_percent ?? 0}% filled`}
                   </small>
                 </div>
               ))}
