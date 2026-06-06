@@ -2608,6 +2608,9 @@ function AccuracyReportPanel({
   const plSummary = plReport?.summary ?? null;
   const manualComparison = plReport?.manual_witness_comparison ?? null;
   const screenshotFingerprint = plSummary?.fingerprints.screenshots?.[0];
+  const plProfile = witnessSummary?.parashara_light.profile ?? null;
+  const plProfileFlags = Array.isArray(plProfile?.data_quality_flags) ? plProfile.data_quality_flags : [];
+  const plProfileComparison = plProfile?.packet_comparison ?? {};
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2635,10 +2638,56 @@ function AccuracyReportPanel({
               ) : null}
             </div>
             <div>
+              <span>PL profile</span>
+              <strong>{plProfile?.available ? plProfile.status : "missing"}</strong>
+              {plProfile?.available ? (
+                <small>
+                  {plProfileFlags.length} flags, authoritative: {plProfile.authoritative ? "yes" : "no"}
+                </small>
+              ) : null}
+            </div>
+            <div>
               <span>Open items</span>
               <strong>{witnessSummary.open_items.length}</strong>
             </div>
           </div>
+          {plProfile?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL birth XML profile</h3>
+              <div>
+                <span>Coordinates</span>
+                <strong>
+                  {typeof plProfileComparison.longitude_delta_degrees === "number"
+                    ? `${plProfileComparison.longitude_delta_degrees.toFixed(6)}°`
+                    : "not compared"}
+                </strong>
+                <small>
+                  lat{" "}
+                  {typeof plProfileComparison.latitude_delta_degrees === "number"
+                    ? plProfileComparison.latitude_delta_degrees.toFixed(6)
+                    : "n/a"}
+                </small>
+              </div>
+              <div>
+                <span>Timezone</span>
+                <strong>
+                  {typeof plProfileComparison.timezone_delta_hours === "number"
+                    ? `${plProfileComparison.timezone_delta_hours.toFixed(2)}h delta`
+                    : "not compared"}
+                </strong>
+                <small>candidate, not authoritative</small>
+              </div>
+              {plProfileFlags.length ? (
+                <div>
+                  <span>Flags</span>
+                  <strong>{plProfileFlags.slice(0, 2).join(", ")}</strong>
+                  {plProfileFlags.length > 2 ? (
+                    <small>+{plProfileFlags.length - 2} more</small>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {witnessSummary.open_items.length ? (
             <div className="accuracy-list witness-open-items">
               <h3>Open witness work</h3>

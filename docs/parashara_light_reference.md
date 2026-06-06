@@ -163,6 +163,7 @@ Current local profile report:
 - Candidate normalization records `longitude_east_candidate=55.9666667` and `timezone_offset_hours_candidate=6.0`; these are convention candidates, not silent corrections.
 - Compared with the app packet, timezone delta is `0.0h`; coordinate deltas are `+0.016467°` longitude and `-0.013733°` latitude.
 - Finding: the PL chart XML explains PL's east-negative storage convention and a small coordinate variance, but it does not explain the observed graha longitude differences. Detailed PL7 calculation/profile settings remain the next audit target.
+- The Accuracy tab now includes this profile through `GET /api/calculations/witness-summary` under `parashara_light.profile`. It is marked `authoritative=false`; `candidate_normalization` is shown only as audit context.
 
 ## Next Capture Targets
 

@@ -704,6 +704,17 @@ export type WitnessSummary = {
     manual_completion_percent: number;
     capture_status?: string;
     review_status?: string;
+    profile: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      source_xml?: string;
+      authoritative: boolean;
+      data_quality_flags: string[];
+      packet_comparison: Record<string, number | string | null>;
+      candidate_normalization: Record<string, number | string | null>;
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;

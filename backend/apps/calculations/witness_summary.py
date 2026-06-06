@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -12,11 +13,13 @@ def build_witness_summary(
     jhora_report_path: str | Path,
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
+    parashara_light_profile_report_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
         parashara_light_packet_path,
         manual_witness_values_path=parashara_light_manual_values_path,
+        profile_report_path=parashara_light_profile_report_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -64,7 +67,9 @@ def _parashara_light_summary(
     path: str | Path,
     *,
     manual_witness_values_path: str | Path = "",
+    profile_report_path: str | Path = "",
 ) -> dict[str, Any]:
+    profile = _parashara_light_profile_summary(profile_report_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -79,6 +84,7 @@ def _parashara_light_summary(
             "manual_values_count": 0,
             "manual_failed_count": 0,
             "manual_completion_percent": 0,
+            "profile": profile,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -94,6 +100,55 @@ def _parashara_light_summary(
         "manual_completion_percent": int(summary.get("manual_completion_percent") or 0),
         "capture_status": summary.get("capture_status", ""),
         "review_status": summary.get("review_status", ""),
+        "profile": profile,
+    }
+
+
+def _parashara_light_profile_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_profile("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_profile(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "authoritative": False,
+            "error": str(exc),
+            "data_quality_flags": [],
+            "packet_comparison": {},
+            "candidate_normalization": {},
+        }
+
+    return {
+        "available": True,
+        "status": "loaded",
+        "source_report": str(source),
+        "source_xml": report.get("source_xml", ""),
+        "authoritative": False,
+        "data_quality_flags": report.get("data_quality_flags") if isinstance(report.get("data_quality_flags"), list) else [],
+        "packet_comparison": (
+            report.get("packet_comparison") if isinstance(report.get("packet_comparison"), dict) else {}
+        ),
+        "candidate_normalization": (
+            report.get("candidate_normalization") if isinstance(report.get("candidate_normalization"), dict) else {}
+        ),
+    }
+
+
+def _missing_parashara_light_profile(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "authoritative": False,
+        "data_quality_flags": [],
+        "packet_comparison": {},
+        "candidate_normalization": {},
     }
 
 
