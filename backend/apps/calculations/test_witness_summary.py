@@ -190,6 +190,24 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH = preferences_inventory_path
+    hidden_option_store_path = tmp_path / "pl-hidden-option-store.json"
+    hidden_option_store_path.write_text(
+        json.dumps(
+            {
+                "source": "parashara_light_hidden_option_store",
+                "status": "hidden_option_store_candidates_identified",
+                "proprietary_binary_policy": "hash_only_do_not_parse",
+                "primary_candidate": {"relative_path": "popts1.dat"},
+                "candidate_counts": {
+                    "option_store_candidates": 3,
+                    "session_token_candidates": 1,
+                },
+                "next_action": "diff_option_store_before_after_visible_setting_change",
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings.PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH = hidden_option_store_path
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -248,6 +266,12 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert preferences_inventory["tabs_count"] == 4
     assert preferences_inventory["internal_ephemeris_mode_visible"] is False
     assert preferences_inventory["next_action"] == "capture_native_export_or_hidden_option_store"
+    hidden_option_store = response.data["parashara_light"]["hidden_option_store"]
+    assert hidden_option_store["available"] is True
+    assert hidden_option_store["status"] == "hidden_option_store_candidates_identified"
+    assert hidden_option_store["primary_candidate"] == "popts1.dat"
+    assert hidden_option_store["option_store_candidates_count"] == 3
+    assert hidden_option_store["next_action"] == "diff_option_store_before_after_visible_setting_change"
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
 
@@ -263,6 +287,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     settings.PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = tmp_path / "missing-pl-calculation-options.json"
     settings.PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH = tmp_path / "missing-pl-settings-aware-forensic.json"
     settings.PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH = tmp_path / "missing-pl-preferences-inventory.json"
+    settings.PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH = tmp_path / "missing-pl-hidden-option-store.json"
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -277,6 +302,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     assert response.data["parashara_light"]["calculation_options"]["available"] is False
     assert response.data["parashara_light"]["settings_aware_forensic"]["available"] is False
     assert response.data["parashara_light"]["preferences_inventory"]["available"] is False
+    assert response.data["parashara_light"]["hidden_option_store"]["available"] is False
 
 
 def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
@@ -292,6 +318,7 @@ def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
     settings.PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH = tmp_path / "missing-pl-calculation-options.json"
     settings.PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH = tmp_path / "missing-pl-settings-aware-forensic.json"
     settings.PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH = tmp_path / "missing-pl-preferences-inventory.json"
+    settings.PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH = tmp_path / "missing-pl-hidden-option-store.json"
 
     response = APIClient().get(reverse("witness-summary"))
 

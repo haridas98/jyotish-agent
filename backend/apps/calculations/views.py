@@ -153,6 +153,11 @@ class WitnessSummaryView(APIView):
                     "PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH",
                     "",
                 ),
+                parashara_light_hidden_option_store_path=getattr(
+                    settings,
+                    "PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH",
+                    "",
+                ),
             )
         )
 

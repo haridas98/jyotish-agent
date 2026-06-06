@@ -796,6 +796,17 @@ export type WitnessSummary = {
       next_action: string;
       error?: string;
     };
+    hidden_option_store: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      proprietary_binary_policy: string;
+      primary_candidate: string;
+      option_store_candidates_count: number;
+      session_token_candidates_count: number;
+      next_action: string;
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;

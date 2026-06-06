@@ -2620,6 +2620,7 @@ function AccuracyReportPanel({
   const plCalculationOptions = witnessSummary?.parashara_light.calculation_options ?? null;
   const plSettingsAwareForensic = witnessSummary?.parashara_light.settings_aware_forensic ?? null;
   const plPreferencesInventory = witnessSummary?.parashara_light.preferences_inventory ?? null;
+  const plHiddenOptionStore = witnessSummary?.parashara_light.hidden_option_store ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2788,6 +2789,28 @@ function AccuracyReportPanel({
                 <span>Ephemeris mode</span>
                 <strong>{plPreferencesInventory.internal_ephemeris_mode_visible ? "visible" : "not visible"}</strong>
                 <small>{plPreferencesInventory.tabs_count} tabs/states reviewed</small>
+              </div>
+            </div>
+          ) : null}
+          {plHiddenOptionStore?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL hidden option store</h3>
+              <div>
+                <span>Status</span>
+                <strong>{plHiddenOptionStore.status || "captured"}</strong>
+                <small>{plHiddenOptionStore.proprietary_binary_policy || "hash-only"}</small>
+              </div>
+              <div>
+                <span>Primary</span>
+                <strong>{plHiddenOptionStore.primary_candidate || "not identified"}</strong>
+                <small>
+                  {plHiddenOptionStore.option_store_candidates_count} option candidates,{" "}
+                  {plHiddenOptionStore.session_token_candidates_count} sessions
+                </small>
+              </div>
+              <div>
+                <span>Next action</span>
+                <strong>{plHiddenOptionStore.next_action || "review"}</strong>
               </div>
             </div>
           ) : null}
