@@ -34,18 +34,18 @@ Alternative local/private providers:
 
 ```http
 POST /api/reports/birth-chart/qwen-analysis
-POST /api/reports/birth-chart/nemotron-analysis
+POST /api/reports/birth-chart/deepseek-analysis
 ```
 
 - Qwen uses local FreeQwenApi at `QWEN_API_BASE_URL`.
-- Nemotron uses OpenRouter directly with `OPENROUTER_API_KEY` and stores `provider=openrouter_nemotron`.
-- Nemotron is intentionally a compact overview, not the full Codex/Qwen report path.
+- DeepSeek uses local FreeDeepseekAPI at `FREE_DEEPSEEK_API_BASE_URL` and stores `provider=free_deepseek`.
+- DeepSeek is intentionally a compact overview, not the full Codex/Qwen report path.
 
-Nemotron server smoke:
+DeepSeek local/server smoke:
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend
-.\.venv\Scripts\python manage.py smoke_nemotron_openrouter
+.\.venv\Scripts\python manage.py smoke_free_deepseek
 ```
 
 ```powershell

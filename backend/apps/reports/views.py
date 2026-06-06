@@ -23,8 +23,8 @@ from .codex_cli_generation import (
     generate_compatibility_codex_cli_analysis,
 )
 from .draft_generation import DraftGenerationUnavailable, generate_birth_chart_draft_analysis
+from .deepseek_generation import generate_birth_chart_deepseek_analysis
 from .models import GeneratedAnalysisDraft
-from .nemotron_generation import generate_birth_chart_nemotron_analysis
 from .qwen_generation import generate_birth_chart_qwen_analysis
 
 
@@ -129,13 +129,13 @@ class BirthQwenAnalysisView(APIView):
             return Response({"error": str(exc)}, status=503)
 
 
-class BirthNemotronAnalysisView(APIView):
+class BirthDeepseekAnalysisView(APIView):
     permission_classes = [PrivateAppAccess]
 
     def post(self, request):
         try:
             return Response(
-                generate_birth_chart_nemotron_analysis(
+                generate_birth_chart_deepseek_analysis(
                     request.data,
                     citation_search=vl_citation_search,
                     research_search=local_research_corpus_search,
