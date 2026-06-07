@@ -401,7 +401,9 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
                             "mark_parashara_light_witness_reviewed",
                         ],
                         "next_action_key": "set_review_status_jhora_verified_after_manual_review",
+                        "next_command_kind": "manual_review",
                         "next_command": "",
+                        "manual_review_command": ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review --jhora ..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345 --parashara-light ..\\.tmp\\pl7\\batch-queue\\sterlitamak-1998-04-30-1345\\packet.json",
                         "blocker_count": 4,
                     }
                 ],
@@ -420,7 +422,9 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
                         "mark_parashara_light_witness_reviewed",
                     ],
                     "next_action_key": "set_review_status_jhora_verified_after_manual_review",
+                    "next_command_kind": "manual_review",
                     "next_command": "",
+                    "manual_review_command": ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review --jhora ..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345 --parashara-light ..\\.tmp\\pl7\\batch-queue\\sterlitamak-1998-04-30-1345\\packet.json",
                     "blocker_count": 4,
                 },
                 "next_command": "",
@@ -471,6 +475,9 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     ]
     assert witness_capture_queue["next_item"]["id"] == "sterlitamak-1998-04-30-1345"
     assert witness_capture_queue["items"][0]["next_action_key"] == "set_review_status_jhora_verified_after_manual_review"
+    assert witness_capture_queue["items"][0]["next_command_kind"] == "manual_review"
+    assert witness_capture_queue["items"][0]["next_command"] == ""
+    assert "preflight_witness_review" in witness_capture_queue["items"][0]["manual_review_command"]
     assert "mark_parashara_light_witness_reviewed" in witness_capture_queue["items"][0]["suggested_actions"]
     timezone_audit = response.data["birth_timezone_audit"]
     assert timezone_audit["available"] is True

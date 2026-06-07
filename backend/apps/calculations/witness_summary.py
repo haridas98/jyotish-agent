@@ -368,7 +368,9 @@ def _witness_capture_queue_item(row: dict[str, Any]) -> dict[str, Any]:
         },
         "suggested_actions": _string_list(row.get("suggested_actions")),
         "next_action_key": str(row.get("next_action_key") or ""),
+        "next_command_kind": str(row.get("next_command_kind") or ""),
         "next_command": str(row.get("next_command") or ""),
+        "manual_review_command": str(row.get("manual_review_command") or ""),
         "blocker_count": int(row.get("blocker_count") or 0),
     }
 

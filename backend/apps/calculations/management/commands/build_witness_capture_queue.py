@@ -12,7 +12,7 @@ from apps.calculations.witness_batch import audit_jhora_pl_witness_batch
 
 
 SCHEMA_VERSION = "jyotish-witness-capture-queue-v1"
-ACTION_COMMANDS = {
+AUTO_CAPTURE_ACTION_COMMANDS = {
     "build_jhora_witness_batch_packets": (
         ".\\.venv\\Scripts\\python.exe manage.py build_jhora_witness_batch_packets --case-id {case_id}"
     ),
@@ -20,28 +20,30 @@ ACTION_COMMANDS = {
         ".\\.venv\\Scripts\\python.exe manage.py capture_jhora_witness_batch_exports "
         "--case-id {case_id} --skip-existing"
     ),
-    "set_review_status_jhora_verified_after_manual_review": (
-        ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed "
-        "..\\.tmp\\jhora\\batch-queue\\{case_id} --reviewer Haridas"
-    ),
-    "add_reviewer_and_reviewed_at": (
-        ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed "
-        "..\\.tmp\\jhora\\batch-queue\\{case_id} --reviewer Haridas"
-    ),
     "attach_pl_witness_packet_or_manual_values": (
         ".\\.venv\\Scripts\\python.exe manage.py build_parashara_light_witness_batch_packets --case-id {case_id}"
     ),
+}
+MANUAL_REVIEW_ACTION_COMMANDS = {
+    "set_review_status_jhora_verified_after_manual_review": (
+        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
+        "--jhora {jhora_path} --parashara-light {pl_path}"
+    ),
+    "add_reviewer_and_reviewed_at": (
+        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
+        "--jhora {jhora_path} --parashara-light {pl_path}"
+    ),
     "mark_jhora_witness_reviewed": (
-        ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed "
-        "..\\.tmp\\jhora\\batch-queue\\{case_id} --reviewer Haridas"
+        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
+        "--jhora {jhora_path} --parashara-light {pl_path}"
     ),
     "mark_jhora_witness_reviewed_with_ack_diff_open": (
-        ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed "
-        "..\\.tmp\\jhora\\batch-queue\\{case_id} --reviewer Haridas --ack-diff-open"
+        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
+        "--jhora {jhora_path} --parashara-light {pl_path}"
     ),
     "mark_parashara_light_witness_reviewed": (
-        ".\\.venv\\Scripts\\python.exe manage.py mark_parashara_light_witness_reviewed "
-        "..\\.tmp\\pl7\\batch-queue\\{case_id} --reviewer Haridas"
+        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
+        "--jhora {jhora_path} --parashara-light {pl_path}"
     ),
 }
 
@@ -103,7 +105,11 @@ def build_witness_capture_queue(
         pl_root=pl_root,
         target_reviewed_count=target_reviewed_count,
     )
-    items = [_queue_item(index + 1, row) for index, row in enumerate(audit["next_actions"][: max(limit, 0)])]
+    case_rows = {str(row.get("id") or ""): row for row in audit.get("cases", []) if isinstance(row, dict)}
+    items = [
+        _queue_item(index + 1, _with_case_records(row, case_rows))
+        for index, row in enumerate(audit["next_actions"][: max(limit, 0)])
+    ]
     output_path = Path(output)
     markdown_path = Path(markdown_output) if str(markdown_output or "").strip() else None
     payload = {
@@ -146,6 +152,8 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
     suggested_actions = _string_list(row.get("suggested_actions"))
     case_id = str(row.get("id") or "")
     next_action = suggested_actions[0] if suggested_actions else ""
+    auto_command = _next_auto_command(case_id, next_action)
+    manual_command = _next_manual_review_command(row, next_action)
     return {
         "priority": priority,
         "id": case_id,
@@ -158,8 +166,19 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
         },
         "suggested_actions": suggested_actions,
         "next_action_key": next_action,
-        "next_command": _next_command(case_id, next_action),
+        "next_command_kind": "auto_capture" if auto_command else "manual_review" if manual_command else "manual",
+        "next_command": auto_command,
+        "manual_review_command": manual_command,
         "blocker_count": len(missing_jhora) + len(missing_pl),
+    }
+
+
+def _with_case_records(action: dict[str, Any], case_rows: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    case_row = case_rows.get(str(action.get("id") or ""), {})
+    return {
+        **action,
+        "jhora_records": case_row.get("jhora_records", []),
+        "pl_records": case_row.get("pl_records", []),
     }
 
 
@@ -167,9 +186,49 @@ def _string_list(value: Any) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
 
 
-def _next_command(case_id: str, action: str) -> str:
-    template = ACTION_COMMANDS.get(action)
+def _next_auto_command(case_id: str, action: str) -> str:
+    template = AUTO_CAPTURE_ACTION_COMMANDS.get(action)
     return template.format(case_id=case_id) if template else ""
+
+
+def _next_manual_review_command(row: dict[str, Any], action: str) -> str:
+    template = MANUAL_REVIEW_ACTION_COMMANDS.get(action)
+    if not template:
+        return ""
+    case_id = str(row.get("id") or "")
+    jhora_path = _preferred_jhora_path(row.get("jhora_records"))
+    pl_path = _preferred_pl_path(row.get("pl_records"))
+    if not jhora_path and not pl_path:
+        return ""
+    return template.format(
+        case_id=case_id,
+        jhora_path=jhora_path,
+        pl_path=pl_path,
+    )
+
+
+def _preferred_jhora_path(value: Any) -> str:
+    return _preferred_record_path(value, required_artifacts=("complete_calculations_text", "settings_evidence", "screenshots"))
+
+
+def _preferred_pl_path(value: Any) -> str:
+    return _preferred_record_path(value, required_artifacts=("ui_state", "settings_evidence", "screenshots", "manual_witness_values"))
+
+
+def _preferred_record_path(value: Any, *, required_artifacts: tuple[str, ...]) -> str:
+    if not isinstance(value, list):
+        return ""
+    fallback = ""
+    for row in value:
+        if not isinstance(row, dict):
+            continue
+        path = str(row.get("path") or "").strip()
+        if path:
+            fallback = fallback or path
+        artifacts = row.get("artifacts") if isinstance(row.get("artifacts"), dict) else {}
+        if path and all(bool(artifacts.get(key)) for key in required_artifacts):
+            return path
+    return fallback
 
 
 def _markdown_queue(payload: dict[str, Any]) -> str:
@@ -194,7 +253,8 @@ def _markdown_queue(payload: dict[str, Any]) -> str:
                 f"- JHora blockers: {', '.join(item['capture_targets']['jhora']) or 'none'}",
                 f"- PL blockers: {', '.join(item['capture_targets']['parashara_light']) or 'none'}",
                 f"- Suggested actions: {', '.join(item['suggested_actions']) or 'review'}",
-                f"- Next command: {item['next_command'] or 'manual review'}",
+                f"- Next command: {item['next_command'] or 'manual review required'}",
+                f"- Manual review command: {item['manual_review_command'] or 'n/a'}",
                 "",
             ]
         )

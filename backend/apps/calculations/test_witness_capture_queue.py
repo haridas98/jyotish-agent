@@ -73,3 +73,27 @@ def test_build_witness_capture_queue_command_outputs_json(tmp_path):
     assert payload["next_command"]
     assert output.exists()
     assert markdown_output.exists()
+
+
+def test_witness_capture_queue_manual_review_actions_are_not_auto_commands():
+    from apps.calculations.management.commands.build_witness_capture_queue import _queue_item
+
+    row = {
+        "id": "sterlitamak-1998-04-30-1345",
+        "group": "dst_sensitive",
+        "label": "Sterlitamak user DST case",
+        "status": "jhora_review_pending",
+        "missing_for_authoritative_review": ["authoritative_review_status", "reviewer"],
+        "missing_secondary_witness": [],
+        "suggested_actions": ["set_review_status_jhora_verified_after_manual_review"],
+        "jhora_records": [{"path": "..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345"}],
+        "pl_records": [],
+    }
+
+    item = _queue_item(1, row)
+
+    assert item["next_command_kind"] == "manual_review"
+    assert item["next_command"] == ""
+    assert item["manual_review_command"].endswith(
+        "manage.py preflight_witness_review --jhora ..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345 --parashara-light "
+    )
