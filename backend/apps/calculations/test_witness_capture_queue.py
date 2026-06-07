@@ -100,3 +100,33 @@ def test_witness_capture_queue_manual_review_actions_are_not_auto_commands():
     assert item["manual_review_command"].endswith(
         "manage.py preflight_witness_review --jhora ..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345 --parashara-light "
     )
+
+
+def test_witness_capture_queue_text_summary_shows_manual_review_next_step():
+    from apps.calculations.management.commands.build_witness_capture_queue import _text_summary
+
+    payload = {
+        "summary": {
+            "queue_count": 1,
+            "remaining_to_target_count": 1,
+            "output": "capture-queue.json",
+            "markdown_output": "capture-queue.md",
+        },
+        "next_command": "",
+        "next_item": {
+            "next_step_label": "Run review preflight first",
+            "manual_review_command": ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review --jhora a --parashara-light b",
+        },
+        "items": [
+            {
+                "priority": 1,
+                "id": "sterlitamak-1998-04-30-1345",
+                "suggested_actions": ["set_review_status_jhora_verified_after_manual_review"],
+            }
+        ],
+    }
+
+    text = _text_summary(payload)
+
+    assert "next step: Run review preflight first" in text
+    assert "manual review command: .\\.venv\\Scripts\\python.exe manage.py preflight_witness_review" in text

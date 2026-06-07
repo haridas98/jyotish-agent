@@ -281,8 +281,13 @@ def _text_summary(payload: dict[str, Any]) -> str:
     ]
     if summary["markdown_output"]:
         lines.append(f"markdown: {summary['markdown_output']}")
+    next_item = payload.get("next_item") if isinstance(payload.get("next_item"), dict) else {}
+    if next_item.get("next_step_label"):
+        lines.append(f"next step: {next_item['next_step_label']}")
     if payload["next_command"]:
         lines.append(f"next command: {payload['next_command']}")
+    elif next_item.get("manual_review_command"):
+        lines.append(f"manual review command: {next_item['manual_review_command']}")
     for item in payload["items"][:10]:
         lines.append(f"- {item['priority']}. {item['id']}: {', '.join(item['suggested_actions']) or 'review'}")
     return "\n".join(lines)
