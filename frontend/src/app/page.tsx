@@ -2722,7 +2722,7 @@ function AccuracyReportPanel({
                   {witnessReview.jhora.status ?? "missing"} / {witnessReview.parashara_light.status ?? "missing"}
                 </strong>
                 <small>
-                  {witnessReview.jhora.id ?? "JHora missing"} В· {witnessReview.parashara_light.id ?? "PL missing"}
+                  {witnessReview.jhora.id ?? "JHora missing"} · {witnessReview.parashara_light.id ?? "PL missing"}
                 </small>
               </div>
               {witnessOpenDiffs ? (
