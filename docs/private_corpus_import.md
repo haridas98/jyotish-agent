@@ -84,6 +84,15 @@ cd C:\Projects\jyotish-agent\backend
   --output ..\.tmp\ocr-review\bphs\qwen-batch-0024-0026-witness.json
 ```
 
+Assemble the completed Qwen-normalized BPHS with SanskritDocuments Sanskrit inserted before each chapter in both Devanagari and ITRANS:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py assemble_bphs_sanskrit_merged
+.\.venv\Scripts\python manage.py import_private_corpus ..\.private_corpus\bphs-santhanam-manifest.json
+.\.venv\Scripts\python manage.py segment_private_corpus bphs-santhanam-qwen-normalized-with-sanskrit-private --max-chars 1800
+```
+
 Digital source candidates:
 
 | Work | Digital source | Import status |
