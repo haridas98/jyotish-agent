@@ -719,6 +719,7 @@ export type WitnessReviewChecklistItem = {
   status: string;
   required: boolean;
   detail: string;
+  next_step: string;
 };
 
 export type WitnessSummary = {

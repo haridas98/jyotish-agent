@@ -39,6 +39,7 @@ and the Accuracy tab shows the written/skipped/error counts plus generated/revie
 The JSON index also includes `next_actions` with per-case JHora/PL blockers and suggested capture/review actions.
 Each written batch row also carries `review_checklist` and `review_checklist_summary`; the plain CLI summary and
 `_index.md` show the same checklist statuses without exposing mark/seal commands.
+Each checklist item includes `next_step`, so UI/agents can show the next safe manual action without parsing markdown.
 Batch rows also include `safe_next_step`; the CLI summary, `_index.md`, Witness Summary API and Accuracy tab show it
 as the next non-mutating review step.
 

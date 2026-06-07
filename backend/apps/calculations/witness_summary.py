@@ -216,6 +216,7 @@ def _witness_review_checklist(payload: dict[str, Any]) -> list[dict[str, Any]]:
             "status": "blocked" if jhora_missing else "ready",
             "required": True,
             "detail": ", ".join(jhora_missing) or "JHora evidence captured",
+            "next_step": _evidence_next_step(jhora_missing, "JHora evidence ready"),
         },
         {
             "key": "parashara_light_evidence",
@@ -223,6 +224,7 @@ def _witness_review_checklist(payload: dict[str, Any]) -> list[dict[str, Any]]:
             "status": "blocked" if pl_missing else "ready",
             "required": True,
             "detail": ", ".join(pl_missing) or "PL evidence captured",
+            "next_step": _evidence_next_step(pl_missing, "PL evidence ready"),
         },
         {
             "key": "open_diffs",
@@ -230,6 +232,7 @@ def _witness_review_checklist(payload: dict[str, Any]) -> list[dict[str, Any]]:
             "status": "ack_required" if ack_required else "matched",
             "required": ack_required,
             "detail": f"JHora {_failed_count(jhora_diffs)}, PL {_failed_count(pl_diffs)} open diffs",
+            "next_step": "review and ACK open JHora/PL diffs" if ack_required else "no open diffs",
         },
         {
             "key": "review_ack",
@@ -237,8 +240,13 @@ def _witness_review_checklist(payload: dict[str, Any]) -> list[dict[str, Any]]:
             "status": "ack_required" if ack_required else "ready",
             "required": ack_required,
             "detail": str(payload.get("safe_next_step") or "review preflight first"),
+            "next_step": str(payload.get("safe_next_step") or "review preflight first"),
         },
     ]
+
+
+def _evidence_next_step(missing: list[str], fallback: str) -> str:
+    return f"capture missing evidence: {', '.join(missing)}" if missing else fallback
 
 
 def _failed_count(value: dict[str, Any]) -> int:
@@ -431,6 +439,7 @@ def _review_checklist_items(value: Any) -> list[dict[str, Any]]:
                 "status": str(row.get("status") or ""),
                 "required": bool(row.get("required")),
                 "detail": str(row.get("detail") or ""),
+                "next_step": str(row.get("next_step") or ""),
             }
         )
     return rows

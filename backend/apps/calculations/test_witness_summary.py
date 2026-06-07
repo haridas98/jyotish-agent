@@ -463,6 +463,8 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     ]
     assert checklist[2]["status"] == "ack_required"
     assert "PL 1" in checklist[2]["detail"]
+    assert checklist[2]["next_step"] == "review and ACK open JHora/PL diffs"
+    assert checklist[3]["next_step"] == "human ACK required before mark/seal"
     witness_review_batch = response.data["witness_review_batch"]
     assert witness_review_batch["available"] is True
     assert witness_review_batch["summary"]["written_count"] == 1

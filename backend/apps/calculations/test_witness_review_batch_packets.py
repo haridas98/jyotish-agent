@@ -45,6 +45,8 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
         "review_ack",
     ]
     assert written["review_checklist"][2]["status"] == "ack_required"
+    assert written["review_checklist"][2]["next_step"] == "review and ACK open JHora/PL diffs"
+    assert written["review_checklist"][3]["next_step"] == "human ACK required before mark/seal"
     assert (
         written["review_checklist_summary"]
         == "JHora evidence=ready; Parashara Light evidence=ready; Open diffs=ack_required; Manual ACK=ack_required"
@@ -81,6 +83,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert index_json["metadata"]["reviewer"] == "Haridas"
     assert index_json["written"][0]["ack_required"] is True
     assert index_json["written"][0]["review_checklist"][3]["key"] == "review_ack"
+    assert index_json["written"][0]["review_checklist"][3]["next_step"] == "human ACK required before mark/seal"
     assert index_json["written"][0]["review_checklist_summary"] == written["review_checklist_summary"]
     assert index_json["written"][0]["safe_next_step"] == "human ACK required before mark/seal"
     assert any(row["id"] == "vrindavan-1990-08-15-1024" for row in index_json["next_actions"])

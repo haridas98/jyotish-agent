@@ -270,6 +270,7 @@ def _review_checklist(
             "status": _evidence_status(jhora_preflight),
             "required": True,
             "detail": _evidence_detail(jhora_preflight, "JHora evidence captured"),
+            "next_step": _evidence_next_step(jhora_preflight, "JHora evidence ready"),
         },
         {
             "key": "parashara_light_evidence",
@@ -277,6 +278,7 @@ def _review_checklist(
             "status": _evidence_status(pl_preflight),
             "required": True,
             "detail": _evidence_detail(pl_preflight, "PL evidence captured"),
+            "next_step": _evidence_next_step(pl_preflight, "PL evidence ready"),
         },
         {
             "key": "open_diffs",
@@ -287,6 +289,7 @@ def _review_checklist(
                 f"JHora {jhora['diff_summary']['failed_count']}, "
                 f"PL {parashara_light['manual_diff_summary']['failed_count']} open diffs"
             ),
+            "next_step": "review and ACK open JHora/PL diffs" if ack_status == "ack_required" else "no open diffs",
         },
         {
             "key": "review_ack",
@@ -294,6 +297,7 @@ def _review_checklist(
             "status": ack_status,
             "required": bool(preflight["overall"]["ack_required"]),
             "detail": _safe_next_step(preflight),
+            "next_step": _safe_next_step(preflight),
         },
     ]
 
@@ -308,6 +312,11 @@ def _evidence_status(source: dict[str, Any]) -> str:
 
 def _evidence_detail(source: dict[str, Any], fallback: str) -> str:
     return ", ".join(_missing_evidence(source)) or fallback
+
+
+def _evidence_next_step(source: dict[str, Any], fallback: str) -> str:
+    missing = _missing_evidence(source)
+    return f"capture missing evidence: {', '.join(missing)}" if missing else fallback
 
 
 def _missing_evidence(source: dict[str, Any]) -> list[str]:

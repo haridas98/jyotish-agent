@@ -2738,7 +2738,7 @@ function AccuracyReportPanel({
                 <div key={item.key}>
                   <span>{item.label}</span>
                   <strong>{item.status}</strong>
-                  <small>{item.detail}</small>
+                  <small>{item.next_step ? `${item.detail}; next: ${item.next_step}` : item.detail}</small>
                 </div>
               ))}
               {witnessOpenDiffRows.map(({ source, row }, index) => (
