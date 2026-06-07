@@ -18,6 +18,8 @@ cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py audit_jhora_witness_batch
 ```
 
+For next-action review gates, run it with `--with-review-preflight`; this adds `ack_required` and `blocked` preflight status for queued cases.
+
 The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to the 20-chart target queue, and reports:
 
 - candidate suite size;

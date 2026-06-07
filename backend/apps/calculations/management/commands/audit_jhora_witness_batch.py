@@ -24,6 +24,7 @@ class Command(BaseCommand):
         )
         parser.add_argument("--target-reviewed-count", type=int, default=20)
         parser.add_argument("--json", action="store_true")
+        parser.add_argument("--with-review-preflight", action="store_true")
         parser.add_argument("--fail-if-target-missing", action="store_true")
 
     def handle(self, *args, **options):
@@ -31,6 +32,7 @@ class Command(BaseCommand):
             jhora_root=options["jhora_root"],
             pl_root=options["pl_root"],
             target_reviewed_count=options["target_reviewed_count"],
+            include_review_preflight=options["with_review_preflight"],
         )
         if options["json"]:
             self.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -60,5 +62,10 @@ def _text_summary(payload: dict) -> str:
         lines.append("next actions:")
         for item in payload["next_actions"][:20]:
             actions = ", ".join(item["suggested_actions"]) or "none"
-            lines.append(f"- {item['id']}: {actions}")
+            preflight = item.get("review_preflight") if isinstance(item.get("review_preflight"), dict) else {}
+            overall = preflight.get("overall") if isinstance(preflight.get("overall"), dict) else {}
+            suffix = ""
+            if overall:
+                suffix = f" | preflight ack_required={overall.get('ack_required')} blocked={overall.get('blocked')}"
+            lines.append(f"- {item['id']}: {actions}{suffix}")
     return "\n".join(lines)

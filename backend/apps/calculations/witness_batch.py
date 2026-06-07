@@ -33,6 +33,7 @@ def audit_jhora_pl_witness_batch(
     jhora_root: str | Path,
     pl_root: str | Path = "",
     target_reviewed_count: int = DEFAULT_TARGET_REVIEWED_COUNT,
+    include_review_preflight: bool = False,
 ) -> dict[str, Any]:
     manifest = jhora_parity_suite_manifest()
     load_errors: list[dict[str, str]] = []
@@ -60,6 +61,7 @@ def audit_jhora_pl_witness_batch(
         "next_actions": _next_actions(
             case_rows,
             max(target_reviewed_count - summary["batch_review_ready_count"], 0),
+            include_review_preflight=include_review_preflight,
         ),
         "cases": case_rows,
         "load_errors": load_errors,
@@ -291,26 +293,53 @@ def _summary(
     }
 
 
-def _next_actions(case_rows: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+def _next_actions(
+    case_rows: list[dict[str, Any]],
+    limit: int,
+    *,
+    include_review_preflight: bool = False,
+) -> list[dict[str, Any]]:
     actions = []
     for row in case_rows:
         if row["batch_review_ready"]:
             continue
-        actions.append(
-            {
-                "id": row["id"],
-                "group": row["group"],
-                "label": row["label"],
-                "status": row["status"],
-                "batch_review_ready": row["batch_review_ready"],
-                "missing_for_authoritative_review": row["missing_for_authoritative_review"],
-                "missing_secondary_witness": row["missing_secondary_witness"],
-                "suggested_actions": _suggested_actions(row),
-            }
-        )
+        action = {
+            "id": row["id"],
+            "group": row["group"],
+            "label": row["label"],
+            "status": row["status"],
+            "batch_review_ready": row["batch_review_ready"],
+            "missing_for_authoritative_review": row["missing_for_authoritative_review"],
+            "missing_secondary_witness": row["missing_secondary_witness"],
+            "suggested_actions": _suggested_actions(row),
+        }
+        if include_review_preflight:
+            action["review_preflight"] = _review_preflight(row)
+        actions.append(action)
         if len(actions) >= limit:
             break
     return actions
+
+
+def _review_preflight(row: dict[str, Any]) -> dict[str, Any]:
+    from apps.calculations.management.commands.preflight_witness_review import build_witness_review_preflight
+
+    jhora_path = _first_record_path(row["jhora_records"])
+    pl_path = _first_record_path(row["pl_records"])
+    try:
+        return build_witness_review_preflight(jhora_path=jhora_path, parashara_light_path=pl_path)
+    except Exception as exc:  # noqa: BLE001 - audit must report preflight blockers without hiding the queue.
+        return {
+            "schema_version": "jyotish-witness-review-preflight-v1",
+            "overall": {"reviewable": False, "ack_required": False, "blocked": True},
+            "error": str(exc),
+        }
+
+
+def _first_record_path(records: list[dict[str, Any]]) -> str:
+    if not records:
+        return ""
+    return str(records[0].get("path") or "")
 
 
 def _suggested_actions(row: dict[str, Any]) -> list[str]:
