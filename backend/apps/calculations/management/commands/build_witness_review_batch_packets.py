@@ -318,6 +318,7 @@ def _text_summary(payload: dict[str, Any]) -> str:
     for row in payload["written"]:
         lines.append(
             f"- {row['id']}: {row['output_path']} "
-            f"(reviewable={row['reviewable']} ack_required={row['ack_required']} blocked={row['blocked']})"
+            f"(reviewable={row['reviewable']} ack_required={row['ack_required']} blocked={row['blocked']} "
+            f"checklist={_checklist_summary(row.get('review_checklist'))})"
         )
     return "\n".join(lines)

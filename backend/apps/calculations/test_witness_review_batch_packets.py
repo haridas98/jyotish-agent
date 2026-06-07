@@ -110,6 +110,32 @@ def test_build_witness_review_batch_packets_command_outputs_json(tmp_path):
     assert (output_root / "_index.json").exists()
 
 
+def test_build_witness_review_batch_packets_command_text_shows_checklist(tmp_path):
+    jhora_root, pl_root = _write_batch_roots(tmp_path)
+    output_root = tmp_path / "review-packets"
+    stdout = StringIO()
+
+    call_command(
+        "build_witness_review_batch_packets",
+        "--jhora-root",
+        str(jhora_root),
+        "--pl-root",
+        str(pl_root),
+        "--output-root",
+        str(output_root),
+        "--reviewer",
+        "Haridas",
+        "--reviewed-at",
+        "2026-06-07T12:00:00+05:00",
+        stdout=stdout,
+    )
+
+    text = stdout.getvalue()
+    assert "sterlitamak-1998-04-30-1345" in text
+    assert "checklist=JHora evidence=ready; Parashara Light evidence=ready; Open diffs=ack_required; Manual ACK=ack_required" in text
+    assert "seal_witness_case" not in text
+
+
 def _write_batch_roots(tmp_path):
     jhora_root = tmp_path / "jhora"
     pl_root = tmp_path / "pl7"
