@@ -69,6 +69,21 @@ cd C:\Projects\jyotish-agent\backend
 
 The command writes provider-normalized variants and OCR issue lists to `.tmp\ocr-review`. It does not overwrite the imported private corpus; human review decides which correction becomes a trusted passage.
 
+For BPHS, OCR review can include internet witness text. Keep the OCR source primary, but when a Sanskrit shloka clearly matches SanskritDocuments or another downloaded witness, the AI reviewer may prefer the witness reading and must note that in `witness_usage`.
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py review_private_corpus_ocr_with_ai `
+  --work-slug bphs-santhanam-private `
+  --providers qwen `
+  --limit 3 `
+  --offset 23 `
+  --max-chars 9000 `
+  --witness-root ..\.private_corpus\internet_witnesses `
+  --max-witness-chars 5000 `
+  --output ..\.tmp\ocr-review\bphs\qwen-batch-0024-0026-witness.json
+```
+
 Digital source candidates:
 
 | Work | Digital source | Import status |
