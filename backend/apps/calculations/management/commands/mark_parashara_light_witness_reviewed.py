@@ -7,6 +7,8 @@ from typing import Any
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
+from apps.calculations.manual_witness_comparison import compare_manual_witness_values
+
 
 DEFAULT_REVIEW_STATUS = "reviewed"
 ALLOWED_REVIEW_STATUSES = {"reviewed", "approved"}
@@ -25,6 +27,11 @@ class Command(BaseCommand):
             default=DEFAULT_REVIEW_STATUS,
         )
         parser.add_argument("--force", action="store_true")
+        parser.add_argument(
+            "--ack-diff-open",
+            action="store_true",
+            help="Acknowledge reviewed PL/manual witness differences and still mark the packet reviewed.",
+        )
         parser.add_argument("--json", action="store_true")
 
     def handle(self, *args, **options):
@@ -34,6 +41,7 @@ class Command(BaseCommand):
             reviewed_at=options["reviewed_at"],
             review_status=options["review_status"],
             force=options["force"],
+            ack_diff_open=options["ack_diff_open"],
         )
         if options["json"]:
             self.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -51,6 +59,7 @@ def mark_parashara_light_witness_reviewed(
     reviewed_at: str = "",
     review_status: str = DEFAULT_REVIEW_STATUS,
     force: bool = False,
+    ack_diff_open: bool = False,
 ) -> dict[str, Any]:
     reviewer = reviewer.strip()
     if not reviewer:
@@ -67,12 +76,17 @@ def mark_parashara_light_witness_reviewed(
     missing = _missing_review_evidence(fixture)
     if missing and not force:
         raise CommandError(f"Cannot mark Parashara's Light witness reviewed; missing: {', '.join(missing)}")
+    manual_status = _manual_witness_status(packet, fixture)
+    if manual_status == "diff_open" and not (ack_diff_open or force):
+        raise CommandError("Cannot mark Parashara's Light witness reviewed; manual witness diff_open requires --ack-diff-open")
 
     timestamp = reviewed_at.strip() or timezone.now().isoformat()
     metadata = fixture.get("pl_metadata") if isinstance(fixture.get("pl_metadata"), dict) else {}
     metadata["reviewer"] = reviewer
     metadata["reviewed_at"] = timestamp
     metadata["profile_status"] = "reviewed"
+    metadata["manual_witness_status"] = manual_status
+    metadata["manual_witness_diff_acknowledged"] = bool(manual_status == "diff_open" and (ack_diff_open or force))
     fixture["pl_metadata"] = metadata
     fixture["review_status"] = review_status
 
@@ -87,6 +101,7 @@ def mark_parashara_light_witness_reviewed(
         "review_status": review_status,
         "reviewer": reviewer,
         "reviewed_at": timestamp,
+        "manual_witness_status": manual_status,
         "packet_path": str(packet_path) if packet_path.exists() else "",
         "fixture_path": str(fixture_path),
         "forced": force,
@@ -124,6 +139,15 @@ def _missing_review_evidence(fixture: dict[str, Any]) -> list[str]:
     if not (isinstance(manual_values, list) and any(isinstance(item, dict) for item in manual_values)):
         missing.append("manual_witness_values")
     return missing
+
+
+def _manual_witness_status(packet: dict[str, Any], fixture: dict[str, Any]) -> str:
+    chart = packet.get("jyotish_agent_chart") if isinstance(packet.get("jyotish_agent_chart"), dict) else {}
+    manual_values = fixture.get("manual_witness_values")
+    if not chart or not isinstance(manual_values, list):
+        return "not_checked"
+    report = compare_manual_witness_values(chart, [row for row in manual_values if isinstance(row, dict)])
+    return str(report.get("status") or "not_checked")
 
 
 def _read_json(path: Path) -> dict[str, Any]:

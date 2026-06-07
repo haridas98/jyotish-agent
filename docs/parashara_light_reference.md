@@ -75,10 +75,11 @@ cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py mark_parashara_light_witness_reviewed `
   ..\.tmp\pl7\haridas-verification-packet `
   --reviewer Haridas `
-  --reviewed-at 2026-06-07T12:30:00+05:00
+  --reviewed-at 2026-06-07T12:30:00+05:00 `
+  --ack-diff-open
 ```
 
-The command refuses incomplete packets unless `--force` is passed.
+The command refuses incomplete packets unless `--force` is passed. If manual PL values differ from the Jyotish Agent chart, it also refuses review unless `--ack-diff-open` is passed.
 
 ## Manual Witness Values
 
