@@ -13,18 +13,19 @@ from apps.reports.draft_generation import DraftGenerationUnavailable, _normalize
 DEFAULT_PROMPT = (
     'Return only valid JSON: {"language":"ru","sections":[{"title":"Smoke","body":"ok","citation_titles":[]}]}'
 )
+DEFAULT_PROVIDERS = "qwen,free_deepseek,nemotron"
 
 ProviderRunner = Callable[[str], str | dict[str, Any]]
 
 
 class Command(BaseCommand):
-    help = "Run minimal smoke checks for local AI helper providers."
+    help = "Run minimal smoke checks for AI helper providers."
 
     def add_arguments(self, parser):
         parser.add_argument("--prompt", default=DEFAULT_PROMPT)
         parser.add_argument(
             "--providers",
-            default="qwen,free_deepseek",
+            default=DEFAULT_PROVIDERS,
             help="Comma-separated provider keys: qwen,free_deepseek,nemotron.",
         )
         parser.add_argument("--continue-on-error", action="store_true")

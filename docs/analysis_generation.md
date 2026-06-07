@@ -44,7 +44,7 @@ POST /api/reports/birth-chart/nemotron-analysis
 - Nemotron uses OpenRouter directly at `OPENROUTER_API_BASE_URL` with `OPENROUTER_API_KEY` and stores `provider=nemotron`.
 - Nemotron is also a compact overview path; use it for a second independent read of the same analysis packet.
 
-Local/server helper smoke:
+Local/server AI helper smoke:
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend

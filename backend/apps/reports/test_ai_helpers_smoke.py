@@ -64,6 +64,38 @@ def test_smoke_ai_helpers_command_reports_qwen_deepseek_and_nemotron(monkeypatch
     ]
 
 
+@override_settings(
+    QWEN_MODEL="qwen-test",
+    FREE_DEEPSEEK_MODEL="deepseek-test",
+    NEMOTRON_MODEL="nemotron-test",
+)
+def test_smoke_ai_helpers_default_providers_include_nemotron(monkeypatch):
+    monkeypatch.setattr(
+        "apps.reports.qwen_generation.qwen_chat_completions_client",
+        lambda: lambda prompt: json.dumps(
+            {"language": "ru", "sections": [{"title": "Smoke", "body": "qwen ok", "citation_titles": []}]}
+        ),
+    )
+    monkeypatch.setattr(
+        "apps.reports.deepseek_generation.free_deepseek_chat_client",
+        lambda: lambda prompt: json.dumps(
+            {"language": "ru", "sections": [{"title": "Smoke", "body": "deepseek ok", "citation_titles": []}]}
+        ),
+    )
+    monkeypatch.setattr(
+        "apps.reports.nemotron_generation.nemotron_chat_completions_client",
+        lambda: lambda prompt: json.dumps(
+            {"language": "ru", "sections": [{"title": "Smoke", "body": "nemotron ok", "citation_titles": []}]}
+        ),
+    )
+
+    stdout = io.StringIO()
+    call_command("smoke_ai_helpers", stdout=stdout)
+
+    payload = json.loads(stdout.getvalue())
+    assert [result["provider"] for result in payload["results"]] == ["qwen", "free_deepseek", "nemotron"]
+
+
 @override_settings(QWEN_MODEL="qwen-test", FREE_DEEPSEEK_MODEL="deepseek-test")
 def test_smoke_ai_helpers_command_can_continue_on_error(monkeypatch):
     monkeypatch.setattr(
