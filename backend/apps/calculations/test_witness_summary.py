@@ -450,8 +450,10 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review["open_diffs"]["jhora"]["failed_count"] > 0
     assert witness_review["open_diffs"]["parashara_light"]["failed_count"] == 1
     assert witness_review["open_diffs"]["parashara_light"]["sample"][0]["field"] == "Surya.rashi"
-    assert witness_review["seal_command"].startswith(".\\.venv\\Scripts\\python.exe manage.py seal_witness_case")
-    assert "--ack-diff-open" in witness_review["seal_command"]
+    assert witness_review["safe_next_step"] == "human ACK required before mark/seal"
+    assert witness_review["seal_command"] == ""
+    assert witness_review["jhora"]["review_command"] == ""
+    assert witness_review["parashara_light"]["review_command"] == ""
     witness_review_batch = response.data["witness_review_batch"]
     assert witness_review_batch["available"] is True
     assert witness_review_batch["summary"]["written_count"] == 1

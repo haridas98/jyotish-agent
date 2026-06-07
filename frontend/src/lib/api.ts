@@ -739,6 +739,7 @@ export type WitnessSummary = {
       blocked: boolean;
     };
     seal_command: string;
+    safe_next_step: string;
     jhora: {
       available?: boolean;
       source?: string;

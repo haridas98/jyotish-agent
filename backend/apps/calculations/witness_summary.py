@@ -123,6 +123,7 @@ def _witness_review_preflight(
             "status": "missing_jhora_witness_case_path",
             "overall": {"reviewable": False, "ack_required": False, "blocked": True},
             "seal_command": "",
+            "safe_next_step": "capture JHora/PL packet or fixture first",
             "jhora": {},
             "parashara_light": {},
             "open_diffs": _empty_witness_review_open_diffs(),
@@ -135,6 +136,7 @@ def _witness_review_preflight(
             parashara_light_path=parashara_light_packet_path,
             reviewer="Haridas",
         )
+        payload = _safe_witness_review_payload(payload)
         payload["open_diffs"] = _witness_review_open_diffs(
             jhora_path=jhora_path,
             parashara_light_packet_path=parashara_light_packet_path,
@@ -146,6 +148,7 @@ def _witness_review_preflight(
             "error": str(exc),
             "overall": {"reviewable": False, "ack_required": False, "blocked": True},
             "seal_command": "",
+            "safe_next_step": "resolve missing evidence before review",
             "jhora": {},
             "parashara_light": {},
             "open_diffs": _empty_witness_review_open_diffs(),
@@ -185,6 +188,32 @@ def _empty_witness_review_open_diffs() -> dict[str, Any]:
 
 def _empty_diff_summary() -> dict[str, Any]:
     return {"status": "missing", "failed_count": 0, "sample": []}
+
+
+def _safe_witness_review_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    safe_payload = dict(payload)
+    safe_payload["seal_command"] = ""
+    safe_payload["safe_next_step"] = _safe_next_step(payload)
+    safe_payload["jhora"] = _safe_review_source(payload.get("jhora"))
+    safe_payload["parashara_light"] = _safe_review_source(payload.get("parashara_light"))
+    return safe_payload
+
+
+def _safe_review_source(value: Any) -> dict[str, Any]:
+    row = dict(value) if isinstance(value, dict) else {}
+    row["review_command"] = ""
+    return row
+
+
+def _safe_next_step(payload: dict[str, Any]) -> str:
+    overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
+    if overall.get("blocked"):
+        return "resolve missing evidence before review"
+    if overall.get("ack_required"):
+        return "human ACK required before mark/seal"
+    if overall.get("reviewable"):
+        return "ready for explicit review command"
+    return "capture JHora/PL packet or fixture first"
 
 
 def _resolve_jhora_witness_case_path(jhora_witness_case_path: str | Path, jhora_report_path: str | Path) -> str:

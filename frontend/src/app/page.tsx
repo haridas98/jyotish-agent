@@ -2711,6 +2711,11 @@ function AccuracyReportPanel({
                 </small>
               </div>
               <div>
+                <span>Safe next step</span>
+                <strong>{witnessReview.safe_next_step || "review preflight first"}</strong>
+                <small>mutating review commands hidden from summary API</small>
+              </div>
+              <div>
                 <span>JHora / PL</span>
                 <strong>
                   {witnessReview.jhora.status ?? "missing"} / {witnessReview.parashara_light.status ?? "missing"}
