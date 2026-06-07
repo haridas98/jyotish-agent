@@ -137,6 +137,7 @@ def build_witness_capture_queue(
         },
         "items": items,
         "next_item": next_item,
+        "next_action_key": next_item["next_action_key"] if next_item else "",
         "next_command_kind": next_item["next_command_kind"] if next_item else "",
         "next_step_label": next_item["next_step_label"] if next_item else "",
         "next_command": next_item["next_command"] if next_item else "",

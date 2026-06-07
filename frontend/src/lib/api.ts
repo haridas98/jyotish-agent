@@ -824,6 +824,7 @@ export type WitnessSummary = {
     };
     items: WitnessCaptureQueueItem[];
     next_item: WitnessCaptureQueueItem | null;
+    next_action_key: string;
     next_command_kind: string;
     next_step_label: string;
     next_command: string;
