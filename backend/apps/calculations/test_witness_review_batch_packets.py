@@ -38,6 +38,13 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert written["id"] == "sterlitamak-1998-04-30-1345"
     assert written["ack_required"] is True
     assert written["blocked"] is False
+    assert [item["key"] for item in written["review_checklist"]] == [
+        "jhora_evidence",
+        "parashara_light_evidence",
+        "open_diffs",
+        "review_ack",
+    ]
+    assert written["review_checklist"][2]["status"] == "ack_required"
     assert payload["metadata"]["reviewer"] == "Haridas"
     assert payload["metadata"]["reviewed_at"] == "2026-06-07T12:00:00+05:00"
     assert payload["metadata"]["jhora_root"] == str(jhora_root)
@@ -45,7 +52,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert payload["metadata"]["generated_at"]
     markdown = (output_root / "sterlitamak-1998-04-30-1345.md").read_text(encoding="utf-8")
     assert "ACK required: yes" in markdown
-    assert "seal_witness_case" in markdown
+    assert "seal_witness_case" not in markdown
     index = (output_root / "_index.md").read_text(encoding="utf-8")
     assert payload["summary"]["index_path"] == str(output_root / "_index.md")
     assert payload["summary"]["index_json_path"] == str(output_root / "_index.json")
@@ -58,6 +65,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert "Skipped:" in index
     assert "sterlitamak-1998-04-30-1345" in index
     assert "ACK: yes" in index
+    assert "Checklist: JHora evidence=ready; Parashara Light evidence=ready; Open diffs=ack_required; Manual ACK=ack_required" in index
     assert "missing_jhora_or_pl_pair" in index
     assert "## Next Actions" in index
     assert "vrindavan-1990-08-15-1024" in index
@@ -66,6 +74,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert index_json["summary"]["reviewable_count"] == 1
     assert index_json["metadata"]["reviewer"] == "Haridas"
     assert index_json["written"][0]["ack_required"] is True
+    assert index_json["written"][0]["review_checklist"][3]["key"] == "review_ack"
     assert any(row["id"] == "vrindavan-1990-08-15-1024" for row in index_json["next_actions"])
 
 

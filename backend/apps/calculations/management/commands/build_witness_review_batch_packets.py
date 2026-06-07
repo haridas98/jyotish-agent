@@ -116,6 +116,7 @@ def build_witness_review_batch_packets(
                 "reviewable": bool(overall["reviewable"]),
                 "ack_required": bool(overall["ack_required"]),
                 "blocked": bool(overall["blocked"]),
+                "review_checklist": packet.get("review_checklist") or [],
             }
         )
 
@@ -216,6 +217,7 @@ def _index_markdown(
             lines.append(
                 f"- `{row['id']}` - Reviewable: {_yes_no(row['reviewable'])}; "
                 f"ACK: {_yes_no(row['ack_required'])}; Blocked: {_yes_no(row['blocked'])}; "
+                f"Checklist: {_checklist_summary(row.get('review_checklist'))}; "
                 f"File: `{row['output_path']}`"
             )
     else:
@@ -291,6 +293,13 @@ def _reason_counts(rows: list[dict[str, str]]) -> dict[str, int]:
         reason = row.get("reason") or "unknown"
         counts[reason] = counts.get(reason, 0) + 1
     return counts
+
+
+def _checklist_summary(value: Any) -> str:
+    if not isinstance(value, list):
+        return "none"
+    rows = [row for row in value if isinstance(row, dict)]
+    return "; ".join(f"{row.get('label', 'item')}={row.get('status', 'unknown')}" for row in rows) or "none"
 
 
 def _yes_no(value: object) -> str:
