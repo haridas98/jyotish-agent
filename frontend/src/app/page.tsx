@@ -2608,6 +2608,7 @@ function AccuracyReportPanel({
   const plSummary = plReport?.summary ?? null;
   const manualComparison = plReport?.manual_witness_comparison ?? null;
   const screenshotFingerprint = plSummary?.fingerprints.screenshots?.[0];
+  const birthTimezoneAudit = witnessSummary?.birth_timezone_audit ?? null;
   const plProfile = witnessSummary?.parashara_light.profile ?? null;
   const plProfileFlags = Array.isArray(plProfile?.data_quality_flags) ? plProfile.data_quality_flags : [];
   const plProfileComparison = plProfile?.packet_comparison ?? {};
@@ -2659,10 +2660,45 @@ function AccuracyReportPanel({
               ) : null}
             </div>
             <div>
+              <span>Birth timezone</span>
+              <strong>{birthTimezoneAudit?.available ? birthTimezoneAudit.resolved_utc_offset || "resolved" : "missing"}</strong>
+              {birthTimezoneAudit?.available ? (
+                <small>DST {birthTimezoneAudit.dst_observed ? "yes" : "no"}</small>
+              ) : null}
+            </div>
+            <div>
               <span>Open items</span>
               <strong>{witnessSummary.open_items.length}</strong>
             </div>
           </div>
+          {birthTimezoneAudit?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>Birth timezone audit</h3>
+              <div>
+                <span>Status</span>
+                <strong>{birthTimezoneAudit.status}</strong>
+                <small>{birthTimezoneAudit.timezone_source || "timezone source unknown"}</small>
+              </div>
+              <div>
+                <span>Offset</span>
+                <strong>
+                  {birthTimezoneAudit.resolved_utc_offset || "n/a"}
+                  {birthTimezoneAudit.expected_utc_offset
+                    ? ` expected ${birthTimezoneAudit.expected_utc_offset}`
+                    : ""}
+                </strong>
+                <small>
+                  local {birthTimezoneAudit.local_datetime_utc_offset || "n/a"}, DST{" "}
+                  {birthTimezoneAudit.dst_observed ? "observed" : "not observed"}
+                </small>
+              </div>
+              <div>
+                <span>UTC</span>
+                <strong>{birthTimezoneAudit.utc_datetime || "not captured"}</strong>
+                <small>{birthTimezoneAudit.local_datetime || "local time missing"}</small>
+              </div>
+            </div>
+          ) : null}
           {plForensic?.available ? (
             <div className="accuracy-list witness-open-items">
               <h3>PL forensic dump</h3>

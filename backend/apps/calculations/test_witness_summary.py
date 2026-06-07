@@ -30,12 +30,27 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
                 "status": "pl_ui_state_captured",
                 "fixture": {
                     "review_status": "draft",
+                    "input": {
+                        "birth_date": "1998-04-30",
+                        "birth_time": "13:45:00",
+                        "place_name": "Sterlitamak",
+                        "timezone": "Asia/Yekaterinburg",
+                        "timezone_offset": "+06:00",
+                    },
                     "pl_metadata": {"capture_status": "ui_state_captured"},
                     "capture_files": {"screenshots": []},
                     "manual_witness_values": [{"source": "pl7", "body": "Surya", "rashi": "Vrishabha"}],
                 },
                 "pl_capture_checklist": [],
                 "jyotish_agent_chart": {
+                    "birth": {
+                        "date": "1998-04-30",
+                        "time": "13:45:00",
+                        "timezone": "Asia/Yekaterinburg",
+                        "utc_offset": "+06:00",
+                        "local_datetime": "1998-04-30T13:45:00+06:00",
+                        "utc_datetime": "1998-04-30T07:45:00+00:00",
+                    },
                     "grahas": [{"body": "Surya", "rashi": "Mesha", "rashi_index": 0}],
                     "houses": [{"house": 10, "rashi": "Mesha", "rashi_index": 0}],
                 },
@@ -248,6 +263,17 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
 
     assert response.status_code == 200
     assert response.data["overall_status"] == "diff_open"
+    timezone_audit = response.data["birth_timezone_audit"]
+    assert timezone_audit["available"] is True
+    assert timezone_audit["status"] == "matched"
+    assert timezone_audit["birth_date"] == "1998-04-30"
+    assert timezone_audit["birth_time"] == "13:45:00"
+    assert timezone_audit["timezone"] == "Asia/Yekaterinburg"
+    assert timezone_audit["expected_utc_offset"] == "+06:00"
+    assert timezone_audit["resolved_utc_offset"] == "+06:00"
+    assert timezone_audit["local_datetime_utc_offset"] == "+06:00"
+    assert timezone_audit["utc_datetime"] == "1998-04-30T07:45:00+00:00"
+    assert timezone_audit["dst_observed"] is True
     assert response.data["jhora"]["available"] is True
     assert response.data["jhora"]["status"] == "diff_open"
     assert response.data["jhora"]["failed_checks"] == 2
@@ -346,6 +372,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
 
     assert response.status_code == 200
     assert response.data["overall_status"] == "missing_witnesses"
+    assert response.data["birth_timezone_audit"]["available"] is False
     assert response.data["jhora"]["available"] is False
     assert response.data["parashara_light"]["available"] is False
     assert response.data["parashara_light"]["profile"]["available"] is False
@@ -385,3 +412,40 @@ def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
     assert profile["status"] == "load_error"
     assert profile["authoritative"] is False
     assert profile["source_report"] == str(profile_path)
+
+
+def test_birth_timezone_audit_reports_unknown_timezone_source(tmp_path):
+    from apps.calculations.witness_summary import _birth_timezone_audit
+
+    packet_path = tmp_path / "pl-packet.json"
+    packet_path.write_text(
+        json.dumps(
+            {
+                "fixture": {
+                    "input": {
+                        "birth_date": "1998-04-30",
+                        "birth_time": "13:45:00",
+                        "timezone": "Not/AZone",
+                        "timezone_offset": "+0600",
+                    }
+                },
+                "jyotish_agent_chart": {
+                    "birth": {
+                        "date": "1998-04-30",
+                        "time": "13:45:00",
+                        "timezone": "Not/AZone",
+                        "utc_offset": "+06:00",
+                        "local_datetime": "1998-04-30T13:45:00+06:00",
+                        "utc_datetime": "1998-04-30T07:45:00+00:00",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    audit = _birth_timezone_audit(packet_path)
+
+    assert audit["timezone_source"] == "unknown"
+    assert audit["expected_utc_offset"] == "+06:00"
+    assert audit["status"] == "matched"

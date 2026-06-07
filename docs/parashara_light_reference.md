@@ -140,12 +140,13 @@ Current Haridas PL witness status:
 - Filled screenshot transcription: `.tmp/pl7/haridas-manual-values-from-screenshot.json`.
 - Compare report: `.tmp/pl7/haridas-manual-witness-from-screenshot-report.json`.
 - Repeatable forensic report: `.tmp/pl7/haridas-pl-swiss-forensic-dump.json`.
+- Birth timezone audit: `1998-04-30 13:45:00 Asia/Yekaterinburg` resolves to `+06:00` with DST observed and UTC `1998-04-30T07:45:00+00:00`.
 - Result: 50 checked fields, 44 passed, 6 failed, 100% manual completion.
 - Failed PL fields: Surya longitude, Mangala longitude, Budha pada/longitude, Guru longitude, Shukra longitude.
 - Swiss forensic dump: `.tmp/pl7/swiss-raw-vs-engine-vs-pl7-screenshot.json`.
 - Current finding: jyotish-agent graha longitudes match direct Swiss Lahiri sidereal output exactly for this input. The repeatable forensic command reports `engine_swiss_diff_count=0`, `pl_diff_count=5` for longitudes, and `conclusion=engine_matches_swiss_pl_profile_diff_open`; the sixth manual diff is Mercury pada caused by the longitude crossing the Revati pada boundary. The next audit target is PL7 calculation/profile settings rather than the local Swiss wrapper.
 - The same forensic dump now rejects simple global offset and time-shift hypotheses: `uniform_offset.status=rejected`, `time_shift.status=rejected`, `next_action=capture_parashara_light_profile_settings`.
-- The Accuracy tab now includes the forensic dump through `GET /api/calculations/witness-summary` under `parashara_light.forensic`. It exposes only aggregate audit signals: conclusion, PL diff count, max deviation, rejected hypotheses and next action.
+- The Accuracy tab now includes the timezone audit and forensic dump through `GET /api/calculations/witness-summary`. It exposes only aggregate audit signals: DST/UTC offset, conclusion, PL diff count, max deviation, rejected hypotheses and next action.
 
 Build a safe PL7 settings evidence manifest without parsing proprietary option/session formats:
 

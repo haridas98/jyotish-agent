@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .jhora_accuracy_report import load_jhora_accuracy_report
 from .parashara_light_packet_report import load_parashara_light_packet_report
+
+TIMEZONE_OFFSET_RE = re.compile(r"^(?:UTC|GMT)?\s*([+-])\s*(\d{1,2})(?::?(\d{2}))?$", re.IGNORECASE)
 
 
 def build_witness_summary(
@@ -42,6 +47,7 @@ def build_witness_summary(
     open_items = _open_items(jhora, parashara_light)
     return {
         "overall_status": _overall_status(jhora, parashara_light),
+        "birth_timezone_audit": _birth_timezone_audit(parashara_light_packet_path),
         "jhora": jhora,
         "parashara_light": parashara_light,
         "open_items": open_items,
@@ -700,6 +706,130 @@ def _missing_parashara_light_internal_settings_audit(path: str) -> dict[str, Any
         "ruled_out_count": 0,
         "next_action": "",
     }
+
+
+def _birth_timezone_audit(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_birth_timezone_audit("")
+    source = Path(path)
+    try:
+        packet = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_birth_timezone_audit(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        audit = _missing_birth_timezone_audit(str(source))
+        audit.update({"status": "load_error", "error": str(exc)})
+        return audit
+
+    fixture = packet.get("fixture") if isinstance(packet.get("fixture"), dict) else {}
+    input_data = fixture.get("input") if isinstance(fixture.get("input"), dict) else {}
+    chart = packet.get("jyotish_agent_chart") if isinstance(packet.get("jyotish_agent_chart"), dict) else {}
+    birth = chart.get("birth") if isinstance(chart.get("birth"), dict) else {}
+    expected_offset = _normalized_utc_offset(str(input_data.get("timezone_offset") or ""))
+    resolved_offset = _normalized_utc_offset(str(birth.get("utc_offset") or ""))
+    timezone = str(birth.get("timezone") or input_data.get("timezone") or "")
+    birth_date = str(input_data.get("birth_date") or birth.get("date") or "")
+    birth_time = str(input_data.get("birth_time") or birth.get("time") or "")
+    local_datetime = str(birth.get("local_datetime") or "")
+    utc_datetime = str(birth.get("utc_datetime") or "")
+    local_datetime_offset = _local_datetime_utc_offset(local_datetime)
+    available = bool(timezone and resolved_offset and local_datetime and utc_datetime)
+    status = "missing_birth_timezone"
+    if available and expected_offset and expected_offset != resolved_offset:
+        status = "offset_diff"
+    elif available and local_datetime_offset and local_datetime_offset != resolved_offset:
+        status = "local_datetime_offset_diff"
+    elif available and expected_offset:
+        status = "matched"
+    elif available:
+        status = "resolved_without_expected_offset"
+    return {
+        "available": available,
+        "status": status,
+        "source_packet": str(source),
+        "birth_date": birth_date,
+        "birth_time": birth_time,
+        "timezone": timezone,
+        "timezone_source": _timezone_source(timezone),
+        "expected_utc_offset": expected_offset,
+        "resolved_utc_offset": resolved_offset,
+        "local_datetime_utc_offset": local_datetime_offset,
+        "local_datetime": local_datetime,
+        "utc_datetime": utc_datetime,
+        "dst_observed": _dst_observed(timezone, birth_date, birth_time, local_datetime),
+    }
+
+
+def _missing_birth_timezone_audit(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_packet": path,
+        "birth_date": "",
+        "birth_time": "",
+        "timezone": "",
+        "timezone_source": "",
+        "expected_utc_offset": "",
+        "resolved_utc_offset": "",
+        "local_datetime_utc_offset": "",
+        "local_datetime": "",
+        "utc_datetime": "",
+        "dst_observed": False,
+    }
+
+
+def _normalized_utc_offset(value: str) -> str:
+    if not value:
+        return ""
+    match = TIMEZONE_OFFSET_RE.match(value.strip())
+    if not match:
+        return ""
+    sign, raw_hours, raw_minutes = match.groups()
+    return f"{sign}{int(raw_hours):02d}:{int(raw_minutes or '0'):02d}"
+
+
+def _timezone_source(timezone: str) -> str:
+    if not timezone:
+        return ""
+    try:
+        ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        return "fixed_offset" if TIMEZONE_OFFSET_RE.match(timezone.strip()) else "unknown"
+    return "iana"
+
+
+def _local_datetime_utc_offset(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        offset = datetime.fromisoformat(value).utcoffset()
+    except ValueError:
+        return ""
+    if offset is None:
+        return ""
+    total_minutes = int(offset.total_seconds() // 60)
+    sign = "+" if total_minutes >= 0 else "-"
+    total_minutes = abs(total_minutes)
+    hours, minutes = divmod(total_minutes, 60)
+    return f"{sign}{hours:02d}:{minutes:02d}"
+
+
+def _dst_observed(timezone: str, birth_date: str, birth_time: str, local_datetime: str) -> bool:
+    try:
+        tz = ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        return False
+    try:
+        if local_datetime:
+            naive = datetime.fromisoformat(local_datetime).replace(tzinfo=None)
+        elif birth_date and birth_time:
+            naive = datetime.fromisoformat(f"{birth_date}T{birth_time}")
+        else:
+            return False
+    except ValueError:
+        return False
+    dst = naive.replace(tzinfo=tz).dst()
+    return bool(dst and dst.total_seconds())
 
 
 def _overall_status(jhora: dict[str, Any], parashara_light: dict[str, Any]) -> str:

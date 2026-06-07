@@ -682,6 +682,22 @@ export type ParasharaLightPacketReport = {
 
 export type WitnessSummary = {
   overall_status: string;
+  birth_timezone_audit: {
+    available: boolean;
+    status: string;
+    source_packet: string;
+    birth_date: string;
+    birth_time: string;
+    timezone: string;
+    timezone_source: string;
+    expected_utc_offset: string;
+    resolved_utc_offset: string;
+    local_datetime_utc_offset: string;
+    local_datetime: string;
+    utc_datetime: string;
+    dst_observed: boolean;
+    error?: string;
+  };
   jhora: {
     available: boolean;
     status: string;
