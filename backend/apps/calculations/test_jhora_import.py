@@ -36,6 +36,8 @@ def test_parse_jhd_text_extracts_birth_input_and_jhora_metadata():
     assert parsed["country"] == "India"
     assert parsed["latitude"] == pytest.approx(28.666667)
     assert parsed["longitude"] == pytest.approx(77.216667)
+    assert parsed["jhora_time_compact"] == "0.000167"
+    assert parsed["jhora_time_decimal_hours"] == pytest.approx(1 / 3600)
     assert parsed["jhora_timezone_offset_hours"] == pytest.approx(5.5)
     assert parsed["timezone"] == "Asia/Kolkata"
 
@@ -52,7 +54,7 @@ def test_jhd_to_accuracy_fixture_keeps_expected_empty_until_manual_jhora_export(
     assert fixture["source"] == "jhora_sample_jhd"
     assert fixture["review_status"] == "draft"
     assert fixture["input"]["birth_date"] == "1869-10-02"
-    assert fixture["input"]["birth_time"] == "07:12:00"
+    assert fixture["input"]["birth_time"] == "07:20:00"
     assert fixture["input"]["place_name"] == "Mahatma Gandhi"
     assert fixture["input"]["latitude"] == pytest.approx(21.616667)
     assert fixture["input"]["longitude"] == pytest.approx(69.816667)

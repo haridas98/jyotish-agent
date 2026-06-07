@@ -15,11 +15,12 @@ def parse_jhd_text(text: str, *, source_name: str = "") -> dict[str, Any]:
     month = int(float(values[0]))
     day = int(float(values[1]))
     year = int(float(values[2]))
-    birth_time_decimal = float(values[3])
+    birth_time_compact = values[3]
     compact_timezone = _compact_time_to_decimal_hours(float(values[4]))
     longitude = _jhora_longitude_to_east_degrees(float(values[5]))
     latitude = _compact_angle_to_degrees(float(values[6]))
     decimal_timezone = _jhora_timezone_decimal(values, compact_timezone)
+    birth_time_decimal_hours = _compact_jhora_time_to_decimal_hours(birth_time_compact)
     source_title = _name_from_source(source_name)
     place_name = _place_name(values[12] if len(values) > 12 else "", source_title)
     country = values[13] if len(values) > 13 else ""
@@ -27,13 +28,14 @@ def parse_jhd_text(text: str, *, source_name: str = "") -> dict[str, Any]:
     return {
         "source_name": source_name,
         "birth_date": f"{year:04d}-{month:02d}-{day:02d}",
-        "birth_time": _decimal_hours_to_hhmm(birth_time_decimal),
+        "birth_time": _compact_jhora_time_to_hhmmss(birth_time_compact),
         "place_name": place_name,
         "country": country,
         "latitude": round(latitude, 6),
         "longitude": round(longitude, 6),
         "timezone": _timezone_guess(country, decimal_timezone),
-        "jhora_time_decimal_hours": birth_time_decimal,
+        "jhora_time_decimal_hours": birth_time_decimal_hours,
+        "jhora_time_compact": birth_time_compact,
         "jhora_timezone_compact": float(values[4]),
         "jhora_timezone_offset_hours": round(decimal_timezone, 6),
         "jhora_raw_line_count": len(values),
@@ -88,12 +90,23 @@ def _compact_time_to_decimal_hours(value: float) -> float:
     return _compact_angle_to_degrees(value)
 
 
-def _decimal_hours_to_hhmm(value: float) -> str:
-    total_seconds = int(round((value % 24.0) * 3600.0))
-    total_seconds %= 24 * 3600
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
+def _compact_jhora_time_to_hhmmss(value: str) -> str:
+    hours, minutes, seconds = _compact_jhora_time_parts(value)
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
+def _compact_jhora_time_to_decimal_hours(value: str) -> float:
+    hours, minutes, seconds = _compact_jhora_time_parts(value)
+    return hours + minutes / 60.0 + seconds / 3600.0
+
+
+def _compact_jhora_time_parts(value: str) -> tuple[int, int, int]:
+    hours_text, _, fraction_text = value.partition(".")
+    hours = int(float(hours_text or "0")) % 24
+    digits = (fraction_text + "000000")[:6]
+    minutes = min(int(digits[:2] or "0"), 59)
+    seconds = min(int(digits[2:4] or "0"), 59)
+    return hours, minutes, seconds
 
 
 def _timezone_guess(country: str, offset_hours: float) -> str:
