@@ -54,4 +54,9 @@ def _text_summary(payload: dict) -> str:
     if summary["next_case_ids"]:
         lines.append("next cases:")
         lines.extend(f"- {case_id}" for case_id in summary["next_case_ids"][:20])
+    if payload["next_actions"]:
+        lines.append("next actions:")
+        for item in payload["next_actions"][:20]:
+            actions = ", ".join(item["suggested_actions"]) or "none"
+            lines.append(f"- {item['id']}: {actions}")
     return "\n".join(lines)

@@ -20,6 +20,24 @@ def test_audit_jhora_pl_witness_batch_reports_missing_queue(tmp_path):
     assert payload["summary"]["authoritative_ready_count"] == 0
     assert payload["summary"]["target_met"] is False
     assert "sterlitamak-1998-04-30-1345" in payload["summary"]["next_case_ids"]
+    first_action = payload["next_actions"][0]
+    assert first_action["id"] == "sterlitamak-1998-04-30-1345"
+    assert first_action["missing_for_authoritative_review"] == [
+        "jhora_packet",
+        "jhora_complete_calculations_text",
+        "jhora_settings_evidence",
+        "jhora_screenshots",
+        "reviewer_note",
+    ]
+    assert first_action["missing_secondary_witness"] == ["pl_witness_packet"]
+    assert first_action["suggested_actions"] == [
+        "build_jhora_witness_batch_packets",
+        "capture_jhora_witness_batch_exports_or_attach_jhora_complete_calculations",
+        "record_jhora_settings_and_timezone_dst_evidence",
+        "attach_jhora_screenshots",
+        "add_reviewer_and_reviewed_at",
+        "attach_pl_witness_packet_or_manual_values",
+    ]
 
 
 def test_audit_jhora_pl_witness_batch_matches_draft_jhora_and_pl_by_birth_key(tmp_path):

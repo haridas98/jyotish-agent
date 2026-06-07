@@ -24,7 +24,8 @@ The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to
 - authoritative-ready count;
 - capture-started count;
 - Parashara Light witness count;
-- next case ids still needing reviewed evidence.
+- next case ids still needing reviewed evidence;
+- next actions per case: missing JHora/PL artifacts plus the command/manual step to close each gap.
 
 As of 2026-06-07 local artifacts after `build_jhora_witness_batch_jhd_files` and `build_jhora_witness_batch_packets`, the queue has 21 candidate cases, target reviewed count is 20, draft `.jhd` input files and packet/checklist directories exist for all 21 cases, one PL witness is attached by birth data, and authoritative-ready count is still 0.
 

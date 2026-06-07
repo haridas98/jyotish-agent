@@ -10,6 +10,15 @@ from .jhora_parity_suite import jhora_parity_suite_manifest
 
 SCHEMA_VERSION = "jyotish-witness-batch-audit-v1"
 DEFAULT_TARGET_REVIEWED_COUNT = 20
+ACTION_BY_MISSING_ARTIFACT = {
+    "jhora_packet": "build_jhora_witness_batch_packets",
+    "jhora_complete_calculations_text": "capture_jhora_witness_batch_exports_or_attach_jhora_complete_calculations",
+    "jhora_settings_evidence": "record_jhora_settings_and_timezone_dst_evidence",
+    "jhora_screenshots": "attach_jhora_screenshots",
+    "reviewer_note": "add_reviewer_and_reviewed_at",
+    "authoritative_review_status": "set_review_status_jhora_verified_after_manual_review",
+    "pl_witness_packet": "attach_pl_witness_packet_or_manual_values",
+}
 
 
 def audit_jhora_pl_witness_batch(
@@ -41,6 +50,10 @@ def audit_jhora_pl_witness_batch(
         "suite_case_count": manifest["case_count"],
         "summary": summary,
         "groups": _group_summary(case_rows),
+        "next_actions": _next_actions(
+            case_rows,
+            max(target_reviewed_count - summary["authoritative_ready_count"], 0),
+        ),
         "cases": case_rows,
         "load_errors": load_errors,
     }
@@ -222,6 +235,36 @@ def _summary(
             if not row["authoritative_ready"]
         ][: max(target_reviewed_count - authoritative_ready_count, 0)],
     }
+
+
+def _next_actions(case_rows: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+    actions = []
+    for row in case_rows:
+        if row["authoritative_ready"]:
+            continue
+        actions.append(
+            {
+                "id": row["id"],
+                "group": row["group"],
+                "label": row["label"],
+                "status": row["status"],
+                "missing_for_authoritative_review": row["missing_for_authoritative_review"],
+                "missing_secondary_witness": row["missing_secondary_witness"],
+                "suggested_actions": _suggested_actions(row),
+            }
+        )
+        if len(actions) >= limit:
+            break
+    return actions
+
+
+def _suggested_actions(row: dict[str, Any]) -> list[str]:
+    actions = []
+    for missing in [*row["missing_for_authoritative_review"], *row["missing_secondary_witness"]]:
+        action = ACTION_BY_MISSING_ARTIFACT.get(missing)
+        if action and action not in actions:
+            actions.append(action)
+    return actions
 
 
 def _group_summary(case_rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
