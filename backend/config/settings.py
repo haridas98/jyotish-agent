@@ -185,6 +185,10 @@ JHORA_WITNESS_CASE_PATH = os.getenv(
     "JHORA_WITNESS_CASE_PATH",
     str(ROOT_DIR / ".tmp" / "jhora" / "batch-queue" / "sterlitamak-1998-04-30-1345"),
 )
+WITNESS_REVIEW_BATCH_INDEX_PATH = os.getenv(
+    "WITNESS_REVIEW_BATCH_INDEX_PATH",
+    str(ROOT_DIR / ".tmp" / "witness-review" / "_index.json"),
+)
 PARASHARA_LIGHT_PACKET_PATH = os.getenv(
     "PARASHARA_LIGHT_PACKET_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"),

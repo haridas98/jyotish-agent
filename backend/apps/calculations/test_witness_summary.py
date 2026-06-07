@@ -310,6 +310,36 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH = internal_settings_audit_path
+    batch_index_path = tmp_path / "witness-review-index.json"
+    batch_index_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-witness-review-batch-packets-v1",
+                "summary": {
+                    "written_count": 1,
+                    "skipped_count": 20,
+                    "error_count": 0,
+                    "output_root": str(tmp_path / "witness-review"),
+                    "index_path": str(tmp_path / "witness-review" / "_index.md"),
+                    "index_json_path": str(batch_index_path),
+                },
+                "written": [
+                    {
+                        "id": "sterlitamak-1998-04-30-1345",
+                        "output_path": str(tmp_path / "witness-review" / "sterlitamak-1998-04-30-1345.md"),
+                        "reviewable": True,
+                        "ack_required": True,
+                        "blocked": False,
+                    }
+                ],
+                "skipped": [{"id": "vrindavan-1990-08-15-1024", "reason": "missing_jhora_or_pl_pair"}],
+                "errors": [],
+                "audit_summary": {"batch_review_ready_count": 0, "target_met": False},
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings.WITNESS_REVIEW_BATCH_INDEX_PATH = batch_index_path
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -324,6 +354,13 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review["parashara_light"]["status"] == "diff_open"
     assert witness_review["seal_command"].startswith(".\\.venv\\Scripts\\python.exe manage.py seal_witness_case")
     assert "--ack-diff-open" in witness_review["seal_command"]
+    witness_review_batch = response.data["witness_review_batch"]
+    assert witness_review_batch["available"] is True
+    assert witness_review_batch["summary"]["written_count"] == 1
+    assert witness_review_batch["summary"]["skipped_count"] == 20
+    assert witness_review_batch["written"][0]["id"] == "sterlitamak-1998-04-30-1345"
+    assert witness_review_batch["written"][0]["ack_required"] is True
+    assert witness_review_batch["skipped_reason_counts"] == {"missing_jhora_or_pl_pair": 1}
     timezone_audit = response.data["birth_timezone_audit"]
     assert timezone_audit["available"] is True
     assert timezone_audit["status"] == "matched"

@@ -2580,6 +2580,10 @@ function AccuracyReportPanel({
   const plOptionStoreDiff = witnessSummary?.parashara_light.option_store_diff ?? null;
   const plInternalSettingsAudit = witnessSummary?.parashara_light.internal_settings_audit ?? null;
   const witnessReview = witnessSummary?.witness_review ?? null;
+  const witnessReviewBatch = witnessSummary?.witness_review_batch ?? null;
+  const witnessReviewBatchSummary = witnessReviewBatch?.summary ?? null;
+  const witnessReviewBatchWritten = witnessReviewBatch?.written ?? [];
+  const witnessReviewBatchSkippedReasons = witnessReviewBatch?.skipped_reason_counts ?? {};
   const [sealCommandCopyStatus, setSealCommandCopyStatus] = useState("");
 
   async function copySealCommand() {
@@ -2678,6 +2682,47 @@ function AccuracyReportPanel({
                   </span>
                   <strong>{witnessReview.seal_command}</strong>
                   {sealCommandCopyStatus ? <small>{sealCommandCopyStatus}</small> : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {witnessReviewBatch ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>Witness batch review</h3>
+              <div>
+                <span>Packets</span>
+                <strong>
+                  {witnessReviewBatch.available
+                    ? `${witnessReviewBatchSummary?.written_count ?? 0} written`
+                    : witnessReviewBatch.status}
+                </strong>
+                <small>
+                  skipped {witnessReviewBatchSummary?.skipped_count ?? 0}, errors{" "}
+                  {witnessReviewBatchSummary?.error_count ?? 0}
+                </small>
+              </div>
+              <div>
+                <span>Index</span>
+                <strong>{witnessReviewBatchSummary?.index_path || witnessReviewBatch.source_index || "missing"}</strong>
+                <small>{witnessReviewBatchSummary?.index_json_path || "JSON index missing"}</small>
+              </div>
+              {witnessReviewBatchWritten.slice(0, 3).map((row) => (
+                <div key={row.id}>
+                  <span>{row.id}</span>
+                  <strong>
+                    {row.reviewable ? "reviewable" : "not reviewable"} / ACK {row.ack_required ? "yes" : "no"}
+                  </strong>
+                  <small>{row.output_path}</small>
+                </div>
+              ))}
+              {Object.keys(witnessReviewBatchSkippedReasons).length ? (
+                <div>
+                  <span>Skipped reasons</span>
+                  <strong>
+                    {Object.entries(witnessReviewBatchSkippedReasons)
+                      .map(([reason, count]) => `${reason}: ${count}`)
+                      .join(", ")}
+                  </strong>
                 </div>
               ) : null}
             </div>

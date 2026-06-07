@@ -119,6 +119,7 @@ def build_witness_review_batch_packets(
         )
 
     index_path = output_dir / "_index.md"
+    index_json_path = output_dir / "_index.json"
     index_markdown = _index_markdown(
         written=written,
         skipped=skipped,
@@ -127,8 +128,7 @@ def build_witness_review_batch_packets(
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     index_path.write_text(index_markdown, encoding="utf-8")
-
-    return {
+    payload = {
         "schema_version": SCHEMA_VERSION,
         "summary": {
             "written_count": len(written),
@@ -136,12 +136,15 @@ def build_witness_review_batch_packets(
             "error_count": len(errors),
             "output_root": str(output_dir),
             "index_path": str(index_path),
+            "index_json_path": str(index_json_path),
         },
         "written": written,
         "skipped": skipped,
         "errors": errors,
         "audit_summary": audit["summary"],
     }
+    index_json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload
 
 
 def _first_record_path(records: list[dict[str, Any]]) -> str:

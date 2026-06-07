@@ -32,12 +32,16 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert "seal_witness_case" in markdown
     index = (output_root / "_index.md").read_text(encoding="utf-8")
     assert payload["summary"]["index_path"] == str(output_root / "_index.md")
+    assert payload["summary"]["index_json_path"] == str(output_root / "_index.json")
     assert "# Witness Review Batch Index" in index
     assert "Written: 1" in index
     assert "Skipped:" in index
     assert "sterlitamak-1998-04-30-1345" in index
     assert "ACK: yes" in index
     assert "missing_jhora_or_pl_pair" in index
+    index_json = json.loads((output_root / "_index.json").read_text(encoding="utf-8"))
+    assert index_json["summary"]["written_count"] == 1
+    assert index_json["written"][0]["ack_required"] is True
 
 
 def test_build_witness_review_batch_packets_command_outputs_json(tmp_path):
@@ -65,7 +69,9 @@ def test_build_witness_review_batch_packets_command_outputs_json(tmp_path):
     assert payload["summary"]["written_count"] == 1
     assert payload["written"][0]["output_path"].endswith("sterlitamak-1998-04-30-1345.md")
     assert payload["summary"]["index_path"].endswith("_index.md")
+    assert payload["summary"]["index_json_path"].endswith("_index.json")
     assert (output_root / "_index.md").exists()
+    assert (output_root / "_index.json").exists()
 
 
 def _write_batch_roots(tmp_path):

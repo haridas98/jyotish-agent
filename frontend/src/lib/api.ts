@@ -731,6 +731,34 @@ export type WitnessSummary = {
     };
     error?: string;
   };
+  witness_review_batch: {
+    available: boolean;
+    status: string;
+    source_index: string;
+    schema_version: string;
+    summary: {
+      written_count: number;
+      skipped_count: number;
+      error_count: number;
+      output_root: string;
+      index_path: string;
+      index_json_path: string;
+    };
+    written: Array<{
+      id: string;
+      output_path: string;
+      reviewable: boolean;
+      ack_required: boolean;
+      blocked: boolean;
+    }>;
+    skipped_reason_counts: Record<string, number>;
+    errors: Array<{
+      id?: string;
+      error?: string;
+    }>;
+    audit_summary: Record<string, number | string | boolean | string[] | null>;
+    error?: string;
+  };
   jhora: {
     available: boolean;
     status: string;

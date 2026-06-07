@@ -22,6 +22,7 @@ def build_witness_summary(
     *,
     jhora_report_path: str | Path,
     jhora_witness_case_path: str | Path = "",
+    witness_review_batch_index_path: str | Path = "",
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
@@ -55,11 +56,13 @@ def build_witness_summary(
         jhora_report_path=jhora_report_path,
         parashara_light_packet_path=parashara_light_packet_path,
     )
+    witness_review_batch = _witness_review_batch_index(witness_review_batch_index_path)
     open_items = _open_items(jhora, parashara_light)
     return {
         "overall_status": _overall_status(jhora, parashara_light),
         "birth_timezone_audit": _birth_timezone_audit(parashara_light_packet_path),
         "witness_review": witness_review,
+        "witness_review_batch": witness_review_batch,
         "jhora": jhora,
         "parashara_light": parashara_light,
         "open_items": open_items,
@@ -150,6 +153,76 @@ def _resolve_jhora_witness_case_path(jhora_witness_case_path: str | Path, jhora_
     if (parent / "packet.json").exists() or (parent / "fixture.json").exists():
         return str(parent)
     return ""
+
+
+def _witness_review_batch_index(path: str | Path) -> dict[str, Any]:
+    if not str(path or "").strip():
+        return _missing_witness_review_batch("")
+    source = Path(path)
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_witness_review_batch(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        result = _missing_witness_review_batch(str(source))
+        result.update({"status": "load_error", "error": str(exc)})
+        return result
+    if not isinstance(payload, dict):
+        result = _missing_witness_review_batch(str(source))
+        result.update({"status": "load_error", "error": "batch index JSON must be an object"})
+        return result
+
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    written = [row for row in payload.get("written", []) if isinstance(row, dict)]
+    skipped = [row for row in payload.get("skipped", []) if isinstance(row, dict)]
+    errors = [row for row in payload.get("errors", []) if isinstance(row, dict)]
+    return {
+        "available": True,
+        "status": "loaded",
+        "source_index": str(source),
+        "schema_version": str(payload.get("schema_version") or ""),
+        "summary": {
+            "written_count": int(summary.get("written_count") or 0),
+            "skipped_count": int(summary.get("skipped_count") or 0),
+            "error_count": int(summary.get("error_count") or 0),
+            "output_root": str(summary.get("output_root") or ""),
+            "index_path": str(summary.get("index_path") or ""),
+            "index_json_path": str(summary.get("index_json_path") or source),
+        },
+        "written": written,
+        "skipped_reason_counts": _skipped_reason_counts(skipped),
+        "errors": errors,
+        "audit_summary": payload.get("audit_summary") if isinstance(payload.get("audit_summary"), dict) else {},
+    }
+
+
+def _missing_witness_review_batch(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_index": path,
+        "schema_version": "",
+        "summary": {
+            "written_count": 0,
+            "skipped_count": 0,
+            "error_count": 0,
+            "output_root": "",
+            "index_path": "",
+            "index_json_path": path,
+        },
+        "written": [],
+        "skipped_reason_counts": {},
+        "errors": [],
+        "audit_summary": {},
+    }
+
+
+def _skipped_reason_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        reason = str(row.get("reason") or "unknown")
+        counts[reason] = counts.get(reason, 0) + 1
+    return counts
 
 
 def _default_jhora_source_export(path: str | Path) -> str:
