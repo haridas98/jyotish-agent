@@ -37,9 +37,35 @@ Then install nginx config, replace `jyotish.example.com`, enable site, and issue
 - `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `NEXT_PUBLIC_API_BASE_URL` must match the actual domain.
 - `VL_DATABASE_URL` must point to the Prabhupada/VL database if source search must work on the server.
 - Swiss/JPL ephemeris files must be placed in `./ephe` if JPL mode is needed.
+- For Qwen report generation, run FreeQwenApi and set `QWEN_API_BASE_URL` in the server `.env`, usually `http://127.0.0.1:3264/api`.
 - For DeepSeek overview generation, run FreeDeepseekAPI and set `FREE_DEEPSEEK_API_BASE_URL` in the server `.env`, usually `http://127.0.0.1:9655/v1`.
 - After deploy, run `cd /srv/jyotish-agent/app/backend && ./.venv/bin/python manage.py smoke_free_deepseek` to verify server-side FreeDeepseekAPI access.
 - To check all local helper providers in one shot, run `./.venv/bin/python manage.py smoke_ai_helpers --continue-on-error`.
+
+## FreeQwenApi service
+
+Install the proxy outside the app tree, then authenticate the Qwen Web session on the server:
+
+```bash
+git clone https://github.com/ForgetMeAI/FreeQwenApi.git /opt/FreeQwenApi
+cd /opt/FreeQwenApi
+npm install
+npm run auth
+npm run models:sync
+```
+
+Then install the service template:
+
+```bash
+cp /srv/jyotish-agent/app/deploy/free-qwen-api.service.example /etc/systemd/system/free-qwen-api.service
+systemctl daemon-reload
+systemctl enable --now free-qwen-api.service
+curl -fsS http://127.0.0.1:3264/api/health
+cd /srv/jyotish-agent/app/backend
+./.venv/bin/python manage.py smoke_ai_helpers --providers qwen
+```
+
+Do not commit `session/`, tokens, browser profiles, or local Qwen auth files; they are server-local session secrets.
 
 ## FreeDeepseekAPI service
 

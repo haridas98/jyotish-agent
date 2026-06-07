@@ -37,11 +37,11 @@ POST /api/reports/birth-chart/qwen-analysis
 POST /api/reports/birth-chart/deepseek-analysis
 ```
 
-- Qwen uses local FreeQwenApi at `QWEN_API_BASE_URL`.
+- Qwen uses local FreeQwenApi at `QWEN_API_BASE_URL`; the default local endpoint is `http://127.0.0.1:3264/api`.
 - DeepSeek uses local FreeDeepseekAPI at `FREE_DEEPSEEK_API_BASE_URL` and stores `provider=free_deepseek`.
 - DeepSeek is intentionally a compact overview, not the full Codex/Qwen report path.
 
-DeepSeek local/server smoke:
+Local/server helper smoke:
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend
