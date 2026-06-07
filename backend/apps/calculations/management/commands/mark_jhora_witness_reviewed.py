@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from apps.calculations.fixture_runner import AUTHORITATIVE_REVIEW_STATUSES
+from apps.calculations.fixture_runner import run_accuracy_fixture
 
 
 DEFAULT_REVIEW_STATUS = "jhora_verified"
@@ -26,6 +27,11 @@ class Command(BaseCommand):
             default=DEFAULT_REVIEW_STATUS,
         )
         parser.add_argument("--force", action="store_true")
+        parser.add_argument(
+            "--ack-diff-open",
+            action="store_true",
+            help="Acknowledge reviewed JHora/Jyotish Agent differences and still mark the packet verified.",
+        )
         parser.add_argument("--json", action="store_true")
 
     def handle(self, *args, **options):
@@ -35,6 +41,7 @@ class Command(BaseCommand):
             reviewed_at=options["reviewed_at"],
             review_status=options["review_status"],
             force=options["force"],
+            ack_diff_open=options["ack_diff_open"],
         )
         if options["json"]:
             self.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -52,6 +59,7 @@ def mark_jhora_witness_reviewed(
     reviewed_at: str = "",
     review_status: str = DEFAULT_REVIEW_STATUS,
     force: bool = False,
+    ack_diff_open: bool = False,
 ) -> dict[str, Any]:
     reviewer = reviewer.strip()
     if not reviewer:
@@ -68,12 +76,17 @@ def mark_jhora_witness_reviewed(
     missing = _missing_review_evidence(fixture)
     if missing and not force:
         raise CommandError(f"Cannot mark JHora witness reviewed; missing: {', '.join(missing)}")
+    accuracy_status = _accuracy_status(fixture)
+    if accuracy_status == "diff_open" and not (ack_diff_open or force):
+        raise CommandError("Cannot mark JHora witness reviewed; accuracy diff_open requires --ack-diff-open")
 
     timestamp = reviewed_at.strip() or timezone.now().isoformat()
     metadata = fixture.get("jhora_metadata") if isinstance(fixture.get("jhora_metadata"), dict) else {}
     metadata["reviewer"] = reviewer
     metadata["reviewed_at"] = timestamp
     metadata["profile_status"] = "reviewed"
+    metadata["accuracy_status"] = accuracy_status
+    metadata["accuracy_diff_acknowledged"] = bool(accuracy_status == "diff_open" and (ack_diff_open or force))
     fixture["jhora_metadata"] = metadata
     fixture["review_status"] = review_status
 
@@ -88,6 +101,7 @@ def mark_jhora_witness_reviewed(
         "review_status": review_status,
         "reviewer": reviewer,
         "reviewed_at": timestamp,
+        "accuracy_status": accuracy_status,
         "packet_path": str(packet_path) if packet_path.exists() else "",
         "fixture_path": str(fixture_path),
         "forced": force,
@@ -126,6 +140,22 @@ def _missing_review_evidence(fixture: dict[str, Any]) -> list[str]:
     if not (isinstance(screenshots, list) and any(str(item).strip() for item in screenshots)):
         missing.append("jhora_screenshots")
     return missing
+
+
+def _accuracy_status(fixture: dict[str, Any]) -> str:
+    if not isinstance(fixture.get("input"), dict):
+        return "not_checked"
+    if not (
+        isinstance(fixture.get("expected"), dict)
+        or isinstance(fixture.get("jhora_expected"), dict)
+        or isinstance(fixture.get("external_expected"), list)
+    ):
+        return "not_checked"
+    try:
+        result = run_accuracy_fixture(fixture)
+    except Exception as exc:  # noqa: BLE001 - review marker should expose comparison blockers as CommandError.
+        raise CommandError(f"Cannot run JHora accuracy comparison: {exc}") from exc
+    return "matched" if result.passed else "diff_open"
 
 
 def _read_json(path: Path) -> dict[str, Any]:

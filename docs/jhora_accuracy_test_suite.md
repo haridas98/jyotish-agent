@@ -91,10 +91,11 @@ After manual review confirms the export, screenshots and settings evidence, mark
 .\.venv\Scripts\python manage.py mark_jhora_witness_reviewed `
   ..\.tmp\jhora\batch-queue\sterlitamak-1998-04-30-1345 `
   --reviewer Haridas `
-  --reviewed-at 2026-06-07T12:00:00+05:00
+  --reviewed-at 2026-06-07T12:00:00+05:00 `
+  --ack-diff-open
 ```
 
-The command refuses incomplete packets unless `--force` is passed.
+The command refuses incomplete packets unless `--force` is passed. If the JHora fixture comparison is `diff_open`, it also refuses verification unless `--ack-diff-open` is passed.
 
 To prepare only one case:
 
