@@ -303,7 +303,15 @@ def _review_checklist(
 
 
 def _review_checklist_lines(review_checklist: list[dict[str, Any]]) -> list[str]:
-    return [f"- [ ] {row['label']}: {row['status']} - {row['detail']}" for row in review_checklist]
+    return [
+        f"- [ ] {row['label']}: {row['status']} - {row['detail']}{_next_step_suffix(row)}"
+        for row in review_checklist
+    ]
+
+
+def _next_step_suffix(row: dict[str, Any]) -> str:
+    next_step = str(row.get("next_step") or "").strip()
+    return f"; next: {next_step}" if next_step else ""
 
 
 def _evidence_status(source: dict[str, Any]) -> str:

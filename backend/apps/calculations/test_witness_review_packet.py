@@ -50,7 +50,8 @@ def test_build_witness_review_packet_renders_safe_markdown_by_default(tmp_path):
     assert "- [ ] JHora evidence: ready - JHora evidence captured" in markdown
     assert "- [ ] Parashara Light evidence: ready - PL evidence captured" in markdown
     assert "- [ ] Open diffs: ack_required - JHora" in markdown
-    assert "- [ ] Manual ACK: ack_required - human ACK required before mark/seal" in markdown
+    assert "; next: review and ACK open JHora/PL diffs" in markdown
+    assert "- [ ] Manual ACK: ack_required - human ACK required before mark/seal; next: human ACK required before mark/seal" in markdown
     assert "mark_jhora_witness_reviewed" not in markdown
     assert "mark_parashara_light_witness_reviewed" not in markdown
     assert "seal_witness_case" not in markdown
