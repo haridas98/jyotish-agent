@@ -2580,6 +2580,21 @@ function AccuracyReportPanel({
   const plOptionStoreDiff = witnessSummary?.parashara_light.option_store_diff ?? null;
   const plInternalSettingsAudit = witnessSummary?.parashara_light.internal_settings_audit ?? null;
   const witnessReview = witnessSummary?.witness_review ?? null;
+  const [sealCommandCopyStatus, setSealCommandCopyStatus] = useState("");
+
+  async function copySealCommand() {
+    if (!witnessReview?.seal_command) return;
+    if (!navigator.clipboard?.writeText) {
+      setSealCommandCopyStatus("clipboard unavailable");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(witnessReview.seal_command);
+      setSealCommandCopyStatus("copied");
+    } catch {
+      setSealCommandCopyStatus("copy failed");
+    }
+  }
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2654,9 +2669,15 @@ function AccuracyReportPanel({
                 </small>
               </div>
               {witnessReview.seal_command ? (
-                <div>
-                  <span>Seal command</span>
+                <div className="seal-command-row">
+                  <span>
+                    Seal command
+                    <button type="button" className="seal-copy-button" onClick={copySealCommand}>
+                      Copy
+                    </button>
+                  </span>
                   <strong>{witnessReview.seal_command}</strong>
+                  {sealCommandCopyStatus ? <small>{sealCommandCopyStatus}</small> : null}
                 </div>
               ) : null}
             </div>
