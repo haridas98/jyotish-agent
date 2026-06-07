@@ -37,6 +37,8 @@ for the parity queue. It does not mark PL evidence reviewed; screenshots, UI sta
 `..\.tmp\witness-review\_index.json`. The Witness Summary API exposes the JSON index as `witness_review_batch`,
 and the Accuracy tab shows the written/skipped/error counts plus generated/reviewer metadata next to the seal gate.
 The JSON index also includes `next_actions` with per-case JHora/PL blockers and suggested capture/review actions.
+Each written batch row also carries `review_checklist` and `review_checklist_summary`; the plain CLI summary and
+`_index.md` show the same checklist statuses without exposing mark/seal commands.
 
 The single-case `witness_review` API payload is safe-by-default for the Accuracy tab: mutating `review_command` and
 `seal_command` values are hidden, `safe_next_step` names the next non-mutating step, and `review_checklist` shows the
