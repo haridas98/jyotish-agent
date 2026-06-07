@@ -15,6 +15,15 @@ Fail the process on any mismatch:
 .\.venv\Scripts\python manage.py run_accuracy_fixtures apps\calculations\fixtures\accuracy --fail-on-diff
 ```
 
+After promoting reviewed JHora witnesses, gate the authoritative suite explicitly:
+
+```powershell
+.\.venv\Scripts\python manage.py run_accuracy_fixtures apps\calculations\fixtures\accuracy `
+  --fail-on-authoritative-diff `
+  --min-authoritative 20 `
+  --min-jhora-verified 20
+```
+
 ## Review Status
 
 - `draft`: not authoritative, internal smoke or unreviewed import.
@@ -24,7 +33,7 @@ Fail the process on any mismatch:
 
 Only `reviewed`, `jhora_verified`, and `approved` count as authoritative in the runner.
 
-Current state: no fixture is yet `jhora_verified`. The next verification target is a 10-chart packet covering modern, DST-sensitive, India, boundary and public teaching examples.
+Current state: no fixture is yet `jhora_verified`. The next verification target is the reviewed JHora/PL batch promoted through `promote_jhora_witness_batch`.
 
 ## Rule
 
