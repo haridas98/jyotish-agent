@@ -39,6 +39,7 @@ Then install nginx config, replace `jyotish.example.com`, enable site, and issue
 - Swiss/JPL ephemeris files must be placed in `./ephe` if JPL mode is needed.
 - For DeepSeek overview generation, run FreeDeepseekAPI and set `FREE_DEEPSEEK_API_BASE_URL` in the server `.env`, usually `http://127.0.0.1:9655/v1`.
 - After deploy, run `cd /srv/jyotish-agent/app/backend && ./.venv/bin/python manage.py smoke_free_deepseek` to verify server-side FreeDeepseekAPI access.
+- To check all local helper providers in one shot, run `./.venv/bin/python manage.py smoke_ai_helpers --continue-on-error`.
 
 ## FreeDeepseekAPI service
 

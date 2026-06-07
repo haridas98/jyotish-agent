@@ -46,6 +46,7 @@ DeepSeek local/server smoke:
 ```powershell
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py smoke_free_deepseek
+.\.venv\Scripts\python manage.py smoke_ai_helpers --continue-on-error
 ```
 
 ```powershell
