@@ -23,11 +23,17 @@ To write markdown review packets for every queued case that already has both JHo
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_parashara_light_witness_batch_packets `
+  --output-root ..\.tmp\pl7\batch-queue
+
 .\.venv\Scripts\python manage.py build_witness_review_batch_packets `
   --output-root ..\.tmp\witness-review
 ```
 
-This writes one markdown packet per paired JHora/PL case plus `..\.tmp\witness-review\_index.md` and
+`build_parashara_light_witness_batch_packets` creates draft PL packet/checklist/manual-values-template directories
+for the parity queue. It does not mark PL evidence reviewed; screenshots, UI state and manual values still have to be captured.
+
+`build_witness_review_batch_packets` writes one markdown packet per paired JHora/PL case plus `..\.tmp\witness-review\_index.md` and
 `..\.tmp\witness-review\_index.json`. The Witness Summary API exposes the JSON index as `witness_review_batch`,
 and the Accuracy tab shows the written/skipped/error counts plus generated/reviewer metadata next to the seal gate.
 
