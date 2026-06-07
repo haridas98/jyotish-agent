@@ -154,6 +154,7 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
     next_action = suggested_actions[0] if suggested_actions else ""
     auto_command = _next_auto_command(case_id, next_action)
     manual_command = _next_manual_review_command(row, next_action)
+    command_kind = "auto_capture" if auto_command else "manual_review" if manual_command else "manual"
     return {
         "priority": priority,
         "id": case_id,
@@ -166,7 +167,8 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
         },
         "suggested_actions": suggested_actions,
         "next_action_key": next_action,
-        "next_command_kind": "auto_capture" if auto_command else "manual_review" if manual_command else "manual",
+        "next_command_kind": command_kind,
+        "next_step_label": _next_step_label(command_kind),
         "next_command": auto_command,
         "manual_review_command": manual_command,
         "blocker_count": len(missing_jhora) + len(missing_pl),
@@ -189,6 +191,14 @@ def _string_list(value: Any) -> list[str]:
 def _next_auto_command(case_id: str, action: str) -> str:
     template = AUTO_CAPTURE_ACTION_COMMANDS.get(action)
     return template.format(case_id=case_id) if template else ""
+
+
+def _next_step_label(kind: str) -> str:
+    if kind == "auto_capture":
+        return "Run capture command"
+    if kind == "manual_review":
+        return "Run review preflight first"
+    return "Manual capture/review"
 
 
 def _next_manual_review_command(row: dict[str, Any], action: str) -> str:

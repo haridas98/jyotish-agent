@@ -2824,8 +2824,10 @@ function AccuracyReportPanel({
               </div>
               {witnessCaptureQueueNext ? (
                 <div>
-                  <span>Next step</span>
-                  <strong>{witnessCaptureQueueNext.next_action_key || witnessCaptureQueueNext.status || "review"}</strong>
+                  <span>{witnessCaptureQueueNext.next_step_label || "Next step"}</span>
+                  <strong>
+                    {witnessCaptureQueueNext.next_action_key || witnessCaptureQueueNext.status || "review"}
+                  </strong>
                   <small>
                     {witnessCaptureQueueNext.next_command ||
                       witnessCaptureQueueNext.manual_review_command ||

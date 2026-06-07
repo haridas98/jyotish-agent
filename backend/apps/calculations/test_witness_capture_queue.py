@@ -35,6 +35,7 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     assert first["capture_targets"]["parashara_light"] == ["pl_witness_packet"]
     assert "build_jhora_witness_batch_packets" in first["suggested_actions"]
     assert first["next_action_key"] == "build_jhora_witness_batch_packets"
+    assert first["next_step_label"] == "Run capture command"
     assert first["next_command"].endswith("manage.py build_jhora_witness_batch_packets --case-id sterlitamak-1998-04-30-1345")
     assert payload["next_item"]["id"] == "sterlitamak-1998-04-30-1345"
     assert payload["next_command"] == first["next_command"]
@@ -93,6 +94,7 @@ def test_witness_capture_queue_manual_review_actions_are_not_auto_commands():
     item = _queue_item(1, row)
 
     assert item["next_command_kind"] == "manual_review"
+    assert item["next_step_label"] == "Run review preflight first"
     assert item["next_command"] == ""
     assert item["manual_review_command"].endswith(
         "manage.py preflight_witness_review --jhora ..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345 --parashara-light "

@@ -693,6 +693,7 @@ export type WitnessCaptureQueueItem = {
   suggested_actions: string[];
   next_action_key: string;
   next_command_kind: string;
+  next_step_label: string;
   next_command: string;
   manual_review_command: string;
   blocker_count: number;
