@@ -93,6 +93,18 @@ cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py segment_private_corpus bphs-santhanam-qwen-normalized-with-sanskrit-private --max-chars 1800
 ```
 
+Inventory PDF pages that likely contain charts, tables or drawn schemes before recreating them as structured HTML/SVG:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py inventory_pdf_visuals `
+  --pdf ..\.private_corpus\bphs-santhanam.pdf `
+  --output-dir ..\.tmp\pdf-visual-inventory\bphs-santhanam `
+  --render-top 30
+```
+
+The command writes `visual-inventory.json` and rendered `page-XXXX.png` files. Use the manifest to decide which PDF pages need manual table/schema reconstruction.
+
 Digital source candidates:
 
 | Work | Digital source | Import status |

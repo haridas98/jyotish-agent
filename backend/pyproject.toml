@@ -10,6 +10,7 @@ dependencies = [
   "gunicorn>=23.0,<24.0",
   "geonamescache>=2.0,<2.1",
   "indic-transliteration>=2.3,<2.4",
+  "pymupdf>=1.26,<1.27",
   "psycopg[binary]>=3.2,<3.3",
   "python-dotenv>=1.1,<1.2",
   "timezonefinder>=8.1,<8.2",
