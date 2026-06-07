@@ -78,7 +78,34 @@ def test_nemotron_client_requires_openrouter_key():
 
 
 @pytest.mark.django_db
-@override_settings(VL_DATABASE_URL="")
+@override_settings(VL_DATABASE_URL="", NEMOTRON_ANALYSIS_ENABLED=False)
+def test_birth_nemotron_analysis_api_is_disabled_by_default(monkeypatch):
+    called = False
+
+    def fail_if_called(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("Nemotron generator should not run when disabled")
+
+    monkeypatch.setattr("apps.reports.views.generate_birth_chart_nemotron_analysis", fail_if_called)
+
+    response = APIClient().post(
+        "/api/reports/birth-chart/nemotron-analysis",
+        {
+            "birth_date": "1998-04-30",
+            "birth_time": "13:45",
+            "place_name": "Sterlitamak",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 404
+    assert response.data["error"] == "Nemotron analysis is disabled"
+    assert called is False
+
+
+@pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="", NEMOTRON_ANALYSIS_ENABLED=True)
 def test_birth_nemotron_analysis_api_returns_saved_draft(monkeypatch):
     monkeypatch.setattr(
         "apps.reports.views.generate_birth_chart_nemotron_analysis",

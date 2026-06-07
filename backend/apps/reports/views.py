@@ -154,6 +154,8 @@ class BirthNemotronAnalysisView(APIView):
     permission_classes = [PrivateAppAccess]
 
     def post(self, request):
+        if not getattr(settings, "NEMOTRON_ANALYSIS_ENABLED", False):
+            return Response({"error": "Nemotron analysis is disabled"}, status=404)
         try:
             return Response(
                 generate_birth_chart_nemotron_analysis(
