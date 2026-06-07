@@ -45,6 +45,14 @@ JHora verification packets can be created before the real export is attached. Th
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py capture_jhora_complete_export `
+  --launch-jhd ..\.tmp\jhora\sterlitamak-1998\sterlitamak-1998.jhd `
+  --output ..\.tmp\jhora\sterlitamak-1998\complete-calculations.txt `
+  --expected-timezone-offset +06:00
+```
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py build_jhora_verification_packet `
   --id sterlitamak-1998-04-30-1345 `
   --birth-date 1998-04-30 `
