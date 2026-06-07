@@ -49,6 +49,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
         written["review_checklist_summary"]
         == "JHora evidence=ready; Parashara Light evidence=ready; Open diffs=ack_required; Manual ACK=ack_required"
     )
+    assert written["safe_next_step"] == "human ACK required before mark/seal"
     assert payload["metadata"]["reviewer"] == "Haridas"
     assert payload["metadata"]["reviewed_at"] == "2026-06-07T12:00:00+05:00"
     assert payload["metadata"]["jhora_root"] == str(jhora_root)
@@ -70,6 +71,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert "sterlitamak-1998-04-30-1345" in index
     assert "ACK: yes" in index
     assert "Checklist: JHora evidence=ready; Parashara Light evidence=ready; Open diffs=ack_required; Manual ACK=ack_required" in index
+    assert "Safe next: human ACK required before mark/seal" in index
     assert "missing_jhora_or_pl_pair" in index
     assert "## Next Actions" in index
     assert "vrindavan-1990-08-15-1024" in index
@@ -80,6 +82,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert index_json["written"][0]["ack_required"] is True
     assert index_json["written"][0]["review_checklist"][3]["key"] == "review_ack"
     assert index_json["written"][0]["review_checklist_summary"] == written["review_checklist_summary"]
+    assert index_json["written"][0]["safe_next_step"] == "human ACK required before mark/seal"
     assert any(row["id"] == "vrindavan-1990-08-15-1024" for row in index_json["next_actions"])
 
 
@@ -138,6 +141,7 @@ def test_build_witness_review_batch_packets_command_text_shows_checklist(tmp_pat
     text = stdout.getvalue()
     assert "sterlitamak-1998-04-30-1345" in text
     assert "checklist=JHora evidence=ready; Parashara Light evidence=ready; Open diffs=ack_required; Manual ACK=ack_required" in text
+    assert "safe_next=human ACK required before mark/seal" in text
     assert "seal_witness_case" not in text
 
 

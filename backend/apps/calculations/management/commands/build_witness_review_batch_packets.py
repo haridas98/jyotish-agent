@@ -110,6 +110,7 @@ def build_witness_review_batch_packets(
             continue
 
         review_checklist = packet.get("review_checklist") or []
+        safe_next_step = _safe_next_step(packet.get("preflight"))
         written.append(
             {
                 "id": case_id,
@@ -117,6 +118,7 @@ def build_witness_review_batch_packets(
                 "reviewable": bool(overall["reviewable"]),
                 "ack_required": bool(overall["ack_required"]),
                 "blocked": bool(overall["blocked"]),
+                "safe_next_step": safe_next_step,
                 "review_checklist": review_checklist,
                 "review_checklist_summary": _checklist_summary(review_checklist),
             }
@@ -219,6 +221,7 @@ def _index_markdown(
             lines.append(
                 f"- `{row['id']}` - Reviewable: {_yes_no(row['reviewable'])}; "
                 f"ACK: {_yes_no(row['ack_required'])}; Blocked: {_yes_no(row['blocked'])}; "
+                f"Safe next: {row.get('safe_next_step') or 'review preflight first'}; "
                 f"Checklist: {row.get('review_checklist_summary') or _checklist_summary(row.get('review_checklist'))}; "
                 f"File: `{row['output_path']}`"
             )
@@ -304,6 +307,18 @@ def _checklist_summary(value: Any) -> str:
     return "; ".join(f"{row.get('label', 'item')}={row.get('status', 'unknown')}" for row in rows) or "none"
 
 
+def _safe_next_step(value: Any) -> str:
+    preflight = value if isinstance(value, dict) else {}
+    overall = preflight.get("overall") if isinstance(preflight.get("overall"), dict) else {}
+    if overall.get("blocked"):
+        return "resolve missing evidence before review"
+    if overall.get("ack_required"):
+        return "human ACK required before mark/seal"
+    if overall.get("reviewable"):
+        return "ready for explicit review command"
+    return "capture JHora/PL packet or fixture first"
+
+
 def _yes_no(value: object) -> str:
     return "yes" if bool(value) else "no"
 
@@ -321,6 +336,7 @@ def _text_summary(payload: dict[str, Any]) -> str:
         lines.append(
             f"- {row['id']}: {row['output_path']} "
             f"(reviewable={row['reviewable']} ack_required={row['ack_required']} blocked={row['blocked']} "
+            f"safe_next={row.get('safe_next_step') or 'review preflight first'} "
             f"checklist={row.get('review_checklist_summary') or _checklist_summary(row.get('review_checklist'))})"
         )
     return "\n".join(lines)
