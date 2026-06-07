@@ -111,6 +111,15 @@ After manual review confirms the export, screenshots and settings evidence, mark
 The command refuses incomplete packets unless `--force` is passed. If the JHora fixture comparison is `diff_open`, it also refuses verification unless `--ack-diff-open` is passed.
 Promotion is a separate gate: it refuses draft/unreviewed packets, missing JHora expected data, missing reviewer metadata, and unacknowledged open diffs before copying the reviewed fixture into the accuracy suite.
 
+For a full reviewed queue, promote every ready case with the same gate:
+
+```powershell
+.\.venv\Scripts\python manage.py promote_jhora_witness_batch `
+  --jhora-root ..\.tmp\jhora\batch-queue `
+  --output-dir apps\calculations\fixtures\accuracy `
+  --fail-if-blocked
+```
+
 To prepare only one case:
 
 ```powershell
