@@ -819,6 +819,18 @@ export type WitnessSummary = {
       next_action: string;
       error?: string;
     };
+    internal_settings_audit: {
+      available: boolean;
+      status: string;
+      source_report: string;
+      visible_settings_status: string;
+      internal_ephemeris_mode_visible: boolean;
+      option_store_diff_status: string;
+      hidden_option_store_primary_candidate: string;
+      ruled_out_count: number;
+      next_action: string;
+      error?: string;
+    };
   };
   open_items: Array<{
     source: string;

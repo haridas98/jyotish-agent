@@ -215,3 +215,7 @@ PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH = os.getenv(
     "PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-option-store-diff.json"),
 )
+PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH = os.getenv(
+    "PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH",
+    str(ROOT_DIR / ".tmp" / "pl7" / "haridas-pl-internal-settings-audit.json"),
+)

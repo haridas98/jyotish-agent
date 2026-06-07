@@ -22,6 +22,7 @@ def build_witness_summary(
     parashara_light_preferences_inventory_path: str | Path = "",
     parashara_light_hidden_option_store_path: str | Path = "",
     parashara_light_option_store_diff_path: str | Path = "",
+    parashara_light_internal_settings_audit_path: str | Path = "",
 ) -> dict[str, Any]:
     jhora = _jhora_summary(jhora_report_path)
     parashara_light = _parashara_light_summary(
@@ -36,6 +37,7 @@ def build_witness_summary(
         preferences_inventory_path=parashara_light_preferences_inventory_path,
         hidden_option_store_path=parashara_light_hidden_option_store_path,
         option_store_diff_path=parashara_light_option_store_diff_path,
+        internal_settings_audit_path=parashara_light_internal_settings_audit_path,
     )
     open_items = _open_items(jhora, parashara_light)
     return {
@@ -92,6 +94,7 @@ def _parashara_light_summary(
     preferences_inventory_path: str | Path = "",
     hidden_option_store_path: str | Path = "",
     option_store_diff_path: str | Path = "",
+    internal_settings_audit_path: str | Path = "",
 ) -> dict[str, Any]:
     profile = _parashara_light_profile_summary(profile_report_path)
     forensic = _parashara_light_forensic_summary(forensic_report_path)
@@ -102,6 +105,7 @@ def _parashara_light_summary(
     preferences_inventory = _parashara_light_preferences_inventory_summary(preferences_inventory_path)
     hidden_option_store = _parashara_light_hidden_option_store_summary(hidden_option_store_path)
     option_store_diff = _parashara_light_option_store_diff_summary(option_store_diff_path)
+    internal_settings_audit = _parashara_light_internal_settings_audit_summary(internal_settings_audit_path)
     try:
         report = load_parashara_light_packet_report(
             path,
@@ -125,6 +129,7 @@ def _parashara_light_summary(
             "preferences_inventory": preferences_inventory,
             "hidden_option_store": hidden_option_store,
             "option_store_diff": option_store_diff,
+            "internal_settings_audit": internal_settings_audit,
         }
 
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
@@ -149,6 +154,7 @@ def _parashara_light_summary(
         "preferences_inventory": preferences_inventory,
         "hidden_option_store": hidden_option_store,
         "option_store_diff": option_store_diff,
+        "internal_settings_audit": internal_settings_audit,
     }
 
 
@@ -645,6 +651,57 @@ def _missing_parashara_light_option_store_diff(path: str) -> dict[str, Any]:
     }
 
 
+def _parashara_light_internal_settings_audit_summary(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_parashara_light_internal_settings_audit("")
+    source = Path(path)
+    try:
+        report = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_parashara_light_internal_settings_audit(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "status": "load_error",
+            "source_report": str(source),
+            "error": str(exc),
+            "visible_settings_status": "",
+            "internal_ephemeris_mode_visible": False,
+            "option_store_diff_status": "",
+            "hidden_option_store_primary_candidate": "",
+            "ruled_out_count": 0,
+            "next_action": "",
+        }
+
+    evidence_gates = report.get("evidence_gates") if isinstance(report.get("evidence_gates"), dict) else {}
+    ruled_out = report.get("ruled_out") if isinstance(report.get("ruled_out"), list) else []
+    return {
+        "available": True,
+        "status": report.get("status", ""),
+        "source_report": str(source),
+        "visible_settings_status": evidence_gates.get("visible_settings_status", ""),
+        "internal_ephemeris_mode_visible": bool(evidence_gates.get("internal_ephemeris_mode_visible")),
+        "option_store_diff_status": evidence_gates.get("option_store_diff_status", ""),
+        "hidden_option_store_primary_candidate": evidence_gates.get("hidden_option_store_primary_candidate", ""),
+        "ruled_out_count": len(ruled_out),
+        "next_action": report.get("next_action", ""),
+    }
+
+
+def _missing_parashara_light_internal_settings_audit(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_report": path,
+        "visible_settings_status": "",
+        "internal_ephemeris_mode_visible": False,
+        "option_store_diff_status": "",
+        "hidden_option_store_primary_candidate": "",
+        "ruled_out_count": 0,
+        "next_action": "",
+    }
+
+
 def _overall_status(jhora: dict[str, Any], parashara_light: dict[str, Any]) -> str:
     if not jhora["available"] and not parashara_light["available"]:
         return "missing_witnesses"
@@ -692,6 +749,7 @@ def _open_items(jhora: dict[str, Any], parashara_light: dict[str, Any]) -> list[
 
 def _parashara_light_next_action(parashara_light: dict[str, Any]) -> str:
     for section in (
+        "internal_settings_audit",
         "settings_aware_forensic",
         "option_store_diff",
         "hidden_option_store",

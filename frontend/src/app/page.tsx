@@ -2622,6 +2622,7 @@ function AccuracyReportPanel({
   const plPreferencesInventory = witnessSummary?.parashara_light.preferences_inventory ?? null;
   const plHiddenOptionStore = witnessSummary?.parashara_light.hidden_option_store ?? null;
   const plOptionStoreDiff = witnessSummary?.parashara_light.option_store_diff ?? null;
+  const plInternalSettingsAudit = witnessSummary?.parashara_light.internal_settings_audit ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2835,6 +2836,28 @@ function AccuracyReportPanel({
                 <span>Setting</span>
                 <strong>{plOptionStoreDiff.visible_setting || "not captured"}</strong>
                 <small>{plOptionStoreDiff.next_action || "review"}</small>
+              </div>
+            </div>
+          ) : null}
+          {plInternalSettingsAudit?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>PL internal settings audit</h3>
+              <div>
+                <span>Status</span>
+                <strong>{plInternalSettingsAudit.status || "captured"}</strong>
+                <small>{plInternalSettingsAudit.visible_settings_status || "visible settings reviewed"}</small>
+              </div>
+              <div>
+                <span>Gates</span>
+                <strong>{plInternalSettingsAudit.option_store_diff_status || "option store pending"}</strong>
+                <small>
+                  ephemeris mode {plInternalSettingsAudit.internal_ephemeris_mode_visible ? "visible" : "not visible"}
+                </small>
+              </div>
+              <div>
+                <span>Next action</span>
+                <strong>{plInternalSettingsAudit.next_action || "review"}</strong>
+                <small>{plInternalSettingsAudit.ruled_out_count} ruled out</small>
               </div>
             </div>
           ) : null}

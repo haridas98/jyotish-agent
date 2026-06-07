@@ -163,6 +163,11 @@ class WitnessSummaryView(APIView):
                     "PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH",
                     "",
                 ),
+                parashara_light_internal_settings_audit_path=getattr(
+                    settings,
+                    "PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH",
+                    "",
+                ),
             )
         )
 

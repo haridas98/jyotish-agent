@@ -207,6 +207,25 @@ Current local profile report:
 - Finding: the PL chart XML explains PL's east-negative storage convention and a small coordinate variance, but it does not explain the observed graha longitude differences. Detailed PL7 calculation/profile settings remain the next audit target.
 - The Accuracy tab now includes this profile through `GET /api/calculations/witness-summary` under `parashara_light.profile`. It is marked `authoritative=false`; `candidate_normalization` is shown only as audit context.
 
+Build the consolidated PL7 internal settings audit from the visible settings, preferences, hidden option-store and option-store diff reports:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_parashara_light_internal_settings_audit `
+  --settings-aware-forensic ..\.tmp\pl7\haridas-pl-settings-aware-forensic.json `
+  --preferences-inventory ..\.tmp\pl7\haridas-pl-preferences-inventory.json `
+  --hidden-option-store ..\.tmp\pl7\haridas-pl-hidden-option-store.json `
+  --option-store-diff ..\.tmp\pl7\haridas-pl-option-store-diff.json `
+  --output ..\.tmp\pl7\haridas-pl-internal-settings-audit.json
+```
+
+Current internal settings audit:
+
+- Report: `.tmp/pl7/haridas-pl-internal-settings-audit.json`.
+- Policy: private audit only; proprietary PL option bytes stay hash-only and are not parsed.
+- The Accuracy tab exposes this as `parashara_light.internal_settings_audit` with status, evidence gates, ruled-out count and next action.
+- If visible settings do not explain the PL diff and the option-store probe is inconclusive, the next action is `capture_pl_native_export_or_internal_ephemeris_mode`.
+
 ## Next Capture Targets
 
 - Birth data/settings screen: date, time, timezone, coordinates, ayanamsa, nodes, house system.

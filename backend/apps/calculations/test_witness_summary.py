@@ -225,6 +225,24 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH = option_store_diff_path
+    internal_settings_audit_path = tmp_path / "pl-internal-settings-audit.json"
+    internal_settings_audit_path.write_text(
+        json.dumps(
+            {
+                "source": "parashara_light_internal_settings_audit",
+                "status": "internal_settings_unresolved_native_export_required",
+                "evidence_gates": {
+                    "visible_settings_status": "visible_settings_do_not_explain_pl_diff",
+                    "internal_ephemeris_mode_visible": False,
+                    "option_store_diff_status": "no_option_store_hash_change_detected",
+                },
+                "ruled_out": ["visible_calculation_options", "visible_preferences_ephemeris_mode"],
+                "next_action": "capture_pl_native_export_or_internal_ephemeris_mode",
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings.PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH = internal_settings_audit_path
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -297,9 +315,16 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert option_store_diff["changed_candidates_count"] == 1
     assert option_store_diff["restore_verified"] is True
     assert option_store_diff["next_action"] == "inspect_pl_native_export_or_ephemeris_mode"
+    internal_settings_audit = response.data["parashara_light"]["internal_settings_audit"]
+    assert internal_settings_audit["available"] is True
+    assert internal_settings_audit["status"] == "internal_settings_unresolved_native_export_required"
+    assert internal_settings_audit["visible_settings_status"] == "visible_settings_do_not_explain_pl_diff"
+    assert internal_settings_audit["internal_ephemeris_mode_visible"] is False
+    assert internal_settings_audit["ruled_out_count"] == 2
+    assert internal_settings_audit["next_action"] == "capture_pl_native_export_or_internal_ephemeris_mode"
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
-    assert response.data["open_items"][1]["next_action"] == "capture_pl_internal_ayanamsha_value_or_ephemeris_mode"
+    assert response.data["open_items"][1]["next_action"] == "capture_pl_native_export_or_internal_ephemeris_mode"
 
 
 def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
@@ -315,6 +340,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     settings.PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH = tmp_path / "missing-pl-preferences-inventory.json"
     settings.PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH = tmp_path / "missing-pl-hidden-option-store.json"
     settings.PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH = tmp_path / "missing-pl-option-store-diff.json"
+    settings.PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH = tmp_path / "missing-pl-internal-settings-audit.json"
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -331,6 +357,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     assert response.data["parashara_light"]["preferences_inventory"]["available"] is False
     assert response.data["parashara_light"]["hidden_option_store"]["available"] is False
     assert response.data["parashara_light"]["option_store_diff"]["available"] is False
+    assert response.data["parashara_light"]["internal_settings_audit"]["available"] is False
 
 
 def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
@@ -348,6 +375,7 @@ def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
     settings.PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH = tmp_path / "missing-pl-preferences-inventory.json"
     settings.PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH = tmp_path / "missing-pl-hidden-option-store.json"
     settings.PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH = tmp_path / "missing-pl-option-store-diff.json"
+    settings.PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH = tmp_path / "missing-pl-internal-settings-audit.json"
 
     response = APIClient().get(reverse("witness-summary"))
 
