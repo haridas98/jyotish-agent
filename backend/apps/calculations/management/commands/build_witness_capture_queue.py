@@ -75,6 +75,7 @@ class Command(BaseCommand):
         parser.add_argument("--target-reviewed-count", type=int, default=20)
         parser.add_argument("--limit", type=int, default=20)
         parser.add_argument("--json", action="store_true")
+        parser.add_argument("--next-only", action="store_true")
 
     def handle(self, *args, **options):
         payload = build_witness_capture_queue(
@@ -87,6 +88,8 @@ class Command(BaseCommand):
         )
         if options["json"]:
             self.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2))
+        elif options["next_only"]:
+            self.stdout.write(_next_only_summary(payload))
         else:
             self.stdout.write(_text_summary(payload))
 
@@ -295,4 +298,25 @@ def _text_summary(payload: dict[str, Any]) -> str:
         lines.append(f"manual review command: {next_item['manual_review_command']}")
     for item in payload["items"][:10]:
         lines.append(f"- {item['priority']}. {item['id']}: {', '.join(item['suggested_actions']) or 'review'}")
+    return "\n".join(lines)
+
+
+def _next_only_summary(payload: dict[str, Any]) -> str:
+    next_item = payload.get("next_item") if isinstance(payload.get("next_item"), dict) else {}
+    next_action = str(payload.get("next_action_key") or next_item.get("next_action_key") or "review")
+    next_step = str(payload.get("next_step_label") or next_item.get("next_step_label") or "Manual capture/review")
+    next_command = str(payload.get("next_command") or next_item.get("next_command") or "")
+    manual_review_command = str(
+        payload.get("manual_review_command") or next_item.get("manual_review_command") or ""
+    )
+    lines = [
+        f"next action: {next_action}",
+        f"next step: {next_step}",
+    ]
+    if next_command:
+        lines.append(f"next command: {next_command}")
+    elif manual_review_command:
+        lines.append(f"manual review command: {manual_review_command}")
+    else:
+        lines.append("next command: manual capture/review")
     return "\n".join(lines)

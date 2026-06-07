@@ -81,6 +81,40 @@ def test_build_witness_capture_queue_command_outputs_json(tmp_path):
     assert markdown_output.exists()
 
 
+def test_build_witness_capture_queue_command_outputs_next_only(tmp_path):
+    output = tmp_path / "capture-queue.json"
+    markdown_output = tmp_path / "capture-queue.md"
+    stdout = StringIO()
+
+    call_command(
+        "build_witness_capture_queue",
+        "--jhora-root",
+        str(tmp_path / "missing-jhora"),
+        "--pl-root",
+        str(tmp_path / "missing-pl"),
+        "--output",
+        str(output),
+        "--markdown-output",
+        str(markdown_output),
+        "--limit",
+        "1",
+        "--next-only",
+        stdout=stdout,
+    )
+
+    text = stdout.getvalue()
+
+    assert "next action: build_jhora_witness_batch_packets" in text
+    assert "next step: Run capture command" in text
+    assert (
+        "next command: .\\.venv\\Scripts\\python.exe manage.py build_jhora_witness_batch_packets "
+        "--case-id sterlitamak-1998-04-30-1345"
+    ) in text
+    assert "- 1." not in text
+    assert output.exists()
+    assert markdown_output.exists()
+
+
 def test_witness_capture_queue_manual_review_actions_are_not_auto_commands():
     from apps.calculations.management.commands.build_witness_capture_queue import _queue_item
 
@@ -134,3 +168,26 @@ def test_witness_capture_queue_text_summary_shows_manual_review_next_step():
 
     assert "next step: Run review preflight first" in text
     assert "manual review command: .\\.venv\\Scripts\\python.exe manage.py preflight_witness_review" in text
+
+
+def test_witness_capture_queue_next_only_summary_shows_manual_review_preflight():
+    from apps.calculations.management.commands.build_witness_capture_queue import _next_only_summary
+
+    payload = {
+        "next_action_key": "set_review_status_jhora_verified_after_manual_review",
+        "next_step_label": "Run review preflight first",
+        "next_command": "",
+        "manual_review_command": (
+            ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
+            "--jhora a --parashara-light b"
+        ),
+        "next_item": {},
+    }
+
+    text = _next_only_summary(payload)
+
+    assert "next action: set_review_status_jhora_verified_after_manual_review" in text
+    assert "next step: Run review preflight first" in text
+    assert "manual review command: .\\.venv\\Scripts\\python.exe manage.py preflight_witness_review" in text
+    assert "mark_jhora_witness_reviewed" not in text
+    assert "seal_witness_case" not in text
