@@ -2609,9 +2609,12 @@ function AccuracyReportPanel({
   const manualComparison = plReport?.manual_witness_comparison ?? null;
   const screenshotFingerprint = plSummary?.fingerprints.screenshots?.[0];
   const birthTimezoneAudit = witnessSummary?.birth_timezone_audit ?? null;
+  const jhoraBirthExport = witnessSummary?.jhora.birth_export ?? null;
   const plProfile = witnessSummary?.parashara_light.profile ?? null;
   const plProfileFlags = Array.isArray(plProfile?.data_quality_flags) ? plProfile.data_quality_flags : [];
   const plProfileComparison = plProfile?.packet_comparison ?? {};
+  const plProfileNormalization = plProfile?.candidate_normalization ?? {};
+  const plProfileRawBirth = plProfile?.raw_birth_info ?? {};
   const plForensic = witnessSummary?.parashara_light.forensic ?? null;
   const plForensicMaxDeviation =
     typeof plForensic?.pl_swiss_max_abs_arcsec === "number" ? plForensic.pl_swiss_max_abs_arcsec : null;
@@ -2641,7 +2644,13 @@ function AccuracyReportPanel({
             <div>
               <span>JHora</span>
               <strong>{witnessSummary.jhora.available ? witnessSummary.jhora.status : "missing"}</strong>
-              {witnessSummary.jhora.available ? <small>{witnessSummary.jhora.failed_checks} failed</small> : null}
+              {witnessSummary.jhora.available ? (
+                <small>
+                  {jhoraBirthExport?.parsed_utc_offset
+                    ? `${jhoraBirthExport.parsed_utc_offset}, ${witnessSummary.jhora.failed_checks} failed`
+                    : `${witnessSummary.jhora.failed_checks} failed`}
+                </small>
+              ) : null}
             </div>
             <div>
               <span>PL</span>
@@ -2696,6 +2705,26 @@ function AccuracyReportPanel({
                 <span>UTC</span>
                 <strong>{birthTimezoneAudit.utc_datetime || "not captured"}</strong>
                 <small>{birthTimezoneAudit.local_datetime || "local time missing"}</small>
+              </div>
+            </div>
+          ) : null}
+          {jhoraBirthExport?.available ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>JHora birth export</h3>
+              <div>
+                <span>Birth time</span>
+                <strong>{jhoraBirthExport.time || "not captured"}</strong>
+                <small>{jhoraBirthExport.date || "date missing"}</small>
+              </div>
+              <div>
+                <span>Timezone</span>
+                <strong>{jhoraBirthExport.parsed_utc_offset || "not parsed"}</strong>
+                <small>{jhoraBirthExport.timezone_line || "Time Zone line missing"}</small>
+              </div>
+              <div>
+                <span>Place</span>
+                <strong>{jhoraBirthExport.place || "not captured"}</strong>
+                <small>{jhoraBirthExport.source_export || "export missing"}</small>
               </div>
             </div>
           ) : null}
@@ -2900,6 +2929,19 @@ function AccuracyReportPanel({
           {plProfile?.available ? (
             <div className="accuracy-list witness-open-items">
               <h3>PL birth XML profile</h3>
+              <div>
+                <span>PL XML timezone</span>
+                <strong>
+                  TimeZone {String(plProfileRawBirth.timezone ?? "n/a")}, DST{" "}
+                  {String(plProfileRawBirth.dst ?? "n/a")}
+                </strong>
+                <small>
+                  {String(plProfileNormalization.timezone_formula ?? "formula missing")}
+                  {typeof plProfileNormalization.timezone_offset_hours_candidate === "number"
+                    ? ` => ${plProfileNormalization.timezone_offset_hours_candidate.toFixed(2)}h`
+                    : ""}
+                </small>
+              </div>
               <div>
                 <span>Coordinates</span>
                 <strong>

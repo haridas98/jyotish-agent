@@ -20,6 +20,7 @@ Birth input used for this session:
 - timezone: `+06:00`, shown in JHora as `6:00:00 (East of GMT)`;
 - place: Sterlitamak, Russia;
 - coordinates shown by JHora: `55 E 57' 01", 53 N 37' 49"`;
+- fresh clipboard export captured on 2026-06-07 from `Jagannatha Hora - sterlitamak-1998.jhd`; it shows `Time Zone:     6:00:00 (East of GMT)`;
 - local packet: `.tmp/jhora/sterlitamak-1998/packet.json`;
 - complete calculations export: `.tmp/jhora/sterlitamak-1998/complete-calculations.txt`;
 - comparison report for API: `.tmp/jhora/sterlitamak-1998/accuracy-report.json`;

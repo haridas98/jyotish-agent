@@ -21,6 +21,20 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         ),
         encoding="utf-8",
     )
+    (tmp_path / "complete-calculations.txt").write_text(
+        "\n".join(
+            [
+                "Natal Chart",
+                "",
+                "Date:          April 30, 1998",
+                "Time:          13:45:00",
+                "Time Zone:     6:00:00 (East of GMT)",
+                "Place:         55 E 57' 01\", 53 N 37' 49\"",
+                "               Sterlitamak, Russia",
+            ]
+        ),
+        encoding="utf-8",
+    )
     pl_packet_path = tmp_path / "pl-packet.json"
     pl_packet_path.write_text(
         json.dumps(
@@ -67,9 +81,15 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
             {
                 "source": "parashara_light_birth_xml_profile",
                 "source_xml": "C:\\GeoVision\\GeoVisionCharts\\Haridas.xml",
+                "raw_birth_info": {
+                    "timezone": -5.0,
+                    "dst": 1.0,
+                    "city": "Sterlitamak",
+                },
                 "candidate_normalization": {
                     "longitude_east_candidate": 55.9666667,
                     "timezone_offset_hours_candidate": 6.0,
+                    "timezone_formula": "-(TimeZone - DST)",
                 },
                 "packet_comparison": {
                     "longitude_delta_degrees": 0.016467,
@@ -277,6 +297,12 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert response.data["jhora"]["available"] is True
     assert response.data["jhora"]["status"] == "diff_open"
     assert response.data["jhora"]["failed_checks"] == 2
+    jhora_birth_export = response.data["jhora"]["birth_export"]
+    assert jhora_birth_export["available"] is True
+    assert jhora_birth_export["date"] == "April 30, 1998"
+    assert jhora_birth_export["time"] == "13:45:00"
+    assert jhora_birth_export["timezone_line"] == "Time Zone:     6:00:00 (East of GMT)"
+    assert jhora_birth_export["parsed_utc_offset"] == "+06:00"
     assert response.data["parashara_light"]["available"] is True
     assert response.data["parashara_light"]["status"] == "diff_open"
     assert response.data["parashara_light"]["manual_failed_count"] == 1
@@ -284,6 +310,9 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert profile["available"] is True
     assert profile["status"] == "loaded"
     assert profile["authoritative"] is False
+    assert profile["raw_birth_info"]["timezone"] == -5.0
+    assert profile["raw_birth_info"]["dst"] == 1.0
+    assert profile["candidate_normalization"]["timezone_formula"] == "-(TimeZone - DST)"
     assert profile["packet_comparison"]["longitude_delta_degrees"] == 0.016467
     assert "PL_PACKET_COORDINATE_VARIANCE" in profile["data_quality_flags"]
     forensic = response.data["parashara_light"]["forensic"]

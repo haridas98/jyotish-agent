@@ -703,6 +703,18 @@ export type WitnessSummary = {
     status: string;
     fixture_id: string;
     source_report: string;
+    source_export: string;
+    birth_export: {
+      available: boolean;
+      status: string;
+      source_export: string;
+      date: string;
+      time: string;
+      timezone_line: string;
+      parsed_utc_offset: string;
+      place: string;
+      error?: string;
+    };
     failed_checks: number;
     missing_fields_count: number;
     max_delta_arcseconds?: number;
@@ -729,6 +741,7 @@ export type WitnessSummary = {
       data_quality_flags: string[];
       packet_comparison: Record<string, number | string | null>;
       candidate_normalization: Record<string, number | string | null>;
+      raw_birth_info: Record<string, number | string | null>;
       error?: string;
     };
     forensic: {

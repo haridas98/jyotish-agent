@@ -11,6 +11,11 @@ from .jhora_accuracy_report import load_jhora_accuracy_report
 from .parashara_light_packet_report import load_parashara_light_packet_report
 
 TIMEZONE_OFFSET_RE = re.compile(r"^(?:UTC|GMT)?\s*([+-])\s*(\d{1,2})(?::?(\d{2}))?$", re.IGNORECASE)
+JHORA_EXPORT_TIMEZONE_RE = re.compile(
+    r"^Time Zone:\s*(?P<hours>\d{1,2}):(?P<minutes>\d{2}):(?P<seconds>\d{2})\s*"
+    r"\((?P<direction>East|West) of GMT\)\s*$",
+    re.IGNORECASE,
+)
 
 
 def build_witness_summary(
@@ -62,6 +67,8 @@ def _jhora_summary(path: str | Path) -> dict[str, Any]:
             "available": False,
             "status": "missing",
             "source_report": str(path),
+            "source_export": _default_jhora_source_export(path),
+            "birth_export": _missing_jhora_birth_export(_default_jhora_source_export(path)),
             "fixture_id": "",
             "failed_checks": 0,
             "missing_fields_count": 0,
@@ -74,17 +81,96 @@ def _jhora_summary(path: str | Path) -> dict[str, Any]:
     failed_checks = int(longitude.get("failed") or 0) + sum(
         int(group.get("failed") or 0) for group in exact_groups if isinstance(group, dict)
     )
+    source_export = str(report.get("source_export") or _default_jhora_source_export(path))
     return {
         "available": True,
         "status": "matched" if report.get("passed") else "diff_open",
         "fixture_id": report.get("fixture_id", ""),
         "source_report": report.get("source_report", str(path)),
+        "source_export": source_export,
+        "birth_export": _jhora_birth_export(source_export),
         "failed_checks": failed_checks,
         "missing_fields_count": len(missing_fields),
         "max_delta_arcseconds": float(longitude.get("max_delta_arcseconds") or 0.0),
         "corrected_max_delta_arcseconds": float(longitude.get("corrected_max_delta_arcseconds") or 0.0),
         "layers": summary.get("jhora_layers") or {},
     }
+
+
+def _default_jhora_source_export(path: str | Path) -> str:
+    if not path:
+        return ""
+    return str(Path(path).parent / "complete-calculations.txt")
+
+
+def _jhora_birth_export(path: str | Path) -> dict[str, Any]:
+    if not path:
+        return _missing_jhora_birth_export("")
+    source = Path(path)
+    try:
+        text = source.read_text(encoding="utf-8-sig")
+    except FileNotFoundError:
+        return _missing_jhora_birth_export(str(source))
+    except OSError as exc:
+        audit = _missing_jhora_birth_export(str(source))
+        audit.update({"status": "load_error", "error": str(exc)})
+        return audit
+
+    lines = text.splitlines()
+    timezone_line = _line_by_prefix(lines, "Time Zone:")
+    parsed_offset = _jhora_export_utc_offset(timezone_line)
+    return {
+        "available": bool(parsed_offset),
+        "status": "loaded" if parsed_offset else "timezone_line_missing",
+        "source_export": str(source),
+        "date": _value_after_prefix(lines, "Date:"),
+        "time": _value_after_prefix(lines, "Time:"),
+        "timezone_line": timezone_line.strip(),
+        "parsed_utc_offset": parsed_offset,
+        "place": _value_after_prefix(lines, "Place:"),
+    }
+
+
+def _missing_jhora_birth_export(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_export": path,
+        "date": "",
+        "time": "",
+        "timezone_line": "",
+        "parsed_utc_offset": "",
+        "place": "",
+    }
+
+
+def _line_by_prefix(lines: list[str], prefix: str) -> str:
+    for line in lines:
+        if line.startswith(prefix):
+            return line
+    return ""
+
+
+def _value_after_prefix(lines: list[str], prefix: str) -> str:
+    line = _line_by_prefix(lines, prefix)
+    if not line:
+        return ""
+    return line.split(":", 1)[1].strip()
+
+
+def _jhora_export_utc_offset(line: str) -> str:
+    match = JHORA_EXPORT_TIMEZONE_RE.match(line.strip())
+    if not match:
+        return ""
+    total_seconds = (
+        int(match.group("hours")) * 3600
+        + int(match.group("minutes")) * 60
+        + int(match.group("seconds"))
+    )
+    total_minutes = int(round(total_seconds / 60))
+    sign = "+" if match.group("direction").lower() == "east" else "-"
+    hours, minutes = divmod(total_minutes, 60)
+    return f"{sign}{hours:02d}:{minutes:02d}"
 
 
 def _parashara_light_summary(
@@ -182,6 +268,7 @@ def _parashara_light_profile_summary(path: str | Path) -> dict[str, Any]:
             "data_quality_flags": [],
             "packet_comparison": {},
             "candidate_normalization": {},
+            "raw_birth_info": {},
         }
 
     return {
@@ -197,6 +284,7 @@ def _parashara_light_profile_summary(path: str | Path) -> dict[str, Any]:
         "candidate_normalization": (
             report.get("candidate_normalization") if isinstance(report.get("candidate_normalization"), dict) else {}
         ),
+        "raw_birth_info": report.get("raw_birth_info") if isinstance(report.get("raw_birth_info"), dict) else {},
     }
 
 
@@ -209,6 +297,7 @@ def _missing_parashara_light_profile(path: str) -> dict[str, Any]:
         "data_quality_flags": [],
         "packet_comparison": {},
         "candidate_normalization": {},
+        "raw_birth_info": {},
     }
 
 
