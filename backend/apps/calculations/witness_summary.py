@@ -322,7 +322,12 @@ def _witness_capture_queue(path: str | Path) -> dict[str, Any]:
         },
         "items": items,
         "next_item": next_item,
+        "next_command_kind": str(payload.get("next_command_kind") or (next_item or {}).get("next_command_kind") or ""),
+        "next_step_label": str(payload.get("next_step_label") or (next_item or {}).get("next_step_label") or ""),
         "next_command": str(payload.get("next_command") or (next_item or {}).get("next_command") or ""),
+        "manual_review_command": str(
+            payload.get("manual_review_command") or (next_item or {}).get("manual_review_command") or ""
+        ),
     }
 
 
@@ -350,7 +355,10 @@ def _missing_witness_capture_queue(path: str) -> dict[str, Any]:
         },
         "items": [],
         "next_item": None,
+        "next_command_kind": "",
+        "next_step_label": "",
         "next_command": "",
+        "manual_review_command": "",
     }
 
 

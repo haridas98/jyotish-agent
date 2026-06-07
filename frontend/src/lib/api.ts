@@ -824,7 +824,10 @@ export type WitnessSummary = {
     };
     items: WitnessCaptureQueueItem[];
     next_item: WitnessCaptureQueueItem | null;
+    next_command_kind: string;
+    next_step_label: string;
     next_command: string;
+    manual_review_command: string;
     error?: string;
   };
   jhora: {
