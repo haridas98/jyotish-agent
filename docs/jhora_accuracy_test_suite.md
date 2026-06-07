@@ -38,6 +38,16 @@ for the parity queue. It does not mark PL evidence reviewed; screenshots, UI sta
 and the Accuracy tab shows the written/skipped/error counts plus generated/reviewer metadata next to the seal gate.
 The JSON index also includes `next_actions` with per-case JHora/PL blockers and suggested capture/review actions.
 
+For a compact checklist while JHora and PL are open, build a capture queue:
+
+```powershell
+.\.venv\Scripts\python manage.py build_witness_capture_queue `
+  --output ..\.tmp\witness-review\capture-queue.json `
+  --markdown-output ..\.tmp\witness-review\capture-queue.md
+```
+
+This writes the next case order, JHora blockers, PL blockers, and suggested capture/review actions without the full audit payload.
+
 The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to the 20-chart target queue, and reports:
 
 - candidate suite size;
