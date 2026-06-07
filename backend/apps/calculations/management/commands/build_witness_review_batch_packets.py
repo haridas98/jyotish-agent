@@ -109,6 +109,7 @@ def build_witness_review_batch_packets(
             skipped.append({"id": case_id, "reason": "not_reviewable"})
             continue
 
+        review_checklist = packet.get("review_checklist") or []
         written.append(
             {
                 "id": case_id,
@@ -116,7 +117,8 @@ def build_witness_review_batch_packets(
                 "reviewable": bool(overall["reviewable"]),
                 "ack_required": bool(overall["ack_required"]),
                 "blocked": bool(overall["blocked"]),
-                "review_checklist": packet.get("review_checklist") or [],
+                "review_checklist": review_checklist,
+                "review_checklist_summary": _checklist_summary(review_checklist),
             }
         )
 
@@ -217,7 +219,7 @@ def _index_markdown(
             lines.append(
                 f"- `{row['id']}` - Reviewable: {_yes_no(row['reviewable'])}; "
                 f"ACK: {_yes_no(row['ack_required'])}; Blocked: {_yes_no(row['blocked'])}; "
-                f"Checklist: {_checklist_summary(row.get('review_checklist'))}; "
+                f"Checklist: {row.get('review_checklist_summary') or _checklist_summary(row.get('review_checklist'))}; "
                 f"File: `{row['output_path']}`"
             )
     else:
@@ -319,6 +321,6 @@ def _text_summary(payload: dict[str, Any]) -> str:
         lines.append(
             f"- {row['id']}: {row['output_path']} "
             f"(reviewable={row['reviewable']} ack_required={row['ack_required']} blocked={row['blocked']} "
-            f"checklist={_checklist_summary(row.get('review_checklist'))})"
+            f"checklist={row.get('review_checklist_summary') or _checklist_summary(row.get('review_checklist'))})"
         )
     return "\n".join(lines)

@@ -45,6 +45,10 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
         "review_ack",
     ]
     assert written["review_checklist"][2]["status"] == "ack_required"
+    assert (
+        written["review_checklist_summary"]
+        == "JHora evidence=ready; Parashara Light evidence=ready; Open diffs=ack_required; Manual ACK=ack_required"
+    )
     assert payload["metadata"]["reviewer"] == "Haridas"
     assert payload["metadata"]["reviewed_at"] == "2026-06-07T12:00:00+05:00"
     assert payload["metadata"]["jhora_root"] == str(jhora_root)
@@ -75,6 +79,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert index_json["metadata"]["reviewer"] == "Haridas"
     assert index_json["written"][0]["ack_required"] is True
     assert index_json["written"][0]["review_checklist"][3]["key"] == "review_ack"
+    assert index_json["written"][0]["review_checklist_summary"] == written["review_checklist_summary"]
     assert any(row["id"] == "vrindavan-1990-08-15-1024" for row in index_json["next_actions"])
 
 
