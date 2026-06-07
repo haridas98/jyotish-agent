@@ -807,6 +807,8 @@ export type WitnessSummary = {
       blocked_count: number;
       ack_required_count: number;
       next_case_ids: string[];
+      next_review_case_id: string;
+      next_review_step: string;
     };
     written: Array<{
       id: string;

@@ -373,6 +373,8 @@ def _missing_witness_review_batch(path: str) -> dict[str, Any]:
             "blocked_count": 0,
             "ack_required_count": 0,
             "next_case_ids": [],
+            "next_review_case_id": "",
+            "next_review_step": "none",
         },
         "written": [],
         "next_actions": [],
@@ -633,6 +635,7 @@ def _witness_review_batch_progress(
     next_case_ids = summary.get("next_case_ids")
     if not isinstance(next_case_ids, list):
         next_case_ids = audit_summary.get("next_case_ids")
+    next_review = _witness_review_batch_next_review(summary=summary, written=written)
     return {
         "target_reviewed_count": target,
         "batch_review_ready_count": ready,
@@ -641,7 +644,23 @@ def _witness_review_batch_progress(
         "blocked_count": int(summary.get("blocked_count") or sum(1 for row in written if row.get("blocked"))),
         "ack_required_count": int(summary.get("ack_required_count") or sum(1 for row in written if row.get("ack_required"))),
         "next_case_ids": [str(case_id) for case_id in next_case_ids] if isinstance(next_case_ids, list) else [],
+        **next_review,
     }
+
+
+def _witness_review_batch_next_review(*, summary: dict[str, Any], written: list[dict[str, Any]]) -> dict[str, str]:
+    case_id = str(summary.get("next_review_case_id") or "")
+    step = str(summary.get("next_review_step") or "")
+    if case_id or step:
+        return {"next_review_case_id": case_id, "next_review_step": step or "none"}
+    for row in written:
+        if not (row.get("blocked") or row.get("ack_required") or row.get("reviewable")):
+            continue
+        next_steps = str(row.get("review_checklist_next_steps_summary") or "").strip()
+        if not next_steps or next_steps == "none":
+            next_steps = str(row.get("safe_next_step") or "review preflight first")
+        return {"next_review_case_id": str(row.get("id") or ""), "next_review_step": next_steps}
+    return {"next_review_case_id": "", "next_review_step": "none"}
 
 
 def _int_from_summary(summary: dict[str, Any], audit_summary: dict[str, Any], key: str) -> int:

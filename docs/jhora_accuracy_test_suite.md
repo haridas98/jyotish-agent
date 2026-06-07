@@ -41,6 +41,7 @@ Each written batch row also carries `review_checklist` and `review_checklist_sum
 `_index.md` show the same checklist statuses without exposing mark/seal commands.
 Each checklist item includes `next_step` in JSON and markdown, so UI/agents can show the next safe manual action.
 Batch rows also include `review_checklist_next_steps_summary` for compact `_index.md`, CLI and Accuracy tab display.
+The batch summary exposes `next_review_case_id` and `next_review_step` as the first safe packet/action to review.
 Batch rows also include `safe_next_step`; the CLI summary, `_index.md`, Witness Summary API and Accuracy tab show it
 as the next non-mutating review step.
 

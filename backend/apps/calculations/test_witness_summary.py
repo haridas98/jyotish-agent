@@ -473,6 +473,8 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review_batch["summary"]["reviewable_count"] == 1
     assert witness_review_batch["summary"]["blocked_count"] == 0
     assert witness_review_batch["summary"]["ack_required_count"] == 1
+    assert witness_review_batch["summary"]["next_review_case_id"] == "sterlitamak-1998-04-30-1345"
+    assert witness_review_batch["summary"]["next_review_step"] == "human ACK required before mark/seal"
     assert witness_review_batch["metadata"]["reviewer"] == "Haridas"
     assert witness_review_batch["metadata"]["generated_at"] == "2026-06-07T12:05:00+05:00"
     assert witness_review_batch["written"][0]["id"] == "sterlitamak-1998-04-30-1345"

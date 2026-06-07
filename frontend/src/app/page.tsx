@@ -2799,6 +2799,11 @@ function AccuracyReportPanel({
                   {witnessReviewBatchMetadata?.reviewed_at || "n/a"}
                 </small>
               </div>
+              <div>
+                <span>Next review</span>
+                <strong>{witnessReviewBatchSummary?.next_review_case_id || "none"}</strong>
+                <small>{witnessReviewBatchSummary?.next_review_step || "none"}</small>
+              </div>
               {witnessReviewBatchWritten.slice(0, 3).map((row) => (
                 <div key={row.id}>
                   <span>{row.id}</span>

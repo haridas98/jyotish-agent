@@ -127,8 +127,8 @@ def build_witness_review_batch_packets(
 
     index_path = output_dir / "_index.md"
     index_json_path = output_dir / "_index.json"
-    progress = _review_progress(written=written, audit_summary=audit["summary"])
     next_actions = _public_next_actions(audit.get("next_actions", []))
+    progress = _review_progress(written=written, audit_summary=audit["summary"], next_actions=next_actions)
     metadata = {
         "generated_at": timezone.now().isoformat(),
         "reviewer": reviewer,
@@ -212,6 +212,8 @@ def _index_markdown(
         f"- Reviewable packets: {progress.get('reviewable_count', 0)}",
         f"- Blocked packets: {progress.get('blocked_count', 0)}",
         f"- ACK-required packets: {progress.get('ack_required_count', 0)}",
+        f"- Next review case: `{progress.get('next_review_case_id') or ''}`",
+        f"- Next review step: {progress.get('next_review_step') or 'none'}",
         f"- Target met: {_yes_no(audit_summary.get('target_met'))}",
         "",
         "## Written Packets",
@@ -254,10 +256,16 @@ def _index_markdown(
     return "\n".join(lines)
 
 
-def _review_progress(*, written: list[dict[str, Any]], audit_summary: dict[str, Any]) -> dict[str, Any]:
+def _review_progress(
+    *,
+    written: list[dict[str, Any]],
+    audit_summary: dict[str, Any],
+    next_actions: list[dict[str, Any]],
+) -> dict[str, Any]:
     target = int(audit_summary.get("target_reviewed_count") or 0)
     ready = int(audit_summary.get("batch_review_ready_count") or 0)
     next_case_ids = audit_summary.get("next_case_ids")
+    next_review = _next_review_target(written=written, next_actions=next_actions)
     return {
         "target_reviewed_count": target,
         "batch_review_ready_count": ready,
@@ -266,7 +274,23 @@ def _review_progress(*, written: list[dict[str, Any]], audit_summary: dict[str, 
         "blocked_count": sum(1 for row in written if row.get("blocked")),
         "ack_required_count": sum(1 for row in written if row.get("ack_required")),
         "next_case_ids": next_case_ids if isinstance(next_case_ids, list) else [],
+        **next_review,
     }
+
+
+def _next_review_target(*, written: list[dict[str, Any]], next_actions: list[dict[str, Any]]) -> dict[str, str]:
+    for row in written:
+        if not (row.get("blocked") or row.get("ack_required") or row.get("reviewable")):
+            continue
+        next_steps = str(row.get("review_checklist_next_steps_summary") or "").strip()
+        if not next_steps or next_steps == "none":
+            next_steps = str(row.get("safe_next_step") or "review preflight first")
+        return {"next_review_case_id": str(row.get("id") or ""), "next_review_step": next_steps}
+    if next_actions:
+        row = next_actions[0]
+        actions = ", ".join(row.get("suggested_actions", [])) or str(row.get("status") or "review")
+        return {"next_review_case_id": str(row.get("id") or ""), "next_review_step": actions}
+    return {"next_review_case_id": "", "next_review_step": "none"}
 
 
 def _public_next_actions(rows: Any) -> list[dict[str, Any]]:
@@ -345,6 +369,8 @@ def _text_summary(payload: dict[str, Any]) -> str:
         f"errors: {summary['error_count']}",
         f"output: {summary['output_root']}",
         f"index: {summary['index_path']}",
+        f"next_review_case: {summary.get('next_review_case_id') or ''}",
+        f"next_review_step: {summary.get('next_review_step') or 'none'}",
     ]
     for row in payload["written"]:
         lines.append(

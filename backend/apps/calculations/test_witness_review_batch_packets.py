@@ -27,6 +27,11 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert payload["summary"]["blocked_count"] == 0
     assert payload["summary"]["ack_required_count"] == 1
     assert payload["summary"]["remaining_to_target_count"] >= 19
+    assert payload["summary"]["next_review_case_id"] == "sterlitamak-1998-04-30-1345"
+    assert (
+        payload["summary"]["next_review_step"]
+        == "Open diffs: review and ACK open JHora/PL diffs; Manual ACK: human ACK required before mark/seal"
+    )
     next_action_by_id = {row["id"]: row for row in payload["next_actions"]}
     assert "vrindavan-1990-08-15-1024" in next_action_by_id
     assert "pl_witness_packet" in next_action_by_id["vrindavan-1990-08-15-1024"]["missing_secondary_witness"]
@@ -73,6 +78,11 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert "Written: 1" in index
     assert "Reviewable packets: 1" in index
     assert "ACK-required packets: 1" in index
+    assert "Next review case: `sterlitamak-1998-04-30-1345`" in index
+    assert (
+        "Next review step: Open diffs: review and ACK open JHora/PL diffs; Manual ACK: human ACK required before mark/seal"
+        in index
+    )
     assert "Skipped:" in index
     assert "sterlitamak-1998-04-30-1345" in index
     assert "ACK: yes" in index
@@ -88,6 +98,8 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     index_json = json.loads((output_root / "_index.json").read_text(encoding="utf-8"))
     assert index_json["summary"]["written_count"] == 1
     assert index_json["summary"]["reviewable_count"] == 1
+    assert index_json["summary"]["next_review_case_id"] == "sterlitamak-1998-04-30-1345"
+    assert index_json["summary"]["next_review_step"] == payload["summary"]["next_review_step"]
     assert index_json["metadata"]["reviewer"] == "Haridas"
     assert index_json["written"][0]["ack_required"] is True
     assert index_json["written"][0]["review_checklist"][3]["key"] == "review_ack"
@@ -151,6 +163,11 @@ def test_build_witness_review_batch_packets_command_text_shows_checklist(tmp_pat
     )
 
     text = stdout.getvalue()
+    assert "next_review_case: sterlitamak-1998-04-30-1345" in text
+    assert (
+        "next_review_step: Open diffs: review and ACK open JHora/PL diffs; Manual ACK: human ACK required before mark/seal"
+        in text
+    )
     assert "sterlitamak-1998-04-30-1345" in text
     assert "checklist=JHora evidence=ready; Parashara Light evidence=ready; Open diffs=ack_required; Manual ACK=ack_required" in text
     assert "next_steps=Open diffs: review and ACK open JHora/PL diffs; Manual ACK: human ACK required before mark/seal" in text
