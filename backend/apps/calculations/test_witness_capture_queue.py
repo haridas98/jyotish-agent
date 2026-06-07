@@ -44,6 +44,7 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     assert "# Witness Capture Queue" in markdown
     assert "sterlitamak-1998-04-30-1345" in markdown
     assert "PL blockers: pl_witness_packet" in markdown
+    assert "Next step: Run capture command" in markdown
     assert "Next command:" in markdown
 
 

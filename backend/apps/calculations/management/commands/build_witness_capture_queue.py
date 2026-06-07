@@ -263,6 +263,7 @@ def _markdown_queue(payload: dict[str, Any]) -> str:
                 f"- JHora blockers: {', '.join(item['capture_targets']['jhora']) or 'none'}",
                 f"- PL blockers: {', '.join(item['capture_targets']['parashara_light']) or 'none'}",
                 f"- Suggested actions: {', '.join(item['suggested_actions']) or 'review'}",
+                f"- Next step: {item['next_step_label']}",
                 f"- Next command: {item['next_command'] or 'manual review required'}",
                 f"- Manual review command: {item['manual_review_command'] or 'n/a'}",
                 "",
