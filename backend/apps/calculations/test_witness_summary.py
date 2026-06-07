@@ -475,6 +475,7 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review_batch["metadata"]["generated_at"] == "2026-06-07T12:05:00+05:00"
     assert witness_review_batch["written"][0]["id"] == "sterlitamak-1998-04-30-1345"
     assert witness_review_batch["written"][0]["ack_required"] is True
+    assert witness_review_batch["written"][0]["review_checklist"] == []
     assert witness_review_batch["next_actions"][0]["id"] == "vrindavan-1990-08-15-1024"
     assert witness_review_batch["next_actions"][0]["missing_secondary_witness"] == ["pl_witness_packet"]
     assert "attach_pl_witness_packet_or_manual_values" in witness_review_batch["next_actions"][0]["suggested_actions"]

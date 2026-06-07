@@ -304,7 +304,7 @@ def _witness_review_batch_index(path: str | Path) -> dict[str, Any]:
 
     summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
     metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
-    written = [row for row in payload.get("written", []) if isinstance(row, dict)]
+    written = _witness_review_batch_written(payload.get("written"))
     skipped = [row for row in payload.get("skipped", []) if isinstance(row, dict)]
     errors = [row for row in payload.get("errors", []) if isinstance(row, dict)]
     audit_summary = payload.get("audit_summary") if isinstance(payload.get("audit_summary"), dict) else {}
@@ -380,6 +380,45 @@ def _skipped_reason_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
         reason = str(row.get("reason") or "unknown")
         counts[reason] = counts.get(reason, 0) + 1
     return counts
+
+
+def _witness_review_batch_written(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    rows = []
+    for row in value:
+        if not isinstance(row, dict):
+            continue
+        rows.append(
+            {
+                "id": str(row.get("id") or ""),
+                "output_path": str(row.get("output_path") or ""),
+                "reviewable": bool(row.get("reviewable")),
+                "ack_required": bool(row.get("ack_required")),
+                "blocked": bool(row.get("blocked")),
+                "review_checklist": _review_checklist_items(row.get("review_checklist")),
+            }
+        )
+    return rows
+
+
+def _review_checklist_items(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    rows = []
+    for row in value:
+        if not isinstance(row, dict):
+            continue
+        rows.append(
+            {
+                "key": str(row.get("key") or ""),
+                "label": str(row.get("label") or ""),
+                "status": str(row.get("status") or ""),
+                "required": bool(row.get("required")),
+                "detail": str(row.get("detail") or ""),
+            }
+        )
+    return rows
 
 
 def _witness_review_batch_next_actions(value: Any) -> list[dict[str, Any]]:
