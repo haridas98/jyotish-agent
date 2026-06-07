@@ -2607,6 +2607,7 @@ function AccuracyReportPanel({
   const witnessReviewBatchSummary = witnessReviewBatch?.summary ?? null;
   const witnessReviewBatchMetadata = witnessReviewBatch?.metadata ?? null;
   const witnessReviewBatchWritten = witnessReviewBatch?.written ?? [];
+  const witnessReviewBatchNextActions = witnessReviewBatch?.next_actions ?? [];
   const witnessReviewBatchSkippedReasons = witnessReviewBatch?.skipped_reason_counts ?? {};
   const [sealCommandCopyStatus, setSealCommandCopyStatus] = useState("");
 
@@ -2766,6 +2767,16 @@ function AccuracyReportPanel({
                   <strong>{witnessReviewBatchSummary.next_case_ids.slice(0, 4).join(", ")}</strong>
                 </div>
               ) : null}
+              {witnessReviewBatchNextActions.slice(0, 3).map((row) => (
+                <div key={`next-${row.id}`}>
+                  <span>{row.label || row.id}</span>
+                  <strong>{row.suggested_actions.slice(0, 3).join(", ") || row.status || "review"}</strong>
+                  <small>
+                    JHora {row.missing_for_authoritative_review.join(", ") || "ok"}; PL{" "}
+                    {row.missing_secondary_witness.join(", ") || "ok"}
+                  </small>
+                </div>
+              ))}
               {Object.keys(witnessReviewBatchSkippedReasons).length ? (
                 <div>
                   <span>Skipped reasons</span>

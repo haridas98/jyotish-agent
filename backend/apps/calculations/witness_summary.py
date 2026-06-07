@@ -201,6 +201,7 @@ def _witness_review_batch_index(path: str | Path) -> dict[str, Any]:
             **progress,
         },
         "written": written,
+        "next_actions": _witness_review_batch_next_actions(payload.get("next_actions")),
         "skipped_reason_counts": _skipped_reason_counts(skipped),
         "errors": errors,
         "audit_summary": audit_summary,
@@ -236,6 +237,7 @@ def _missing_witness_review_batch(path: str) -> dict[str, Any]:
             "next_case_ids": [],
         },
         "written": [],
+        "next_actions": [],
         "skipped_reason_counts": {},
         "errors": [],
         "audit_summary": {},
@@ -248,6 +250,31 @@ def _skipped_reason_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
         reason = str(row.get("reason") or "unknown")
         counts[reason] = counts.get(reason, 0) + 1
     return counts
+
+
+def _witness_review_batch_next_actions(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    rows = []
+    for row in value:
+        if not isinstance(row, dict):
+            continue
+        rows.append(
+            {
+                "id": str(row.get("id") or ""),
+                "group": str(row.get("group") or ""),
+                "label": str(row.get("label") or ""),
+                "status": str(row.get("status") or ""),
+                "missing_for_authoritative_review": _string_list(row.get("missing_for_authoritative_review")),
+                "missing_secondary_witness": _string_list(row.get("missing_secondary_witness")),
+                "suggested_actions": _string_list(row.get("suggested_actions")),
+            }
+        )
+    return rows
+
+
+def _string_list(value: Any) -> list[str]:
+    return [str(item) for item in value] if isinstance(value, list) else []
 
 
 def _witness_review_batch_progress(

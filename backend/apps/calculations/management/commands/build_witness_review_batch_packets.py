@@ -122,6 +122,7 @@ def build_witness_review_batch_packets(
     index_path = output_dir / "_index.md"
     index_json_path = output_dir / "_index.json"
     progress = _review_progress(written=written, audit_summary=audit["summary"])
+    next_actions = _public_next_actions(audit.get("next_actions", []))
     metadata = {
         "generated_at": timezone.now().isoformat(),
         "reviewer": reviewer,
@@ -136,6 +137,7 @@ def build_witness_review_batch_packets(
         errors=errors,
         audit_summary=audit["summary"],
         progress=progress,
+        next_actions=next_actions,
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     index_path.write_text(index_markdown, encoding="utf-8")
@@ -155,6 +157,7 @@ def build_witness_review_batch_packets(
         "skipped": skipped,
         "errors": errors,
         "audit_summary": audit["summary"],
+        "next_actions": next_actions,
     }
     index_json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return payload
@@ -184,6 +187,7 @@ def _index_markdown(
     errors: list[dict[str, str]],
     audit_summary: dict[str, Any],
     progress: dict[str, Any],
+    next_actions: list[dict[str, Any]],
 ) -> str:
     lines = [
         "# Witness Review Batch Index",
@@ -229,6 +233,14 @@ def _index_markdown(
         for row in errors:
             lines.append(f"- `{row['id']}`: {row['error']}")
 
+    lines.extend(["", "## Next Actions", ""])
+    if next_actions:
+        for row in next_actions:
+            actions = ", ".join(row.get("suggested_actions", [])) or "review"
+            lines.append(f"- `{row['id']}` - {row.get('status', 'pending')}: {actions}")
+    else:
+        lines.append("- none")
+
     lines.append("")
     return "\n".join(lines)
 
@@ -246,6 +258,31 @@ def _review_progress(*, written: list[dict[str, Any]], audit_summary: dict[str, 
         "ack_required_count": sum(1 for row in written if row.get("ack_required")),
         "next_case_ids": next_case_ids if isinstance(next_case_ids, list) else [],
     }
+
+
+def _public_next_actions(rows: Any) -> list[dict[str, Any]]:
+    if not isinstance(rows, list):
+        return []
+    public_rows: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        public_rows.append(
+            {
+                "id": str(row.get("id") or ""),
+                "group": str(row.get("group") or ""),
+                "label": str(row.get("label") or ""),
+                "status": str(row.get("status") or ""),
+                "missing_for_authoritative_review": _string_list(row.get("missing_for_authoritative_review")),
+                "missing_secondary_witness": _string_list(row.get("missing_secondary_witness")),
+                "suggested_actions": _string_list(row.get("suggested_actions")),
+            }
+        )
+    return public_rows
+
+
+def _string_list(value: Any) -> list[str]:
+    return [str(item) for item in value] if isinstance(value, list) else []
 
 
 def _reason_counts(rows: list[dict[str, str]]) -> dict[str, int]:

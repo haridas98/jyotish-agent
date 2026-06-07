@@ -765,6 +765,15 @@ export type WitnessSummary = {
       ack_required: boolean;
       blocked: boolean;
     }>;
+    next_actions: Array<{
+      id: string;
+      group: string;
+      label: string;
+      status: string;
+      missing_for_authoritative_review: string[];
+      missing_secondary_witness: string[];
+      suggested_actions: string[];
+    }>;
     skipped_reason_counts: Record<string, number>;
     errors: Array<{
       id?: string;

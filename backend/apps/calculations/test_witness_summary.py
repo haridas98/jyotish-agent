@@ -345,6 +345,17 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
                         "blocked": False,
                     }
                 ],
+                "next_actions": [
+                    {
+                        "id": "vrindavan-1990-08-15-1024",
+                        "group": "modern_exact_timezone",
+                        "label": "Vrindavan modern baseline",
+                        "status": "jhora_review_pending",
+                        "missing_for_authoritative_review": ["jhora_screenshots"],
+                        "missing_secondary_witness": ["pl_witness_packet"],
+                        "suggested_actions": ["attach_jhora_screenshots", "attach_pl_witness_packet_or_manual_values"],
+                    }
+                ],
                 "skipped": [{"id": "vrindavan-1990-08-15-1024", "reason": "missing_jhora_or_pl_pair"}],
                 "errors": [],
                 "audit_summary": {"batch_review_ready_count": 0, "target_met": False},
@@ -379,6 +390,9 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review_batch["metadata"]["generated_at"] == "2026-06-07T12:05:00+05:00"
     assert witness_review_batch["written"][0]["id"] == "sterlitamak-1998-04-30-1345"
     assert witness_review_batch["written"][0]["ack_required"] is True
+    assert witness_review_batch["next_actions"][0]["id"] == "vrindavan-1990-08-15-1024"
+    assert witness_review_batch["next_actions"][0]["missing_secondary_witness"] == ["pl_witness_packet"]
+    assert "attach_pl_witness_packet_or_manual_values" in witness_review_batch["next_actions"][0]["suggested_actions"]
     assert witness_review_batch["skipped_reason_counts"] == {"missing_jhora_or_pl_pair": 1}
     timezone_audit = response.data["birth_timezone_audit"]
     assert timezone_audit["available"] is True

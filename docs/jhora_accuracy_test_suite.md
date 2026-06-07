@@ -36,6 +36,7 @@ for the parity queue. It does not mark PL evidence reviewed; screenshots, UI sta
 `build_witness_review_batch_packets` writes one markdown packet per paired JHora/PL case plus `..\.tmp\witness-review\_index.md` and
 `..\.tmp\witness-review\_index.json`. The Witness Summary API exposes the JSON index as `witness_review_batch`,
 and the Accuracy tab shows the written/skipped/error counts plus generated/reviewer metadata next to the seal gate.
+The JSON index also includes `next_actions` with per-case JHora/PL blockers and suggested capture/review actions.
 
 The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to the 20-chart target queue, and reports:
 
