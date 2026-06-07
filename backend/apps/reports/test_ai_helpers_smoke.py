@@ -69,7 +69,7 @@ def test_smoke_ai_helpers_command_reports_qwen_deepseek_and_nemotron(monkeypatch
     FREE_DEEPSEEK_MODEL="deepseek-test",
     NEMOTRON_MODEL="nemotron-test",
 )
-def test_smoke_ai_helpers_default_providers_include_nemotron(monkeypatch):
+def test_smoke_ai_helpers_default_providers_use_local_qwen_and_deepseek(monkeypatch):
     monkeypatch.setattr(
         "apps.reports.qwen_generation.qwen_chat_completions_client",
         lambda: lambda prompt: json.dumps(
@@ -93,7 +93,7 @@ def test_smoke_ai_helpers_default_providers_include_nemotron(monkeypatch):
     call_command("smoke_ai_helpers", stdout=stdout)
 
     payload = json.loads(stdout.getvalue())
-    assert [result["provider"] for result in payload["results"]] == ["qwen", "free_deepseek", "nemotron"]
+    assert [result["provider"] for result in payload["results"]] == ["qwen", "free_deepseek"]
 
 
 @override_settings(QWEN_MODEL="qwen-test", FREE_DEEPSEEK_MODEL="deepseek-test")

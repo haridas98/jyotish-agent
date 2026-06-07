@@ -50,7 +50,7 @@ Local/server AI helper smoke:
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py smoke_free_deepseek
 .\.venv\Scripts\python manage.py smoke_ai_helpers --continue-on-error
-.\.venv\Scripts\python manage.py smoke_ai_helpers --providers qwen,nemotron --continue-on-error
+.\.venv\Scripts\python manage.py smoke_ai_helpers --providers qwen,free_deepseek --continue-on-error
 ```
 
 Failed smoke rows include `setup_hint`, so missing proxy/env setup is visible without reading server logs.

@@ -13,7 +13,7 @@ from apps.reports.draft_generation import DraftGenerationUnavailable, _normalize
 DEFAULT_PROMPT = (
     'Return only valid JSON: {"language":"ru","sections":[{"title":"Smoke","body":"ok","citation_titles":[]}]}'
 )
-DEFAULT_PROVIDERS = "qwen,free_deepseek,nemotron"
+DEFAULT_PROVIDERS = "qwen,free_deepseek"
 
 ProviderRunner = Callable[[str], str | dict[str, Any]]
 
