@@ -98,7 +98,12 @@ def test_audit_jhora_pl_witness_batch_matches_draft_jhora_and_pl_by_birth_key(tm
         "pl_reviewer_note",
         "pl_review_status",
     ]
-    assert case["missing_for_authoritative_review"] == ["reviewer_note", "authoritative_review_status"]
+    assert case["missing_for_authoritative_review"] == [
+        "authoritative_review_status",
+        "reviewer",
+        "reviewed_at",
+        "expected_or_jhora_expected",
+    ]
     assert payload["summary"]["capture_started_count"] == 1
     assert payload["summary"]["pl_witness_count"] == 1
     assert payload["summary"]["pl_reviewed_count"] == 0
@@ -126,11 +131,13 @@ def test_audit_jhora_pl_witness_batch_counts_authoritative_reviewed_case(tmp_pat
                     "timezone_offset": "+06:00",
                     "reviewer": "Haridas",
                     "reviewed_at": "2026-06-07T00:00:00+00:00",
+                    "accuracy_status": "matched",
                 },
                 "capture_files": {
                     "complete_calculations_text": "complete-calculations.txt",
                     "screenshots": ["main.png"],
                 },
+                "expected": {"ascendant": {"longitude": 115.4, "rashi": "Karka"}},
             }
         ),
         encoding="utf-8",
@@ -144,6 +151,46 @@ def test_audit_jhora_pl_witness_batch_counts_authoritative_reviewed_case(tmp_pat
     assert case["batch_review_ready"] is False
     assert case["missing_for_authoritative_review"] == []
     assert payload["summary"]["authoritative_ready_count"] == 1
+
+
+def test_audit_jhora_pl_witness_batch_does_not_count_reviewed_case_without_expected_data(tmp_path):
+    from apps.calculations.witness_batch import audit_jhora_pl_witness_batch
+
+    jhora_dir = tmp_path / "jhora" / "sterlitamak"
+    jhora_dir.mkdir(parents=True)
+    (jhora_dir / "fixture.json").write_text(
+        json.dumps(
+            {
+                "id": "sterlitamak-1998-04-30-1345",
+                "review_status": "jhora_verified",
+                "input": {
+                    "birth_date": "1998-04-30",
+                    "birth_time": "13:45:00",
+                    "place_name": "Sterlitamak",
+                },
+                "jhora_metadata": {
+                    "capture_status": "export_parsed",
+                    "ayanamsa": "Lahiri",
+                    "timezone_offset": "+06:00",
+                    "reviewer": "Haridas",
+                    "reviewed_at": "2026-06-07T00:00:00+00:00",
+                    "accuracy_status": "matched",
+                },
+                "capture_files": {
+                    "complete_calculations_text": "complete-calculations.txt",
+                    "screenshots": ["main.png"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = audit_jhora_pl_witness_batch(jhora_root=tmp_path / "jhora", pl_root=tmp_path / "pl7")
+    case = next(row for row in payload["cases"] if row["id"] == "sterlitamak-1998-04-30-1345")
+
+    assert case["status"] == "jhora_review_pending"
+    assert case["authoritative_ready"] is False
+    assert case["missing_for_authoritative_review"] == ["expected_or_jhora_expected"]
 
 
 def test_audit_jhora_pl_witness_batch_counts_fully_reviewed_jhora_and_pl_case(tmp_path):
@@ -170,11 +217,13 @@ def test_audit_jhora_pl_witness_batch_counts_fully_reviewed_jhora_and_pl_case(tm
                     "timezone_offset": "+06:00",
                     "reviewer": "Haridas",
                     "reviewed_at": "2026-06-07T00:00:00+00:00",
+                    "accuracy_status": "matched",
                 },
                 "capture_files": {
                     "complete_calculations_text": "complete-calculations.txt",
                     "screenshots": ["main.png"],
                 },
+                "expected": {"ascendant": {"longitude": 115.4, "rashi": "Karka"}},
             }
         ),
         encoding="utf-8",

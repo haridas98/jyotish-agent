@@ -32,6 +32,7 @@ The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to
 - next actions per case: missing JHora/PL artifacts plus the command/manual step to close each gap.
 
 `target_met` now requires a case to be both JHora authoritative-ready and PL secondary-witness-ready.
+JHora authoritative-ready uses the same gate as `promote_jhora_witness_fixture`: reviewed status, expected/JHora expected data, reviewer metadata, checked accuracy status, and explicit ACK for open diffs.
 
 As of 2026-06-07 local artifacts after `build_jhora_witness_batch_jhd_files` and `build_jhora_witness_batch_packets`, the queue has 21 candidate cases, target reviewed count is 20, draft `.jhd` input files and packet/checklist directories exist for all 21 cases, one PL witness is attached by birth data, and authoritative-ready count is still 0.
 

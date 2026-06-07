@@ -17,7 +17,12 @@ ACTION_BY_MISSING_ARTIFACT = {
     "jhora_settings_evidence": "record_jhora_settings_and_timezone_dst_evidence",
     "jhora_screenshots": "attach_jhora_screenshots",
     "reviewer_note": "add_reviewer_and_reviewed_at",
+    "reviewer": "add_reviewer_and_reviewed_at",
+    "reviewed_at": "add_reviewer_and_reviewed_at",
     "authoritative_review_status": "set_review_status_jhora_verified_after_manual_review",
+    "expected_or_jhora_expected": "capture_jhora_expected_values_or_complete_calculations",
+    "accuracy_status_checked": "mark_jhora_witness_reviewed",
+    "accuracy_diff_acknowledgement": "mark_jhora_witness_reviewed_with_ack_diff_open",
     "pl_witness_packet": "attach_pl_witness_packet_or_manual_values",
     "pl_ui_state": "capture_parashara_light_ui_state_or_attach_ui_state",
     "pl_settings_evidence": "record_pl_settings_and_timezone_dst_evidence",
@@ -101,6 +106,7 @@ def _fixture_record(fixture: dict[str, Any], source: str, path: Path) -> dict[st
     metadata = _metadata(fixture, source)
     capture_files = fixture.get("capture_files") if isinstance(fixture.get("capture_files"), dict) else {}
     artifacts = _artifact_flags(fixture, metadata, capture_files, source)
+    promotion_blockers = _promotion_blockers(fixture, source)
     return {
         "id": str(fixture.get("id") or ""),
         "source": source,
@@ -111,6 +117,7 @@ def _fixture_record(fixture: dict[str, Any], source: str, path: Path) -> dict[st
         "reviewer": str(metadata.get("reviewer") or ""),
         "reviewed_at": str(metadata.get("reviewed_at") or ""),
         "artifacts": artifacts,
+        "promotion_blockers": promotion_blockers,
     }
 
 
@@ -168,9 +175,7 @@ def _artifact_flags(
 
 def _case_row(case: dict[str, Any], jhora_records: list[dict[str, Any]], pl_records: list[dict[str, Any]]) -> dict[str, Any]:
     missing_for_review = _missing_for_authoritative_review(jhora_records)
-    authoritative_ready = any(
-        record["review_status"] in AUTHORITATIVE_REVIEW_STATUSES for record in jhora_records
-    ) and not missing_for_review
+    authoritative_ready = any(not record["promotion_blockers"] for record in jhora_records)
     missing_secondary_witness = _missing_for_secondary_review(pl_records)
     secondary_witness_ready = bool(pl_records) and not missing_secondary_witness
     batch_review_ready = authoritative_ready and secondary_witness_ready
@@ -206,6 +211,15 @@ def _case_row(case: dict[str, Any], jhora_records: list[dict[str, Any]], pl_reco
 def _missing_for_authoritative_review(jhora_records: list[dict[str, Any]]) -> list[str]:
     if not jhora_records:
         return ["jhora_packet", "jhora_complete_calculations_text", "jhora_settings_evidence", "jhora_screenshots", "reviewer_note"]
+
+    if any(not record["promotion_blockers"] for record in jhora_records):
+        return []
+
+    promotion_blockers = _dedupe(
+        [blocker for record in jhora_records for blocker in record.get("promotion_blockers", [])]
+    )
+    if promotion_blockers:
+        return promotion_blockers
 
     artifacts = defaultdict(bool)
     for record in jhora_records:
@@ -257,7 +271,20 @@ def _public_record(record: dict[str, Any]) -> dict[str, Any]:
         "review_status": record["review_status"],
         "capture_status": record["capture_status"],
         "artifacts": record["artifacts"],
+        "promotion_blockers": record.get("promotion_blockers", []),
     }
+
+
+def _promotion_blockers(fixture: dict[str, Any], source: str) -> list[str]:
+    if source != "jhora":
+        return []
+    from apps.calculations.management.commands.promote_jhora_witness_fixture import promotion_blockers
+
+    try:
+        blockers, _status = promotion_blockers(fixture)
+    except Exception as exc:  # noqa: BLE001 - batch audit should expose bad captures instead of crashing.
+        return [f"promotion_gate_error:{exc}"]
+    return blockers
 
 
 def _summary(
@@ -398,6 +425,14 @@ def _unique_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
         seen.add(key)
         unique.append(record)
     return unique
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    result = []
+    for value in values:
+        if value not in result:
+            result.append(value)
+    return result
 
 
 def _birth_key(input_data: Any) -> str:

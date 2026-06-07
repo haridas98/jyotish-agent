@@ -117,9 +117,11 @@ def promotion_blockers(fixture: dict[str, Any]) -> tuple[list[str], str]:
         blockers.append("expected_or_jhora_expected")
 
     accuracy_status = str(metadata.get("accuracy_status") or "")
-    if not accuracy_status:
+    if not accuracy_status and not blockers:
         accuracy_status = jhora_accuracy_status(fixture)
-    if accuracy_status == "not_checked":
+    if not accuracy_status:
+        accuracy_status = "not_checked"
+    if accuracy_status == "not_checked" and not blockers:
         blockers.append("accuracy_status_checked")
     if accuracy_status == "diff_open" and not bool(metadata.get("accuracy_diff_acknowledged")):
         blockers.append("accuracy_diff_acknowledgement")
