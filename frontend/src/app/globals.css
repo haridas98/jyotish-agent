@@ -1365,6 +1365,14 @@ select {
   max-width: 640px;
 }
 
+.witness-seal-gate {
+  max-width: 100%;
+}
+
+.witness-seal-gate strong {
+  overflow-wrap: anywhere;
+}
+
 .accuracy-footnote {
   margin: 0;
   overflow-wrap: anywhere;

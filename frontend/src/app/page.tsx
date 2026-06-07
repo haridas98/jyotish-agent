@@ -2579,6 +2579,7 @@ function AccuracyReportPanel({
   const plHiddenOptionStore = witnessSummary?.parashara_light.hidden_option_store ?? null;
   const plOptionStoreDiff = witnessSummary?.parashara_light.option_store_diff ?? null;
   const plInternalSettingsAudit = witnessSummary?.parashara_light.internal_settings_audit ?? null;
+  const witnessReview = witnessSummary?.witness_review ?? null;
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2632,6 +2633,34 @@ function AccuracyReportPanel({
               <strong>{witnessSummary.open_items.length}</strong>
             </div>
           </div>
+          {witnessReview ? (
+            <div className="accuracy-list witness-open-items witness-seal-gate">
+              <h3>Witness seal gate</h3>
+              <div>
+                <span>Status</span>
+                <strong>{witnessReview.available ? (witnessReview.overall.reviewable ? "reviewable" : witnessReview.status) : "missing"}</strong>
+                <small>
+                  ACK {witnessReview.overall.ack_required ? "required" : "not required"}, blocked{" "}
+                  {witnessReview.overall.blocked ? "yes" : "no"}
+                </small>
+              </div>
+              <div>
+                <span>JHora / PL</span>
+                <strong>
+                  {witnessReview.jhora.status ?? "missing"} / {witnessReview.parashara_light.status ?? "missing"}
+                </strong>
+                <small>
+                  {witnessReview.jhora.id ?? "JHora missing"} · {witnessReview.parashara_light.id ?? "PL missing"}
+                </small>
+              </div>
+              {witnessReview.seal_command ? (
+                <div>
+                  <span>Seal command</span>
+                  <strong>{witnessReview.seal_command}</strong>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {birthTimezoneAudit?.available ? (
             <div className="accuracy-list witness-open-items">
               <h3>Birth timezone audit</h3>
