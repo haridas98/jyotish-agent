@@ -22,12 +22,18 @@ def test_build_witness_review_packet_renders_safe_markdown_by_default(tmp_path):
     assert payload["schema_version"] == "jyotish-witness-review-packet-v1"
     assert payload["output_path"] == ""
     assert payload["preflight"]["overall"]["ack_required"] is True
+    assert payload["jhora"]["diff_summary"]["failed_count"] > 0
+    assert payload["parashara_light"]["manual_diff_summary"]["failed_count"] == 1
     assert "# Witness Review Packet" in markdown
     assert "Reviewable: yes" in markdown
     assert "ACK required: yes" in markdown
     assert "jhora-diff-open" in markdown
     assert "pl-diff-open" in markdown
     assert "status: diff_open" in markdown
+    assert "## Open Diffs" in markdown
+    assert "JHora failed:" in markdown
+    assert "Parashara Light failed: 1" in markdown
+    assert "Lagna.rashi: witness=Simha calculated=Karka" in markdown
     assert "safe next step: human ACK required before mark/seal" in markdown
     assert "mark_jhora_witness_reviewed" not in markdown
     assert "mark_parashara_light_witness_reviewed" not in markdown

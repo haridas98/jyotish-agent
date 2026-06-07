@@ -6,6 +6,7 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.calculations.fixture_runner import run_accuracy_fixture
 from apps.calculations.management.commands.mark_jhora_witness_reviewed import (
     _packet_fixture as jhora_packet_fixture,
 )
@@ -133,6 +134,7 @@ def _jhora_summary(path: str | Path) -> dict[str, Any]:
         "has_expected_ascendant": isinstance(expected.get("ascendant"), dict),
         "jhora_expected_layers": sorted(jhora_expected.keys()),
         "screenshots_count": len([item for item in screenshots if str(item).strip()]),
+        "diff_summary": _jhora_diff_summary(fixture),
         "packet_path": str(packet_path) if packet_path.exists() else "",
         "fixture_path": str(fixture_path),
     }
@@ -157,6 +159,7 @@ def _parashara_light_summary(path: str | Path) -> dict[str, Any]:
         "manual_values_count": int(summary.get("manual_values_count") or 0),
         "manual_failed_count": int(summary.get("failed_count") or 0),
         "manual_completion_percent": int(completion.get("completion_percent") or 0),
+        "manual_diff_summary": _manual_diff_summary(comparison),
         "packet_path": str(packet_path) if packet_path.exists() else "",
         "fixture_path": str(fixture_path),
     }
@@ -179,6 +182,13 @@ def _markdown(
         f"- ACK required: {_yes_no(overall['ack_required'])}",
         f"- Blocked: {_yes_no(overall['blocked'])}",
         f"- safe next step: {_safe_next_step(preflight)}",
+        "",
+        "## Open Diffs",
+        "",
+        f"- JHora failed: {jhora['diff_summary']['failed_count']}",
+        *_diff_lines(jhora["diff_summary"], prefix="JHora"),
+        f"- Parashara Light failed: {parashara_light['manual_diff_summary']['failed_count']}",
+        *_diff_lines(parashara_light["manual_diff_summary"], prefix="PL"),
         "",
         "## JHora",
         "",
@@ -230,6 +240,76 @@ def _markdown(
             last=True,
         )
     return "\n".join(lines)
+
+
+def _jhora_diff_summary(fixture: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(fixture.get("input"), dict):
+        return _empty_diff_summary(status="not_checked")
+    if not any(isinstance(fixture.get(key), expected_type) for key, expected_type in _EXPECTED_KEYS):
+        return _empty_diff_summary(status="not_checked")
+    result = run_accuracy_fixture(fixture)
+    report = result.report
+    rows: list[dict[str, Any]] = []
+    for comparison in report.longitude_comparisons:
+        if comparison.passed:
+            continue
+        rows.append(
+            {
+                "field": f"{comparison.body}.longitude",
+                "witness": round(comparison.expected_degrees, 6),
+                "calculated": round(comparison.actual_degrees, 6),
+                "delta_arcseconds": comparison.delta_arcseconds,
+            }
+        )
+    for field, passed in report.exact_matches.items():
+        if passed:
+            continue
+        rows.append({"field": field, "witness": "expected", "calculated": "calculated"})
+    for field in report.missing_fields:
+        rows.append({"field": field, "witness": "expected", "calculated": "missing"})
+    return {
+        "status": "matched" if result.passed else "diff_open",
+        "failed_count": len(rows),
+        "sample": rows[:10],
+    }
+
+
+def _manual_diff_summary(comparison: dict[str, Any]) -> dict[str, Any]:
+    diffs = comparison.get("diffs") if isinstance(comparison.get("diffs"), list) else []
+    rows = [
+        {
+            "field": f"{diff.get('body')}.{diff.get('field')}",
+            "witness": diff.get("witness"),
+            "calculated": diff.get("calculated"),
+        }
+        for diff in diffs
+        if isinstance(diff, dict) and not diff.get("passed") and not diff.get("missing")
+    ]
+    return {
+        "status": str(comparison.get("status") or "not_checked"),
+        "failed_count": len(rows),
+        "sample": rows[:10],
+    }
+
+
+def _empty_diff_summary(*, status: str) -> dict[str, Any]:
+    return {"status": status, "failed_count": 0, "sample": []}
+
+
+_EXPECTED_KEYS = (
+    ("expected", dict),
+    ("jhora_expected", dict),
+    ("external_expected", list),
+)
+
+
+def _diff_lines(summary: dict[str, Any], *, prefix: str) -> list[str]:
+    sample = summary.get("sample") if isinstance(summary.get("sample"), list) else []
+    return [
+        f"  - {prefix} {row.get('field')}: witness={row.get('witness')} calculated={row.get('calculated')}"
+        for row in sample[:5]
+        if isinstance(row, dict)
+    ]
 
 
 def _safe_next_step(preflight: dict[str, Any]) -> str:
