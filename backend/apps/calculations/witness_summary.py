@@ -397,11 +397,24 @@ def _witness_review_batch_written(value: Any) -> list[dict[str, Any]]:
                 "reviewable": bool(row.get("reviewable")),
                 "ack_required": bool(row.get("ack_required")),
                 "blocked": bool(row.get("blocked")),
+                "safe_next_step": _witness_review_batch_safe_next_step(row),
                 "review_checklist": review_checklist,
                 "review_checklist_summary": _review_checklist_summary(review_checklist),
             }
         )
     return rows
+
+
+def _witness_review_batch_safe_next_step(row: dict[str, Any]) -> str:
+    if row.get("safe_next_step"):
+        return str(row["safe_next_step"])
+    if row.get("blocked"):
+        return "resolve missing evidence before review"
+    if row.get("ack_required"):
+        return "human ACK required before mark/seal"
+    if row.get("reviewable"):
+        return "ready for explicit review command"
+    return "capture JHora/PL packet or fixture first"
 
 
 def _review_checklist_items(value: Any) -> list[dict[str, Any]]:

@@ -813,6 +813,7 @@ export type WitnessSummary = {
       reviewable: boolean;
       ack_required: boolean;
       blocked: boolean;
+      safe_next_step: string;
       review_checklist: WitnessReviewChecklistItem[];
       review_checklist_summary: string;
     }>;
