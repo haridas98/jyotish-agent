@@ -68,6 +68,18 @@ Current local packet smoke:
 
 This is a `draft` black-box witness packet. It does not mark PL values as verified and does not parse proprietary internals.
 
+After manual review confirms UI-state, screenshots, settings evidence and copied/manual values, mark the packet reviewed:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py mark_parashara_light_witness_reviewed `
+  ..\.tmp\pl7\haridas-verification-packet `
+  --reviewer Haridas `
+  --reviewed-at 2026-06-07T12:30:00+05:00
+```
+
+The command refuses incomplete packets unless `--force` is passed.
+
 ## Manual Witness Values
 
 When PL exposes values through clickable text, copy/export or manual transcription, keep them in a private JSON array and pass it with `--manual-witness-values`.
