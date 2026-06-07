@@ -70,6 +70,8 @@ cd C:\Projects\jyotish-agent\backend
 
 The default output root is `..\.tmp\jhora\batch-queue`, which is scanned by `audit_jhora_witness_batch`. Each case directory gets a JHora-openable `.jhd` input next to its packet/checklist artifacts.
 
+If a case directory already contains `jhora-complete-calculations.txt` or `jhora-ui-tables.json`, `build_jhora_witness_batch_packets` attaches those captured JHora artifacts into the generated packet automatically.
+
 To prepare only one case:
 
 ```powershell

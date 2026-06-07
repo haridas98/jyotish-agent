@@ -84,10 +84,22 @@ def _build_case_packet(case: dict[str, Any], output_root: Path, options: dict[st
     case_id = str(case["id"])
     output_dir = output_root / case_id
     birth_input = _birth_input(case["input"], options)
+    jhora_export_path = output_dir / "jhora-complete-calculations.txt"
+    jhora_export_text = jhora_export_path.read_text(encoding="utf-8") if jhora_export_path.exists() else ""
+    jhora_ui_table_dump_path = output_dir / "jhora-ui-tables.json"
+    jhora_ui_table_dump = (
+        json.loads(jhora_ui_table_dump_path.read_text(encoding="utf-8"))
+        if jhora_ui_table_dump_path.exists()
+        else {}
+    )
     try:
         packet = build_jhora_verification_packet(
             birth_input,
             packet_id=case_id,
+            jhora_export_text=jhora_export_text,
+            jhora_export_path=str(jhora_export_path) if jhora_export_text else "",
+            jhora_ui_table_dump=jhora_ui_table_dump,
+            jhora_ui_table_dump_path=str(jhora_ui_table_dump_path) if jhora_ui_table_dump else "",
             jhora_version=options["jhora_version"],
         )
         paths = write_jhora_verification_packet(packet, output_dir)

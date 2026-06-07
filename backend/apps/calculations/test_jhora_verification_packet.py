@@ -183,3 +183,97 @@ def test_build_jhora_witness_batch_packets_command_writes_selected_cases(monkeyp
         (output_root / "sterlitamak-1998-04-30-1345" / "fixture.json").read_text(encoding="utf-8")
     )
     assert fixture["review_status"] == "draft"
+
+
+def test_build_jhora_witness_batch_packets_uses_existing_complete_export(monkeypatch, tmp_path):
+    output_root = tmp_path / "batch"
+    case_dir = output_root / "sterlitamak-1998-04-30-1345"
+    case_dir.mkdir(parents=True)
+    export_path = case_dir / "jhora-complete-calculations.txt"
+    export_path.write_text(JHORA_EXPORT_SNIPPET, encoding="utf-8")
+    captured = []
+
+    def fake_build(data, **kwargs):
+        captured.append((data, kwargs))
+        return {
+            "schema_version": "jyotish-jhora-verification-packet-v1",
+            "id": kwargs["packet_id"],
+            "status": "jhora_export_parsed",
+            "fixture": {
+                "id": kwargs["packet_id"],
+                "review_status": "draft",
+                "capture_files": {"complete_calculations_text": kwargs["jhora_export_path"]},
+                "jhora_metadata": {"capture_status": "export_parsed"},
+            },
+            "jyotish_agent_chart": {"birth": {"date": data["birth_date"]}},
+            "dual_calculation": {"status": "calculated_witness_mode"},
+            "jhora_capture_checklist": ["Capture settings"],
+        }
+
+    monkeypatch.setattr(
+        "apps.calculations.management.commands.build_jhora_witness_batch_packets.build_jhora_verification_packet",
+        fake_build,
+    )
+
+    call_command(
+        "build_jhora_witness_batch_packets",
+        "--case-id",
+        "sterlitamak-1998-04-30-1345",
+        "--output-root",
+        str(output_root),
+    )
+
+    assert captured[0][1]["jhora_export_text"] == JHORA_EXPORT_SNIPPET
+    assert captured[0][1]["jhora_export_path"] == str(export_path)
+    packet = json.loads((case_dir / "packet.json").read_text(encoding="utf-8"))
+    assert packet["status"] == "jhora_export_parsed"
+
+
+def test_build_jhora_witness_batch_packets_uses_existing_ui_table_dump(monkeypatch, tmp_path):
+    output_root = tmp_path / "batch"
+    case_dir = output_root / "sterlitamak-1998-04-30-1345"
+    case_dir.mkdir(parents=True)
+    ui_path = case_dir / "jhora-ui-tables.json"
+    ui_payload = {
+        "source": "jhora_win32_listviews",
+        "tables": [{"index": 4, "row_count": 7}],
+        "identified": {"shadbala_totals": {"rows": [["Sun", "682.72"]]}},
+    }
+    ui_path.write_text(json.dumps(ui_payload), encoding="utf-8")
+    captured = []
+
+    def fake_build(data, **kwargs):
+        captured.append((data, kwargs))
+        return {
+            "schema_version": "jyotish-jhora-verification-packet-v1",
+            "id": kwargs["packet_id"],
+            "status": "capture_pending",
+            "fixture": {
+                "id": kwargs["packet_id"],
+                "review_status": "draft",
+                "capture_files": {"ui_table_dump": kwargs["jhora_ui_table_dump_path"]},
+                "jhora_metadata": {"capture_status": "export_pending"},
+                "jhora_expected": {"ui_tables": kwargs["jhora_ui_table_dump"]},
+            },
+            "jyotish_agent_chart": {"birth": {"date": data["birth_date"]}},
+            "dual_calculation": {"status": "calculated_witness_mode"},
+            "jhora_capture_checklist": ["Capture settings"],
+        }
+
+    monkeypatch.setattr(
+        "apps.calculations.management.commands.build_jhora_witness_batch_packets.build_jhora_verification_packet",
+        fake_build,
+    )
+
+    call_command(
+        "build_jhora_witness_batch_packets",
+        "--case-id",
+        "sterlitamak-1998-04-30-1345",
+        "--output-root",
+        str(output_root),
+    )
+
+    assert captured[0][1]["jhora_ui_table_dump"] == ui_payload
+    assert captured[0][1]["jhora_ui_table_dump_path"] == str(ui_path)
+    fixture = json.loads((case_dir / "fixture.json").read_text(encoding="utf-8"))
+    assert fixture["jhora_expected"]["ui_tables"]["identified"]["shadbala_totals"]
