@@ -2641,6 +2641,7 @@ function AccuracyReportPanel({
     ...(witnessOpenDiffs?.jhora.sample ?? []).map((row) => ({ source: "JHora", row })),
     ...(witnessOpenDiffs?.parashara_light.sample ?? []).map((row) => ({ source: "PL", row })),
   ].slice(0, 6);
+  const witnessReviewChecklist = witnessReview?.review_checklist ?? [];
   const hasWitnessCaptureQueueNext =
     Boolean(witnessCaptureQueueNext) ||
     Boolean(witnessCaptureQueue?.next_step_label) ||
@@ -2733,6 +2734,13 @@ function AccuracyReportPanel({
                   <small>{witnessOpenDiffs.status}</small>
                 </div>
               ) : null}
+              {witnessReviewChecklist.slice(0, 4).map((item) => (
+                <div key={item.key}>
+                  <span>{item.label}</span>
+                  <strong>{item.status}</strong>
+                  <small>{item.detail}</small>
+                </div>
+              ))}
               {witnessOpenDiffRows.map(({ source, row }, index) => (
                 <div key={`${source}-${row.field}-${index}`}>
                   <span>

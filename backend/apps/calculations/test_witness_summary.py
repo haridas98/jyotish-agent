@@ -454,6 +454,15 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review["seal_command"] == ""
     assert witness_review["jhora"]["review_command"] == ""
     assert witness_review["parashara_light"]["review_command"] == ""
+    checklist = witness_review["review_checklist"]
+    assert [item["key"] for item in checklist] == [
+        "jhora_evidence",
+        "parashara_light_evidence",
+        "open_diffs",
+        "review_ack",
+    ]
+    assert checklist[2]["status"] == "ack_required"
+    assert "PL 1" in checklist[2]["detail"]
     witness_review_batch = response.data["witness_review_batch"]
     assert witness_review_batch["available"] is True
     assert witness_review_batch["summary"]["written_count"] == 1

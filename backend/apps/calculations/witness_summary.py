@@ -118,7 +118,7 @@ def _witness_review_preflight(
 ) -> dict[str, Any]:
     jhora_path = _resolve_jhora_witness_case_path(jhora_witness_case_path, jhora_report_path)
     if not jhora_path:
-        return {
+        payload = {
             "available": False,
             "status": "missing_jhora_witness_case_path",
             "overall": {"reviewable": False, "ack_required": False, "blocked": True},
@@ -128,6 +128,8 @@ def _witness_review_preflight(
             "parashara_light": {},
             "open_diffs": _empty_witness_review_open_diffs(),
         }
+        payload["review_checklist"] = _witness_review_checklist(payload)
+        return payload
     try:
         from apps.calculations.management.commands.preflight_witness_review import build_witness_review_preflight
 
@@ -141,8 +143,9 @@ def _witness_review_preflight(
             jhora_path=jhora_path,
             parashara_light_packet_path=parashara_light_packet_path,
         )
+        payload["review_checklist"] = _witness_review_checklist(payload)
     except Exception as exc:  # noqa: BLE001 - API summary must expose review blockers, not fail the whole tab.
-        return {
+        payload = {
             "available": False,
             "status": "load_error",
             "error": str(exc),
@@ -153,6 +156,8 @@ def _witness_review_preflight(
             "parashara_light": {},
             "open_diffs": _empty_witness_review_open_diffs(),
         }
+        payload["review_checklist"] = _witness_review_checklist(payload)
+        return payload
     return {"available": True, "status": "loaded", **payload}
 
 
@@ -188,6 +193,59 @@ def _empty_witness_review_open_diffs() -> dict[str, Any]:
 
 def _empty_diff_summary() -> dict[str, Any]:
     return {"status": "missing", "failed_count": 0, "sample": []}
+
+
+def _witness_review_checklist(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    jhora = payload.get("jhora") if isinstance(payload.get("jhora"), dict) else {}
+    parashara_light = payload.get("parashara_light") if isinstance(payload.get("parashara_light"), dict) else {}
+    open_diffs = payload.get("open_diffs") if isinstance(payload.get("open_diffs"), dict) else _empty_witness_review_open_diffs()
+    jhora_diffs = open_diffs.get("jhora") if isinstance(open_diffs.get("jhora"), dict) else _empty_diff_summary()
+    pl_diffs = (
+        open_diffs.get("parashara_light")
+        if isinstance(open_diffs.get("parashara_light"), dict)
+        else _empty_diff_summary()
+    )
+    overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
+    jhora_missing = _string_list(jhora.get("missing_evidence"))
+    pl_missing = _string_list(parashara_light.get("missing_evidence"))
+    ack_required = bool(overall.get("ack_required"))
+    return [
+        {
+            "key": "jhora_evidence",
+            "label": "Review JHora settings, screenshots and complete export",
+            "status": "blocked" if jhora_missing else "ready",
+            "required": True,
+            "detail": ", ".join(jhora_missing) or "JHora evidence captured",
+        },
+        {
+            "key": "parashara_light_evidence",
+            "label": "Review PL settings, screenshots and manual witness values",
+            "status": "blocked" if pl_missing else "ready",
+            "required": True,
+            "detail": ", ".join(pl_missing) or "PL evidence captured",
+        },
+        {
+            "key": "open_diffs",
+            "label": "Review open JHora/PL diffs",
+            "status": "ack_required" if ack_required else "matched",
+            "required": ack_required,
+            "detail": f"JHora {_failed_count(jhora_diffs)}, PL {_failed_count(pl_diffs)} open diffs",
+        },
+        {
+            "key": "review_ack",
+            "label": "Record manual ACK before mark/seal",
+            "status": "ack_required" if ack_required else "ready",
+            "required": ack_required,
+            "detail": str(payload.get("safe_next_step") or "review preflight first"),
+        },
+    ]
+
+
+def _failed_count(value: dict[str, Any]) -> int:
+    try:
+        return int(value.get("failed_count") or 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _safe_witness_review_payload(payload: dict[str, Any]) -> dict[str, Any]:

@@ -713,6 +713,14 @@ export type WitnessOpenDiffSummary = {
   sample: WitnessOpenDiffRow[];
 };
 
+export type WitnessReviewChecklistItem = {
+  key: string;
+  label: string;
+  status: string;
+  required: boolean;
+  detail: string;
+};
+
 export type WitnessSummary = {
   overall_status: string;
   birth_timezone_audit: {
@@ -769,6 +777,7 @@ export type WitnessSummary = {
       parashara_light: WitnessOpenDiffSummary;
       error?: string;
     };
+    review_checklist: WitnessReviewChecklistItem[];
     error?: string;
   };
   witness_review_batch: {
