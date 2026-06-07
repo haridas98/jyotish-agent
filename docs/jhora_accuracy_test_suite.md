@@ -27,6 +27,8 @@ cd C:\Projects\jyotish-agent\backend
   --output-root ..\.tmp\witness-review
 ```
 
+This writes one markdown packet per paired JHora/PL case and an index at `..\.tmp\witness-review\_index.md`.
+
 The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to the 20-chart target queue, and reports:
 
 - candidate suite size;

@@ -118,6 +118,16 @@ def build_witness_review_batch_packets(
             }
         )
 
+    index_path = output_dir / "_index.md"
+    index_markdown = _index_markdown(
+        written=written,
+        skipped=skipped,
+        errors=errors,
+        audit_summary=audit["summary"],
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(index_markdown, encoding="utf-8")
+
     return {
         "schema_version": SCHEMA_VERSION,
         "summary": {
@@ -125,6 +135,7 @@ def build_witness_review_batch_packets(
             "skipped_count": len(skipped),
             "error_count": len(errors),
             "output_root": str(output_dir),
+            "index_path": str(index_path),
         },
         "written": written,
         "skipped": skipped,
@@ -149,6 +160,64 @@ def _safe_filename(value: str) -> str:
     return "".join(safe).strip(".-") or "witness-review"
 
 
+def _index_markdown(
+    *,
+    written: list[dict[str, Any]],
+    skipped: list[dict[str, str]],
+    errors: list[dict[str, str]],
+    audit_summary: dict[str, Any],
+) -> str:
+    lines = [
+        "# Witness Review Batch Index",
+        "",
+        f"- Written: {len(written)}",
+        f"- Skipped: {len(skipped)}",
+        f"- Errors: {len(errors)}",
+        f"- Batch review ready: {audit_summary.get('batch_review_ready_count', 0)}",
+        f"- Target reviewed: {audit_summary.get('target_reviewed_count', 0)}",
+        f"- Target met: {_yes_no(audit_summary.get('target_met'))}",
+        "",
+        "## Written Packets",
+        "",
+    ]
+    if written:
+        for row in written:
+            lines.append(
+                f"- `{row['id']}` - Reviewable: {_yes_no(row['reviewable'])}; "
+                f"ACK: {_yes_no(row['ack_required'])}; Blocked: {_yes_no(row['blocked'])}; "
+                f"File: `{row['output_path']}`"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "## Skipped Cases", ""])
+    if skipped:
+        for reason, count in _reason_counts(skipped).items():
+            lines.append(f"- {reason}: {count}")
+    else:
+        lines.append("- none")
+
+    if errors:
+        lines.extend(["", "## Errors", ""])
+        for row in errors:
+            lines.append(f"- `{row['id']}`: {row['error']}")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _reason_counts(rows: list[dict[str, str]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        reason = row.get("reason") or "unknown"
+        counts[reason] = counts.get(reason, 0) + 1
+    return counts
+
+
+def _yes_no(value: object) -> str:
+    return "yes" if bool(value) else "no"
+
+
 def _text_summary(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
     lines = [
@@ -156,6 +225,7 @@ def _text_summary(payload: dict[str, Any]) -> str:
         f"skipped: {summary['skipped_count']}",
         f"errors: {summary['error_count']}",
         f"output: {summary['output_root']}",
+        f"index: {summary['index_path']}",
     ]
     for row in payload["written"]:
         lines.append(
