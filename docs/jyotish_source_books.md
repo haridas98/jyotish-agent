@@ -14,6 +14,7 @@ Sanskrit ITX corpus list: [sanskrit_corpus_sources.md](sanskrit_corpus_sources.m
 | Phaladipika - V. Subrahmanya Sastri translation | Translation comparison candidate for graha/yoga/dasha wording | `rights_review_required`; `private_research_only_until_approved`; OpenLibrary edition says 1937, user-provided 1932 claim still needs legal bibliographic check |
 | Saravali | Broad natal results, yogas, sign/house combinations | `copyright_review_required`; source anchor: <https://www.rarebooksocietyofindia.org/postDetail.php?id=196174216674_10153565781516675> |
 | Sarvartha Cintamani | Bhava and life-topic analysis | `research_only` until edition selected |
+| Vedic Astrology: An Integrated Approach | Tutorial/reference cross-check for JHora-linked practice, vargas, dashas and calculation profile review | `private_research_only_until_approved`; local PDF/text from <https://www.vedicastrologer.org/articles/vedic_astro_textbook.pdf> |
 
 ## Conditional / Supporting Texts
 

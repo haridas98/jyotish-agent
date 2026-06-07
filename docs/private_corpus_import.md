@@ -56,6 +56,19 @@ cd C:\Projects\jyotish-agent\backend
   --output ..\.tmp\codex-analysis-haridev.json
 ```
 
+Review OCR quality with Qwen and FreeDeepseek without modifying source passages:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py review_private_corpus_ocr_with_ai `
+  --work-slug vedic-astrology-integrated-approach-pvr-private `
+  --providers qwen,free_deepseek `
+  --limit 1 `
+  --output ..\.tmp\ocr-review\pvr-textbook-chunk-0001-qwen-deepseek.json
+```
+
+The command writes provider-normalized variants and OCR issue lists to `.tmp\ocr-review`. It does not overwrite the imported private corpus; human review decides which correction becomes a trusted passage.
+
 Digital source candidates:
 
 | Work | Digital source | Import status |
@@ -64,6 +77,7 @@ Digital source candidates:
 | Phaladeepika, V. Subrahmanya Sastri | <https://www.wisdomlib.org/hinduism/book/phaladeepika-by-mantreswara-text-and-translation>; <https://openlibrary.org/works/OL1038542W/Mantreswara%27s_phaladeepika> | private research / rights review |
 | Jataka Parijata, V. Subrahmanya Sastri | WisdomLib has previews/buy references; full text source still needs clean source | private research if user supplies file |
 | Brihat Parashara Hora Shastra | Shyamasundara Dasa warns to use with caution; modern editions need rights review | private research / conditional authority |
+| Vedic Astrology: An Integrated Approach, P.V.R. Narasimha Rao | <https://www.vedicastrologer.org/articles/vedic_astro_textbook.pdf> | local PDF + extracted text, private research / rights review |
 | SanskritDocuments Jyotish ITX corpus | <https://sanskritdocuments.org/sanskrit/sociology_astrology/> | private research / Sanskrit ITRANS |
 | GRETIL Jyotish/astronomy/math corpus | <https://gretil.sub.uni-goettingen.de/gretil.html#Jyot> | private research / Sanskrit plain text |
 | Internet Archive Jyotish OCR layer | archive.org item OCR for Saravali, Sarvartha, Muhurta, Jaimini, Hora Sara, Prasna and related works | private research / OCR rights review |

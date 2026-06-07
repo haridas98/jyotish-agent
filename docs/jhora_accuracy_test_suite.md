@@ -72,6 +72,14 @@ The default output root is `..\.tmp\jhora\batch-queue`, which is scanned by `aud
 
 If a case directory already contains `jhora-complete-calculations.txt` or `jhora-ui-tables.json`, `build_jhora_witness_batch_packets` attaches those captured JHora artifacts into the generated packet automatically.
 
+To capture JHora `Edit -> Copy complete calculations` exports from the whole queue:
+
+```powershell
+.\.venv\Scripts\python manage.py capture_jhora_witness_batch_exports --skip-existing
+```
+
+The command opens each case `.jhd`, verifies JHora's exported UTC offset against the fixture timezone/DST data, writes `jhora-complete-calculations.txt`, and rebuilds that case packet.
+
 To prepare only one case:
 
 ```powershell
