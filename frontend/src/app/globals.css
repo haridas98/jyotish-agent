@@ -1821,6 +1821,11 @@ select {
   border-top: 1px solid #b9d9c7;
 }
 
+.nemotron-generation-strip {
+  background: #f7f6fb;
+  border-top: 1px solid #c9c1e2;
+}
+
 .draft-generation-strip div,
 .generated-draft {
   display: grid;

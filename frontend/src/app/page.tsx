@@ -23,6 +23,7 @@ import {
   fetchWitnessSummary,
   generateBirthCodexAnalysis,
   generateBirthDeepseekAnalysis,
+  generateBirthNemotronAnalysis,
   generateBirthQwenAnalysis,
   generateBirthReport,
   generateCompatibilityAnalysisPacket,
@@ -1167,16 +1168,20 @@ function ReportPreviewPanel({
   draftAnalysis,
   qwenAnalysis,
   deepseekAnalysis,
+  nemotronAnalysis,
   draftStatus,
   qwenStatus,
   deepseekStatus,
+  nemotronStatus,
   onGenerateDraft,
   onRegenerateDraft,
   onGenerateQwen,
   onGenerateDeepseek,
+  onGenerateNemotron,
   draftDisabled,
   qwenDisabled,
   deepseekDisabled,
+  nemotronDisabled,
   chatMessages,
   chatStatus,
   onAskDraftQuestion,
@@ -1186,16 +1191,20 @@ function ReportPreviewPanel({
   draftAnalysis: GeneratedDraftAnalysis | null;
   qwenAnalysis: GeneratedDraftAnalysis | null;
   deepseekAnalysis: GeneratedDraftAnalysis | null;
+  nemotronAnalysis: GeneratedDraftAnalysis | null;
   draftStatus: string;
   qwenStatus: string;
   deepseekStatus: string;
+  nemotronStatus: string;
   onGenerateDraft: () => void;
   onRegenerateDraft: () => void;
   onGenerateQwen: () => void;
   onGenerateDeepseek: () => void;
+  onGenerateNemotron: () => void;
   draftDisabled: boolean;
   qwenDisabled: boolean;
   deepseekDisabled: boolean;
+  nemotronDisabled: boolean;
   chatMessages: CodexAnalysisChatMessage[];
   chatStatus: string;
   onAskDraftQuestion: (question: string) => void;
@@ -1253,6 +1262,17 @@ function ReportPreviewPanel({
             <div className="draft-generation-actions">
               <button type="button" className="secondary-button" onClick={onGenerateDeepseek} disabled={deepseekDisabled}>
                 Сгенерировать с помощью DeepSeek
+              </button>
+            </div>
+          </div>
+          <div className="draft-generation-strip nemotron-generation-strip">
+            <div>
+              <strong>Альтернативный обзор Nemotron</strong>
+              <span>{nemotronStatus}</span>
+            </div>
+            <div className="draft-generation-actions">
+              <button type="button" className="secondary-button" onClick={onGenerateNemotron} disabled={nemotronDisabled}>
+                Сгенерировать с помощью Nemotron
               </button>
             </div>
           </div>
@@ -1364,6 +1384,9 @@ function ReportPreviewPanel({
           ) : null}
           {deepseekAnalysis ? (
             <GeneratedAnalysisDetails analysis={deepseekAnalysis} assistantLabel="DeepSeek" />
+          ) : null}
+          {nemotronAnalysis ? (
+            <GeneratedAnalysisDetails analysis={nemotronAnalysis} assistantLabel="Nemotron" />
           ) : null}
           {birthReport.sections.map((section) => (
             <article className="report-section" key={section.key}>
@@ -3312,6 +3335,8 @@ export default function Home() {
   const [qwenAnalysisStatus, setQwenAnalysisStatus] = useState("QWEN разбор ещё не генерировался");
   const [deepseekAnalysis, setDeepseekAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
   const [deepseekAnalysisStatus, setDeepseekAnalysisStatus] = useState("DeepSeek обзор ещё не генерировался");
+  const [nemotronAnalysis, setNemotronAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
+  const [nemotronAnalysisStatus, setNemotronAnalysisStatus] = useState("Nemotron обзор ещё не генерировался");
   const [codexChatMessages, setCodexChatMessages] = useState<CodexAnalysisChatMessage[]>([]);
   const [codexChatStatus, setCodexChatStatus] = useState("Сначала сгенерируйте личный разбор");
   const [codexChatBusy, setCodexChatBusy] = useState(false);
@@ -4209,6 +4234,23 @@ export default function Home() {
     }
   }
 
+  async function handleGenerateNemotronAnalysis() {
+    const payload = lastBirthPayload ?? buildBirthPayload();
+    if (!payload) return;
+    setNemotronAnalysis(null);
+    setNemotronAnalysisStatus("Запускаю Nemotron через OpenRouter...");
+    try {
+      const result = await generateBirthNemotronAnalysis(payload);
+      setNemotronAnalysis(result);
+      setNemotronAnalysisStatus(
+        `Nemotron #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
+      );
+    } catch (error) {
+      setNemotronAnalysis(null);
+      setNemotronAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации Nemotron-обзора");
+    }
+  }
+
   async function handleAskDraftQuestion(question: string) {
     if (!draftAnalysis) return;
     const userMessage: CodexAnalysisChatMessage = { role: "user", content: question };
@@ -4254,6 +4296,8 @@ export default function Home() {
       setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setDeepseekAnalysis(null);
       setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
+      setNemotronAnalysis(null);
+      setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
@@ -4281,6 +4325,8 @@ export default function Home() {
       setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setDeepseekAnalysis(null);
       setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
+      setNemotronAnalysis(null);
+      setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
@@ -4297,6 +4343,8 @@ export default function Home() {
       setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setDeepseekAnalysis(null);
       setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
+      setNemotronAnalysis(null);
+      setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setTransitReport(null);
       setMuhurtaReport(null);
       setCompatibilityReport(null);
@@ -4770,16 +4818,20 @@ export default function Home() {
                     draftAnalysis={draftAnalysis}
                     qwenAnalysis={qwenAnalysis}
                     deepseekAnalysis={deepseekAnalysis}
+                    nemotronAnalysis={nemotronAnalysis}
                     draftStatus={draftAnalysisStatus}
                     qwenStatus={qwenAnalysisStatus}
                     deepseekStatus={deepseekAnalysisStatus}
+                    nemotronStatus={nemotronAnalysisStatus}
                     onGenerateDraft={() => handleGenerateDraftAnalysis(false)}
                     onRegenerateDraft={() => handleGenerateDraftAnalysis(true)}
                     onGenerateQwen={handleGenerateQwenAnalysis}
                     onGenerateDeepseek={handleGenerateDeepseekAnalysis}
+                    onGenerateNemotron={handleGenerateNemotronAnalysis}
                     draftDisabled={!birthReport}
                     qwenDisabled={!birthReport}
                     deepseekDisabled={!birthReport}
+                    nemotronDisabled={!birthReport}
                     chatMessages={codexChatMessages}
                     chatStatus={codexChatStatus}
                     onAskDraftQuestion={handleAskDraftQuestion}
