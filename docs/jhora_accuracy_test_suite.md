@@ -97,6 +97,13 @@ After manual review confirms the export, screenshots and settings evidence, mark
   --reviewer Haridas `
   --reviewed-at 2026-06-07T12:00:00+05:00
 
+.\.venv\Scripts\python manage.py build_witness_review_packet `
+  --jhora ..\.tmp\jhora\batch-queue\sterlitamak-1998-04-30-1345 `
+  --parashara-light ..\.tmp\pl7\haridas-current\verification-packet `
+  --reviewer Haridas `
+  --reviewed-at 2026-06-07T12:00:00+05:00 `
+  --output ..\.tmp\witness-review\sterlitamak-1998-04-30-1345.md
+
 .\.venv\Scripts\python manage.py mark_jhora_witness_reviewed `
   ..\.tmp\jhora\batch-queue\sterlitamak-1998-04-30-1345 `
   --reviewer Haridas `
@@ -124,6 +131,7 @@ After both JHora and Parashara Light evidence have been manually reviewed, close
 ```
 
 `preflight_witness_review` prints the same command as `seal_command` when the case is reviewable.
+`build_witness_review_packet` writes a short markdown packet with source paths, JHora/PL statuses, review commands, and the final seal command, so the human ACK step is recorded before closing the case.
 The Accuracy tab API also exposes this through `witness_review` when `JHORA_WITNESS_CASE_PATH` points to the reviewed case directory.
 
 For a full reviewed queue, promote every ready case with the same gate:

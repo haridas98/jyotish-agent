@@ -1,0 +1,216 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from django.core.management.base import BaseCommand, CommandError
+
+from apps.calculations.management.commands.mark_jhora_witness_reviewed import (
+    _packet_fixture as jhora_packet_fixture,
+)
+from apps.calculations.management.commands.mark_jhora_witness_reviewed import (
+    _read_json as read_jhora_json,
+)
+from apps.calculations.management.commands.mark_jhora_witness_reviewed import (
+    _resolve_paths as resolve_jhora_paths,
+)
+from apps.calculations.management.commands.mark_parashara_light_witness_reviewed import (
+    _packet_fixture as pl_packet_fixture,
+)
+from apps.calculations.management.commands.mark_parashara_light_witness_reviewed import (
+    _read_json as read_pl_json,
+)
+from apps.calculations.management.commands.mark_parashara_light_witness_reviewed import (
+    _resolve_paths as resolve_pl_paths,
+)
+from apps.calculations.management.commands.preflight_witness_review import (
+    build_witness_review_preflight,
+)
+from apps.calculations.parashara_light_packet_report import load_parashara_light_packet_report
+
+
+SCHEMA_VERSION = "jyotish-witness-review-packet-v1"
+
+
+class Command(BaseCommand):
+    help = "Build a compact markdown review packet before sealing a JHora/Parashara Light witness case."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--jhora", required=True, help="JHora case directory, packet.json, or fixture.json.")
+        parser.add_argument(
+            "--parashara-light",
+            required=True,
+            help="Parashara Light case directory, packet.json, or fixture.json.",
+        )
+        parser.add_argument("--reviewer", default="Haridas")
+        parser.add_argument("--reviewed-at", default="")
+        parser.add_argument("--output", default="")
+        parser.add_argument("--json", action="store_true")
+
+    def handle(self, *args, **options):
+        payload = build_witness_review_packet(
+            jhora_path=options["jhora"],
+            parashara_light_path=options["parashara_light"],
+            reviewer=options["reviewer"],
+            reviewed_at=options["reviewed_at"],
+            output=options["output"],
+        )
+        if options["json"]:
+            self.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            if payload["output_path"]:
+                self.stdout.write(f"written {payload['output_path']}")
+            else:
+                self.stdout.write(payload["markdown"])
+
+
+def build_witness_review_packet(
+    *,
+    jhora_path: str | Path,
+    parashara_light_path: str | Path,
+    reviewer: str = "Haridas",
+    reviewed_at: str = "",
+    output: str | Path = "",
+) -> dict[str, Any]:
+    preflight = build_witness_review_preflight(
+        jhora_path=jhora_path,
+        parashara_light_path=parashara_light_path,
+        reviewer=reviewer,
+        reviewed_at=reviewed_at,
+    )
+    jhora_summary = _jhora_summary(jhora_path)
+    pl_summary = _parashara_light_summary(parashara_light_path)
+    markdown = _markdown(
+        preflight=preflight,
+        jhora=jhora_summary,
+        parashara_light=pl_summary,
+    )
+    output_path = ""
+    if output:
+        target = Path(output)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(markdown, encoding="utf-8")
+        output_path = str(target)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "written" if output_path else ("reviewable" if preflight["overall"]["reviewable"] else "blocked"),
+        "output_path": output_path,
+        "preflight": preflight,
+        "jhora": jhora_summary,
+        "parashara_light": pl_summary,
+        "markdown": markdown,
+    }
+
+
+def _jhora_summary(path: str | Path) -> dict[str, Any]:
+    packet_path, fixture_path = resolve_jhora_paths(Path(path))
+    packet = read_jhora_json(packet_path) if packet_path.exists() else {}
+    fixture = read_jhora_json(fixture_path) if fixture_path.exists() else jhora_packet_fixture(packet)
+    if not fixture:
+        raise CommandError(f"No JHora fixture found at {fixture_path} or inside {packet_path}")
+    metadata = fixture.get("jhora_metadata") if isinstance(fixture.get("jhora_metadata"), dict) else {}
+    capture_files = fixture.get("capture_files") if isinstance(fixture.get("capture_files"), dict) else {}
+    expected = fixture.get("expected") if isinstance(fixture.get("expected"), dict) else {}
+    grahas = expected.get("grahas") if isinstance(expected.get("grahas"), dict) else {}
+    jhora_expected = fixture.get("jhora_expected") if isinstance(fixture.get("jhora_expected"), dict) else {}
+    screenshots = capture_files.get("screenshots") if isinstance(capture_files.get("screenshots"), list) else []
+    return {
+        "id": str(fixture.get("id") or packet.get("id") or fixture_path.parent.name),
+        "review_status": str(fixture.get("review_status") or "draft"),
+        "capture_status": str(metadata.get("capture_status") or ""),
+        "timezone_offset": str(metadata.get("timezone_offset") or ""),
+        "ayanamsa": str(metadata.get("ayanamsa") or ""),
+        "expected_graha_count": len(grahas),
+        "has_expected_ascendant": isinstance(expected.get("ascendant"), dict),
+        "jhora_expected_layers": sorted(jhora_expected.keys()),
+        "screenshots_count": len([item for item in screenshots if str(item).strip()]),
+        "packet_path": str(packet_path) if packet_path.exists() else "",
+        "fixture_path": str(fixture_path),
+    }
+
+
+def _parashara_light_summary(path: str | Path) -> dict[str, Any]:
+    packet_path, fixture_path = resolve_pl_paths(Path(path))
+    packet = read_pl_json(packet_path) if packet_path.exists() else {}
+    fixture = read_pl_json(fixture_path) if fixture_path.exists() else pl_packet_fixture(packet)
+    if not fixture:
+        raise CommandError(f"No Parashara Light fixture found at {fixture_path} or inside {packet_path}")
+    report = load_parashara_light_packet_report(packet_path if packet_path.exists() else fixture_path)
+    comparison = report.get("manual_witness_comparison") if isinstance(report.get("manual_witness_comparison"), dict) else {}
+    summary = comparison.get("summary") if isinstance(comparison.get("summary"), dict) else {}
+    completion = comparison.get("completion") if isinstance(comparison.get("completion"), dict) else {}
+    metadata = fixture.get("pl_metadata") if isinstance(fixture.get("pl_metadata"), dict) else {}
+    return {
+        "id": str(fixture.get("id") or packet.get("id") or fixture_path.parent.name),
+        "review_status": str(fixture.get("review_status") or "draft"),
+        "capture_status": str(metadata.get("capture_status") or ""),
+        "manual_status": str(comparison.get("status") or "not_checked"),
+        "manual_values_count": int(summary.get("manual_values_count") or 0),
+        "manual_failed_count": int(summary.get("failed_count") or 0),
+        "manual_completion_percent": int(completion.get("completion_percent") or 0),
+        "packet_path": str(packet_path) if packet_path.exists() else "",
+        "fixture_path": str(fixture_path),
+    }
+
+
+def _markdown(*, preflight: dict[str, Any], jhora: dict[str, Any], parashara_light: dict[str, Any]) -> str:
+    overall = preflight["overall"]
+    jhora_preflight = preflight["jhora"]
+    pl_preflight = preflight["parashara_light"]
+    lines = [
+        "# Witness Review Packet",
+        "",
+        f"- Reviewable: {_yes_no(overall['reviewable'])}",
+        f"- ACK required: {_yes_no(overall['ack_required'])}",
+        f"- Blocked: {_yes_no(overall['blocked'])}",
+        f"- Seal command: `{preflight.get('seal_command') or ''}`",
+        "",
+        "## JHora",
+        "",
+        f"- ID: `{jhora['id']}`",
+        f"- status: {jhora_preflight['status']}",
+        f"- Review status: `{jhora['review_status']}`",
+        f"- Preflight status: `{jhora_preflight['status']}`",
+        f"- Missing evidence: {_missing(jhora_preflight)}",
+        f"- Review command: `{jhora_preflight.get('review_command') or ''}`",
+        f"- Timezone offset: `{jhora['timezone_offset']}`",
+        f"- Ayanamsa: `{jhora['ayanamsa']}`",
+        f"- Expected grahas: {jhora['expected_graha_count']}",
+        f"- Expected ascendant: {_yes_no(jhora['has_expected_ascendant'])}",
+        f"- JHora layers: {', '.join(jhora['jhora_expected_layers']) or 'none'}",
+        f"- Screenshots: {jhora['screenshots_count']}",
+        f"- Fixture: `{jhora['fixture_path']}`",
+        "",
+        "## Parashara Light",
+        "",
+        f"- ID: `{parashara_light['id']}`",
+        f"- status: {pl_preflight['status']}",
+        f"- Review status: `{parashara_light['review_status']}`",
+        f"- Preflight status: `{pl_preflight['status']}`",
+        f"- Missing evidence: {_missing(pl_preflight)}",
+        f"- Review command: `{pl_preflight.get('review_command') or ''}`",
+        f"- Manual witness status: `{parashara_light['manual_status']}`",
+        f"- Manual values: {parashara_light['manual_values_count']}",
+        f"- Manual failed: {parashara_light['manual_failed_count']}",
+        f"- Manual completion: {parashara_light['manual_completion_percent']}%",
+        f"- Fixture: `{parashara_light['fixture_path']}`",
+        "",
+        "## Human ACK",
+        "",
+        "Do not run seal until manual evidence review and diff ACK are complete.",
+        "",
+        "- Confirm that JHora settings, PL settings, screenshots and copied/clicked values were reviewed.",
+        "- If ACK is required, only run the seal command after accepting the listed open diffs as reviewed witnesses.",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def _missing(row: dict[str, Any]) -> str:
+    missing = row.get("missing_evidence") if isinstance(row.get("missing_evidence"), list) else []
+    return ", ".join(str(item) for item in missing) if missing else "none"
+
+
+def _yes_no(value: object) -> str:
+    return "yes" if bool(value) else "no"
