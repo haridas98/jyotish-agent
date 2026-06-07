@@ -25,6 +25,9 @@ from apps.calculations.management.commands.mark_parashara_light_witness_reviewed
     _resolve_paths as resolve_pl_paths,
 )
 from apps.calculations.management.commands.preflight_witness_review import (
+    _safe_next_summary,
+)
+from apps.calculations.management.commands.preflight_witness_review import (
     build_witness_review_preflight,
 )
 from apps.calculations.parashara_light_packet_report import load_parashara_light_packet_report
@@ -47,6 +50,7 @@ class Command(BaseCommand):
         parser.add_argument("--reviewed-at", default="")
         parser.add_argument("--output", default="")
         parser.add_argument("--json", action="store_true")
+        parser.add_argument("--include-review-commands", action="store_true")
 
     def handle(self, *args, **options):
         payload = build_witness_review_packet(
@@ -55,6 +59,7 @@ class Command(BaseCommand):
             reviewer=options["reviewer"],
             reviewed_at=options["reviewed_at"],
             output=options["output"],
+            include_review_commands=options["include_review_commands"],
         )
         if options["json"]:
             self.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -72,6 +77,7 @@ def build_witness_review_packet(
     reviewer: str = "Haridas",
     reviewed_at: str = "",
     output: str | Path = "",
+    include_review_commands: bool = False,
 ) -> dict[str, Any]:
     preflight = build_witness_review_preflight(
         jhora_path=jhora_path,
@@ -85,6 +91,7 @@ def build_witness_review_packet(
         preflight=preflight,
         jhora=jhora_summary,
         parashara_light=pl_summary,
+        include_review_commands=include_review_commands,
     )
     output_path = ""
     if output:
@@ -96,6 +103,7 @@ def build_witness_review_packet(
         "schema_version": SCHEMA_VERSION,
         "status": "written" if output_path else ("reviewable" if preflight["overall"]["reviewable"] else "blocked"),
         "output_path": output_path,
+        "include_review_commands": include_review_commands,
         "preflight": preflight,
         "jhora": jhora_summary,
         "parashara_light": pl_summary,
@@ -154,7 +162,13 @@ def _parashara_light_summary(path: str | Path) -> dict[str, Any]:
     }
 
 
-def _markdown(*, preflight: dict[str, Any], jhora: dict[str, Any], parashara_light: dict[str, Any]) -> str:
+def _markdown(
+    *,
+    preflight: dict[str, Any],
+    jhora: dict[str, Any],
+    parashara_light: dict[str, Any],
+    include_review_commands: bool,
+) -> str:
     overall = preflight["overall"]
     jhora_preflight = preflight["jhora"]
     pl_preflight = preflight["parashara_light"]
@@ -164,7 +178,7 @@ def _markdown(*, preflight: dict[str, Any], jhora: dict[str, Any], parashara_lig
         f"- Reviewable: {_yes_no(overall['reviewable'])}",
         f"- ACK required: {_yes_no(overall['ack_required'])}",
         f"- Blocked: {_yes_no(overall['blocked'])}",
-        f"- Seal command: `{preflight.get('seal_command') or ''}`",
+        f"- safe next step: {_safe_next_step(preflight)}",
         "",
         "## JHora",
         "",
@@ -173,7 +187,6 @@ def _markdown(*, preflight: dict[str, Any], jhora: dict[str, Any], parashara_lig
         f"- Review status: `{jhora['review_status']}`",
         f"- Preflight status: `{jhora_preflight['status']}`",
         f"- Missing evidence: {_missing(jhora_preflight)}",
-        f"- Review command: `{jhora_preflight.get('review_command') or ''}`",
         f"- Timezone offset: `{jhora['timezone_offset']}`",
         f"- Ayanamsa: `{jhora['ayanamsa']}`",
         f"- Expected grahas: {jhora['expected_graha_count']}",
@@ -189,7 +202,6 @@ def _markdown(*, preflight: dict[str, Any], jhora: dict[str, Any], parashara_lig
         f"- Review status: `{parashara_light['review_status']}`",
         f"- Preflight status: `{pl_preflight['status']}`",
         f"- Missing evidence: {_missing(pl_preflight)}",
-        f"- Review command: `{pl_preflight.get('review_command') or ''}`",
         f"- Manual witness status: `{parashara_light['manual_status']}`",
         f"- Manual values: {parashara_light['manual_values_count']}",
         f"- Manual failed: {parashara_light['manual_failed_count']}",
@@ -204,7 +216,35 @@ def _markdown(*, preflight: dict[str, Any], jhora: dict[str, Any], parashara_lig
         "- If ACK is required, only run the seal command after accepting the listed open diffs as reviewed witnesses.",
         "",
     ]
+    if include_review_commands:
+        lines[6:6] = [f"- Seal command: `{preflight.get('seal_command') or ''}`"]
+        _insert_after(
+            lines,
+            f"- Missing evidence: {_missing(jhora_preflight)}",
+            f"- Review command: `{jhora_preflight.get('review_command') or ''}`",
+        )
+        _insert_after(
+            lines,
+            f"- Missing evidence: {_missing(pl_preflight)}",
+            f"- Review command: `{pl_preflight.get('review_command') or ''}`",
+            last=True,
+        )
     return "\n".join(lines)
+
+
+def _safe_next_step(preflight: dict[str, Any]) -> str:
+    for line in _safe_next_summary(preflight).splitlines():
+        if line.startswith("safe next step: "):
+            return line.removeprefix("safe next step: ")
+    return "review preflight first"
+
+
+def _insert_after(lines: list[str], anchor: str, value: str, *, last: bool = False) -> None:
+    if last:
+        index = len(lines) - 1 - lines[::-1].index(anchor)
+    else:
+        index = lines.index(anchor)
+    lines.insert(index + 1, value)
 
 
 def _missing(row: dict[str, Any]) -> str:

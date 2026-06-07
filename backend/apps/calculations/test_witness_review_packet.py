@@ -4,7 +4,7 @@ from io import StringIO
 from django.core.management import call_command
 
 
-def test_build_witness_review_packet_renders_markdown_with_ack_and_seal(tmp_path):
+def test_build_witness_review_packet_renders_safe_markdown_by_default(tmp_path):
     from apps.calculations.management.commands.build_witness_review_packet import (
         build_witness_review_packet,
     )
@@ -28,11 +28,37 @@ def test_build_witness_review_packet_renders_markdown_with_ack_and_seal(tmp_path
     assert "jhora-diff-open" in markdown
     assert "pl-diff-open" in markdown
     assert "status: diff_open" in markdown
+    assert "safe next step: human ACK required before mark/seal" in markdown
+    assert "mark_jhora_witness_reviewed" not in markdown
+    assert "mark_parashara_light_witness_reviewed" not in markdown
+    assert "seal_witness_case" not in markdown
+    assert "--ack-diff-open" not in markdown
+    assert "Do not run seal until manual evidence review and diff ACK are complete." in markdown
+
+
+def test_build_witness_review_packet_can_render_review_commands_explicitly(tmp_path):
+    from apps.calculations.management.commands.build_witness_review_packet import (
+        build_witness_review_packet,
+    )
+
+    jhora_dir, pl_dir = _write_diff_open_case(tmp_path)
+
+    payload = build_witness_review_packet(
+        jhora_path=jhora_dir,
+        parashara_light_path=pl_dir,
+        reviewer="Haridas",
+        reviewed_at="2026-06-07T12:00:00+05:00",
+        include_review_commands=True,
+    )
+
+    markdown = payload["markdown"]
+
     assert "mark_jhora_witness_reviewed" in markdown
     assert "mark_parashara_light_witness_reviewed" in markdown
     assert "seal_witness_case" in markdown
     assert "--ack-diff-open" in markdown
-    assert "Do not run seal until manual evidence review and diff ACK are complete." in markdown
+    assert markdown.index("mark_jhora_witness_reviewed") < markdown.index("## Parashara Light")
+    assert markdown.index("## Parashara Light") < markdown.index("mark_parashara_light_witness_reviewed")
 
 
 def test_build_witness_review_packet_command_writes_output_and_json(tmp_path):
