@@ -1373,29 +1373,6 @@ select {
   overflow-wrap: anywhere;
 }
 
-.seal-command-row span {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-}
-
-.seal-copy-button {
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--green);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-  min-height: 28px;
-  padding: 4px 9px;
-}
-
-.seal-copy-button:hover {
-  border-color: var(--saffron);
-}
-
 .accuracy-footnote {
   margin: 0;
   overflow-wrap: anywhere;

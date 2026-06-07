@@ -699,6 +699,19 @@ export type WitnessCaptureQueueItem = {
   blocker_count: number;
 };
 
+export type WitnessOpenDiffRow = {
+  field: string;
+  witness: string | number | null;
+  calculated: string | number | null;
+  delta_arcseconds?: number;
+};
+
+export type WitnessOpenDiffSummary = {
+  status: string;
+  failed_count: number;
+  sample: WitnessOpenDiffRow[];
+};
+
 export type WitnessSummary = {
   overall_status: string;
   birth_timezone_audit: {
@@ -747,6 +760,12 @@ export type WitnessSummary = {
       review_command?: string;
       packet_path?: string;
       fixture_path?: string;
+    };
+    open_diffs: {
+      status: string;
+      jhora: WitnessOpenDiffSummary;
+      parashara_light: WitnessOpenDiffSummary;
+      error?: string;
     };
     error?: string;
   };

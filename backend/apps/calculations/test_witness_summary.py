@@ -447,6 +447,9 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review["overall"]["blocked"] is False
     assert witness_review["jhora"]["status"] == "diff_open"
     assert witness_review["parashara_light"]["status"] == "diff_open"
+    assert witness_review["open_diffs"]["jhora"]["failed_count"] > 0
+    assert witness_review["open_diffs"]["parashara_light"]["failed_count"] == 1
+    assert witness_review["open_diffs"]["parashara_light"]["sample"][0]["field"] == "Surya.rashi"
     assert witness_review["seal_command"].startswith(".\\.venv\\Scripts\\python.exe manage.py seal_witness_case")
     assert "--ack-diff-open" in witness_review["seal_command"]
     witness_review_batch = response.data["witness_review_batch"]

@@ -125,6 +125,7 @@ def _witness_review_preflight(
             "seal_command": "",
             "jhora": {},
             "parashara_light": {},
+            "open_diffs": _empty_witness_review_open_diffs(),
         }
     try:
         from apps.calculations.management.commands.preflight_witness_review import build_witness_review_preflight
@@ -133,6 +134,10 @@ def _witness_review_preflight(
             jhora_path=jhora_path,
             parashara_light_path=parashara_light_packet_path,
             reviewer="Haridas",
+        )
+        payload["open_diffs"] = _witness_review_open_diffs(
+            jhora_path=jhora_path,
+            parashara_light_packet_path=parashara_light_packet_path,
         )
     except Exception as exc:  # noqa: BLE001 - API summary must expose review blockers, not fail the whole tab.
         return {
@@ -143,8 +148,43 @@ def _witness_review_preflight(
             "seal_command": "",
             "jhora": {},
             "parashara_light": {},
+            "open_diffs": _empty_witness_review_open_diffs(),
         }
     return {"available": True, "status": "loaded", **payload}
+
+
+def _witness_review_open_diffs(*, jhora_path: str | Path, parashara_light_packet_path: str | Path) -> dict[str, Any]:
+    try:
+        from apps.calculations.management.commands.build_witness_review_packet import build_witness_review_packet
+
+        packet = build_witness_review_packet(
+            jhora_path=jhora_path,
+            parashara_light_path=parashara_light_packet_path,
+            reviewer="Haridas",
+            include_review_commands=False,
+        )
+    except Exception as exc:  # noqa: BLE001 - diff summary should not break the whole witness summary.
+        result = _empty_witness_review_open_diffs()
+        result["status"] = "load_error"
+        result["error"] = str(exc)
+        return result
+    return {
+        "status": "loaded",
+        "jhora": packet["jhora"].get("diff_summary") or _empty_diff_summary(),
+        "parashara_light": packet["parashara_light"].get("manual_diff_summary") or _empty_diff_summary(),
+    }
+
+
+def _empty_witness_review_open_diffs() -> dict[str, Any]:
+    return {
+        "status": "missing",
+        "jhora": _empty_diff_summary(),
+        "parashara_light": _empty_diff_summary(),
+    }
+
+
+def _empty_diff_summary() -> dict[str, Any]:
+    return {"status": "missing", "failed_count": 0, "sample": []}
 
 
 def _resolve_jhora_witness_case_path(jhora_witness_case_path: str | Path, jhora_report_path: str | Path) -> str:

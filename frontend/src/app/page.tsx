@@ -2565,6 +2565,11 @@ function shortHash(value?: string) {
   return value ? value.slice(0, 12) : "missing";
 }
 
+function formatWitnessDiffValue(value: string | number | null | undefined) {
+  if (typeof value === "number") return Number.isInteger(value) ? String(value) : value.toFixed(6);
+  return value === null || value === undefined || value === "" ? "n/a" : String(value);
+}
+
 function AccuracyReportPanel({
   witnessSummary,
   witnessStatus,
@@ -2631,26 +2636,16 @@ function AccuracyReportPanel({
     witnessCaptureQueueNext?.status ||
     witnessCaptureQueue?.next_command_kind ||
     "review";
+  const witnessOpenDiffs = witnessReview?.open_diffs ?? null;
+  const witnessOpenDiffRows = [
+    ...(witnessOpenDiffs?.jhora.sample ?? []).map((row) => ({ source: "JHora", row })),
+    ...(witnessOpenDiffs?.parashara_light.sample ?? []).map((row) => ({ source: "PL", row })),
+  ].slice(0, 6);
   const hasWitnessCaptureQueueNext =
     Boolean(witnessCaptureQueueNext) ||
     Boolean(witnessCaptureQueue?.next_step_label) ||
     Boolean(witnessCaptureQueue?.next_command) ||
     Boolean(witnessCaptureQueue?.manual_review_command);
-  const [sealCommandCopyStatus, setSealCommandCopyStatus] = useState("");
-
-  async function copySealCommand() {
-    if (!witnessReview?.seal_command) return;
-    if (!navigator.clipboard?.writeText) {
-      setSealCommandCopyStatus("clipboard unavailable");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(witnessReview.seal_command);
-      setSealCommandCopyStatus("copied");
-    } catch {
-      setSealCommandCopyStatus("copy failed");
-    }
-  }
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -2721,21 +2716,33 @@ function AccuracyReportPanel({
                   {witnessReview.jhora.status ?? "missing"} / {witnessReview.parashara_light.status ?? "missing"}
                 </strong>
                 <small>
-                  {witnessReview.jhora.id ?? "JHora missing"} · {witnessReview.parashara_light.id ?? "PL missing"}
+                  {witnessReview.jhora.id ?? "JHora missing"} В· {witnessReview.parashara_light.id ?? "PL missing"}
                 </small>
               </div>
-              {witnessReview.seal_command ? (
-                <div className="seal-command-row">
-                  <span>
-                    Seal command
-                    <button type="button" className="seal-copy-button" onClick={copySealCommand}>
-                      Copy
-                    </button>
-                  </span>
-                  <strong>{witnessReview.seal_command}</strong>
-                  {sealCommandCopyStatus ? <small>{sealCommandCopyStatus}</small> : null}
+              {witnessOpenDiffs ? (
+                <div>
+                  <span>Open diffs</span>
+                  <strong>
+                    JHora {witnessOpenDiffs.jhora.failed_count}, PL {witnessOpenDiffs.parashara_light.failed_count}
+                  </strong>
+                  <small>{witnessOpenDiffs.status}</small>
                 </div>
               ) : null}
+              {witnessOpenDiffRows.map(({ source, row }, index) => (
+                <div key={`${source}-${row.field}-${index}`}>
+                  <span>
+                    {source} {row.field}
+                  </span>
+                  <strong>
+                    {formatWitnessDiffValue(row.witness)} / {formatWitnessDiffValue(row.calculated)}
+                  </strong>
+                  <small>
+                    {typeof row.delta_arcseconds === "number"
+                      ? `${row.delta_arcseconds.toFixed(2)} arcsec`
+                      : "exact diff"}
+                  </small>
+                </div>
+              ))}
             </div>
           ) : null}
           {witnessReviewBatch ? (
