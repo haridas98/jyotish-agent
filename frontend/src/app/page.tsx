@@ -401,20 +401,101 @@ function normalizePlaceLabel(value: string) {
   return value.trim().toLowerCase().replace(/\s*,\s*/g, ", ").replace(/\s+/g, " ");
 }
 
-const northIndianHouseCells: Record<number, { centerX: number; centerY: number }> = {
-  1: { centerX: 200, centerY: 112 },
-  2: { centerX: 108, centerY: 54 },
-  3: { centerX: 54, centerY: 108 },
-  4: { centerX: 100, centerY: 200 },
-  5: { centerX: 54, centerY: 292 },
-  6: { centerX: 108, centerY: 346 },
-  7: { centerX: 200, centerY: 292 },
-  8: { centerX: 292, centerY: 346 },
-  9: { centerX: 346, centerY: 292 },
-  10: { centerX: 300, centerY: 200 },
-  11: { centerX: 346, centerY: 108 },
-  12: { centerX: 292, centerY: 54 },
+type ChartPoint = { x: number; y: number };
+
+const northIndianHousePolygons: Record<number, ChartPoint[]> = {
+  1: [
+    { x: 200, y: 2 },
+    { x: 300, y: 100 },
+    { x: 200, y: 200 },
+    { x: 100, y: 100 },
+  ],
+  2: [
+    { x: 2, y: 2 },
+    { x: 200, y: 2 },
+    { x: 100, y: 100 },
+  ],
+  3: [
+    { x: 2, y: 2 },
+    { x: 100, y: 100 },
+    { x: 2, y: 200 },
+  ],
+  4: [
+    { x: 2, y: 200 },
+    { x: 100, y: 100 },
+    { x: 200, y: 200 },
+    { x: 100, y: 300 },
+  ],
+  5: [
+    { x: 2, y: 200 },
+    { x: 100, y: 300 },
+    { x: 2, y: 398 },
+  ],
+  6: [
+    { x: 2, y: 398 },
+    { x: 100, y: 300 },
+    { x: 200, y: 398 },
+  ],
+  7: [
+    { x: 200, y: 398 },
+    { x: 100, y: 300 },
+    { x: 200, y: 200 },
+    { x: 300, y: 300 },
+  ],
+  8: [
+    { x: 200, y: 398 },
+    { x: 300, y: 300 },
+    { x: 398, y: 398 },
+  ],
+  9: [
+    { x: 398, y: 398 },
+    { x: 300, y: 300 },
+    { x: 398, y: 200 },
+  ],
+  10: [
+    { x: 398, y: 200 },
+    { x: 300, y: 100 },
+    { x: 200, y: 200 },
+    { x: 300, y: 300 },
+  ],
+  11: [
+    { x: 398, y: 2 },
+    { x: 398, y: 200 },
+    { x: 300, y: 100 },
+  ],
+  12: [
+    { x: 200, y: 2 },
+    { x: 398, y: 2 },
+    { x: 300, y: 100 },
+  ],
 };
+
+const northIndianHouseCells = Object.fromEntries(
+  Object.entries(northIndianHousePolygons).map(([house, polygon]) => {
+    const center = polygonCentroid(polygon);
+    return [Number(house), { centerX: center.x, centerY: center.y }];
+  }),
+) as Record<number, { centerX: number; centerY: number }>;
+
+function polygonCentroid(points: ChartPoint[]) {
+  let doubledArea = 0;
+  let x = 0;
+  let y = 0;
+  points.forEach((point, index) => {
+    const next = points[(index + 1) % points.length];
+    const cross = point.x * next.y - next.x * point.y;
+    doubledArea += cross;
+    x += (point.x + next.x) * cross;
+    y += (point.y + next.y) * cross;
+  });
+  if (doubledArea === 0) {
+    return {
+      x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+      y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+    };
+  }
+  return { x: x / (3 * doubledArea), y: y / (3 * doubledArea) };
+}
 
 const grahaSymbols: Record<string, string> = {
   Lagna: "As",
@@ -446,36 +527,6 @@ const northGrahaLabels: Record<string, string> = {
 
 const rashiNames = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena"];
 const rashiChartLabels = ["Mesha", "Vrish", "Mith", "Karka", "Simha", "Kanya", "Tula", "Vrisch", "Dhanu", "Makara", "Kumbh", "Meena"];
-
-const nakshatraChartLabels: Record<string, string> = {
-  Ashwini: "Ashw",
-  Bharani: "Bhar",
-  Krittika: "Krit",
-  Rohini: "Rohi",
-  Mrigashira: "Mrig",
-  Ardra: "Ardr",
-  Punarvasu: "Puna",
-  Pushya: "Push",
-  Ashlesha: "Ashl",
-  Magha: "Magh",
-  "Purva Phalguni": "PPha",
-  "Uttara Phalguni": "UPha",
-  Hasta: "Hast",
-  Chitra: "Chit",
-  Swati: "Swat",
-  Vishakha: "Visa",
-  Anuradha: "Anu",
-  Jyeshtha: "Jye",
-  Mula: "Mula",
-  "Purva Ashadha": "PSha",
-  "Uttara Ashadha": "USha",
-  Shravana: "Srav",
-  Dhanishtha: "Dhan",
-  Shatabhisha: "Sata",
-  "Purva Bhadrapada": "PBha",
-  "Uttara Bhadrapada": "UBha",
-  Revati: "Reva",
-};
 
 const rashiNameIndices: Record<string, number> = {
   Aries: 0,
@@ -659,7 +710,8 @@ function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; v
           const signLabel = rashiChartLabel(house.rashiIndex, house.rashi);
           const textLines = northIndianCellLines(house);
           const lineGap = textLines.length > 5 ? 11 : 13;
-          const firstLineY = firstSymbolLineY(cell.centerY, textLines.length, lineGap);
+          const centerY = safeSymbolCenterY(cell.centerY, textLines.length, lineGap);
+          const firstLineY = firstSymbolLineY(centerY, textLines.length, lineGap);
           return (
             <g className="chart-house-group" key={house.house}>
               <title>{`Знак ${signLabel}: ${house.placements.map(fullPlacementTitle).join("; ") || "пусто"}`}</title>
@@ -695,7 +747,7 @@ function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; v
 
 function northIndianCellLines(house: NorthIndianHouseItem) {
   return [
-    rashiChartLabel(house.rashiIndex, house.rashi),
+    `${house.house} ${rashiChartLabel(house.rashiIndex, house.rashi)}`,
     ...house.placements.map(compactPlacementLine),
   ];
 }
@@ -703,8 +755,7 @@ function northIndianCellLines(house: NorthIndianHouseItem) {
 function compactPlacementLine(placement: ChartPlacement) {
   const label = placement.isLagna ? "As" : northGrahaLabel(placement.body);
   if (placement.longitude === null) return label;
-  const nakshatra = placement.nakshatra ? ` ${shortNakshatra(placement.nakshatra)}${placement.pada ?? ""}` : "";
-  return `${label} ${formatSignDegrees(placement.longitude)}${nakshatra}`;
+  return `${label} ${formatSignDegrees(placement.longitude)}`;
 }
 
 function fullPlacementTitle(placement: ChartPlacement) {
@@ -716,10 +767,6 @@ function fullPlacementTitle(placement: ChartPlacement) {
 
 function rashiChartLabel(index: number | null, fallback: string) {
   return index === null ? fallback || "-" : rashiChartLabels[index] ?? fallback;
-}
-
-function shortNakshatra(name: string) {
-  return nakshatraChartLabels[name] ?? name.replace(/\s+/g, "").slice(0, 4);
 }
 
 function formatSignDegrees(value: number) {
@@ -734,6 +781,14 @@ function formatSignDegrees(value: number) {
 
 function firstSymbolLineY(centerY: number, lineCount: number, lineGap: number) {
   return centerY - ((lineCount - 1) * lineGap) / 2;
+}
+
+function safeSymbolCenterY(centerY: number, lineCount: number, lineGap: number) {
+  const halfHeight = ((lineCount - 1) * lineGap) / 2;
+  const min = 18 + halfHeight;
+  const max = 382 - halfHeight;
+  if (min > max) return 200;
+  return Math.min(Math.max(centerY, min), max);
 }
 
 function symbolLines(symbols: string[], maxPerLine?: number) {
