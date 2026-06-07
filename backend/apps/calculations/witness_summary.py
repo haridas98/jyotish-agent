@@ -408,6 +408,7 @@ def _witness_review_batch_written(value: Any) -> list[dict[str, Any]]:
                 "safe_next_step": _witness_review_batch_safe_next_step(row),
                 "review_checklist": review_checklist,
                 "review_checklist_summary": _review_checklist_summary(review_checklist),
+                "review_checklist_next_steps_summary": _review_checklist_next_steps_summary(row, review_checklist),
             }
         )
     return rows
@@ -447,6 +448,17 @@ def _review_checklist_items(value: Any) -> list[dict[str, Any]]:
 
 def _review_checklist_summary(rows: list[dict[str, Any]]) -> str:
     return "; ".join(f"{row['label']}={row['status']}" for row in rows) or "none"
+
+
+def _review_checklist_next_steps_summary(row: dict[str, Any], rows: list[dict[str, Any]]) -> str:
+    if row.get("review_checklist_next_steps_summary"):
+        return str(row["review_checklist_next_steps_summary"])
+    next_steps = [
+        f"{item['label']}: {item['next_step']}"
+        for item in rows
+        if item.get("next_step") and item.get("status") in {"blocked", "ack_required"}
+    ]
+    return "; ".join(next_steps) or "none"
 
 
 def _witness_review_batch_next_actions(value: Any) -> list[dict[str, Any]]:

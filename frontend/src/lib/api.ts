@@ -817,6 +817,7 @@ export type WitnessSummary = {
       safe_next_step: string;
       review_checklist: WitnessReviewChecklistItem[];
       review_checklist_summary: string;
+      review_checklist_next_steps_summary: string;
     }>;
     next_actions: Array<{
       id: string;

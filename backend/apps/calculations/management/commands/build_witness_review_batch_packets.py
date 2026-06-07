@@ -121,6 +121,7 @@ def build_witness_review_batch_packets(
                 "safe_next_step": safe_next_step,
                 "review_checklist": review_checklist,
                 "review_checklist_summary": _checklist_summary(review_checklist),
+                "review_checklist_next_steps_summary": _checklist_next_steps_summary(review_checklist),
             }
         )
 
@@ -223,6 +224,7 @@ def _index_markdown(
                 f"ACK: {_yes_no(row['ack_required'])}; Blocked: {_yes_no(row['blocked'])}; "
                 f"Safe next: {row.get('safe_next_step') or 'review preflight first'}; "
                 f"Checklist: {row.get('review_checklist_summary') or _checklist_summary(row.get('review_checklist'))}; "
+                f"Next steps: {row.get('review_checklist_next_steps_summary') or _checklist_next_steps_summary(row.get('review_checklist'))}; "
                 f"File: `{row['output_path']}`"
             )
     else:
@@ -307,6 +309,18 @@ def _checklist_summary(value: Any) -> str:
     return "; ".join(f"{row.get('label', 'item')}={row.get('status', 'unknown')}" for row in rows) or "none"
 
 
+def _checklist_next_steps_summary(value: Any) -> str:
+    if not isinstance(value, list):
+        return "none"
+    rows = [row for row in value if isinstance(row, dict)]
+    next_steps = [
+        f"{row.get('label', 'item')}: {row.get('next_step')}"
+        for row in rows
+        if row.get("next_step") and row.get("status") in {"blocked", "ack_required"}
+    ]
+    return "; ".join(next_steps) or "none"
+
+
 def _safe_next_step(value: Any) -> str:
     preflight = value if isinstance(value, dict) else {}
     overall = preflight.get("overall") if isinstance(preflight.get("overall"), dict) else {}
@@ -337,6 +351,7 @@ def _text_summary(payload: dict[str, Any]) -> str:
             f"- {row['id']}: {row['output_path']} "
             f"(reviewable={row['reviewable']} ack_required={row['ack_required']} blocked={row['blocked']} "
             f"safe_next={row.get('safe_next_step') or 'review preflight first'} "
-            f"checklist={row.get('review_checklist_summary') or _checklist_summary(row.get('review_checklist'))})"
+            f"checklist={row.get('review_checklist_summary') or _checklist_summary(row.get('review_checklist'))} "
+            f"next_steps={row.get('review_checklist_next_steps_summary') or _checklist_next_steps_summary(row.get('review_checklist'))})"
         )
     return "\n".join(lines)

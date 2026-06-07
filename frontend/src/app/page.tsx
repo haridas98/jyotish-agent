@@ -2807,7 +2807,11 @@ function AccuracyReportPanel({
                   </strong>
                   <small>
                     {row.safe_next_step};{" "}
-                    {row.review_checklist_summary !== "none" ? row.review_checklist_summary : row.output_path}
+                    {row.review_checklist_next_steps_summary !== "none"
+                      ? row.review_checklist_next_steps_summary
+                      : row.review_checklist_summary !== "none"
+                        ? row.review_checklist_summary
+                        : row.output_path}
                   </small>
                 </div>
               ))}
