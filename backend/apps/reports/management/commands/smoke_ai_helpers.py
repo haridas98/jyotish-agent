@@ -6,7 +6,7 @@ from typing import Any, Callable
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.reports import deepseek_generation, qwen_generation
+from apps.reports import deepseek_generation, nemotron_generation, qwen_generation
 from apps.reports.draft_generation import DraftGenerationUnavailable, _normalize_llm_output
 
 
@@ -25,7 +25,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--providers",
             default="qwen,free_deepseek",
-            help="Comma-separated provider keys: qwen,free_deepseek.",
+            help="Comma-separated provider keys: qwen,free_deepseek,nemotron.",
         )
         parser.add_argument("--continue-on-error", action="store_true")
 
@@ -46,7 +46,7 @@ def _provider_keys(value: str) -> list[str]:
     keys = [item.strip() for item in value.split(",") if item.strip()]
     if not keys:
         raise CommandError("At least one provider is required")
-    unknown = [key for key in keys if key not in {"qwen", "free_deepseek"}]
+    unknown = [key for key in keys if key not in {"qwen", "free_deepseek", "nemotron"}]
     if unknown:
         raise CommandError(f"Unknown AI helper provider(s): {', '.join(unknown)}")
     return keys
@@ -78,6 +78,8 @@ def _runner(provider: str) -> ProviderRunner:
         return qwen_generation.qwen_chat_completions_client()
     if provider == "free_deepseek":
         return deepseek_generation.free_deepseek_chat_client()
+    if provider == "nemotron":
+        return nemotron_generation.nemotron_chat_completions_client()
     raise CommandError(f"Unknown AI helper provider: {provider}")
 
 
@@ -86,6 +88,8 @@ def _model(provider: str) -> str:
         return settings.QWEN_MODEL
     if provider == "free_deepseek":
         return settings.FREE_DEEPSEEK_MODEL
+    if provider == "nemotron":
+        return settings.NEMOTRON_MODEL
     return ""
 
 

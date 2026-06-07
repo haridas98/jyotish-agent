@@ -167,6 +167,16 @@ FREE_DEEPSEEK_API_KEY = os.getenv("FREE_DEEPSEEK_API_KEY", "dummy-key")
 FREE_DEEPSEEK_MODEL = os.getenv("FREE_DEEPSEEK_MODEL", "deepseek-chat")
 FREE_DEEPSEEK_TIMEOUT_SECONDS = int(os.getenv("FREE_DEEPSEEK_TIMEOUT_SECONDS", "420"))
 FREE_DEEPSEEK_MAX_TOKENS = int(os.getenv("FREE_DEEPSEEK_MAX_TOKENS", "5000"))
+OPENROUTER_API_BASE_URL = os.getenv("OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_HTTP_REFERER = os.getenv("OPENROUTER_HTTP_REFERER", "")
+OPENROUTER_APP_TITLE = os.getenv("OPENROUTER_APP_TITLE", "Jyotish Agent")
+NEMOTRON_MODEL = os.getenv(
+    "NEMOTRON_MODEL",
+    os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free"),
+)
+NEMOTRON_TIMEOUT_SECONDS = int(os.getenv("NEMOTRON_TIMEOUT_SECONDS", "420"))
+NEMOTRON_MAX_TOKENS = int(os.getenv("NEMOTRON_MAX_TOKENS", "5000"))
 JHORA_ACCURACY_REPORT_PATH = os.getenv(
     "JHORA_ACCURACY_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "jhora" / "sterlitamak-1998" / "accuracy-report.json"),

@@ -39,6 +39,7 @@ Then install nginx config, replace `jyotish.example.com`, enable site, and issue
 - Swiss/JPL ephemeris files must be placed in `./ephe` if JPL mode is needed.
 - For Qwen report generation, run FreeQwenApi and set `QWEN_API_BASE_URL` in the server `.env`, usually `http://127.0.0.1:3264/api`.
 - For DeepSeek overview generation, run FreeDeepseekAPI and set `FREE_DEEPSEEK_API_BASE_URL` in the server `.env`, usually `http://127.0.0.1:9655/v1`.
+- For Nemotron overview generation, set `OPENROUTER_API_KEY`, keep `OPENROUTER_API_BASE_URL=https://openrouter.ai/api/v1`, and set `NEMOTRON_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free`.
 - After deploy, run `cd /srv/jyotish-agent/app/backend && ./.venv/bin/python manage.py smoke_free_deepseek` to verify server-side FreeDeepseekAPI access.
 - To check all local helper providers in one shot, run `./.venv/bin/python manage.py smoke_ai_helpers --continue-on-error`.
 
@@ -89,6 +90,26 @@ cd /srv/jyotish-agent/app/backend
 ```
 
 Do not commit `deepseek-auth.json`; it is a server-local browser session secret.
+
+## OpenRouter Nemotron
+
+Backend calls OpenRouter directly, so no local proxy service is required. Put the key only in server `.env`:
+
+```bash
+OPENROUTER_API_KEY=...
+OPENROUTER_HTTP_REFERER=https://jyotish.example.com
+OPENROUTER_APP_TITLE=Jyotish Agent
+NEMOTRON_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free
+```
+
+Smoke check:
+
+```bash
+cd /srv/jyotish-agent/app/backend
+./.venv/bin/python manage.py smoke_ai_helpers --providers nemotron
+```
+
+The helper repo `C:\Projects\useful-tools\openrouter-nemotron` can be installed on a server for manual CLI checks, but the Django backend does not depend on it at runtime.
 
 ## Codex CLI analysis
 

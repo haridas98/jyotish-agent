@@ -35,11 +35,14 @@ Alternative local/private providers:
 ```http
 POST /api/reports/birth-chart/qwen-analysis
 POST /api/reports/birth-chart/deepseek-analysis
+POST /api/reports/birth-chart/nemotron-analysis
 ```
 
 - Qwen uses local FreeQwenApi at `QWEN_API_BASE_URL`; the default local endpoint is `http://127.0.0.1:3264/api`.
 - DeepSeek uses local FreeDeepseekAPI at `FREE_DEEPSEEK_API_BASE_URL` and stores `provider=free_deepseek`.
 - DeepSeek is intentionally a compact overview, not the full Codex/Qwen report path.
+- Nemotron uses OpenRouter directly at `OPENROUTER_API_BASE_URL` with `OPENROUTER_API_KEY` and stores `provider=nemotron`.
+- Nemotron is also a compact overview path; use it for a second independent read of the same analysis packet.
 
 Local/server helper smoke:
 
@@ -47,6 +50,7 @@ Local/server helper smoke:
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py smoke_free_deepseek
 .\.venv\Scripts\python manage.py smoke_ai_helpers --continue-on-error
+.\.venv\Scripts\python manage.py smoke_ai_helpers --providers qwen,nemotron --continue-on-error
 ```
 
 ```powershell
