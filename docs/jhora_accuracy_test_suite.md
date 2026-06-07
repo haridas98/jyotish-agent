@@ -38,6 +38,10 @@ for the parity queue. It does not mark PL evidence reviewed; screenshots, UI sta
 and the Accuracy tab shows the written/skipped/error counts plus generated/reviewer metadata next to the seal gate.
 The JSON index also includes `next_actions` with per-case JHora/PL blockers and suggested capture/review actions.
 
+The single-case `witness_review` API payload is safe-by-default for the Accuracy tab: mutating `review_command` and
+`seal_command` values are hidden, `safe_next_step` names the next non-mutating step, and `review_checklist` shows the
+four manual ACK gates: JHora evidence, PL evidence, open diffs, and final review ACK.
+
 For a compact checklist while JHora and PL are open, build a capture queue:
 
 ```powershell
@@ -166,7 +170,7 @@ After both JHora and Parashara Light evidence have been manually reviewed, close
 
 `preflight_witness_review` prints the same command as `seal_command` when the case is reviewable.
 `build_witness_review_packet` writes a short markdown packet with source paths, JHora/PL statuses, review commands, and the final seal command, so the human ACK step is recorded before closing the case.
-The Accuracy tab API also exposes this through `witness_review` when `JHORA_WITNESS_CASE_PATH` points to the reviewed case directory.
+The Accuracy tab API exposes only the safe summary through `witness_review` when `JHORA_WITNESS_CASE_PATH` points to the reviewed case directory. Use its `review_checklist` for UI review, then run mark/seal commands only from an explicit human-reviewed packet or preflight output.
 
 For a full reviewed queue, promote every ready case with the same gate:
 
