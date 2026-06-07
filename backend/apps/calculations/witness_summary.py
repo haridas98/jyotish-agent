@@ -177,6 +177,8 @@ def _witness_review_batch_index(path: str | Path) -> dict[str, Any]:
     written = [row for row in payload.get("written", []) if isinstance(row, dict)]
     skipped = [row for row in payload.get("skipped", []) if isinstance(row, dict)]
     errors = [row for row in payload.get("errors", []) if isinstance(row, dict)]
+    audit_summary = payload.get("audit_summary") if isinstance(payload.get("audit_summary"), dict) else {}
+    progress = _witness_review_batch_progress(summary=summary, written=written, audit_summary=audit_summary)
     return {
         "available": True,
         "status": "loaded",
@@ -196,11 +198,12 @@ def _witness_review_batch_index(path: str | Path) -> dict[str, Any]:
             "output_root": str(summary.get("output_root") or ""),
             "index_path": str(summary.get("index_path") or ""),
             "index_json_path": str(summary.get("index_json_path") or source),
+            **progress,
         },
         "written": written,
         "skipped_reason_counts": _skipped_reason_counts(skipped),
         "errors": errors,
-        "audit_summary": payload.get("audit_summary") if isinstance(payload.get("audit_summary"), dict) else {},
+        "audit_summary": audit_summary,
     }
 
 
@@ -224,6 +227,13 @@ def _missing_witness_review_batch(path: str) -> dict[str, Any]:
             "output_root": "",
             "index_path": "",
             "index_json_path": path,
+            "target_reviewed_count": 0,
+            "batch_review_ready_count": 0,
+            "remaining_to_target_count": 0,
+            "reviewable_count": 0,
+            "blocked_count": 0,
+            "ack_required_count": 0,
+            "next_case_ids": [],
         },
         "written": [],
         "skipped_reason_counts": {},
@@ -238,6 +248,38 @@ def _skipped_reason_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
         reason = str(row.get("reason") or "unknown")
         counts[reason] = counts.get(reason, 0) + 1
     return counts
+
+
+def _witness_review_batch_progress(
+    *,
+    summary: dict[str, Any],
+    written: list[dict[str, Any]],
+    audit_summary: dict[str, Any],
+) -> dict[str, Any]:
+    target = _int_from_summary(summary, audit_summary, "target_reviewed_count")
+    ready = _int_from_summary(summary, audit_summary, "batch_review_ready_count")
+    next_case_ids = summary.get("next_case_ids")
+    if not isinstance(next_case_ids, list):
+        next_case_ids = audit_summary.get("next_case_ids")
+    return {
+        "target_reviewed_count": target,
+        "batch_review_ready_count": ready,
+        "remaining_to_target_count": max(target - ready, 0),
+        "reviewable_count": int(summary.get("reviewable_count") or sum(1 for row in written if row.get("reviewable"))),
+        "blocked_count": int(summary.get("blocked_count") or sum(1 for row in written if row.get("blocked"))),
+        "ack_required_count": int(summary.get("ack_required_count") or sum(1 for row in written if row.get("ack_required"))),
+        "next_case_ids": [str(case_id) for case_id in next_case_ids] if isinstance(next_case_ids, list) else [],
+    }
+
+
+def _int_from_summary(summary: dict[str, Any], audit_summary: dict[str, Any], key: str) -> int:
+    value = summary.get(key)
+    if value in (None, ""):
+        value = audit_summary.get(key)
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _default_jhora_source_export(path: str | Path) -> str:

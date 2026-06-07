@@ -750,6 +750,13 @@ export type WitnessSummary = {
       output_root: string;
       index_path: string;
       index_json_path: string;
+      target_reviewed_count: number;
+      batch_review_ready_count: number;
+      remaining_to_target_count: number;
+      reviewable_count: number;
+      blocked_count: number;
+      ack_required_count: number;
+      next_case_ids: string[];
     };
     written: Array<{
       id: string;

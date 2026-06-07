@@ -121,6 +121,7 @@ def build_witness_review_batch_packets(
 
     index_path = output_dir / "_index.md"
     index_json_path = output_dir / "_index.json"
+    progress = _review_progress(written=written, audit_summary=audit["summary"])
     metadata = {
         "generated_at": timezone.now().isoformat(),
         "reviewer": reviewer,
@@ -134,6 +135,7 @@ def build_witness_review_batch_packets(
         skipped=skipped,
         errors=errors,
         audit_summary=audit["summary"],
+        progress=progress,
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     index_path.write_text(index_markdown, encoding="utf-8")
@@ -147,6 +149,7 @@ def build_witness_review_batch_packets(
             "output_root": str(output_dir),
             "index_path": str(index_path),
             "index_json_path": str(index_json_path),
+            **progress,
         },
         "written": written,
         "skipped": skipped,
@@ -180,6 +183,7 @@ def _index_markdown(
     skipped: list[dict[str, str]],
     errors: list[dict[str, str]],
     audit_summary: dict[str, Any],
+    progress: dict[str, Any],
 ) -> str:
     lines = [
         "# Witness Review Batch Index",
@@ -194,6 +198,10 @@ def _index_markdown(
         f"- Errors: {len(errors)}",
         f"- Batch review ready: {audit_summary.get('batch_review_ready_count', 0)}",
         f"- Target reviewed: {audit_summary.get('target_reviewed_count', 0)}",
+        f"- Remaining to target: {progress.get('remaining_to_target_count', 0)}",
+        f"- Reviewable packets: {progress.get('reviewable_count', 0)}",
+        f"- Blocked packets: {progress.get('blocked_count', 0)}",
+        f"- ACK-required packets: {progress.get('ack_required_count', 0)}",
         f"- Target met: {_yes_no(audit_summary.get('target_met'))}",
         "",
         "## Written Packets",
@@ -223,6 +231,21 @@ def _index_markdown(
 
     lines.append("")
     return "\n".join(lines)
+
+
+def _review_progress(*, written: list[dict[str, Any]], audit_summary: dict[str, Any]) -> dict[str, Any]:
+    target = int(audit_summary.get("target_reviewed_count") or 0)
+    ready = int(audit_summary.get("batch_review_ready_count") or 0)
+    next_case_ids = audit_summary.get("next_case_ids")
+    return {
+        "target_reviewed_count": target,
+        "batch_review_ready_count": ready,
+        "remaining_to_target_count": max(target - ready, 0),
+        "reviewable_count": sum(1 for row in written if row.get("reviewable")),
+        "blocked_count": sum(1 for row in written if row.get("blocked")),
+        "ack_required_count": sum(1 for row in written if row.get("ack_required")),
+        "next_case_ids": next_case_ids if isinstance(next_case_ids, list) else [],
+    }
 
 
 def _reason_counts(rows: list[dict[str, str]]) -> dict[str, int]:

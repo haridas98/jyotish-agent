@@ -23,6 +23,10 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert payload["schema_version"] == "jyotish-witness-review-batch-packets-v1"
     assert payload["summary"]["written_count"] == 1
     assert payload["summary"]["skipped_count"] >= 1
+    assert payload["summary"]["reviewable_count"] == 1
+    assert payload["summary"]["blocked_count"] == 0
+    assert payload["summary"]["ack_required_count"] == 1
+    assert payload["summary"]["remaining_to_target_count"] >= 19
     written = payload["written"][0]
     assert written["id"] == "sterlitamak-1998-04-30-1345"
     assert written["ack_required"] is True
@@ -42,12 +46,15 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert "Reviewer: Haridas" in index
     assert "Reviewed at: 2026-06-07T12:00:00+05:00" in index
     assert "Written: 1" in index
+    assert "Reviewable packets: 1" in index
+    assert "ACK-required packets: 1" in index
     assert "Skipped:" in index
     assert "sterlitamak-1998-04-30-1345" in index
     assert "ACK: yes" in index
     assert "missing_jhora_or_pl_pair" in index
     index_json = json.loads((output_root / "_index.json").read_text(encoding="utf-8"))
     assert index_json["summary"]["written_count"] == 1
+    assert index_json["summary"]["reviewable_count"] == 1
     assert index_json["metadata"]["reviewer"] == "Haridas"
     assert index_json["written"][0]["ack_required"] is True
 

@@ -2703,6 +2703,19 @@ function AccuracyReportPanel({
                 </small>
               </div>
               <div>
+                <span>Progress</span>
+                <strong>
+                  {witnessReviewBatchSummary?.batch_review_ready_count ?? 0} /{" "}
+                  {witnessReviewBatchSummary?.target_reviewed_count ?? 0} ready
+                </strong>
+                <small>
+                  remaining {witnessReviewBatchSummary?.remaining_to_target_count ?? 0}, reviewable{" "}
+                  {witnessReviewBatchSummary?.reviewable_count ?? 0}, blocked{" "}
+                  {witnessReviewBatchSummary?.blocked_count ?? 0}, ACK{" "}
+                  {witnessReviewBatchSummary?.ack_required_count ?? 0}
+                </small>
+              </div>
+              <div>
                 <span>Index</span>
                 <strong>{witnessReviewBatchSummary?.index_path || witnessReviewBatch.source_index || "missing"}</strong>
                 <small>{witnessReviewBatchSummary?.index_json_path || "JSON index missing"}</small>
@@ -2724,6 +2737,12 @@ function AccuracyReportPanel({
                   <small>{row.output_path}</small>
                 </div>
               ))}
+              {witnessReviewBatchSummary?.next_case_ids?.length ? (
+                <div>
+                  <span>Next cases</span>
+                  <strong>{witnessReviewBatchSummary.next_case_ids.slice(0, 4).join(", ")}</strong>
+                </div>
+              ) : null}
               {Object.keys(witnessReviewBatchSkippedReasons).length ? (
                 <div>
                   <span>Skipped reasons</span>

@@ -329,6 +329,12 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
                     "output_root": str(tmp_path / "witness-review"),
                     "index_path": str(tmp_path / "witness-review" / "_index.md"),
                     "index_json_path": str(batch_index_path),
+                    "target_reviewed_count": 20,
+                    "batch_review_ready_count": 0,
+                    "remaining_to_target_count": 20,
+                    "reviewable_count": 1,
+                    "blocked_count": 0,
+                    "ack_required_count": 1,
                 },
                 "written": [
                     {
@@ -365,6 +371,10 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review_batch["available"] is True
     assert witness_review_batch["summary"]["written_count"] == 1
     assert witness_review_batch["summary"]["skipped_count"] == 20
+    assert witness_review_batch["summary"]["remaining_to_target_count"] == 20
+    assert witness_review_batch["summary"]["reviewable_count"] == 1
+    assert witness_review_batch["summary"]["blocked_count"] == 0
+    assert witness_review_batch["summary"]["ack_required_count"] == 1
     assert witness_review_batch["metadata"]["reviewer"] == "Haridas"
     assert witness_review_batch["metadata"]["generated_at"] == "2026-06-07T12:05:00+05:00"
     assert witness_review_batch["written"][0]["id"] == "sterlitamak-1998-04-30-1345"
