@@ -43,6 +43,7 @@ POST /api/reports/birth-chart/nemotron-analysis
 - DeepSeek is intentionally a compact overview, not the full Codex/Qwen report path.
 - Nemotron uses OpenRouter directly at `OPENROUTER_API_BASE_URL` with `OPENROUTER_API_KEY` and stores `provider=nemotron`.
 - Nemotron is also a compact overview path; use it for a second independent read of the same analysis packet.
+- The Nemotron UI action is hidden unless `NEXT_PUBLIC_ENABLE_NEMOTRON=true`; Qwen and DeepSeek stay the default local helpers.
 
 Local/server AI helper smoke:
 

@@ -74,6 +74,7 @@ import {
 } from "@/lib/northIndianChartGeometry";
 
 const PRIVATE_APP_REQUIRE_AUTH = process.env.NEXT_PUBLIC_PRIVATE_APP_REQUIRE_AUTH === "true";
+const ENABLE_NEMOTRON_ANALYSIS = process.env.NEXT_PUBLIC_ENABLE_NEMOTRON === "true";
 
 const sourceRows = [
   ["Айанамша", "Lahiri", "Рабочий профиль; JHora diff подключён", "ready"],
@@ -1265,17 +1266,19 @@ function ReportPreviewPanel({
               </button>
             </div>
           </div>
-          <div className="draft-generation-strip nemotron-generation-strip">
-            <div>
-              <strong>Альтернативный обзор Nemotron</strong>
-              <span>{nemotronStatus}</span>
+          {ENABLE_NEMOTRON_ANALYSIS ? (
+            <div className="draft-generation-strip nemotron-generation-strip">
+              <div>
+                <strong>Альтернативный обзор Nemotron</strong>
+                <span>{nemotronStatus}</span>
+              </div>
+              <div className="draft-generation-actions">
+                <button type="button" className="secondary-button" onClick={onGenerateNemotron} disabled={nemotronDisabled}>
+                  Сгенерировать с помощью Nemotron
+                </button>
+              </div>
             </div>
-            <div className="draft-generation-actions">
-              <button type="button" className="secondary-button" onClick={onGenerateNemotron} disabled={nemotronDisabled}>
-                Сгенерировать с помощью Nemotron
-              </button>
-            </div>
-          </div>
+          ) : null}
           {draftAnalysis ? (
             <div className="generated-draft">
               <div className="block-heading">
@@ -1385,7 +1388,7 @@ function ReportPreviewPanel({
           {deepseekAnalysis ? (
             <GeneratedAnalysisDetails analysis={deepseekAnalysis} assistantLabel="DeepSeek" />
           ) : null}
-          {nemotronAnalysis ? (
+          {ENABLE_NEMOTRON_ANALYSIS && nemotronAnalysis ? (
             <GeneratedAnalysisDetails analysis={nemotronAnalysis} assistantLabel="Nemotron" />
           ) : null}
           {birthReport.sections.map((section) => (
