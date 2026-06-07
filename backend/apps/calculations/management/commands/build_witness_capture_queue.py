@@ -25,26 +25,11 @@ AUTO_CAPTURE_ACTION_COMMANDS = {
     ),
 }
 MANUAL_REVIEW_ACTION_COMMANDS = {
-    "set_review_status_jhora_verified_after_manual_review": (
-        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
-        "--jhora {jhora_path} --parashara-light {pl_path}"
-    ),
-    "add_reviewer_and_reviewed_at": (
-        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
-        "--jhora {jhora_path} --parashara-light {pl_path}"
-    ),
-    "mark_jhora_witness_reviewed": (
-        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
-        "--jhora {jhora_path} --parashara-light {pl_path}"
-    ),
-    "mark_jhora_witness_reviewed_with_ack_diff_open": (
-        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
-        "--jhora {jhora_path} --parashara-light {pl_path}"
-    ),
-    "mark_parashara_light_witness_reviewed": (
-        ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
-        "--jhora {jhora_path} --parashara-light {pl_path}"
-    ),
+    "set_review_status_jhora_verified_after_manual_review",
+    "add_reviewer_and_reviewed_at",
+    "mark_jhora_witness_reviewed",
+    "mark_jhora_witness_reviewed_with_ack_diff_open",
+    "mark_parashara_light_witness_reviewed",
 }
 
 
@@ -210,19 +195,19 @@ def _next_step_label(kind: str) -> str:
 
 
 def _next_manual_review_command(row: dict[str, Any], action: str) -> str:
-    template = MANUAL_REVIEW_ACTION_COMMANDS.get(action)
-    if not template:
+    if action not in MANUAL_REVIEW_ACTION_COMMANDS:
         return ""
-    case_id = str(row.get("id") or "")
     jhora_path = _preferred_jhora_path(row.get("jhora_records"))
     pl_path = _preferred_pl_path(row.get("pl_records"))
     if not jhora_path and not pl_path:
         return ""
-    return template.format(
-        case_id=case_id,
-        jhora_path=jhora_path,
-        pl_path=pl_path,
-    )
+    parts = [".\\.venv\\Scripts\\python.exe", "manage.py", "preflight_witness_review"]
+    if jhora_path:
+        parts.extend(["--jhora", jhora_path])
+    if pl_path:
+        parts.extend(["--parashara-light", pl_path])
+    parts.append("--safe-next-only")
+    return " ".join(parts)
 
 
 def _preferred_jhora_path(value: Any) -> str:

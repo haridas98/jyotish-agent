@@ -28,6 +28,7 @@ class Command(BaseCommand):
         parser.add_argument("--parashara-light", default="", help="PL case directory, packet.json, or fixture.json.")
         parser.add_argument("--reviewer", default="Haridas")
         parser.add_argument("--reviewed-at", default="")
+        parser.add_argument("--safe-next-only", action="store_true")
 
     def handle(self, *args, **options):
         payload = build_witness_review_preflight(
@@ -36,7 +37,10 @@ class Command(BaseCommand):
             reviewer=options["reviewer"],
             reviewed_at=options["reviewed_at"],
         )
-        self.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2))
+        if options["safe_next_only"]:
+            self.stdout.write(_safe_next_summary(payload))
+        else:
+            self.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 def build_witness_review_preflight(
@@ -208,6 +212,34 @@ def _packet_fixture(packet: dict[str, Any]) -> dict[str, Any]:
 def _read_json(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8-sig"))
     return payload if isinstance(payload, dict) else {}
+
+
+def _safe_next_summary(payload: dict[str, Any]) -> str:
+    overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
+    jhora = payload.get("jhora") if isinstance(payload.get("jhora"), dict) else {}
+    parashara_light = (
+        payload.get("parashara_light") if isinstance(payload.get("parashara_light"), dict) else {}
+    )
+    lines = [
+        f"reviewable: {_bool_text(bool(overall.get('reviewable')))}",
+        f"ack required: {_bool_text(bool(overall.get('ack_required')))}",
+        f"blocked: {_bool_text(bool(overall.get('blocked')))}",
+        f"jhora status: {jhora.get('status') or 'missing'}",
+        f"parashara light status: {parashara_light.get('status') or 'missing'}",
+    ]
+    if overall.get("blocked"):
+        lines.append("safe next step: resolve missing evidence before review")
+    elif overall.get("ack_required"):
+        lines.append("safe next step: human ACK required before mark/seal")
+    elif overall.get("reviewable"):
+        lines.append("safe next step: ready for explicit review command")
+    else:
+        lines.append("safe next step: capture JHora/PL packet or fixture first")
+    return "\n".join(lines)
+
+
+def _bool_text(value: bool) -> str:
+    return "true" if value else "false"
 
 
 def _missing(source: str, path: str | Path = "") -> dict[str, Any]:

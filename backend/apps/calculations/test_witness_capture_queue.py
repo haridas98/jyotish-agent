@@ -136,8 +136,9 @@ def test_witness_capture_queue_manual_review_actions_are_not_auto_commands():
     assert item["next_step_label"] == "Run review preflight first"
     assert item["next_command"] == ""
     assert item["manual_review_command"].endswith(
-        "manage.py preflight_witness_review --jhora ..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345 --parashara-light "
+        "manage.py preflight_witness_review --jhora ..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345 --safe-next-only"
     )
+    assert "--parashara-light  " not in item["manual_review_command"]
 
 
 def test_witness_capture_queue_text_summary_shows_manual_review_next_step():
@@ -179,7 +180,7 @@ def test_witness_capture_queue_next_only_summary_shows_manual_review_preflight()
         "next_command": "",
         "manual_review_command": (
             ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
-            "--jhora a --parashara-light b"
+            "--jhora a --parashara-light b --safe-next-only"
         ),
         "next_item": {},
     }
@@ -189,5 +190,6 @@ def test_witness_capture_queue_next_only_summary_shows_manual_review_preflight()
     assert "next action: set_review_status_jhora_verified_after_manual_review" in text
     assert "next step: Run review preflight first" in text
     assert "manual review command: .\\.venv\\Scripts\\python.exe manage.py preflight_witness_review" in text
+    assert "--safe-next-only" in text
     assert "mark_jhora_witness_reviewed" not in text
     assert "seal_witness_case" not in text
