@@ -141,3 +141,45 @@ def test_jhora_parity_suite_manifest_has_required_case_mix():
         "main_chart_screenshots",
         "strength_tables",
     ]
+
+
+def test_build_jhora_witness_batch_packets_command_writes_selected_cases(monkeypatch, tmp_path):
+    output_root = tmp_path / "batch"
+    captured = []
+
+    def fake_build(data, **kwargs):
+        captured.append((data, kwargs))
+        return {
+            "schema_version": "jyotish-jhora-verification-packet-v1",
+            "id": kwargs["packet_id"],
+            "status": "capture_pending",
+            "fixture": {
+                "id": kwargs["packet_id"],
+                "review_status": "draft",
+                "jhora_metadata": {"version_required": kwargs["jhora_version"]},
+            },
+            "jyotish_agent_chart": {"birth": {"date": data["birth_date"]}},
+            "dual_calculation": {"status": "calculated_witness_mode"},
+            "jhora_capture_checklist": ["Capture settings"],
+        }
+
+    monkeypatch.setattr(
+        "apps.calculations.management.commands.build_jhora_witness_batch_packets.build_jhora_verification_packet",
+        fake_build,
+    )
+
+    call_command(
+        "build_jhora_witness_batch_packets",
+        "--case-id",
+        "sterlitamak-1998-04-30-1345",
+        "--output-root",
+        str(output_root),
+    )
+
+    assert captured[0][0]["birth_date"] == "1998-04-30"
+    assert captured[0][0]["ayanamsa"] == "lahiri"
+    assert (output_root / "sterlitamak-1998-04-30-1345" / "packet.json").exists()
+    fixture = json.loads(
+        (output_root / "sterlitamak-1998-04-30-1345" / "fixture.json").read_text(encoding="utf-8")
+    )
+    assert fixture["review_status"] == "draft"

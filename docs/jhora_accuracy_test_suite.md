@@ -26,7 +26,7 @@ The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to
 - Parashara Light witness count;
 - next case ids still needing reviewed evidence.
 
-As of 2026-06-07 local artifacts, the queue has 21 candidate cases, target reviewed count is 20, Sterlitamak capture has started, one PL witness is attached by birth data, and authoritative-ready count is still 0.
+As of 2026-06-07 local artifacts after `build_jhora_witness_batch_packets`, the queue has 21 candidate cases, target reviewed count is 20, draft packet/checklist directories exist for all 21 cases, one PL witness is attached by birth data, and authoritative-ready count is still 0.
 
 ## Metrics
 
@@ -59,6 +59,22 @@ cd C:\Projects\jyotish-agent\backend
 
 JHora verification packets can be created before the real export is attached. These packets keep the case in
 `capture_pending`/`draft` status and include our chart, dual-calculation witness, tolerances and a screenshot/export checklist:
+
+To build draft packet/checklist directories for the whole 20-chart queue:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_jhora_witness_batch_packets
+```
+
+The default output root is `..\.tmp\jhora\batch-queue`, which is scanned by `audit_jhora_witness_batch`.
+
+To prepare only one case:
+
+```powershell
+.\.venv\Scripts\python manage.py build_jhora_witness_batch_packets `
+  --case-id sterlitamak-1998-04-30-1345
+```
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend
