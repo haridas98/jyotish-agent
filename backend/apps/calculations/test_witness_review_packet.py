@@ -24,6 +24,15 @@ def test_build_witness_review_packet_renders_safe_markdown_by_default(tmp_path):
     assert payload["preflight"]["overall"]["ack_required"] is True
     assert payload["jhora"]["diff_summary"]["failed_count"] > 0
     assert payload["parashara_light"]["manual_diff_summary"]["failed_count"] == 1
+    checklist = payload["review_checklist"]
+    assert [item["key"] for item in checklist] == [
+        "jhora_evidence",
+        "parashara_light_evidence",
+        "open_diffs",
+        "review_ack",
+    ]
+    assert checklist[2]["status"] == "ack_required"
+    assert "PL 1" in checklist[2]["detail"]
     assert "# Witness Review Packet" in markdown
     assert "Reviewable: yes" in markdown
     assert "ACK required: yes" in markdown

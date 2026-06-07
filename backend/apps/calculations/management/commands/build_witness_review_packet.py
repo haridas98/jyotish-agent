@@ -88,10 +88,16 @@ def build_witness_review_packet(
     )
     jhora_summary = _jhora_summary(jhora_path)
     pl_summary = _parashara_light_summary(parashara_light_path)
+    review_checklist = _review_checklist(
+        preflight=preflight,
+        jhora=jhora_summary,
+        parashara_light=pl_summary,
+    )
     markdown = _markdown(
         preflight=preflight,
         jhora=jhora_summary,
         parashara_light=pl_summary,
+        review_checklist=review_checklist,
         include_review_commands=include_review_commands,
     )
     output_path = ""
@@ -108,6 +114,7 @@ def build_witness_review_packet(
         "preflight": preflight,
         "jhora": jhora_summary,
         "parashara_light": pl_summary,
+        "review_checklist": review_checklist,
         "markdown": markdown,
     }
 
@@ -170,6 +177,7 @@ def _markdown(
     preflight: dict[str, Any],
     jhora: dict[str, Any],
     parashara_light: dict[str, Any],
+    review_checklist: list[dict[str, Any]],
     include_review_commands: bool,
 ) -> str:
     overall = preflight["overall"]
@@ -185,7 +193,7 @@ def _markdown(
         "",
         "## Review Checklist",
         "",
-        *_review_checklist_lines(preflight=preflight, jhora=jhora, parashara_light=parashara_light),
+        *_review_checklist_lines(review_checklist),
         "",
         "## Open Diffs",
         "",
@@ -246,27 +254,52 @@ def _markdown(
     return "\n".join(lines)
 
 
-def _review_checklist_lines(
+def _review_checklist(
     *,
     preflight: dict[str, Any],
     jhora: dict[str, Any],
     parashara_light: dict[str, Any],
-) -> list[str]:
+) -> list[dict[str, Any]]:
     jhora_preflight = preflight["jhora"]
     pl_preflight = preflight["parashara_light"]
     ack_status = "ack_required" if preflight["overall"]["ack_required"] else "ready"
     return [
-        f"- [ ] JHora evidence: {_evidence_status(jhora_preflight)} - {_evidence_detail(jhora_preflight, 'JHora evidence captured')}",
-        (
-            "- [ ] Parashara Light evidence: "
-            f"{_evidence_status(pl_preflight)} - {_evidence_detail(pl_preflight, 'PL evidence captured')}"
-        ),
-        (
-            f"- [ ] Open diffs: {ack_status} - JHora {jhora['diff_summary']['failed_count']}, "
-            f"PL {parashara_light['manual_diff_summary']['failed_count']} open diffs"
-        ),
-        f"- [ ] Manual ACK: {ack_status} - {_safe_next_step(preflight)}",
+        {
+            "key": "jhora_evidence",
+            "label": "JHora evidence",
+            "status": _evidence_status(jhora_preflight),
+            "required": True,
+            "detail": _evidence_detail(jhora_preflight, "JHora evidence captured"),
+        },
+        {
+            "key": "parashara_light_evidence",
+            "label": "Parashara Light evidence",
+            "status": _evidence_status(pl_preflight),
+            "required": True,
+            "detail": _evidence_detail(pl_preflight, "PL evidence captured"),
+        },
+        {
+            "key": "open_diffs",
+            "label": "Open diffs",
+            "status": ack_status,
+            "required": bool(preflight["overall"]["ack_required"]),
+            "detail": (
+                f"JHora {jhora['diff_summary']['failed_count']}, "
+                f"PL {parashara_light['manual_diff_summary']['failed_count']} open diffs"
+            ),
+        },
+        {
+            "key": "review_ack",
+            "label": "Manual ACK",
+            "status": ack_status,
+            "required": bool(preflight["overall"]["ack_required"]),
+            "detail": _safe_next_step(preflight),
+        },
     ]
+
+
+def _review_checklist_lines(review_checklist: list[dict[str, Any]]) -> list[str]:
+    return [f"- [ ] {row['label']}: {row['status']} - {row['detail']}" for row in review_checklist]
 
 
 def _evidence_status(source: dict[str, Any]) -> str:
