@@ -2617,6 +2617,24 @@ function AccuracyReportPanel({
   const witnessCaptureQueueMetadata = witnessCaptureQueue?.metadata ?? null;
   const witnessCaptureQueueItems = witnessCaptureQueue?.items ?? [];
   const witnessCaptureQueueNext = witnessCaptureQueue?.next_item ?? witnessCaptureQueueItems[0] ?? null;
+  const witnessCaptureQueueNextStepLabel =
+    witnessCaptureQueue?.next_step_label || witnessCaptureQueueNext?.next_step_label || "Next step";
+  const witnessCaptureQueueNextCommand =
+    witnessCaptureQueue?.next_command ||
+    witnessCaptureQueue?.manual_review_command ||
+    witnessCaptureQueueNext?.next_command ||
+    witnessCaptureQueueNext?.manual_review_command ||
+    "manual capture/review";
+  const witnessCaptureQueueNextAction =
+    witnessCaptureQueueNext?.next_action_key ||
+    witnessCaptureQueueNext?.status ||
+    witnessCaptureQueue?.next_command_kind ||
+    "review";
+  const hasWitnessCaptureQueueNext =
+    Boolean(witnessCaptureQueueNext) ||
+    Boolean(witnessCaptureQueue?.next_step_label) ||
+    Boolean(witnessCaptureQueue?.next_command) ||
+    Boolean(witnessCaptureQueue?.manual_review_command);
   const [sealCommandCopyStatus, setSealCommandCopyStatus] = useState("");
 
   async function copySealCommand() {
@@ -2825,17 +2843,11 @@ function AccuracyReportPanel({
                 <strong>{witnessCaptureQueueSummary?.markdown_output || "missing"}</strong>
                 <small>{witnessCaptureQueue.source_queue || witnessCaptureQueueSummary?.output || "queue missing"}</small>
               </div>
-              {witnessCaptureQueueNext ? (
+              {hasWitnessCaptureQueueNext ? (
                 <div>
-                  <span>{witnessCaptureQueueNext.next_step_label || "Next step"}</span>
-                  <strong>
-                    {witnessCaptureQueueNext.next_action_key || witnessCaptureQueueNext.status || "review"}
-                  </strong>
-                  <small>
-                    {witnessCaptureQueueNext.next_command ||
-                      witnessCaptureQueueNext.manual_review_command ||
-                      "manual capture/review"}
-                  </small>
+                  <span>{witnessCaptureQueueNextStepLabel}</span>
+                  <strong>{witnessCaptureQueueNextAction}</strong>
+                  <small>{witnessCaptureQueueNextCommand}</small>
                 </div>
               ) : null}
               {witnessCaptureQueueItems.slice(0, 3).map((row) => (
