@@ -53,6 +53,8 @@ cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py smoke_ai_helpers --providers qwen,nemotron --continue-on-error
 ```
 
+Failed smoke rows include `setup_hint`, so missing proxy/env setup is visible without reading server logs.
+
 ```powershell
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py seed_shastra_catalog

@@ -125,8 +125,29 @@ def test_smoke_ai_helpers_command_can_continue_on_error(monkeypatch):
         "provider": "qwen",
         "model": "qwen-test",
         "error": "qwen down",
+        "setup_hint": "Run FreeQwenApi and set QWEN_API_BASE_URL/QWEN_MODEL in backend .env.",
     }
     assert payload["results"][1]["status"] == "ok"
+
+
+@override_settings(NEMOTRON_MODEL="nemotron-test")
+def test_smoke_ai_helpers_failure_includes_nemotron_setup_hint(monkeypatch):
+    monkeypatch.setattr(
+        "apps.reports.nemotron_generation.nemotron_chat_completions_client",
+        lambda: lambda prompt: (_ for _ in ()).throw(DraftGenerationUnavailable("OPENROUTER_API_KEY is missing")),
+    )
+
+    stdout = io.StringIO()
+    call_command("smoke_ai_helpers", "--providers", "nemotron", "--continue-on-error", stdout=stdout)
+
+    payload = json.loads(stdout.getvalue())
+    assert payload["results"][0] == {
+        "status": "failed",
+        "provider": "nemotron",
+        "model": "nemotron-test",
+        "error": "OPENROUTER_API_KEY is missing",
+        "setup_hint": "Set OPENROUTER_API_KEY and NEMOTRON_MODEL in backend .env.",
+    }
 
 
 @override_settings(NEMOTRON_MODEL="nemotron-test")

@@ -71,6 +71,7 @@ def _smoke_provider(provider: str, prompt: str) -> dict[str, Any]:
             "provider": provider,
             "model": _model(provider),
             "error": str(exc),
+            "setup_hint": _setup_hint(provider),
         }
 
 
@@ -91,6 +92,16 @@ def _model(provider: str) -> str:
         return settings.FREE_DEEPSEEK_MODEL
     if provider == "nemotron":
         return settings.NEMOTRON_MODEL
+    return ""
+
+
+def _setup_hint(provider: str) -> str:
+    if provider == "qwen":
+        return "Run FreeQwenApi and set QWEN_API_BASE_URL/QWEN_MODEL in backend .env."
+    if provider == "free_deepseek":
+        return "Run FreeDeepseekAPI and set FREE_DEEPSEEK_API_BASE_URL/FREE_DEEPSEEK_MODEL in backend .env."
+    if provider == "nemotron":
+        return "Set OPENROUTER_API_KEY and NEMOTRON_MODEL in backend .env."
     return ""
 
 

@@ -42,6 +42,7 @@ Then install nginx config, replace `jyotish.example.com`, enable site, and issue
 - For Nemotron overview generation, set `OPENROUTER_API_KEY`, keep `OPENROUTER_API_BASE_URL=https://openrouter.ai/api/v1`, and set `NEMOTRON_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free`.
 - After deploy, run `cd /srv/jyotish-agent/app/backend && ./.venv/bin/python manage.py smoke_free_deepseek` to verify server-side FreeDeepseekAPI access.
 - To check all AI helper providers in one shot, run `./.venv/bin/python manage.py smoke_ai_helpers --continue-on-error`.
+- If a helper fails, the smoke JSON includes `setup_hint` with the missing proxy/env step.
 
 ## FreeQwenApi service
 
