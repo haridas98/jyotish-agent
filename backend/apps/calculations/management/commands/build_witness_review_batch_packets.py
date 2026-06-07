@@ -6,6 +6,7 @@ from typing import Any
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
 from apps.calculations.management.commands.build_witness_review_packet import (
     build_witness_review_packet,
@@ -120,7 +121,15 @@ def build_witness_review_batch_packets(
 
     index_path = output_dir / "_index.md"
     index_json_path = output_dir / "_index.json"
+    metadata = {
+        "generated_at": timezone.now().isoformat(),
+        "reviewer": reviewer,
+        "reviewed_at": reviewed_at,
+        "jhora_root": str(jhora_root),
+        "pl_root": str(pl_root),
+    }
     index_markdown = _index_markdown(
+        metadata=metadata,
         written=written,
         skipped=skipped,
         errors=errors,
@@ -130,6 +139,7 @@ def build_witness_review_batch_packets(
     index_path.write_text(index_markdown, encoding="utf-8")
     payload = {
         "schema_version": SCHEMA_VERSION,
+        "metadata": metadata,
         "summary": {
             "written_count": len(written),
             "skipped_count": len(skipped),
@@ -165,6 +175,7 @@ def _safe_filename(value: str) -> str:
 
 def _index_markdown(
     *,
+    metadata: dict[str, str],
     written: list[dict[str, Any]],
     skipped: list[dict[str, str]],
     errors: list[dict[str, str]],
@@ -173,6 +184,11 @@ def _index_markdown(
     lines = [
         "# Witness Review Batch Index",
         "",
+        f"- Generated at: {metadata.get('generated_at') or ''}",
+        f"- Reviewer: {metadata.get('reviewer') or ''}",
+        f"- Reviewed at: {metadata.get('reviewed_at') or ''}",
+        f"- JHora root: `{metadata.get('jhora_root') or ''}`",
+        f"- PL root: `{metadata.get('pl_root') or ''}`",
         f"- Written: {len(written)}",
         f"- Skipped: {len(skipped)}",
         f"- Errors: {len(errors)}",

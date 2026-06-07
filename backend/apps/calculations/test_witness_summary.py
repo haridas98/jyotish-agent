@@ -315,6 +315,13 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         json.dumps(
             {
                 "schema_version": "jyotish-witness-review-batch-packets-v1",
+                "metadata": {
+                    "generated_at": "2026-06-07T12:05:00+05:00",
+                    "reviewer": "Haridas",
+                    "reviewed_at": "2026-06-07T12:00:00+05:00",
+                    "jhora_root": str(tmp_path / "jhora"),
+                    "pl_root": str(tmp_path / "pl7"),
+                },
                 "summary": {
                     "written_count": 1,
                     "skipped_count": 20,
@@ -358,6 +365,8 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review_batch["available"] is True
     assert witness_review_batch["summary"]["written_count"] == 1
     assert witness_review_batch["summary"]["skipped_count"] == 20
+    assert witness_review_batch["metadata"]["reviewer"] == "Haridas"
+    assert witness_review_batch["metadata"]["generated_at"] == "2026-06-07T12:05:00+05:00"
     assert witness_review_batch["written"][0]["id"] == "sterlitamak-1998-04-30-1345"
     assert witness_review_batch["written"][0]["ack_required"] is True
     assert witness_review_batch["skipped_reason_counts"] == {"missing_jhora_or_pl_pair": 1}

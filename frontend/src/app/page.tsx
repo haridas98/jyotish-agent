@@ -2582,6 +2582,7 @@ function AccuracyReportPanel({
   const witnessReview = witnessSummary?.witness_review ?? null;
   const witnessReviewBatch = witnessSummary?.witness_review_batch ?? null;
   const witnessReviewBatchSummary = witnessReviewBatch?.summary ?? null;
+  const witnessReviewBatchMetadata = witnessReviewBatch?.metadata ?? null;
   const witnessReviewBatchWritten = witnessReviewBatch?.written ?? [];
   const witnessReviewBatchSkippedReasons = witnessReviewBatch?.skipped_reason_counts ?? {};
   const [sealCommandCopyStatus, setSealCommandCopyStatus] = useState("");
@@ -2705,6 +2706,14 @@ function AccuracyReportPanel({
                 <span>Index</span>
                 <strong>{witnessReviewBatchSummary?.index_path || witnessReviewBatch.source_index || "missing"}</strong>
                 <small>{witnessReviewBatchSummary?.index_json_path || "JSON index missing"}</small>
+              </div>
+              <div>
+                <span>Generated</span>
+                <strong>{witnessReviewBatchMetadata?.generated_at || "unknown"}</strong>
+                <small>
+                  reviewer {witnessReviewBatchMetadata?.reviewer || "n/a"}, reviewed at{" "}
+                  {witnessReviewBatchMetadata?.reviewed_at || "n/a"}
+                </small>
               </div>
               {witnessReviewBatchWritten.slice(0, 3).map((row) => (
                 <div key={row.id}>

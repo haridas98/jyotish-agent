@@ -173,6 +173,7 @@ def _witness_review_batch_index(path: str | Path) -> dict[str, Any]:
         return result
 
     summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
     written = [row for row in payload.get("written", []) if isinstance(row, dict)]
     skipped = [row for row in payload.get("skipped", []) if isinstance(row, dict)]
     errors = [row for row in payload.get("errors", []) if isinstance(row, dict)]
@@ -181,6 +182,13 @@ def _witness_review_batch_index(path: str | Path) -> dict[str, Any]:
         "status": "loaded",
         "source_index": str(source),
         "schema_version": str(payload.get("schema_version") or ""),
+        "metadata": {
+            "generated_at": str(metadata.get("generated_at") or ""),
+            "reviewer": str(metadata.get("reviewer") or ""),
+            "reviewed_at": str(metadata.get("reviewed_at") or ""),
+            "jhora_root": str(metadata.get("jhora_root") or ""),
+            "pl_root": str(metadata.get("pl_root") or ""),
+        },
         "summary": {
             "written_count": int(summary.get("written_count") or 0),
             "skipped_count": int(summary.get("skipped_count") or 0),
@@ -202,6 +210,13 @@ def _missing_witness_review_batch(path: str) -> dict[str, Any]:
         "status": "missing",
         "source_index": path,
         "schema_version": "",
+        "metadata": {
+            "generated_at": "",
+            "reviewer": "",
+            "reviewed_at": "",
+            "jhora_root": "",
+            "pl_root": "",
+        },
         "summary": {
             "written_count": 0,
             "skipped_count": 0,

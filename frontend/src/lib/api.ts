@@ -736,6 +736,13 @@ export type WitnessSummary = {
     status: string;
     source_index: string;
     schema_version: string;
+    metadata: {
+      generated_at: string;
+      reviewer: string;
+      reviewed_at: string;
+      jhora_root: string;
+      pl_root: string;
+    };
     summary: {
       written_count: number;
       skipped_count: number;

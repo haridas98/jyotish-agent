@@ -27,6 +27,11 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert written["id"] == "sterlitamak-1998-04-30-1345"
     assert written["ack_required"] is True
     assert written["blocked"] is False
+    assert payload["metadata"]["reviewer"] == "Haridas"
+    assert payload["metadata"]["reviewed_at"] == "2026-06-07T12:00:00+05:00"
+    assert payload["metadata"]["jhora_root"] == str(jhora_root)
+    assert payload["metadata"]["pl_root"] == str(pl_root)
+    assert payload["metadata"]["generated_at"]
     markdown = (output_root / "sterlitamak-1998-04-30-1345.md").read_text(encoding="utf-8")
     assert "ACK required: yes" in markdown
     assert "seal_witness_case" in markdown
@@ -34,6 +39,8 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert payload["summary"]["index_path"] == str(output_root / "_index.md")
     assert payload["summary"]["index_json_path"] == str(output_root / "_index.json")
     assert "# Witness Review Batch Index" in index
+    assert "Reviewer: Haridas" in index
+    assert "Reviewed at: 2026-06-07T12:00:00+05:00" in index
     assert "Written: 1" in index
     assert "Skipped:" in index
     assert "sterlitamak-1998-04-30-1345" in index
@@ -41,6 +48,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert "missing_jhora_or_pl_pair" in index
     index_json = json.loads((output_root / "_index.json").read_text(encoding="utf-8"))
     assert index_json["summary"]["written_count"] == 1
+    assert index_json["metadata"]["reviewer"] == "Haridas"
     assert index_json["written"][0]["ack_required"] is True
 
 
@@ -67,6 +75,7 @@ def test_build_witness_review_batch_packets_command_outputs_json(tmp_path):
 
     payload = json.loads(stdout.getvalue())
     assert payload["summary"]["written_count"] == 1
+    assert payload["metadata"]["reviewer"] == "Haridas"
     assert payload["written"][0]["output_path"].endswith("sterlitamak-1998-04-30-1345.md")
     assert payload["summary"]["index_path"].endswith("_index.md")
     assert payload["summary"]["index_json_path"].endswith("_index.json")
