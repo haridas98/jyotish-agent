@@ -10,6 +10,7 @@ from .jhora_parity_suite import jhora_parity_suite_manifest
 
 SCHEMA_VERSION = "jyotish-witness-batch-audit-v1"
 DEFAULT_TARGET_REVIEWED_COUNT = 20
+PL_REVIEW_STATUSES = {"approved", "reviewed"}
 ACTION_BY_MISSING_ARTIFACT = {
     "jhora_packet": "build_jhora_witness_batch_packets",
     "jhora_complete_calculations_text": "capture_jhora_witness_batch_exports_or_attach_jhora_complete_calculations",
@@ -18,6 +19,12 @@ ACTION_BY_MISSING_ARTIFACT = {
     "reviewer_note": "add_reviewer_and_reviewed_at",
     "authoritative_review_status": "set_review_status_jhora_verified_after_manual_review",
     "pl_witness_packet": "attach_pl_witness_packet_or_manual_values",
+    "pl_ui_state": "capture_parashara_light_ui_state_or_attach_ui_state",
+    "pl_settings_evidence": "record_pl_settings_and_timezone_dst_evidence",
+    "pl_screenshots": "attach_pl_screenshots",
+    "manual_witness_values": "fill_pl_manual_witness_values",
+    "pl_reviewer_note": "mark_parashara_light_witness_reviewed",
+    "pl_review_status": "mark_parashara_light_witness_reviewed",
 }
 
 
@@ -52,7 +59,7 @@ def audit_jhora_pl_witness_batch(
         "groups": _group_summary(case_rows),
         "next_actions": _next_actions(
             case_rows,
-            max(target_reviewed_count - summary["authoritative_ready_count"], 0),
+            max(target_reviewed_count - summary["batch_review_ready_count"], 0),
         ),
         "cases": case_rows,
         "load_errors": load_errors,
@@ -140,10 +147,18 @@ def _artifact_flags(
 
     return {
         "ui_state": bool(str(capture_files.get("ui_state") or "").strip() or metadata.get("capture_status")),
+        "settings_evidence": any(
+            str(metadata.get(key) or "").strip()
+            for key in ("siddhanta_model", "ayanamsa", "timezone_offset", "house_system", "node_type")
+        ),
         "screenshots": screenshot_declared,
         "manual_witness_values": bool(
             str(capture_files.get("manual_witness_values") or "").strip()
             or str(fixture.get("manual_witness_source") or "").strip()
+            or (
+                isinstance(fixture.get("manual_witness_values"), list)
+                and any(isinstance(item, dict) for item in fixture["manual_witness_values"])
+            )
         ),
         "reviewer_note": reviewer_note,
     }
@@ -154,8 +169,13 @@ def _case_row(case: dict[str, Any], jhora_records: list[dict[str, Any]], pl_reco
     authoritative_ready = any(
         record["review_status"] in AUTHORITATIVE_REVIEW_STATUSES for record in jhora_records
     ) and not missing_for_review
+    missing_secondary_witness = _missing_for_secondary_review(pl_records)
+    secondary_witness_ready = bool(pl_records) and not missing_secondary_witness
+    batch_review_ready = authoritative_ready and secondary_witness_ready
     capture_started = bool(jhora_records or pl_records)
-    if authoritative_ready:
+    if batch_review_ready:
+        status = "batch_review_ready"
+    elif authoritative_ready:
         status = "authoritative_ready"
     elif jhora_records:
         status = "jhora_review_pending"
@@ -172,8 +192,10 @@ def _case_row(case: dict[str, Any], jhora_records: list[dict[str, Any]], pl_reco
         "status": status,
         "capture_started": capture_started,
         "authoritative_ready": authoritative_ready,
+        "secondary_witness_ready": secondary_witness_ready,
+        "batch_review_ready": batch_review_ready,
         "missing_for_authoritative_review": missing_for_review,
-        "missing_secondary_witness": [] if pl_records else ["pl_witness_packet"],
+        "missing_secondary_witness": missing_secondary_witness,
         "jhora_records": [_public_record(record) for record in jhora_records],
         "pl_records": [_public_record(record) for record in pl_records],
     }
@@ -202,6 +224,30 @@ def _missing_for_authoritative_review(jhora_records: list[dict[str, Any]]) -> li
     return missing
 
 
+def _missing_for_secondary_review(pl_records: list[dict[str, Any]]) -> list[str]:
+    if not pl_records:
+        return ["pl_witness_packet"]
+
+    artifacts = defaultdict(bool)
+    for record in pl_records:
+        for key, value in record["artifacts"].items():
+            artifacts[key] = artifacts[key] or bool(value)
+
+    missing = []
+    for key, label in (
+        ("ui_state", "pl_ui_state"),
+        ("settings_evidence", "pl_settings_evidence"),
+        ("screenshots", "pl_screenshots"),
+        ("manual_witness_values", "manual_witness_values"),
+        ("reviewer_note", "pl_reviewer_note"),
+    ):
+        if not artifacts[key]:
+            missing.append(label)
+    if not any(record["review_status"] in PL_REVIEW_STATUSES for record in pl_records):
+        missing.append("pl_review_status")
+    return missing
+
+
 def _public_record(record: dict[str, Any]) -> dict[str, Any]:
     return {
         "source": record["source"],
@@ -219,28 +265,36 @@ def _summary(
     load_errors: list[dict[str, str]],
 ) -> dict[str, Any]:
     authoritative_ready_count = sum(1 for row in case_rows if row["authoritative_ready"])
+    batch_review_ready_count = sum(1 for row in case_rows if row["batch_review_ready"])
     capture_started_count = sum(1 for row in case_rows if row["capture_started"])
     return {
         "suite_case_count": suite_case_count,
         "target_reviewed_count": target_reviewed_count,
         "authoritative_ready_count": authoritative_ready_count,
+        "secondary_witness_ready_count": sum(1 for row in case_rows if row["secondary_witness_ready"]),
+        "batch_review_ready_count": batch_review_ready_count,
         "capture_started_count": capture_started_count,
         "missing_count": sum(1 for row in case_rows if row["status"] == "missing"),
         "pl_witness_count": sum(1 for row in case_rows if row["pl_records"]),
+        "pl_reviewed_count": sum(
+            1
+            for row in case_rows
+            if any(record["review_status"] in PL_REVIEW_STATUSES for record in row["pl_records"])
+        ),
         "load_error_count": len(load_errors),
-        "target_met": authoritative_ready_count >= target_reviewed_count,
+        "target_met": batch_review_ready_count >= target_reviewed_count,
         "next_case_ids": [
             row["id"]
             for row in case_rows
-            if not row["authoritative_ready"]
-        ][: max(target_reviewed_count - authoritative_ready_count, 0)],
+            if not row["batch_review_ready"]
+        ][: max(target_reviewed_count - batch_review_ready_count, 0)],
     }
 
 
 def _next_actions(case_rows: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
     actions = []
     for row in case_rows:
-        if row["authoritative_ready"]:
+        if row["batch_review_ready"]:
             continue
         actions.append(
             {
@@ -248,6 +302,7 @@ def _next_actions(case_rows: list[dict[str, Any]], limit: int) -> list[dict[str,
                 "group": row["group"],
                 "label": row["label"],
                 "status": row["status"],
+                "batch_review_ready": row["batch_review_ready"],
                 "missing_for_authoritative_review": row["missing_for_authoritative_review"],
                 "missing_secondary_witness": row["missing_secondary_witness"],
                 "suggested_actions": _suggested_actions(row),
@@ -275,13 +330,21 @@ def _group_summary(case_rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]
             groups[group] = {
                 "total": 0,
                 "authoritative_ready": 0,
+                "secondary_witness_ready": 0,
+                "batch_review_ready": 0,
                 "capture_started": 0,
                 "pl_witness": 0,
+                "pl_reviewed": 0,
             }
         groups[group]["total"] += 1
         groups[group]["authoritative_ready"] += int(bool(row["authoritative_ready"]))
+        groups[group]["secondary_witness_ready"] += int(bool(row["secondary_witness_ready"]))
+        groups[group]["batch_review_ready"] += int(bool(row["batch_review_ready"]))
         groups[group]["capture_started"] += int(bool(row["capture_started"]))
         groups[group]["pl_witness"] += int(bool(row["pl_records"]))
+        groups[group]["pl_reviewed"] += int(
+            any(record["review_status"] in PL_REVIEW_STATUSES for record in row["pl_records"])
+        )
     return groups
 
 

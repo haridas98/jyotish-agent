@@ -47,6 +47,8 @@ def _text_summary(payload: dict) -> str:
         f"suite cases: {summary['suite_case_count']}",
         f"target reviewed: {summary['target_reviewed_count']}",
         f"authoritative ready: {summary['authoritative_ready_count']}",
+        f"PL reviewed: {summary['pl_reviewed_count']}",
+        f"batch review ready: {summary['batch_review_ready_count']}",
         f"capture started: {summary['capture_started_count']}",
         f"PL witnesses: {summary['pl_witness_count']}",
         f"target met: {summary['target_met']}",
