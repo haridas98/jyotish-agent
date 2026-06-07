@@ -55,13 +55,23 @@ def build_witness_review_preflight(
     parts = [row for row in (jhora, parashara_light) if row["available"]]
     blocked = any(row["missing_evidence"] for row in parts)
     ack_required = any(bool(row["ack_required"]) for row in parts)
+    overall = {
+        "reviewable": bool(parts) and not blocked,
+        "ack_required": ack_required,
+        "blocked": blocked,
+    }
     return {
         "schema_version": "jyotish-witness-review-preflight-v1",
-        "overall": {
-            "reviewable": bool(parts) and not blocked,
-            "ack_required": ack_required,
-            "blocked": blocked,
-        },
+        "overall": overall,
+        "seal_command": _seal_command(
+            jhora_path,
+            parashara_light_path,
+            reviewer=reviewer,
+            reviewed_at=reviewed_at,
+            ack_required=ack_required,
+        )
+        if overall["reviewable"] and jhora_path and parashara_light_path
+        else "",
         "jhora": jhora,
         "parashara_light": parashara_light,
     }
@@ -140,6 +150,32 @@ def _review_command(
         "manage.py",
         command,
         str(path),
+        "--reviewer",
+        reviewer,
+    ]
+    if reviewed_at:
+        parts.extend(["--reviewed-at", reviewed_at])
+    if ack_required:
+        parts.append("--ack-diff-open")
+    return " ".join(_ps_quote(part) for part in parts)
+
+
+def _seal_command(
+    jhora_path: str | Path,
+    parashara_light_path: str | Path,
+    *,
+    reviewer: str,
+    reviewed_at: str,
+    ack_required: bool,
+) -> str:
+    parts = [
+        ".\\.venv\\Scripts\\python.exe",
+        "manage.py",
+        "seal_witness_case",
+        "--jhora",
+        str(jhora_path),
+        "--parashara-light",
+        str(parashara_light_path),
         "--reviewer",
         reviewer,
     ]

@@ -78,3 +78,7 @@ def test_witness_review_preflight_reports_ack_required_commands(tmp_path):
     assert payload["parashara_light"]["ack_required"] is True
     assert payload["parashara_light"]["review_command"].startswith(".\\.venv\\Scripts\\python.exe manage.py")
     assert "--ack-diff-open" in payload["parashara_light"]["review_command"]
+    assert payload["seal_command"].startswith(".\\.venv\\Scripts\\python.exe manage.py seal_witness_case")
+    assert "--jhora" in payload["seal_command"]
+    assert "--parashara-light" in payload["seal_command"]
+    assert "--ack-diff-open" in payload["seal_command"]

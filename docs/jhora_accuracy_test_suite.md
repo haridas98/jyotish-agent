@@ -123,6 +123,8 @@ After both JHora and Parashara Light evidence have been manually reviewed, close
   --promotion-output-dir apps\calculations\fixtures\accuracy
 ```
 
+`preflight_witness_review` prints the same command as `seal_command` when the case is reviewable.
+
 For a full reviewed queue, promote every ready case with the same gate:
 
 ```powershell
