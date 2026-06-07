@@ -510,6 +510,30 @@ Done:
 - [ ] Провести review традиции.
 - [ ] Расширять функциональность до parity.
 
+## 20a. Текущий статус исполнения - 2026-06-07
+
+Сделано в текущем коде:
+
+- Backend выбран и реализован на Django/DRF; приложения разделены на accounts, places, calculations, reports, sources и VL integration.
+- Документы MVP/policy есть: `docs/product_scope.md`, `docs/vaishnava_interpretation_policy.md`, `docs/jhora_parity_policy.md`, `docs/jhora_feature_matrix.md`.
+- Расчетный MVP есть: birth chart, D1/D9, shodasha vargas, panchanga, Vimshottari, базовый отчет, workflow panels и source-backed report generation.
+- VL read-only интеграция есть через `apps.vl_integration` и поиск цитат в reports.
+- Qwen и FreeDeepseek подключены в backend/frontend, задокументированы, smoke-tested локально и установлены на private server.
+- Сервер `31.76.79.2` держит активные backend, frontend, FreeQwenApi и FreeDeepseekAPI; `smoke_ai_helpers --continue-on-error` возвращает `qwen ok` и `free_deepseek ok`.
+
+Открыто:
+
+- Authoritative JHora fixture target не закрыт. Есть tooling, Sterlitamak 1998 capture, JHora export parsing и witness UI, но `docs/jhora_accuracy_test_suite.md` все еще фиксирует authoritative JHora fixture count как `0`.
+- PL остается black-box witness с packet/profile/forensic/settings captures, но не финальным расчетным авторитетом. Следующий шаг - копировать/снимать больше видимых PL/JHora значений и прикладывать reviewed settings evidence.
+- MVP-пункт `JHora comparison по 20 картам` остается ближайшей конкретной вехой.
+- Review традиции продолжается; публичная интерпретация должна оставаться rule/citation-first и draft-gated там, где evidence слабая.
+
+Следующая конкретная веха:
+
+1. Собрать первый reviewed batch из 20 JHora/PL witness charts.
+2. Для каждой карты сохранить fixed birth input, timezone/DST evidence, JHora/PL settings, export/screenshot witness и reviewer note.
+3. Повышать статус только reviewed cases из smoke/audit material в authoritative comparison fixtures.
+
 ## 21. Самопроверка понимания
 
 Я не должен начинать с красивого сайта. Сначала нужны точность расчетов, источники, права, политика интерпретаций и проверяемость.
