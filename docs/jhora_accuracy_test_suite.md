@@ -124,6 +124,7 @@ After both JHora and Parashara Light evidence have been manually reviewed, close
 ```
 
 `preflight_witness_review` prints the same command as `seal_command` when the case is reviewable.
+The Accuracy tab API also exposes this through `witness_review` when `JHORA_WITNESS_CASE_PATH` points to the reviewed case directory.
 
 For a full reviewed queue, promote every ready case with the same gate:
 

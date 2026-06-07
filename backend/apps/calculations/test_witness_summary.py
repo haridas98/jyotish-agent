@@ -35,7 +35,34 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         ),
         encoding="utf-8",
     )
-    pl_packet_path = tmp_path / "pl-packet.json"
+    jhora_case_dir = tmp_path / "jhora-case"
+    jhora_case_dir.mkdir()
+    jhora_fixture = {
+        "id": "sterlitamak-1998-04-30-1345",
+        "review_status": "draft",
+        "input": {
+            "birth_date": "1998-04-30",
+            "birth_time": "13:45:00",
+            "place_name": "Sterlitamak",
+            "timezone": "Asia/Yekaterinburg",
+            "latitude": 53.6304,
+            "longitude": 55.9502,
+        },
+        "expected": {"ascendant": {"longitude": 10.0, "rashi": "Mesha"}},
+        "jhora_metadata": {
+            "capture_status": "export_parsed",
+            "ayanamsa": "lahiri",
+            "timezone_offset": "+06:00",
+        },
+        "capture_files": {
+            "complete_calculations_text": "jhora-complete-calculations.txt",
+            "screenshots": ["screen.png"],
+        },
+    }
+    (jhora_case_dir / "fixture.json").write_text(json.dumps(jhora_fixture), encoding="utf-8")
+    pl_case_dir = tmp_path / "pl-case"
+    pl_case_dir.mkdir()
+    pl_packet_path = pl_case_dir / "packet.json"
     pl_packet_path.write_text(
         json.dumps(
             {
@@ -51,8 +78,12 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
                         "timezone": "Asia/Yekaterinburg",
                         "timezone_offset": "+06:00",
                     },
-                    "pl_metadata": {"capture_status": "ui_state_captured"},
-                    "capture_files": {"screenshots": []},
+                    "pl_metadata": {
+                        "capture_status": "ui_state_captured",
+                        "ayanamsa": "lahiri",
+                        "timezone_offset": "+06:00",
+                    },
+                    "capture_files": {"ui_state": "pl-ui-state.json", "screenshots": ["pl.png"]},
                     "manual_witness_values": [{"source": "pl7", "body": "Surya", "rashi": "Vrishabha"}],
                 },
                 "pl_capture_checklist": [],
@@ -73,6 +104,7 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.JHORA_ACCURACY_REPORT_PATH = jhora_path
+    settings.JHORA_WITNESS_CASE_PATH = jhora_case_dir
     settings.PARASHARA_LIGHT_PACKET_PATH = pl_packet_path
     settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
     profile_report_path = tmp_path / "pl-profile.json"
@@ -283,6 +315,15 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
 
     assert response.status_code == 200
     assert response.data["overall_status"] == "diff_open"
+    witness_review = response.data["witness_review"]
+    assert witness_review["available"] is True
+    assert witness_review["overall"]["reviewable"] is True
+    assert witness_review["overall"]["ack_required"] is True
+    assert witness_review["overall"]["blocked"] is False
+    assert witness_review["jhora"]["status"] == "diff_open"
+    assert witness_review["parashara_light"]["status"] == "diff_open"
+    assert witness_review["seal_command"].startswith(".\\.venv\\Scripts\\python.exe manage.py seal_witness_case")
+    assert "--ack-diff-open" in witness_review["seal_command"]
     timezone_audit = response.data["birth_timezone_audit"]
     assert timezone_audit["available"] is True
     assert timezone_audit["status"] == "matched"

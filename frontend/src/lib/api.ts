@@ -698,6 +698,39 @@ export type WitnessSummary = {
     dst_observed: boolean;
     error?: string;
   };
+  witness_review: {
+    available: boolean;
+    status: string;
+    overall: {
+      reviewable: boolean;
+      ack_required: boolean;
+      blocked: boolean;
+    };
+    seal_command: string;
+    jhora: {
+      available?: boolean;
+      source?: string;
+      id?: string;
+      status?: string;
+      missing_evidence?: string[];
+      ack_required?: boolean;
+      review_command?: string;
+      packet_path?: string;
+      fixture_path?: string;
+    };
+    parashara_light: {
+      available?: boolean;
+      source?: string;
+      id?: string;
+      status?: string;
+      missing_evidence?: string[];
+      ack_required?: boolean;
+      review_command?: string;
+      packet_path?: string;
+      fixture_path?: string;
+    };
+    error?: string;
+  };
   jhora: {
     available: boolean;
     status: string;

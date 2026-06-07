@@ -21,6 +21,7 @@ JHORA_EXPORT_TIMEZONE_RE = re.compile(
 def build_witness_summary(
     *,
     jhora_report_path: str | Path,
+    jhora_witness_case_path: str | Path = "",
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
@@ -49,10 +50,16 @@ def build_witness_summary(
         option_store_diff_path=parashara_light_option_store_diff_path,
         internal_settings_audit_path=parashara_light_internal_settings_audit_path,
     )
+    witness_review = _witness_review_preflight(
+        jhora_witness_case_path=jhora_witness_case_path,
+        jhora_report_path=jhora_report_path,
+        parashara_light_packet_path=parashara_light_packet_path,
+    )
     open_items = _open_items(jhora, parashara_light)
     return {
         "overall_status": _overall_status(jhora, parashara_light),
         "birth_timezone_audit": _birth_timezone_audit(parashara_light_packet_path),
+        "witness_review": witness_review,
         "jhora": jhora,
         "parashara_light": parashara_light,
         "open_items": open_items,
@@ -95,6 +102,54 @@ def _jhora_summary(path: str | Path) -> dict[str, Any]:
         "corrected_max_delta_arcseconds": float(longitude.get("corrected_max_delta_arcseconds") or 0.0),
         "layers": summary.get("jhora_layers") or {},
     }
+
+
+def _witness_review_preflight(
+    *,
+    jhora_witness_case_path: str | Path,
+    jhora_report_path: str | Path,
+    parashara_light_packet_path: str | Path,
+) -> dict[str, Any]:
+    jhora_path = _resolve_jhora_witness_case_path(jhora_witness_case_path, jhora_report_path)
+    if not jhora_path:
+        return {
+            "available": False,
+            "status": "missing_jhora_witness_case_path",
+            "overall": {"reviewable": False, "ack_required": False, "blocked": True},
+            "seal_command": "",
+            "jhora": {},
+            "parashara_light": {},
+        }
+    try:
+        from apps.calculations.management.commands.preflight_witness_review import build_witness_review_preflight
+
+        payload = build_witness_review_preflight(
+            jhora_path=jhora_path,
+            parashara_light_path=parashara_light_packet_path,
+            reviewer="Haridas",
+        )
+    except Exception as exc:  # noqa: BLE001 - API summary must expose review blockers, not fail the whole tab.
+        return {
+            "available": False,
+            "status": "load_error",
+            "error": str(exc),
+            "overall": {"reviewable": False, "ack_required": False, "blocked": True},
+            "seal_command": "",
+            "jhora": {},
+            "parashara_light": {},
+        }
+    return {"available": True, "status": "loaded", **payload}
+
+
+def _resolve_jhora_witness_case_path(jhora_witness_case_path: str | Path, jhora_report_path: str | Path) -> str:
+    if str(jhora_witness_case_path or "").strip():
+        return str(jhora_witness_case_path)
+    if not str(jhora_report_path or "").strip():
+        return ""
+    parent = Path(jhora_report_path).parent
+    if (parent / "packet.json").exists() or (parent / "fixture.json").exists():
+        return str(parent)
+    return ""
 
 
 def _default_jhora_source_export(path: str | Path) -> str:
