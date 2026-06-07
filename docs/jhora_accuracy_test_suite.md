@@ -88,6 +88,12 @@ The command opens each case `.jhd`, verifies JHora's exported UTC offset against
 After manual review confirms the export, screenshots and settings evidence, mark the case as authoritative:
 
 ```powershell
+.\.venv\Scripts\python manage.py preflight_witness_review `
+  --jhora ..\.tmp\jhora\batch-queue\sterlitamak-1998-04-30-1345 `
+  --parashara-light ..\.tmp\pl7\haridas-current\verification-packet `
+  --reviewer Haridas `
+  --reviewed-at 2026-06-07T12:00:00+05:00
+
 .\.venv\Scripts\python manage.py mark_jhora_witness_reviewed `
   ..\.tmp\jhora\batch-queue\sterlitamak-1998-04-30-1345 `
   --reviewer Haridas `
