@@ -2805,12 +2805,7 @@ function AccuracyReportPanel({
                   <strong>
                     {row.reviewable ? "reviewable" : "not reviewable"} / ACK {row.ack_required ? "yes" : "no"}
                   </strong>
-                  <small>
-                    {(row.review_checklist ?? [])
-                      .slice(0, 4)
-                      .map((item) => `${item.label}=${item.status}`)
-                      .join("; ") || row.output_path}
-                  </small>
+                  <small>{row.review_checklist_summary !== "none" ? row.review_checklist_summary : row.output_path}</small>
                 </div>
               ))}
               {witnessReviewBatchSummary?.next_case_ids?.length ? (

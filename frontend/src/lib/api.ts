@@ -814,6 +814,7 @@ export type WitnessSummary = {
       ack_required: boolean;
       blocked: boolean;
       review_checklist: WitnessReviewChecklistItem[];
+      review_checklist_summary: string;
     }>;
     next_actions: Array<{
       id: string;

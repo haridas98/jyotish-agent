@@ -389,6 +389,7 @@ def _witness_review_batch_written(value: Any) -> list[dict[str, Any]]:
     for row in value:
         if not isinstance(row, dict):
             continue
+        review_checklist = _review_checklist_items(row.get("review_checklist"))
         rows.append(
             {
                 "id": str(row.get("id") or ""),
@@ -396,7 +397,8 @@ def _witness_review_batch_written(value: Any) -> list[dict[str, Any]]:
                 "reviewable": bool(row.get("reviewable")),
                 "ack_required": bool(row.get("ack_required")),
                 "blocked": bool(row.get("blocked")),
-                "review_checklist": _review_checklist_items(row.get("review_checklist")),
+                "review_checklist": review_checklist,
+                "review_checklist_summary": _review_checklist_summary(review_checklist),
             }
         )
     return rows
@@ -419,6 +421,10 @@ def _review_checklist_items(value: Any) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def _review_checklist_summary(rows: list[dict[str, Any]]) -> str:
+    return "; ".join(f"{row['label']}={row['status']}" for row in rows) or "none"
 
 
 def _witness_review_batch_next_actions(value: Any) -> list[dict[str, Any]]:
