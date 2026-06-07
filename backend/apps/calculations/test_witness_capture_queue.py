@@ -38,7 +38,10 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     assert first["next_step_label"] == "Run capture command"
     assert first["next_command"].endswith("manage.py build_jhora_witness_batch_packets --case-id sterlitamak-1998-04-30-1345")
     assert payload["next_item"]["id"] == "sterlitamak-1998-04-30-1345"
+    assert payload["next_command_kind"] == "auto_capture"
+    assert payload["next_step_label"] == "Run capture command"
     assert payload["next_command"] == first["next_command"]
+    assert payload["manual_review_command"] == ""
     assert json.loads(output.read_text(encoding="utf-8"))["summary"]["queue_count"] == 2
     markdown = markdown_output.read_text(encoding="utf-8")
     assert "# Witness Capture Queue" in markdown

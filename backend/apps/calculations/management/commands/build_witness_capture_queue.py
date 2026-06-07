@@ -110,6 +110,7 @@ def build_witness_capture_queue(
         _queue_item(index + 1, _with_case_records(row, case_rows))
         for index, row in enumerate(audit["next_actions"][: max(limit, 0)])
     ]
+    next_item = items[0] if items else None
     output_path = Path(output)
     markdown_path = Path(markdown_output) if str(markdown_output or "").strip() else None
     payload = {
@@ -135,8 +136,11 @@ def build_witness_capture_queue(
             "markdown_output": str(markdown_path or ""),
         },
         "items": items,
-        "next_item": items[0] if items else None,
-        "next_command": items[0]["next_command"] if items else "",
+        "next_item": next_item,
+        "next_command_kind": next_item["next_command_kind"] if next_item else "",
+        "next_step_label": next_item["next_step_label"] if next_item else "",
+        "next_command": next_item["next_command"] if next_item else "",
+        "manual_review_command": next_item["manual_review_command"] if next_item else "",
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
