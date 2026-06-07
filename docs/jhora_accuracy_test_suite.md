@@ -11,6 +11,23 @@
 
 Current authoritative JHora fixture count: 0. Existing fixtures are smoke/audit material until a recorded JHora export or screenshot packet is attached and reviewed.
 
+Current batch audit command:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py audit_jhora_witness_batch
+```
+
+The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to the 20-chart target queue, and reports:
+
+- candidate suite size;
+- authoritative-ready count;
+- capture-started count;
+- Parashara Light witness count;
+- next case ids still needing reviewed evidence.
+
+As of 2026-06-07 local artifacts, the queue has 21 candidate cases, target reviewed count is 20, Sterlitamak capture has started, one PL witness is attached by birth data, and authoritative-ready count is still 0.
+
 ## Metrics
 
 - Planet longitude: arcsecond delta.
