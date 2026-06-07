@@ -35,6 +35,11 @@ def test_build_witness_review_packet_renders_safe_markdown_by_default(tmp_path):
     assert "Parashara Light failed: 1" in markdown
     assert "Lagna.rashi: witness=Simha calculated=Karka" in markdown
     assert "safe next step: human ACK required before mark/seal" in markdown
+    assert "## Review Checklist" in markdown
+    assert "- [ ] JHora evidence: ready - JHora evidence captured" in markdown
+    assert "- [ ] Parashara Light evidence: ready - PL evidence captured" in markdown
+    assert "- [ ] Open diffs: ack_required - JHora" in markdown
+    assert "- [ ] Manual ACK: ack_required - human ACK required before mark/seal" in markdown
     assert "mark_jhora_witness_reviewed" not in markdown
     assert "mark_parashara_light_witness_reviewed" not in markdown
     assert "seal_witness_case" not in markdown

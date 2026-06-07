@@ -183,6 +183,10 @@ def _markdown(
         f"- Blocked: {_yes_no(overall['blocked'])}",
         f"- safe next step: {_safe_next_step(preflight)}",
         "",
+        "## Review Checklist",
+        "",
+        *_review_checklist_lines(preflight=preflight, jhora=jhora, parashara_light=parashara_light),
+        "",
         "## Open Diffs",
         "",
         f"- JHora failed: {jhora['diff_summary']['failed_count']}",
@@ -240,6 +244,42 @@ def _markdown(
             last=True,
         )
     return "\n".join(lines)
+
+
+def _review_checklist_lines(
+    *,
+    preflight: dict[str, Any],
+    jhora: dict[str, Any],
+    parashara_light: dict[str, Any],
+) -> list[str]:
+    jhora_preflight = preflight["jhora"]
+    pl_preflight = preflight["parashara_light"]
+    ack_status = "ack_required" if preflight["overall"]["ack_required"] else "ready"
+    return [
+        f"- [ ] JHora evidence: {_evidence_status(jhora_preflight)} - {_evidence_detail(jhora_preflight, 'JHora evidence captured')}",
+        (
+            "- [ ] Parashara Light evidence: "
+            f"{_evidence_status(pl_preflight)} - {_evidence_detail(pl_preflight, 'PL evidence captured')}"
+        ),
+        (
+            f"- [ ] Open diffs: {ack_status} - JHora {jhora['diff_summary']['failed_count']}, "
+            f"PL {parashara_light['manual_diff_summary']['failed_count']} open diffs"
+        ),
+        f"- [ ] Manual ACK: {ack_status} - {_safe_next_step(preflight)}",
+    ]
+
+
+def _evidence_status(source: dict[str, Any]) -> str:
+    return "blocked" if _missing_evidence(source) else "ready"
+
+
+def _evidence_detail(source: dict[str, Any], fallback: str) -> str:
+    return ", ".join(_missing_evidence(source)) or fallback
+
+
+def _missing_evidence(source: dict[str, Any]) -> list[str]:
+    values = source.get("missing_evidence")
+    return [str(value) for value in values] if isinstance(values, list) else []
 
 
 def _jhora_diff_summary(fixture: dict[str, Any]) -> dict[str, Any]:
