@@ -277,3 +277,49 @@ def test_build_jhora_witness_batch_packets_uses_existing_ui_table_dump(monkeypat
     assert captured[0][1]["jhora_ui_table_dump_path"] == str(ui_path)
     fixture = json.loads((case_dir / "fixture.json").read_text(encoding="utf-8"))
     assert fixture["jhora_expected"]["ui_tables"]["identified"]["shadbala_totals"]
+
+
+def test_build_jhora_witness_batch_packets_uses_existing_screenshots(monkeypatch, tmp_path):
+    output_root = tmp_path / "batch"
+    case_dir = output_root / "sterlitamak-1998-04-30-1345"
+    screenshot_dir = case_dir / "screenshots"
+    screenshot_dir.mkdir(parents=True)
+    first = screenshot_dir / "Снимок экрана 2026-06-07 131214.png"
+    second = screenshot_dir / "menu expanded.jpg"
+    first.write_bytes(b"png")
+    second.write_bytes(b"jpg")
+    captured = []
+
+    def fake_build(data, **kwargs):
+        captured.append((data, kwargs))
+        return {
+            "schema_version": "jyotish-jhora-verification-packet-v1",
+            "id": kwargs["packet_id"],
+            "status": "capture_pending",
+            "fixture": {
+                "id": kwargs["packet_id"],
+                "review_status": "draft",
+                "capture_files": {"screenshots": kwargs["screenshot_paths"]},
+                "jhora_metadata": {"capture_status": "export_pending"},
+            },
+            "jyotish_agent_chart": {"birth": {"date": data["birth_date"]}},
+            "dual_calculation": {"status": "calculated_witness_mode"},
+            "jhora_capture_checklist": ["Capture settings"],
+        }
+
+    monkeypatch.setattr(
+        "apps.calculations.management.commands.build_jhora_witness_batch_packets.build_jhora_verification_packet",
+        fake_build,
+    )
+
+    call_command(
+        "build_jhora_witness_batch_packets",
+        "--case-id",
+        "sterlitamak-1998-04-30-1345",
+        "--output-root",
+        str(output_root),
+    )
+
+    assert captured[0][1]["screenshot_paths"] == [str(second), str(first)]
+    fixture = json.loads((case_dir / "fixture.json").read_text(encoding="utf-8"))
+    assert fixture["capture_files"]["screenshots"] == [str(second), str(first)]

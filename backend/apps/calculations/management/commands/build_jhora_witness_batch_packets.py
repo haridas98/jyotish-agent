@@ -92,6 +92,7 @@ def _build_case_packet(case: dict[str, Any], output_root: Path, options: dict[st
         if jhora_ui_table_dump_path.exists()
         else {}
     )
+    screenshot_paths = _screenshot_paths(output_dir / "screenshots")
     try:
         packet = build_jhora_verification_packet(
             birth_input,
@@ -100,6 +101,7 @@ def _build_case_packet(case: dict[str, Any], output_root: Path, options: dict[st
             jhora_export_path=str(jhora_export_path) if jhora_export_text else "",
             jhora_ui_table_dump=jhora_ui_table_dump,
             jhora_ui_table_dump_path=str(jhora_ui_table_dump_path) if jhora_ui_table_dump else "",
+            screenshot_paths=screenshot_paths,
             jhora_version=options["jhora_version"],
         )
         paths = write_jhora_verification_packet(packet, output_dir)
@@ -121,6 +123,13 @@ def _build_case_packet(case: dict[str, Any], output_root: Path, options: dict[st
         "output_dir": str(output_dir),
         "paths": paths,
     }
+
+
+def _screenshot_paths(path: Path) -> list[str]:
+    if not path.exists():
+        return []
+    allowed = {".png", ".jpg", ".jpeg", ".webp"}
+    return [str(item) for item in sorted(path.iterdir(), key=lambda item: item.name.lower()) if item.suffix.lower() in allowed]
 
 
 def _birth_input(case_input: dict[str, Any], options: dict[str, Any]) -> dict[str, Any]:
