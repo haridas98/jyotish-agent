@@ -680,6 +680,22 @@ export type ParasharaLightPacketReport = {
   };
 };
 
+export type WitnessCaptureQueueItem = {
+  priority: number;
+  id: string;
+  group: string;
+  label: string;
+  status: string;
+  capture_targets: {
+    jhora: string[];
+    parashara_light: string[];
+  };
+  suggested_actions: string[];
+  next_action_key: string;
+  next_command: string;
+  blocker_count: number;
+};
+
 export type WitnessSummary = {
   overall_status: string;
   birth_timezone_audit: {
@@ -803,19 +819,9 @@ export type WitnessSummary = {
       output: string;
       markdown_output: string;
     };
-    items: Array<{
-      priority: number;
-      id: string;
-      group: string;
-      label: string;
-      status: string;
-      capture_targets: {
-        jhora: string[];
-        parashara_light: string[];
-      };
-      suggested_actions: string[];
-      blocker_count: number;
-    }>;
+    items: WitnessCaptureQueueItem[];
+    next_item: WitnessCaptureQueueItem | null;
+    next_command: string;
     error?: string;
   };
   jhora: {

@@ -295,7 +295,10 @@ def _witness_capture_queue(path: str | Path) -> dict[str, Any]:
 
     metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
     summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
-    items = payload.get("items") if isinstance(payload.get("items"), list) else []
+    raw_items = payload.get("items") if isinstance(payload.get("items"), list) else []
+    items = [_witness_capture_queue_item(row) for row in raw_items if isinstance(row, dict)]
+    raw_next_item = payload.get("next_item") if isinstance(payload.get("next_item"), dict) else None
+    next_item = _witness_capture_queue_item(raw_next_item) if raw_next_item else (items[0] if items else None)
     return {
         "available": True,
         "status": "loaded",
@@ -317,7 +320,9 @@ def _witness_capture_queue(path: str | Path) -> dict[str, Any]:
             "output": str(summary.get("output") or str(source)),
             "markdown_output": str(summary.get("markdown_output") or ""),
         },
-        "items": [_witness_capture_queue_item(row) for row in items if isinstance(row, dict)],
+        "items": items,
+        "next_item": next_item,
+        "next_command": str(payload.get("next_command") or (next_item or {}).get("next_command") or ""),
     }
 
 
@@ -344,6 +349,8 @@ def _missing_witness_capture_queue(path: str) -> dict[str, Any]:
             "markdown_output": "",
         },
         "items": [],
+        "next_item": None,
+        "next_command": "",
     }
 
 
@@ -360,6 +367,8 @@ def _witness_capture_queue_item(row: dict[str, Any]) -> dict[str, Any]:
             "parashara_light": _string_list(targets.get("parashara_light")),
         },
         "suggested_actions": _string_list(row.get("suggested_actions")),
+        "next_action_key": str(row.get("next_action_key") or ""),
+        "next_command": str(row.get("next_command") or ""),
         "blocker_count": int(row.get("blocker_count") or 0),
     }
 

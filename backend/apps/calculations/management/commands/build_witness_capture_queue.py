@@ -12,6 +12,38 @@ from apps.calculations.witness_batch import audit_jhora_pl_witness_batch
 
 
 SCHEMA_VERSION = "jyotish-witness-capture-queue-v1"
+ACTION_COMMANDS = {
+    "build_jhora_witness_batch_packets": (
+        ".\\.venv\\Scripts\\python.exe manage.py build_jhora_witness_batch_packets --case-id {case_id}"
+    ),
+    "capture_jhora_witness_batch_exports_or_attach_jhora_complete_calculations": (
+        ".\\.venv\\Scripts\\python.exe manage.py capture_jhora_witness_batch_exports "
+        "--case-id {case_id} --skip-existing"
+    ),
+    "set_review_status_jhora_verified_after_manual_review": (
+        ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed "
+        "..\\.tmp\\jhora\\batch-queue\\{case_id} --reviewer Haridas"
+    ),
+    "add_reviewer_and_reviewed_at": (
+        ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed "
+        "..\\.tmp\\jhora\\batch-queue\\{case_id} --reviewer Haridas"
+    ),
+    "attach_pl_witness_packet_or_manual_values": (
+        ".\\.venv\\Scripts\\python.exe manage.py build_parashara_light_witness_batch_packets --case-id {case_id}"
+    ),
+    "mark_jhora_witness_reviewed": (
+        ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed "
+        "..\\.tmp\\jhora\\batch-queue\\{case_id} --reviewer Haridas"
+    ),
+    "mark_jhora_witness_reviewed_with_ack_diff_open": (
+        ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed "
+        "..\\.tmp\\jhora\\batch-queue\\{case_id} --reviewer Haridas --ack-diff-open"
+    ),
+    "mark_parashara_light_witness_reviewed": (
+        ".\\.venv\\Scripts\\python.exe manage.py mark_parashara_light_witness_reviewed "
+        "..\\.tmp\\pl7\\batch-queue\\{case_id} --reviewer Haridas"
+    ),
+}
 
 
 class Command(BaseCommand):
@@ -97,6 +129,8 @@ def build_witness_capture_queue(
             "markdown_output": str(markdown_path or ""),
         },
         "items": items,
+        "next_item": items[0] if items else None,
+        "next_command": items[0]["next_command"] if items else "",
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -109,9 +143,12 @@ def build_witness_capture_queue(
 def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
     missing_jhora = _string_list(row.get("missing_for_authoritative_review"))
     missing_pl = _string_list(row.get("missing_secondary_witness"))
+    suggested_actions = _string_list(row.get("suggested_actions"))
+    case_id = str(row.get("id") or "")
+    next_action = suggested_actions[0] if suggested_actions else ""
     return {
         "priority": priority,
-        "id": str(row.get("id") or ""),
+        "id": case_id,
         "group": str(row.get("group") or ""),
         "label": str(row.get("label") or ""),
         "status": str(row.get("status") or ""),
@@ -119,13 +156,20 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
             "jhora": missing_jhora,
             "parashara_light": missing_pl,
         },
-        "suggested_actions": _string_list(row.get("suggested_actions")),
+        "suggested_actions": suggested_actions,
+        "next_action_key": next_action,
+        "next_command": _next_command(case_id, next_action),
         "blocker_count": len(missing_jhora) + len(missing_pl),
     }
 
 
 def _string_list(value: Any) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
+
+
+def _next_command(case_id: str, action: str) -> str:
+    template = ACTION_COMMANDS.get(action)
+    return template.format(case_id=case_id) if template else ""
 
 
 def _markdown_queue(payload: dict[str, Any]) -> str:
@@ -150,6 +194,7 @@ def _markdown_queue(payload: dict[str, Any]) -> str:
                 f"- JHora blockers: {', '.join(item['capture_targets']['jhora']) or 'none'}",
                 f"- PL blockers: {', '.join(item['capture_targets']['parashara_light']) or 'none'}",
                 f"- Suggested actions: {', '.join(item['suggested_actions']) or 'review'}",
+                f"- Next command: {item['next_command'] or 'manual review'}",
                 "",
             ]
         )
@@ -165,6 +210,8 @@ def _text_summary(payload: dict[str, Any]) -> str:
     ]
     if summary["markdown_output"]:
         lines.append(f"markdown: {summary['markdown_output']}")
+    if payload["next_command"]:
+        lines.append(f"next command: {payload['next_command']}")
     for item in payload["items"][:10]:
         lines.append(f"- {item['priority']}. {item['id']}: {', '.join(item['suggested_actions']) or 'review'}")
     return "\n".join(lines)

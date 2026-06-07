@@ -34,11 +34,16 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     ]
     assert first["capture_targets"]["parashara_light"] == ["pl_witness_packet"]
     assert "build_jhora_witness_batch_packets" in first["suggested_actions"]
+    assert first["next_action_key"] == "build_jhora_witness_batch_packets"
+    assert first["next_command"].endswith("manage.py build_jhora_witness_batch_packets --case-id sterlitamak-1998-04-30-1345")
+    assert payload["next_item"]["id"] == "sterlitamak-1998-04-30-1345"
+    assert payload["next_command"] == first["next_command"]
     assert json.loads(output.read_text(encoding="utf-8"))["summary"]["queue_count"] == 2
     markdown = markdown_output.read_text(encoding="utf-8")
     assert "# Witness Capture Queue" in markdown
     assert "sterlitamak-1998-04-30-1345" in markdown
     assert "PL blockers: pl_witness_packet" in markdown
+    assert "Next command:" in markdown
 
 
 def test_build_witness_capture_queue_command_outputs_json(tmp_path):
@@ -65,5 +70,6 @@ def test_build_witness_capture_queue_command_outputs_json(tmp_path):
     payload = json.loads(stdout.getvalue())
     assert payload["summary"]["queue_count"] == 1
     assert payload["items"][0]["priority"] == 1
+    assert payload["next_command"]
     assert output.exists()
     assert markdown_output.exists()

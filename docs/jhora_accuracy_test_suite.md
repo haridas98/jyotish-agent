@@ -49,6 +49,8 @@ For a compact checklist while JHora and PL are open, build a capture queue:
 This writes the next case order, JHora blockers, PL blockers, and suggested capture/review actions without the full audit payload.
 The Witness Summary API exposes this file as `witness_capture_queue`, and the Accuracy tab shows the queue count,
 remaining target, first blockers, and markdown path. Override the source with `WITNESS_CAPTURE_QUEUE_PATH` if needed.
+New capture queues also include `next_item` and `next_command` so the current manual/CLI step can be shown without
+opening the markdown file.
 
 The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to the 20-chart target queue, and reports:
 

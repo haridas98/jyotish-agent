@@ -2613,6 +2613,7 @@ function AccuracyReportPanel({
   const witnessCaptureQueueSummary = witnessCaptureQueue?.summary ?? null;
   const witnessCaptureQueueMetadata = witnessCaptureQueue?.metadata ?? null;
   const witnessCaptureQueueItems = witnessCaptureQueue?.items ?? [];
+  const witnessCaptureQueueNext = witnessCaptureQueue?.next_item ?? witnessCaptureQueueItems[0] ?? null;
   const [sealCommandCopyStatus, setSealCommandCopyStatus] = useState("");
 
   async function copySealCommand() {
@@ -2821,6 +2822,13 @@ function AccuracyReportPanel({
                 <strong>{witnessCaptureQueueSummary?.markdown_output || "missing"}</strong>
                 <small>{witnessCaptureQueue.source_queue || witnessCaptureQueueSummary?.output || "queue missing"}</small>
               </div>
+              {witnessCaptureQueueNext ? (
+                <div>
+                  <span>Next step</span>
+                  <strong>{witnessCaptureQueueNext.next_action_key || witnessCaptureQueueNext.status || "review"}</strong>
+                  <small>{witnessCaptureQueue.next_command || witnessCaptureQueueNext.next_command || "manual capture/review"}</small>
+                </div>
+              ) : null}
               {witnessCaptureQueueItems.slice(0, 3).map((row) => (
                 <div key={`capture-${row.id}`}>
                   <span>

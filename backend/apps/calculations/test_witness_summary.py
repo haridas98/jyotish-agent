@@ -400,9 +400,30 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
                             "set_review_status_jhora_verified_after_manual_review",
                             "mark_parashara_light_witness_reviewed",
                         ],
+                        "next_action_key": "set_review_status_jhora_verified_after_manual_review",
+                        "next_command": "",
                         "blocker_count": 4,
                     }
                 ],
+                "next_item": {
+                    "priority": 1,
+                    "id": "sterlitamak-1998-04-30-1345",
+                    "group": "birth_verified",
+                    "label": "Sterlitamak DST baseline",
+                    "status": "review_pending",
+                    "capture_targets": {
+                        "jhora": ["authoritative_review_status", "reviewer"],
+                        "parashara_light": ["pl_reviewer_note", "pl_review_status"],
+                    },
+                    "suggested_actions": [
+                        "set_review_status_jhora_verified_after_manual_review",
+                        "mark_parashara_light_witness_reviewed",
+                    ],
+                    "next_action_key": "set_review_status_jhora_verified_after_manual_review",
+                    "next_command": "",
+                    "blocker_count": 4,
+                },
+                "next_command": "",
             }
         ),
         encoding="utf-8",
@@ -448,6 +469,8 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         "authoritative_review_status",
         "reviewer",
     ]
+    assert witness_capture_queue["next_item"]["id"] == "sterlitamak-1998-04-30-1345"
+    assert witness_capture_queue["items"][0]["next_action_key"] == "set_review_status_jhora_verified_after_manual_review"
     assert "mark_parashara_light_witness_reviewed" in witness_capture_queue["items"][0]["suggested_actions"]
     timezone_audit = response.data["birth_timezone_audit"]
     assert timezone_audit["available"] is True
