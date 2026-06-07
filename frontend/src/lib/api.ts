@@ -782,6 +782,42 @@ export type WitnessSummary = {
     audit_summary: Record<string, number | string | boolean | string[] | null>;
     error?: string;
   };
+  witness_capture_queue: {
+    available: boolean;
+    status: string;
+    source_queue: string;
+    schema_version: string;
+    metadata: {
+      generated_at: string;
+      jhora_root: string;
+      pl_root: string;
+      target_reviewed_count: number;
+      limit: number;
+    };
+    summary: {
+      queue_count: number;
+      remaining_to_target_count: number;
+      batch_review_ready_count: number;
+      capture_started_count: number;
+      pl_witness_count: number;
+      output: string;
+      markdown_output: string;
+    };
+    items: Array<{
+      priority: number;
+      id: string;
+      group: string;
+      label: string;
+      status: string;
+      capture_targets: {
+        jhora: string[];
+        parashara_light: string[];
+      };
+      suggested_actions: string[];
+      blocker_count: number;
+    }>;
+    error?: string;
+  };
   jhora: {
     available: boolean;
     status: string;

@@ -2609,6 +2609,10 @@ function AccuracyReportPanel({
   const witnessReviewBatchWritten = witnessReviewBatch?.written ?? [];
   const witnessReviewBatchNextActions = witnessReviewBatch?.next_actions ?? [];
   const witnessReviewBatchSkippedReasons = witnessReviewBatch?.skipped_reason_counts ?? {};
+  const witnessCaptureQueue = witnessSummary?.witness_capture_queue ?? null;
+  const witnessCaptureQueueSummary = witnessCaptureQueue?.summary ?? null;
+  const witnessCaptureQueueMetadata = witnessCaptureQueue?.metadata ?? null;
+  const witnessCaptureQueueItems = witnessCaptureQueue?.items ?? [];
   const [sealCommandCopyStatus, setSealCommandCopyStatus] = useState("");
 
   async function copySealCommand() {
@@ -2787,6 +2791,48 @@ function AccuracyReportPanel({
                   </strong>
                 </div>
               ) : null}
+            </div>
+          ) : null}
+          {witnessCaptureQueue ? (
+            <div className="accuracy-list witness-open-items">
+              <h3>Witness capture queue</h3>
+              <div>
+                <span>Queue</span>
+                <strong>
+                  {witnessCaptureQueue.available
+                    ? `${witnessCaptureQueueSummary?.queue_count ?? 0} cases`
+                    : witnessCaptureQueue.status}
+                </strong>
+                <small>
+                  remaining {witnessCaptureQueueSummary?.remaining_to_target_count ?? 0}, ready{" "}
+                  {witnessCaptureQueueSummary?.batch_review_ready_count ?? 0}
+                </small>
+              </div>
+              <div>
+                <span>Coverage</span>
+                <strong>{witnessCaptureQueueSummary?.capture_started_count ?? 0} capture-started</strong>
+                <small>
+                  PL witnesses {witnessCaptureQueueSummary?.pl_witness_count ?? 0}, target{" "}
+                  {witnessCaptureQueueMetadata?.target_reviewed_count ?? 0}
+                </small>
+              </div>
+              <div>
+                <span>Markdown</span>
+                <strong>{witnessCaptureQueueSummary?.markdown_output || "missing"}</strong>
+                <small>{witnessCaptureQueue.source_queue || witnessCaptureQueueSummary?.output || "queue missing"}</small>
+              </div>
+              {witnessCaptureQueueItems.slice(0, 3).map((row) => (
+                <div key={`capture-${row.id}`}>
+                  <span>
+                    {row.priority}. {row.label || row.id}
+                  </span>
+                  <strong>{row.suggested_actions.slice(0, 3).join(", ") || row.status || "review"}</strong>
+                  <small>
+                    JHora {row.capture_targets.jhora.join(", ") || "ok"}; PL{" "}
+                    {row.capture_targets.parashara_light.join(", ") || "ok"}
+                  </small>
+                </div>
+              ))}
             </div>
           ) : null}
           {birthTimezoneAudit?.available ? (

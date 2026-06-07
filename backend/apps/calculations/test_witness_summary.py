@@ -364,6 +364,50 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
         encoding="utf-8",
     )
     settings.WITNESS_REVIEW_BATCH_INDEX_PATH = batch_index_path
+    capture_queue_path = tmp_path / "witness-capture-queue.json"
+    capture_queue_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-witness-capture-queue-v1",
+                "metadata": {
+                    "generated_at": "2026-06-07T12:10:00+05:00",
+                    "jhora_root": str(tmp_path / "jhora"),
+                    "pl_root": str(tmp_path / "pl7"),
+                    "target_reviewed_count": 20,
+                    "limit": 20,
+                },
+                "summary": {
+                    "queue_count": 20,
+                    "remaining_to_target_count": 20,
+                    "batch_review_ready_count": 0,
+                    "capture_started_count": 21,
+                    "pl_witness_count": 1,
+                    "output": str(capture_queue_path),
+                    "markdown_output": str(tmp_path / "capture-queue.md"),
+                },
+                "items": [
+                    {
+                        "priority": 1,
+                        "id": "sterlitamak-1998-04-30-1345",
+                        "group": "birth_verified",
+                        "label": "Sterlitamak DST baseline",
+                        "status": "review_pending",
+                        "capture_targets": {
+                            "jhora": ["authoritative_review_status", "reviewer"],
+                            "parashara_light": ["pl_reviewer_note", "pl_review_status"],
+                        },
+                        "suggested_actions": [
+                            "set_review_status_jhora_verified_after_manual_review",
+                            "mark_parashara_light_witness_reviewed",
+                        ],
+                        "blocker_count": 4,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    settings.WITNESS_CAPTURE_QUEUE_PATH = capture_queue_path
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -394,6 +438,17 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review_batch["next_actions"][0]["missing_secondary_witness"] == ["pl_witness_packet"]
     assert "attach_pl_witness_packet_or_manual_values" in witness_review_batch["next_actions"][0]["suggested_actions"]
     assert witness_review_batch["skipped_reason_counts"] == {"missing_jhora_or_pl_pair": 1}
+    witness_capture_queue = response.data["witness_capture_queue"]
+    assert witness_capture_queue["available"] is True
+    assert witness_capture_queue["summary"]["queue_count"] == 20
+    assert witness_capture_queue["summary"]["capture_started_count"] == 21
+    assert witness_capture_queue["metadata"]["target_reviewed_count"] == 20
+    assert witness_capture_queue["items"][0]["id"] == "sterlitamak-1998-04-30-1345"
+    assert witness_capture_queue["items"][0]["capture_targets"]["jhora"] == [
+        "authoritative_review_status",
+        "reviewer",
+    ]
+    assert "mark_parashara_light_witness_reviewed" in witness_capture_queue["items"][0]["suggested_actions"]
     timezone_audit = response.data["birth_timezone_audit"]
     assert timezone_audit["available"] is True
     assert timezone_audit["status"] == "matched"
@@ -507,6 +562,8 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     settings.PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH = tmp_path / "missing-pl-hidden-option-store.json"
     settings.PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH = tmp_path / "missing-pl-option-store-diff.json"
     settings.PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH = tmp_path / "missing-pl-internal-settings-audit.json"
+    settings.WITNESS_REVIEW_BATCH_INDEX_PATH = tmp_path / "missing-witness-review-index.json"
+    settings.WITNESS_CAPTURE_QUEUE_PATH = tmp_path / "missing-witness-capture-queue.json"
 
     response = APIClient().get(reverse("witness-summary"))
 
@@ -525,6 +582,7 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     assert response.data["parashara_light"]["hidden_option_store"]["available"] is False
     assert response.data["parashara_light"]["option_store_diff"]["available"] is False
     assert response.data["parashara_light"]["internal_settings_audit"]["available"] is False
+    assert response.data["witness_capture_queue"]["available"] is False
 
 
 def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):

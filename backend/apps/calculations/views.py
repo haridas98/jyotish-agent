@@ -130,6 +130,7 @@ class WitnessSummaryView(APIView):
                 jhora_report_path=jhora_path,
                 jhora_witness_case_path=getattr(settings, "JHORA_WITNESS_CASE_PATH", ""),
                 witness_review_batch_index_path=getattr(settings, "WITNESS_REVIEW_BATCH_INDEX_PATH", ""),
+                witness_capture_queue_path=getattr(settings, "WITNESS_CAPTURE_QUEUE_PATH", ""),
                 parashara_light_packet_path=pl_packet_path,
                 parashara_light_manual_values_path=getattr(settings, "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH", ""),
                 parashara_light_profile_report_path=getattr(settings, "PARASHARA_LIGHT_PROFILE_REPORT_PATH", ""),

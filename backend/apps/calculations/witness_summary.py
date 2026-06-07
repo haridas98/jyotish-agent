@@ -23,6 +23,7 @@ def build_witness_summary(
     jhora_report_path: str | Path,
     jhora_witness_case_path: str | Path = "",
     witness_review_batch_index_path: str | Path = "",
+    witness_capture_queue_path: str | Path = "",
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
@@ -57,12 +58,14 @@ def build_witness_summary(
         parashara_light_packet_path=parashara_light_packet_path,
     )
     witness_review_batch = _witness_review_batch_index(witness_review_batch_index_path)
+    witness_capture_queue = _witness_capture_queue(witness_capture_queue_path)
     open_items = _open_items(jhora, parashara_light)
     return {
         "overall_status": _overall_status(jhora, parashara_light),
         "birth_timezone_audit": _birth_timezone_audit(parashara_light_packet_path),
         "witness_review": witness_review,
         "witness_review_batch": witness_review_batch,
+        "witness_capture_queue": witness_capture_queue,
         "jhora": jhora,
         "parashara_light": parashara_light,
         "open_items": open_items,
@@ -271,6 +274,94 @@ def _witness_review_batch_next_actions(value: Any) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def _witness_capture_queue(path: str | Path) -> dict[str, Any]:
+    if not str(path or "").strip():
+        return _missing_witness_capture_queue("")
+    source = Path(path)
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError:
+        return _missing_witness_capture_queue(str(source))
+    except (json.JSONDecodeError, OSError, ValueError) as exc:
+        result = _missing_witness_capture_queue(str(source))
+        result.update({"status": "load_error", "error": str(exc)})
+        return result
+    if not isinstance(payload, dict):
+        result = _missing_witness_capture_queue(str(source))
+        result.update({"status": "load_error", "error": "capture queue JSON must be an object"})
+        return result
+
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    items = payload.get("items") if isinstance(payload.get("items"), list) else []
+    return {
+        "available": True,
+        "status": "loaded",
+        "source_queue": str(source),
+        "schema_version": str(payload.get("schema_version") or ""),
+        "metadata": {
+            "generated_at": str(metadata.get("generated_at") or ""),
+            "jhora_root": str(metadata.get("jhora_root") or ""),
+            "pl_root": str(metadata.get("pl_root") or ""),
+            "target_reviewed_count": int(metadata.get("target_reviewed_count") or 0),
+            "limit": int(metadata.get("limit") or 0),
+        },
+        "summary": {
+            "queue_count": int(summary.get("queue_count") or 0),
+            "remaining_to_target_count": int(summary.get("remaining_to_target_count") or 0),
+            "batch_review_ready_count": int(summary.get("batch_review_ready_count") or 0),
+            "capture_started_count": int(summary.get("capture_started_count") or 0),
+            "pl_witness_count": int(summary.get("pl_witness_count") or 0),
+            "output": str(summary.get("output") or str(source)),
+            "markdown_output": str(summary.get("markdown_output") or ""),
+        },
+        "items": [_witness_capture_queue_item(row) for row in items if isinstance(row, dict)],
+    }
+
+
+def _missing_witness_capture_queue(path: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "status": "missing",
+        "source_queue": path,
+        "schema_version": "",
+        "metadata": {
+            "generated_at": "",
+            "jhora_root": "",
+            "pl_root": "",
+            "target_reviewed_count": 0,
+            "limit": 0,
+        },
+        "summary": {
+            "queue_count": 0,
+            "remaining_to_target_count": 0,
+            "batch_review_ready_count": 0,
+            "capture_started_count": 0,
+            "pl_witness_count": 0,
+            "output": path,
+            "markdown_output": "",
+        },
+        "items": [],
+    }
+
+
+def _witness_capture_queue_item(row: dict[str, Any]) -> dict[str, Any]:
+    targets = row.get("capture_targets") if isinstance(row.get("capture_targets"), dict) else {}
+    return {
+        "priority": int(row.get("priority") or 0),
+        "id": str(row.get("id") or ""),
+        "group": str(row.get("group") or ""),
+        "label": str(row.get("label") or ""),
+        "status": str(row.get("status") or ""),
+        "capture_targets": {
+            "jhora": _string_list(targets.get("jhora")),
+            "parashara_light": _string_list(targets.get("parashara_light")),
+        },
+        "suggested_actions": _string_list(row.get("suggested_actions")),
+        "blocker_count": int(row.get("blocker_count") or 0),
+    }
 
 
 def _string_list(value: Any) -> list[str]:

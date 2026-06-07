@@ -189,6 +189,10 @@ WITNESS_REVIEW_BATCH_INDEX_PATH = os.getenv(
     "WITNESS_REVIEW_BATCH_INDEX_PATH",
     str(ROOT_DIR / ".tmp" / "witness-review" / "_index.json"),
 )
+WITNESS_CAPTURE_QUEUE_PATH = os.getenv(
+    "WITNESS_CAPTURE_QUEUE_PATH",
+    str(ROOT_DIR / ".tmp" / "witness-review" / "capture-queue.json"),
+)
 PARASHARA_LIGHT_PACKET_PATH = os.getenv(
     "PARASHARA_LIGHT_PACKET_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"),
