@@ -469,6 +469,7 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_review_batch["next_actions"][0]["id"] == "vrindavan-1990-08-15-1024"
     assert witness_review_batch["next_actions"][0]["missing_secondary_witness"] == ["pl_witness_packet"]
     assert "attach_pl_witness_packet_or_manual_values" in witness_review_batch["next_actions"][0]["suggested_actions"]
+    assert "Attach PL witness values" in witness_review_batch["next_actions"][0]["suggested_action_labels"]
     assert witness_review_batch["skipped_reason_counts"] == {"missing_jhora_or_pl_pair": 1}
     witness_capture_queue = response.data["witness_capture_queue"]
     assert witness_capture_queue["available"] is True
@@ -493,6 +494,10 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert witness_capture_queue["items"][0]["next_command"] == ""
     assert "preflight_witness_review" in witness_capture_queue["items"][0]["manual_review_command"]
     assert "mark_parashara_light_witness_reviewed" in witness_capture_queue["items"][0]["suggested_actions"]
+    assert witness_capture_queue["items"][0]["suggested_action_labels"] == [
+        "Run review preflight",
+        "Mark PL reviewed after ACK",
+    ]
     timezone_audit = response.data["birth_timezone_audit"]
     assert timezone_audit["available"] is True
     assert timezone_audit["status"] == "matched"

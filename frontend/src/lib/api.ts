@@ -691,6 +691,7 @@ export type WitnessCaptureQueueItem = {
     parashara_light: string[];
   };
   suggested_actions: string[];
+  suggested_action_labels: string[];
   next_action_key: string;
   next_command_kind: string;
   next_step_label: string;
@@ -812,6 +813,7 @@ export type WitnessSummary = {
       missing_for_authoritative_review: string[];
       missing_secondary_witness: string[];
       suggested_actions: string[];
+      suggested_action_labels: string[];
     }>;
     skipped_reason_counts: Record<string, number>;
     errors: Array<{

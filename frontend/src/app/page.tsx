@@ -2809,7 +2809,7 @@ function AccuracyReportPanel({
               {witnessReviewBatchNextActions.slice(0, 3).map((row) => (
                 <div key={`next-${row.id}`}>
                   <span>{row.label || row.id}</span>
-                  <strong>{row.suggested_actions.slice(0, 3).join(", ") || row.status || "review"}</strong>
+                  <strong>{row.suggested_action_labels.slice(0, 3).join(", ") || row.status || "review"}</strong>
                   <small>
                     JHora {row.missing_for_authoritative_review.join(", ") || "ok"}; PL{" "}
                     {row.missing_secondary_witness.join(", ") || "ok"}
@@ -2868,7 +2868,7 @@ function AccuracyReportPanel({
                   <span>
                     {row.priority}. {row.label || row.id}
                   </span>
-                  <strong>{row.suggested_actions.slice(0, 3).join(", ") || row.status || "review"}</strong>
+                  <strong>{row.suggested_action_labels.slice(0, 3).join(", ") || row.status || "review"}</strong>
                   <small>
                     JHora {row.capture_targets.jhora.join(", ") || "ok"}; PL{" "}
                     {row.capture_targets.parashara_light.join(", ") || "ok"}
