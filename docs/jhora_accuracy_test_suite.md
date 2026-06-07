@@ -19,6 +19,13 @@ cd C:\Projects\jyotish-agent\backend
 ```
 
 For next-action review gates, run it with `--with-review-preflight`; this adds `ack_required` and `blocked` preflight status for queued cases.
+To write markdown review packets for every queued case that already has both JHora and PL witness artifacts:
+
+```powershell
+cd C:\Projects\jyotish-agent\backend
+.\.venv\Scripts\python manage.py build_witness_review_batch_packets `
+  --output-root ..\.tmp\witness-review
+```
 
 The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to the 20-chart target queue, and reports:
 

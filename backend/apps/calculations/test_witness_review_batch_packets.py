@@ -1,0 +1,139 @@
+import json
+from io import StringIO
+
+from django.core.management import call_command
+
+
+def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpaired(tmp_path):
+    from apps.calculations.management.commands.build_witness_review_batch_packets import (
+        build_witness_review_batch_packets,
+    )
+
+    jhora_root, pl_root = _write_batch_roots(tmp_path)
+    output_root = tmp_path / "review-packets"
+
+    payload = build_witness_review_batch_packets(
+        jhora_root=jhora_root,
+        pl_root=pl_root,
+        output_root=output_root,
+        reviewer="Haridas",
+        reviewed_at="2026-06-07T12:00:00+05:00",
+    )
+
+    assert payload["schema_version"] == "jyotish-witness-review-batch-packets-v1"
+    assert payload["summary"]["written_count"] == 1
+    assert payload["summary"]["skipped_count"] >= 1
+    written = payload["written"][0]
+    assert written["id"] == "sterlitamak-1998-04-30-1345"
+    assert written["ack_required"] is True
+    assert written["blocked"] is False
+    markdown = (output_root / "sterlitamak-1998-04-30-1345.md").read_text(encoding="utf-8")
+    assert "ACK required: yes" in markdown
+    assert "seal_witness_case" in markdown
+
+
+def test_build_witness_review_batch_packets_command_outputs_json(tmp_path):
+    jhora_root, pl_root = _write_batch_roots(tmp_path)
+    output_root = tmp_path / "review-packets"
+    stdout = StringIO()
+
+    call_command(
+        "build_witness_review_batch_packets",
+        "--jhora-root",
+        str(jhora_root),
+        "--pl-root",
+        str(pl_root),
+        "--output-root",
+        str(output_root),
+        "--reviewer",
+        "Haridas",
+        "--reviewed-at",
+        "2026-06-07T12:00:00+05:00",
+        "--json",
+        stdout=stdout,
+    )
+
+    payload = json.loads(stdout.getvalue())
+    assert payload["summary"]["written_count"] == 1
+    assert payload["written"][0]["output_path"].endswith("sterlitamak-1998-04-30-1345.md")
+
+
+def _write_batch_roots(tmp_path):
+    jhora_root = tmp_path / "jhora"
+    pl_root = tmp_path / "pl7"
+    jhora_dir = jhora_root / "sterlitamak"
+    pl_dir = pl_root / "haridas"
+    vrindavan_dir = jhora_root / "vrindavan"
+    jhora_dir.mkdir(parents=True)
+    pl_dir.mkdir(parents=True)
+    vrindavan_dir.mkdir(parents=True)
+    input_data = {
+        "birth_date": "1998-04-30",
+        "birth_time": "13:45:00",
+        "place_name": "Sterlitamak",
+        "timezone": "Asia/Yekaterinburg",
+        "latitude": 53.6304,
+        "longitude": 55.9502,
+    }
+    jhora_fixture = {
+        "id": "sterlitamak-1998-04-30-1345",
+        "review_status": "draft",
+        "input": input_data,
+        "expected": {"ascendant": {"longitude": 10.0, "rashi": "Mesha"}},
+        "jhora_metadata": {
+            "capture_status": "export_parsed",
+            "ayanamsa": "Lahiri",
+            "timezone_offset": "+06:00",
+        },
+        "capture_files": {
+            "complete_calculations_text": "complete-calculations.txt",
+            "screenshots": ["main.png"],
+        },
+        "jhora_expected": {"special_points": {}},
+    }
+    pl_fixture = {
+        "id": "pl7-haridas-1998",
+        "review_status": "draft",
+        "input": input_data,
+        "pl_metadata": {
+            "capture_status": "ui_state_captured",
+            "ayanamsa": "Lahiri",
+            "timezone_offset": "+06:00",
+        },
+        "capture_files": {"ui_state": "state.json", "screenshots": ["pl.png"]},
+        "manual_witness_values": [
+            {"source": "pl7", "body": "Lagna", "witness": {"rashi": "Simha"}},
+        ],
+    }
+    (jhora_dir / "fixture.json").write_text(json.dumps(jhora_fixture), encoding="utf-8")
+    (pl_dir / "packet.json").write_text(
+        json.dumps(
+            {
+                "fixture": pl_fixture,
+                "jyotish_agent_chart": {
+                    "ascendant": {"body": "Lagna", "rashi": "Karka", "rashi_index": 3},
+                    "grahas": [],
+                    "houses": [{"house": 1, "rashi": "Karka", "rashi_index": 3}],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (pl_dir / "fixture.json").write_text(json.dumps(pl_fixture), encoding="utf-8")
+    (vrindavan_dir / "fixture.json").write_text(
+        json.dumps(
+            {
+                "id": "vrindavan-1990-08-15-1024",
+                "review_status": "draft",
+                "input": {
+                    "birth_date": "1990-08-15",
+                    "birth_time": "10:24:00",
+                    "place_name": "Vrindavan",
+                },
+                "jhora_metadata": {"capture_status": "export_parsed", "ayanamsa": "Lahiri"},
+                "capture_files": {"complete_calculations_text": "complete.txt"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    return jhora_root, pl_root
