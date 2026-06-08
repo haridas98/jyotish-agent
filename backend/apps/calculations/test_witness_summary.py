@@ -502,11 +502,13 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     ]
     assert witness_capture_queue["next_item"]["id"] == "sterlitamak-1998-04-30-1345"
     assert witness_capture_queue["next_action_key"] == "set_review_status_jhora_verified_after_manual_review"
+    assert witness_capture_queue["next_action_label"] == "Run review preflight"
     assert witness_capture_queue["next_command_kind"] == "manual_review"
     assert witness_capture_queue["next_step_label"] == "Run review preflight first"
     assert witness_capture_queue["next_command"] == ""
     assert "preflight_witness_review" in witness_capture_queue["manual_review_command"]
     assert witness_capture_queue["items"][0]["next_action_key"] == "set_review_status_jhora_verified_after_manual_review"
+    assert witness_capture_queue["items"][0]["next_action_label"] == "Run review preflight"
     assert witness_capture_queue["items"][0]["next_command_kind"] == "manual_review"
     assert witness_capture_queue["items"][0]["next_step_label"] == "Run review preflight first"
     assert witness_capture_queue["next_item"]["next_step_label"] == "Run review preflight first"

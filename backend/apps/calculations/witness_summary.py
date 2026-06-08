@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .jhora_accuracy_report import load_jhora_accuracy_report
 from .parashara_light_packet_report import load_parashara_light_packet_report
-from .witness_action_labels import suggested_action_labels
+from .witness_action_labels import suggested_action_label, suggested_action_labels
 
 TIMEZONE_OFFSET_RE = re.compile(r"^(?:UTC|GMT)?\s*([+-])\s*(\d{1,2})(?::?(\d{2}))?$", re.IGNORECASE)
 JHORA_EXPORT_TIMEZONE_RE = re.compile(
@@ -554,6 +554,7 @@ def _witness_capture_queue(path: str | Path) -> dict[str, Any]:
         (next_item or {}).get("manual_review_command"),
         sanitizer=_safe_witness_manual_review_command,
     )
+    next_action_key = str(payload.get("next_action_key") or (next_item or {}).get("next_action_key") or "")
     return {
         "available": True,
         "status": "loaded",
@@ -577,8 +578,11 @@ def _witness_capture_queue(path: str | Path) -> dict[str, Any]:
         },
         "items": items,
         "next_item": next_item,
-        "next_action_key": str(payload.get("next_action_key") or (next_item or {}).get("next_action_key") or ""),
-        "next_action_label": str(payload.get("next_action_label") or (next_item or {}).get("next_action_label") or ""),
+        "next_action_key": next_action_key,
+        "next_action_label": _witness_action_label(
+            payload.get("next_action_label") or (next_item or {}).get("next_action_label"),
+            next_action_key,
+        ),
         "next_command_kind": str(payload.get("next_command_kind") or (next_item or {}).get("next_command_kind") or ""),
         "next_step_label": str(payload.get("next_step_label") or (next_item or {}).get("next_step_label") or ""),
         "next_command": next_command,
@@ -622,6 +626,7 @@ def _missing_witness_capture_queue(path: str) -> dict[str, Any]:
 def _witness_capture_queue_item(row: dict[str, Any]) -> dict[str, Any]:
     targets = row.get("capture_targets") if isinstance(row.get("capture_targets"), dict) else {}
     suggested_actions = _string_list(row.get("suggested_actions"))
+    next_action_key = str(row.get("next_action_key") or "")
     return {
         "priority": int(row.get("priority") or 0),
         "id": str(row.get("id") or ""),
@@ -634,14 +639,19 @@ def _witness_capture_queue_item(row: dict[str, Any]) -> dict[str, Any]:
         },
         "suggested_actions": suggested_actions,
         "suggested_action_labels": suggested_action_labels(suggested_actions),
-        "next_action_key": str(row.get("next_action_key") or ""),
-        "next_action_label": str(row.get("next_action_label") or ""),
+        "next_action_key": next_action_key,
+        "next_action_label": _witness_action_label(row.get("next_action_label"), next_action_key),
         "next_command_kind": str(row.get("next_command_kind") or ""),
         "next_step_label": str(row.get("next_step_label") or ""),
         "next_command": _safe_witness_next_command(row.get("next_command")),
         "manual_review_command": _safe_witness_manual_review_command(row.get("manual_review_command")),
         "blocker_count": int(row.get("blocker_count") or 0),
     }
+
+
+def _witness_action_label(label: Any, action_key: str) -> str:
+    label = str(label or "").strip()
+    return label or suggested_action_label(action_key)
 
 
 def _preferred_safe_command(primary: Any, fallback: Any, *, sanitizer) -> str:

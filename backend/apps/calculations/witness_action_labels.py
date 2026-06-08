@@ -22,5 +22,10 @@ ACTION_LABELS = {
 }
 
 
+def suggested_action_label(action: str) -> str:
+    action = str(action or "")
+    return ACTION_LABELS.get(action, action.replace("_", " ")) if action else ""
+
+
 def suggested_action_labels(actions: list[str]) -> list[str]:
-    return [ACTION_LABELS.get(action, action.replace("_", " ")) for action in actions]
+    return [suggested_action_label(action) for action in actions]
