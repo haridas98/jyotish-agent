@@ -161,3 +161,33 @@ def test_witness_review_preflight_safe_next_only_hides_mutating_commands(tmp_pat
     assert "seal_witness_case" not in text
     assert "mark_jhora_witness_reviewed" not in text
     assert "mark_parashara_light_witness_reviewed" not in text
+
+
+def test_witness_review_preflight_quotes_powershell_metacharacters():
+    from apps.calculations.management.commands.preflight_witness_review import (
+        _review_command,
+        _seal_command,
+    )
+
+    review_command = _review_command(
+        "mark_jhora_witness_reviewed",
+        "C:\\cases\\jhora'; Write-Error nope",
+        reviewer="O'Brien; Stop-Process",
+        reviewed_at="2026-06-07T12:00:00+05:00",
+        ack_required=True,
+    )
+    seal_command = _seal_command(
+        "C:\\cases\\jh&bad",
+        "C:\\cases\\pl|bad",
+        reviewer="O'Brien",
+        reviewed_at="",
+        ack_required=False,
+    )
+
+    assert "'C:\\cases\\jhora''; Write-Error nope'" in review_command
+    assert "--reviewer 'O''Brien; Stop-Process'" in review_command
+    assert "--reviewed-at '2026-06-07T12:00:00+05:00'" in review_command
+    assert "--ack-diff-open" in review_command
+    assert "--jhora 'C:\\cases\\jh&bad'" in seal_command
+    assert "--parashara-light 'C:\\cases\\pl|bad'" in seal_command
+    assert "--reviewer 'O''Brien'" in seal_command

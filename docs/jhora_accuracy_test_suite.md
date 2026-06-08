@@ -68,6 +68,7 @@ even if an old/manual queue artifact contains them.
 Queue items include both `suggested_actions` keys and `suggested_action_labels` for readable markdown/UI display.
 Review/status actions are exposed as a `manual_review_command` preflight command; only the preflight/seal output should
 be used for commands that actually mark evidence reviewed.
+Generated PowerShell commands quote dynamic arguments such as case ids, paths and reviewer names.
 
 The audit scans `.tmp\jhora` and `.tmp\pl7`, matches packet/fixture artifacts to the 20-chart target queue, and reports:
 

@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from apps.calculations.witness_action_labels import suggested_action_labels
 from apps.calculations.witness_batch import audit_jhora_pl_witness_batch
+from apps.calculations.witness_powershell import ps_quote
 
 
 SCHEMA_VERSION = "jyotish-witness-capture-queue-v1"
@@ -189,7 +190,7 @@ def _string_list(value: Any) -> list[str]:
 
 def _next_auto_command(case_id: str, action: str) -> str:
     template = AUTO_CAPTURE_ACTION_COMMANDS.get(action)
-    return template.format(case_id=case_id) if template else ""
+    return template.format(case_id=ps_quote(case_id)) if template else ""
 
 
 def _next_step_label(kind: str) -> str:
@@ -209,9 +210,9 @@ def _next_manual_review_command(row: dict[str, Any], action: str) -> str:
         return ""
     parts = [".\\.venv\\Scripts\\python.exe", "manage.py", "preflight_witness_review"]
     if jhora_path:
-        parts.extend(["--jhora", jhora_path])
+        parts.extend(["--jhora", ps_quote(jhora_path)])
     if pl_path:
-        parts.extend(["--parashara-light", pl_path])
+        parts.extend(["--parashara-light", ps_quote(pl_path)])
     parts.append("--safe-next-only")
     return " ".join(parts)
 

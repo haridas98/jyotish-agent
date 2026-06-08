@@ -37,7 +37,9 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     assert "Build JHora witness packet" in first["suggested_action_labels"]
     assert first["next_action_key"] == "build_jhora_witness_batch_packets"
     assert first["next_step_label"] == "Run capture command"
-    assert first["next_command"].endswith("manage.py build_jhora_witness_batch_packets --case-id sterlitamak-1998-04-30-1345")
+    assert first["next_command"].endswith(
+        "manage.py build_jhora_witness_batch_packets --case-id 'sterlitamak-1998-04-30-1345'"
+    )
     assert payload["next_item"]["id"] == "sterlitamak-1998-04-30-1345"
     assert payload["next_action_key"] == "build_jhora_witness_batch_packets"
     assert payload["next_command_kind"] == "auto_capture"
@@ -110,7 +112,7 @@ def test_build_witness_capture_queue_command_outputs_next_only(tmp_path):
     assert "next step: Run capture command" in text
     assert (
         "next command: .\\.venv\\Scripts\\python.exe manage.py build_jhora_witness_batch_packets "
-        "--case-id sterlitamak-1998-04-30-1345"
+        "--case-id 'sterlitamak-1998-04-30-1345'"
     ) in text
     assert "- 1." not in text
     assert output.exists()
@@ -139,9 +141,30 @@ def test_witness_capture_queue_manual_review_actions_are_not_auto_commands():
     assert item["next_step_label"] == "Run review preflight first"
     assert item["next_command"] == ""
     assert item["manual_review_command"].endswith(
-        "manage.py preflight_witness_review --jhora ..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345 --safe-next-only"
+        "manage.py preflight_witness_review --jhora '..\\.tmp\\jhora\\batch-queue\\sterlitamak-1998-04-30-1345' --safe-next-only"
     )
     assert "--parashara-light  " not in item["manual_review_command"]
+
+
+def test_witness_capture_queue_quotes_generated_command_arguments():
+    from apps.calculations.management.commands.build_witness_capture_queue import (
+        _next_auto_command,
+        _next_manual_review_command,
+    )
+
+    auto_command = _next_auto_command("case'; Write-Error nope", "build_jhora_witness_batch_packets")
+    assert "--case-id 'case''; Write-Error nope'" in auto_command
+
+    manual_command = _next_manual_review_command(
+        {
+            "jhora_records": [{"path": "C:\\cases\\jh'; Remove-Item x"}],
+            "pl_records": [{"path": "C:\\cases\\pl&bad"}],
+        },
+        "set_review_status_jhora_verified_after_manual_review",
+    )
+
+    assert "--jhora 'C:\\cases\\jh''; Remove-Item x'" in manual_command
+    assert "--parashara-light 'C:\\cases\\pl&bad'" in manual_command
 
 
 def test_witness_capture_queue_text_summary_shows_manual_review_next_step():

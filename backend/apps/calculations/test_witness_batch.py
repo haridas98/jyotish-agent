@@ -38,6 +38,10 @@ def test_audit_jhora_pl_witness_batch_reports_missing_queue(tmp_path):
         "add_reviewer_and_reviewed_at",
         "attach_pl_witness_packet_or_manual_values",
     ]
+    assert first_action["suggested_action_labels"][:2] == [
+        "Build JHora witness packet",
+        "Capture JHora complete export",
+    ]
 
 
 def test_audit_jhora_pl_witness_batch_matches_draft_jhora_and_pl_by_birth_key(tmp_path):
@@ -356,6 +360,18 @@ def test_audit_jhora_witness_batch_command_outputs_json_and_can_fail(tmp_path):
     )
     payload = json.loads(stdout.getvalue())
     assert payload["summary"]["target_met"] is False
+    assert "suggested_action_labels" in payload["next_actions"][0]
+
+    text_stdout = io.StringIO()
+    call_command(
+        "audit_jhora_witness_batch",
+        "--jhora-root",
+        str(tmp_path / "jhora"),
+        "--pl-root",
+        str(tmp_path / "pl7"),
+        stdout=text_stdout,
+    )
+    assert "Build JHora witness packet" in text_stdout.getvalue()
 
     with pytest.raises(CommandError, match="witness target is not met"):
         call_command(

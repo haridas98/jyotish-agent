@@ -18,6 +18,7 @@ from apps.calculations.management.commands.mark_parashara_light_witness_reviewed
 from apps.calculations.management.commands.mark_parashara_light_witness_reviewed import (
     _missing_review_evidence as missing_parashara_light_review_evidence,
 )
+from apps.calculations.witness_powershell import ps_quote
 
 
 class Command(BaseCommand):
@@ -153,15 +154,15 @@ def _review_command(
         ".\\.venv\\Scripts\\python.exe",
         "manage.py",
         command,
-        str(path),
+        ps_quote(path),
         "--reviewer",
-        reviewer,
+        ps_quote(reviewer),
     ]
     if reviewed_at:
-        parts.extend(["--reviewed-at", reviewed_at])
+        parts.extend(["--reviewed-at", ps_quote(reviewed_at)])
     if ack_required:
         parts.append("--ack-diff-open")
-    return " ".join(_ps_quote(part) for part in parts)
+    return " ".join(str(part) for part in parts)
 
 
 def _seal_command(
@@ -177,23 +178,17 @@ def _seal_command(
         "manage.py",
         "seal_witness_case",
         "--jhora",
-        str(jhora_path),
+        ps_quote(jhora_path),
         "--parashara-light",
-        str(parashara_light_path),
+        ps_quote(parashara_light_path),
         "--reviewer",
-        reviewer,
+        ps_quote(reviewer),
     ]
     if reviewed_at:
-        parts.extend(["--reviewed-at", reviewed_at])
+        parts.extend(["--reviewed-at", ps_quote(reviewed_at)])
     if ack_required:
         parts.append("--ack-diff-open")
-    return " ".join(_ps_quote(part) for part in parts)
-
-
-def _ps_quote(value: str) -> str:
-    if value and not any(char.isspace() for char in value):
-        return value
-    return "'" + value.replace("'", "''") + "'"
+    return " ".join(str(part) for part in parts)
 
 
 def _resolve_paths(path: Path) -> tuple[Path, Path]:

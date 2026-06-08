@@ -7,6 +7,7 @@ from typing import Any
 
 from .fixture_runner import AUTHORITATIVE_REVIEW_STATUSES
 from .jhora_parity_suite import jhora_parity_suite_manifest
+from .witness_action_labels import suggested_action_labels
 
 SCHEMA_VERSION = "jyotish-witness-batch-audit-v1"
 DEFAULT_TARGET_REVIEWED_COUNT = 20
@@ -330,6 +331,7 @@ def _next_actions(
     for row in case_rows:
         if row["batch_review_ready"]:
             continue
+        suggested_actions = _suggested_actions(row)
         action = {
             "id": row["id"],
             "group": row["group"],
@@ -338,7 +340,8 @@ def _next_actions(
             "batch_review_ready": row["batch_review_ready"],
             "missing_for_authoritative_review": row["missing_for_authoritative_review"],
             "missing_secondary_witness": row["missing_secondary_witness"],
-            "suggested_actions": _suggested_actions(row),
+            "suggested_actions": suggested_actions,
+            "suggested_action_labels": suggested_action_labels(suggested_actions),
         }
         if include_review_preflight:
             action["review_preflight"] = _review_preflight(row)

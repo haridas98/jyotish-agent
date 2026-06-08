@@ -61,7 +61,7 @@ def _text_summary(payload: dict) -> str:
     if payload["next_actions"]:
         lines.append("next actions:")
         for item in payload["next_actions"][:20]:
-            actions = ", ".join(item["suggested_actions"]) or "none"
+            actions = ", ".join(item.get("suggested_action_labels") or item["suggested_actions"]) or "none"
             preflight = item.get("review_preflight") if isinstance(item.get("review_preflight"), dict) else {}
             overall = preflight.get("overall") if isinstance(preflight.get("overall"), dict) else {}
             suffix = ""
