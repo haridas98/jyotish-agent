@@ -89,7 +89,7 @@ $restartCommand = if ($BackendOnly) {
 $remoteHealthCheckCommand = @'
 health=$(curl -fsS http://127.0.0.1:18100/api/health)
 echo "$health"
-case "$health" in *\"deploy_commit\":\"__DEPLOY_COMMIT__\"*) ;; *) echo "deploy_commit mismatch: expected __DEPLOY_COMMIT__" >&2; exit 1;; esac
+case "$health" in *deploy_commit*__DEPLOY_COMMIT__*) ;; *) echo "deploy_commit mismatch: expected __DEPLOY_COMMIT__" >&2; exit 1;; esac
 '@ -replace "`r?`n", "; "
 $remoteHealthCheckCommand = $remoteHealthCheckCommand.Replace("__DEPLOY_COMMIT__", $commit)
 
