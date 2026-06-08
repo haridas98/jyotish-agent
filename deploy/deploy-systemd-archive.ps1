@@ -89,7 +89,7 @@ $restartCommand = if ($BackendOnly) {
 $remoteHealthCheckCommand = @'
 health=$(curl -fsS http://127.0.0.1:18100/api/health)
 echo "$health"
-./.venv/bin/python -c 'import json, sys; data=json.loads(sys.argv[1]); expected=sys.argv[2]; actual=data.get("deploy_commit"); raise SystemExit(0 if actual == expected else f"deploy_commit mismatch: expected {expected}, got {actual}")' "$health" "__DEPLOY_COMMIT__"
+case "$health" in *\"deploy_commit\":\"__DEPLOY_COMMIT__\"*) ;; *) echo "deploy_commit mismatch: expected __DEPLOY_COMMIT__" >&2; exit 1;; esac
 '@ -replace "`r?`n", "; "
 $remoteHealthCheckCommand = $remoteHealthCheckCommand.Replace("__DEPLOY_COMMIT__", $commit)
 
