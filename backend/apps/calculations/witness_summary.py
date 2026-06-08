@@ -17,6 +17,40 @@ JHORA_EXPORT_TIMEZONE_RE = re.compile(
     r"\((?P<direction>East|West) of GMT\)\s*$",
     re.IGNORECASE,
 )
+WITNESS_MANAGE_COMMAND_RE = re.compile(
+    r"^\.[\\/]\.venv[\\/]Scripts[\\/]python\.exe\s+manage\.py\s+"
+    r"(?P<command>[A-Za-z_][A-Za-z0-9_]*)(?P<args>\s.*)?$"
+)
+SAFE_WITNESS_NEXT_COMMANDS = {
+    "audit_jhora_witness_batch",
+    "build_jhora_verification_packet",
+    "build_jhora_witness_batch_jhd_files",
+    "build_jhora_witness_batch_packets",
+    "build_manual_witness_template",
+    "build_parashara_light_calculation_options_report",
+    "build_parashara_light_forensic_dump",
+    "build_parashara_light_hidden_option_store",
+    "build_parashara_light_internal_settings_audit",
+    "build_parashara_light_option_store_diff",
+    "build_parashara_light_preferences_inventory",
+    "build_parashara_light_profile_report",
+    "build_parashara_light_settings_aware_forensic",
+    "build_parashara_light_settings_evidence",
+    "build_parashara_light_verification_packet",
+    "build_parashara_light_visible_settings_capture",
+    "build_parashara_light_witness_batch_packets",
+    "build_witness_capture_queue",
+    "build_witness_review_batch_packets",
+    "build_witness_review_packet",
+    "capture_jhora_complete_export",
+    "capture_jhora_ui_tables",
+    "capture_jhora_witness_batch_exports",
+    "capture_parashara_light_ui_state",
+    "compare_manual_witness_values",
+    "preflight_witness_review",
+    "run_accuracy_fixtures",
+}
+SAFE_WITNESS_MANUAL_REVIEW_COMMANDS = {"preflight_witness_review"}
 
 
 def build_witness_summary(
@@ -618,34 +652,37 @@ def _preferred_safe_command(primary: Any, fallback: Any, *, sanitizer) -> str:
 
 def _safe_witness_next_command(value: Any) -> str:
     command = str(value or "").strip()
-    if not command or _has_mutating_witness_command(command):
-        return ""
-    safe_tokens = (
-        "audit_",
-        "build_",
-        "capture_",
-        "compare_manual_witness_values",
-        "preflight_witness_review",
-        "run_accuracy_fixtures",
-    )
-    return command if any(token in command for token in safe_tokens) else ""
+    return command if _is_safe_witness_manage_command(command, SAFE_WITNESS_NEXT_COMMANDS) else ""
 
 
 def _safe_witness_manual_review_command(value: Any) -> str:
     command = str(value or "").strip()
-    if not command or _has_mutating_witness_command(command):
-        return ""
-    return command if "preflight_witness_review" in command else ""
+    return command if _is_safe_witness_manage_command(command, SAFE_WITNESS_MANUAL_REVIEW_COMMANDS) else ""
 
 
-def _has_mutating_witness_command(command: str) -> bool:
-    mutating_tokens = (
-        "mark_jhora_witness_reviewed",
-        "mark_parashara_light_witness_reviewed",
-        "promote_jhora_witness_",
-        "seal_witness_case",
-    )
-    return any(token in command for token in mutating_tokens)
+def _is_safe_witness_manage_command(command: str, allowed_commands: set[str]) -> bool:
+    if not command or _has_unquoted_powershell_control(command):
+        return False
+    match = WITNESS_MANAGE_COMMAND_RE.match(command)
+    return bool(match and match.group("command") in allowed_commands)
+
+
+def _has_unquoted_powershell_control(command: str) -> bool:
+    in_single_quote = False
+    index = 0
+    while index < len(command):
+        char = command[index]
+        if char == "'":
+            if in_single_quote and index + 1 < len(command) and command[index + 1] == "'":
+                index += 2
+                continue
+            in_single_quote = not in_single_quote
+            index += 1
+            continue
+        if not in_single_quote and char in {'"', "#", "&", ";", "<", ">", "`", "|", "\n", "\r"}:
+            return True
+        index += 1
+    return in_single_quote
 
 
 def _string_list(value: Any) -> list[str]:

@@ -735,6 +735,60 @@ def test_witness_capture_queue_hides_mutating_commands(tmp_path):
     assert "preflight_witness_review" in queue["items"][1]["manual_review_command"]
 
 
+def test_witness_capture_queue_rejects_commands_that_only_contain_safe_tokens(tmp_path):
+    capture_queue_path = tmp_path / "witness-capture-queue.json"
+    capture_queue_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-witness-capture-queue-v1",
+                "summary": {"queue_count": 2},
+                "next_command": "Remove-Item C:\\tmp\\x # build_jhora_witness_batch_packets",
+                "manual_review_command": "Write-Host preflight_witness_review; Remove-Item x",
+                "items": [
+                    {
+                        "priority": 1,
+                        "id": "one",
+                        "next_command": (
+                            ".\\.venv\\Scripts\\python.exe manage.py capture_jhora_complete_export "
+                            "--case one; Remove-Item x"
+                        ),
+                        "manual_review_command": (
+                            ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review; Remove-Item x"
+                        ),
+                    },
+                    {
+                        "priority": 2,
+                        "id": "two",
+                        "next_command": (
+                            ".\\.venv\\Scripts\\python.exe manage.py build_jhora_witness_batch_packets "
+                            "--case-id 'case; still quoted'"
+                        ),
+                        "manual_review_command": (
+                            ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
+                            "--jhora 'case''; still quoted' --safe-next-only"
+                        ),
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        witness_capture_queue_path=capture_queue_path,
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+    )
+
+    queue = summary["witness_capture_queue"]
+    assert queue["next_command"] == ""
+    assert queue["manual_review_command"] == ""
+    assert queue["items"][0]["next_command"] == ""
+    assert queue["items"][0]["manual_review_command"] == ""
+    assert "case; still quoted" in queue["items"][1]["next_command"]
+    assert "case''; still quoted" in queue["items"][1]["manual_review_command"]
+
+
 def test_birth_timezone_audit_reports_unknown_timezone_source(tmp_path):
     from apps.calculations.witness_summary import _birth_timezone_audit
 

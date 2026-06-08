@@ -38,10 +38,23 @@ def test_audit_jhora_pl_witness_batch_reports_missing_queue(tmp_path):
         "add_reviewer_and_reviewed_at",
         "attach_pl_witness_packet_or_manual_values",
     ]
-    assert first_action["suggested_action_labels"][:2] == [
+    assert first_action["suggested_action_labels"] == [
         "Build JHora witness packet",
         "Capture JHora complete export",
+        "Record JHora settings and DST evidence",
+        "Attach JHora screenshots",
+        "Add reviewer after manual review",
+        "Attach PL witness values",
     ]
+
+
+def test_witness_batch_action_labels_cover_all_missing_artifact_actions():
+    from apps.calculations.witness_action_labels import ACTION_LABELS
+    from apps.calculations.witness_batch import ACTION_BY_MISSING_ARTIFACT
+
+    missing_labels = sorted(set(ACTION_BY_MISSING_ARTIFACT.values()) - set(ACTION_LABELS))
+
+    assert missing_labels == []
 
 
 def test_audit_jhora_pl_witness_batch_matches_draft_jhora_and_pl_by_birth_key(tmp_path):
