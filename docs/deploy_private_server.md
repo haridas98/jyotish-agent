@@ -47,6 +47,8 @@ Deploy from local workspace:
 ```powershell
 git status --short --branch
 git rev-parse --short HEAD
+$env:JYOTISH_PUBLIC_HEALTH_URL = "http://31.76.79.2:18100/api/health"
+$env:JYOTISH_PUBLIC_FRONTEND_URL = "http://31.76.79.2:13130/"
 .\deploy\deploy-systemd-archive.ps1 `
   -HostName 31.76.79.2 `
   -UserName root `
@@ -54,9 +56,9 @@ git rev-parse --short HEAD
 ```
 
 The helper creates `git archive`, uploads it with `pscp.exe`, unpacks it on the server, updates `.deploy-commit`,
-runs Django checks/migrations, builds frontend, restarts systemd services, and verifies local health. Pass
-`-BackendOnly` for backend-only changes. Set `JYOTISH_DEPLOY_PASSWORD` locally or use Pageant/SSH keys; do not commit
-secrets.
+runs Django checks/migrations, builds frontend, restarts systemd services, verifies local health, and checks public URLs
+when `JYOTISH_PUBLIC_HEALTH_URL` / `JYOTISH_PUBLIC_FRONTEND_URL` or matching params are set. Pass `-BackendOnly` for
+backend-only changes. Set `JYOTISH_DEPLOY_PASSWORD` locally or use Pageant/SSH keys; do not commit secrets.
 
 Manual equivalent:
 

@@ -3,6 +3,8 @@ param(
   [string]$UserName = $env:JYOTISH_DEPLOY_USER,
   [string]$Password = $env:JYOTISH_DEPLOY_PASSWORD,
   [string]$HostKey = $env:JYOTISH_DEPLOY_HOSTKEY,
+  [string]$PublicHealthUrl = $env:JYOTISH_PUBLIC_HEALTH_URL,
+  [string]$PublicFrontendUrl = $env:JYOTISH_PUBLIC_FRONTEND_URL,
   [string]$AppPath = "/srv/jyotish-agent/app",
   [switch]$BackendOnly,
   [switch]$AllowDirty
@@ -25,6 +27,22 @@ function Invoke-Checked {
   & $FilePath @Arguments
   if ($LASTEXITCODE -ne 0) {
     throw "$FilePath failed with exit code $LASTEXITCODE"
+  }
+}
+
+function Invoke-HttpCheck {
+  param(
+    [string]$Url,
+    [switch]$PrintContent
+  )
+  if (-not $Url) {
+    return
+  }
+
+  $response = Invoke-WebRequest -UseBasicParsing -Uri $Url -TimeoutSec 20
+  Write-Host "HTTP $($response.StatusCode) $Url"
+  if ($PrintContent) {
+    Write-Host $response.Content
   }
 }
 
@@ -77,5 +95,8 @@ $remoteCommand = @(
 ) -join "; "
 
 Invoke-Checked "plink.exe" ($sshArgs + @("${UserName}@${HostName}", $remoteCommand))
+
+Invoke-HttpCheck -Url $PublicHealthUrl -PrintContent
+Invoke-HttpCheck -Url $PublicFrontendUrl
 
 Write-Host "Deployed $commit to $HostName"
