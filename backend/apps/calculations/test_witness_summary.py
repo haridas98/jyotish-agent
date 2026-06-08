@@ -729,7 +729,7 @@ def test_witness_capture_queue_hides_mutating_commands(tmp_path):
     )
 
     queue = summary["witness_capture_queue"]
-    assert queue["next_command"] == ""
+    assert "capture_jhora_complete_export" in queue["next_command"]
     assert queue["manual_review_command"] == ""
     assert "capture_jhora_complete_export" in queue["items"][0]["next_command"]
     assert queue["items"][0]["manual_review_command"] == ""

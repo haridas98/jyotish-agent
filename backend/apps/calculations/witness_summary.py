@@ -656,7 +656,9 @@ def _witness_action_label(label: Any, action_key: str) -> str:
 
 def _preferred_safe_command(primary: Any, fallback: Any, *, sanitizer) -> str:
     if str(primary or "").strip():
-        return sanitizer(primary)
+        safe_primary = sanitizer(primary)
+        if safe_primary:
+            return safe_primary
     return sanitizer(fallback)
 
 
