@@ -34,6 +34,7 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     ]
     assert first["capture_targets"]["parashara_light"] == ["pl_witness_packet"]
     assert "build_jhora_witness_batch_packets" in first["suggested_actions"]
+    assert "Build JHora witness packet" in first["suggested_action_labels"]
     assert first["next_action_key"] == "build_jhora_witness_batch_packets"
     assert first["next_step_label"] == "Run capture command"
     assert first["next_command"].endswith("manage.py build_jhora_witness_batch_packets --case-id sterlitamak-1998-04-30-1345")
@@ -48,6 +49,7 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     assert "# Witness Capture Queue" in markdown
     assert "sterlitamak-1998-04-30-1345" in markdown
     assert "PL blockers: pl_witness_packet" in markdown
+    assert "Suggested actions: Build JHora witness packet" in markdown
     assert "Next step: Run capture command" in markdown
     assert "Next command:" in markdown
 
@@ -104,7 +106,7 @@ def test_build_witness_capture_queue_command_outputs_next_only(tmp_path):
 
     text = stdout.getvalue()
 
-    assert "next action: build_jhora_witness_batch_packets" in text
+    assert "next action: Build JHora witness packet" in text
     assert "next step: Run capture command" in text
     assert (
         "next command: .\\.venv\\Scripts\\python.exe manage.py build_jhora_witness_batch_packets "
@@ -133,6 +135,7 @@ def test_witness_capture_queue_manual_review_actions_are_not_auto_commands():
     item = _queue_item(1, row)
 
     assert item["next_command_kind"] == "manual_review"
+    assert item["suggested_action_labels"] == ["Run review preflight"]
     assert item["next_step_label"] == "Run review preflight first"
     assert item["next_command"] == ""
     assert item["manual_review_command"].endswith(
@@ -161,6 +164,7 @@ def test_witness_capture_queue_text_summary_shows_manual_review_next_step():
                 "priority": 1,
                 "id": "sterlitamak-1998-04-30-1345",
                 "suggested_actions": ["set_review_status_jhora_verified_after_manual_review"],
+                "suggested_action_labels": ["Run review preflight"],
             }
         ],
     }
@@ -169,6 +173,7 @@ def test_witness_capture_queue_text_summary_shows_manual_review_next_step():
 
     assert "next step: Run review preflight first" in text
     assert "manual review command: .\\.venv\\Scripts\\python.exe manage.py preflight_witness_review" in text
+    assert "- 1. sterlitamak-1998-04-30-1345: Run review preflight" in text
 
 
 def test_witness_capture_queue_next_only_summary_shows_manual_review_preflight():
@@ -176,6 +181,7 @@ def test_witness_capture_queue_next_only_summary_shows_manual_review_preflight()
 
     payload = {
         "next_action_key": "set_review_status_jhora_verified_after_manual_review",
+        "next_action_label": "Run review preflight",
         "next_step_label": "Run review preflight first",
         "next_command": "",
         "manual_review_command": (
@@ -187,7 +193,7 @@ def test_witness_capture_queue_next_only_summary_shows_manual_review_preflight()
 
     text = _next_only_summary(payload)
 
-    assert "next action: set_review_status_jhora_verified_after_manual_review" in text
+    assert "next action: Run review preflight" in text
     assert "next step: Run review preflight first" in text
     assert "manual review command: .\\.venv\\Scripts\\python.exe manage.py preflight_witness_review" in text
     assert "--safe-next-only" in text

@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from apps.calculations.witness_action_labels import suggested_action_labels
 from apps.calculations.witness_batch import audit_jhora_pl_witness_batch
 
 
@@ -126,6 +127,7 @@ def build_witness_capture_queue(
         "items": items,
         "next_item": next_item,
         "next_action_key": next_item["next_action_key"] if next_item else "",
+        "next_action_label": next_item["next_action_label"] if next_item else "",
         "next_command_kind": next_item["next_command_kind"] if next_item else "",
         "next_step_label": next_item["next_step_label"] if next_item else "",
         "next_command": next_item["next_command"] if next_item else "",
@@ -143,8 +145,10 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
     missing_jhora = _string_list(row.get("missing_for_authoritative_review"))
     missing_pl = _string_list(row.get("missing_secondary_witness"))
     suggested_actions = _string_list(row.get("suggested_actions"))
+    action_labels = suggested_action_labels(suggested_actions)
     case_id = str(row.get("id") or "")
     next_action = suggested_actions[0] if suggested_actions else ""
+    next_action_label = action_labels[0] if action_labels else ""
     auto_command = _next_auto_command(case_id, next_action)
     manual_command = _next_manual_review_command(row, next_action)
     command_kind = "auto_capture" if auto_command else "manual_review" if manual_command else "manual"
@@ -159,7 +163,9 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
             "parashara_light": missing_pl,
         },
         "suggested_actions": suggested_actions,
+        "suggested_action_labels": action_labels,
         "next_action_key": next_action,
+        "next_action_label": next_action_label,
         "next_command_kind": command_kind,
         "next_step_label": _next_step_label(command_kind),
         "next_command": auto_command,
@@ -255,7 +261,7 @@ def _markdown_queue(payload: dict[str, Any]) -> str:
                 f"- Status: {item['status']}",
                 f"- JHora blockers: {', '.join(item['capture_targets']['jhora']) or 'none'}",
                 f"- PL blockers: {', '.join(item['capture_targets']['parashara_light']) or 'none'}",
-                f"- Suggested actions: {', '.join(item['suggested_actions']) or 'review'}",
+                f"- Suggested actions: {', '.join(item.get('suggested_action_labels') or item['suggested_actions']) or 'review'}",
                 f"- Next step: {item['next_step_label']}",
                 f"- Next command: {item['next_command'] or 'manual review required'}",
                 f"- Manual review command: {item['manual_review_command'] or 'n/a'}",
@@ -282,13 +288,20 @@ def _text_summary(payload: dict[str, Any]) -> str:
     elif next_item.get("manual_review_command"):
         lines.append(f"manual review command: {next_item['manual_review_command']}")
     for item in payload["items"][:10]:
-        lines.append(f"- {item['priority']}. {item['id']}: {', '.join(item['suggested_actions']) or 'review'}")
+        actions = ", ".join(item.get("suggested_action_labels") or item["suggested_actions"]) or "review"
+        lines.append(f"- {item['priority']}. {item['id']}: {actions}")
     return "\n".join(lines)
 
 
 def _next_only_summary(payload: dict[str, Any]) -> str:
     next_item = payload.get("next_item") if isinstance(payload.get("next_item"), dict) else {}
-    next_action = str(payload.get("next_action_key") or next_item.get("next_action_key") or "review")
+    next_action = str(
+        payload.get("next_action_label")
+        or next_item.get("next_action_label")
+        or payload.get("next_action_key")
+        or next_item.get("next_action_key")
+        or "review"
+    )
     next_step = str(payload.get("next_step_label") or next_item.get("next_step_label") or "Manual capture/review")
     next_command = str(payload.get("next_command") or next_item.get("next_command") or "")
     manual_review_command = str(

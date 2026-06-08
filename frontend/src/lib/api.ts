@@ -693,6 +693,7 @@ export type WitnessCaptureQueueItem = {
   suggested_actions: string[];
   suggested_action_labels: string[];
   next_action_key: string;
+  next_action_label: string;
   next_command_kind: string;
   next_step_label: string;
   next_command: string;
@@ -863,6 +864,7 @@ export type WitnessSummary = {
     items: WitnessCaptureQueueItem[];
     next_item: WitnessCaptureQueueItem | null;
     next_action_key: string;
+    next_action_label: string;
     next_command_kind: string;
     next_step_label: string;
     next_command: string;
