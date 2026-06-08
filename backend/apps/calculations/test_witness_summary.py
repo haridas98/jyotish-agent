@@ -791,6 +791,47 @@ def test_witness_capture_queue_rejects_commands_that_only_contain_safe_tokens(tm
     assert "case''; still quoted" in queue["items"][1]["manual_review_command"]
 
 
+def test_witness_review_batch_legacy_summary_case_id_uses_written_next_step(tmp_path):
+    batch_index_path = tmp_path / "witness-review-index.json"
+    batch_index_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-witness-review-batch-packets-v1",
+                "summary": {
+                    "written_count": 1,
+                    "next_review_case_id": "sterlitamak-1998-04-30-1345",
+                },
+                "written": [
+                    {
+                        "id": "sterlitamak-1998-04-30-1345",
+                        "reviewable": False,
+                        "ack_required": True,
+                        "blocked": True,
+                        "safe_next_step": "resolve missing evidence before review",
+                        "review_checklist_next_steps_summary": (
+                            "Parashara Light evidence: capture missing evidence: pl_ui_state"
+                        ),
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        witness_review_batch_index_path=batch_index_path,
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+    )
+
+    batch = summary["witness_review_batch"]
+    assert batch["summary"]["next_review_case_id"] == "sterlitamak-1998-04-30-1345"
+    assert (
+        batch["summary"]["next_review_step"]
+        == "Parashara Light evidence: capture missing evidence: pl_ui_state"
+    )
+
+
 def test_birth_timezone_audit_reports_unknown_timezone_source(tmp_path):
     from apps.calculations.witness_summary import _birth_timezone_audit
 

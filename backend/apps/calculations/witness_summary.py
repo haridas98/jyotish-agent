@@ -728,16 +728,26 @@ def _witness_review_batch_progress(
 def _witness_review_batch_next_review(*, summary: dict[str, Any], written: list[dict[str, Any]]) -> dict[str, str]:
     case_id = str(summary.get("next_review_case_id") or "")
     step = str(summary.get("next_review_step") or "")
-    if case_id or step:
+    if step:
         return {"next_review_case_id": case_id, "next_review_step": step or "none"}
+    if case_id:
+        for row in written:
+            if str(row.get("id") or "") != case_id:
+                continue
+            return {"next_review_case_id": case_id, "next_review_step": _witness_review_batch_row_next_step(row)}
+        return {"next_review_case_id": case_id, "next_review_step": "none"}
     for row in written:
         if not (row.get("blocked") or row.get("ack_required") or row.get("reviewable")):
             continue
-        next_steps = str(row.get("review_checklist_next_steps_summary") or "").strip()
-        if not next_steps or next_steps == "none":
-            next_steps = str(row.get("safe_next_step") or "review preflight first")
-        return {"next_review_case_id": str(row.get("id") or ""), "next_review_step": next_steps}
+        return {"next_review_case_id": str(row.get("id") or ""), "next_review_step": _witness_review_batch_row_next_step(row)}
     return {"next_review_case_id": "", "next_review_step": "none"}
+
+
+def _witness_review_batch_row_next_step(row: dict[str, Any]) -> str:
+    next_steps = str(row.get("review_checklist_next_steps_summary") or "").strip()
+    if next_steps and next_steps != "none":
+        return next_steps
+    return str(row.get("safe_next_step") or "review preflight first")
 
 
 def _int_from_summary(summary: dict[str, Any], audit_summary: dict[str, Any], key: str) -> int:
