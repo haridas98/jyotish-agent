@@ -31,6 +31,45 @@ docker compose -f docker-compose.prod.yml exec backend python manage.py createsu
 
 Then install nginx config, replace `jyotish.example.com`, enable site, and issue TLS if a domain is used.
 
+## Current production host flow
+
+Current host `31.76.79.2` is an archive-based systemd deploy, not a git checkout and not Docker.
+
+- App path: `/srv/jyotish-agent/app`.
+- Frontend: `jyotish-agent-frontend.service`, Next on `0.0.0.0:13130`.
+- Backend: `jyotish-agent-backend.service`, gunicorn on `0.0.0.0:18100`.
+- Runtime files to preserve: `.env`, `.tmp/`, `.private_corpus/`, `ephe/`, `backend/.venv/`, `frontend/node_modules/`.
+- Deploy marker: `/srv/jyotish-agent/app/.deploy-commit`.
+- Verification: `GET http://31.76.79.2:18100/api/health` must return `deploy_commit`.
+
+Deploy from local workspace:
+
+```powershell
+git status --short --branch
+git rev-parse --short HEAD
+git archive --format=tar --output=.tmp\deploy-jyotish-agent-<commit>.tar HEAD
+pscp .tmp\deploy-jyotish-agent-<commit>.tar root@31.76.79.2:/tmp/deploy-jyotish-agent-<commit>.tar
+```
+
+Then on the server:
+
+```bash
+cd /srv/jyotish-agent/app
+cp .deploy-commit .deploy-commit.prev 2>/dev/null || true
+tar -xf /tmp/deploy-jyotish-agent-<commit>.tar -C /srv/jyotish-agent/app
+echo <commit> > .deploy-commit
+cd backend
+./.venv/bin/python manage.py check
+./.venv/bin/python manage.py migrate --noinput
+cd ../frontend
+npm run build
+systemctl restart jyotish-agent-backend.service jyotish-agent-frontend.service
+curl -fsS http://127.0.0.1:18100/api/health
+curl -I --max-time 15 http://127.0.0.1:13130/
+```
+
+For backend-only changes, skip the frontend build and restart only `jyotish-agent-backend.service`.
+
 ## Required production env decisions
 
 - `DJANGO_SECRET_KEY`, `POSTGRES_PASSWORD` must be real secrets.
