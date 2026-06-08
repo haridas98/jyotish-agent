@@ -2631,6 +2631,8 @@ function AccuracyReportPanel({
     witnessCaptureQueueNext?.manual_review_command ||
     "manual capture/review";
   const witnessCaptureQueueNextAction =
+    witnessCaptureQueue?.next_action_label ||
+    witnessCaptureQueueNext?.next_action_label ||
     witnessCaptureQueue?.next_action_key ||
     witnessCaptureQueueNext?.next_action_key ||
     witnessCaptureQueueNext?.status ||
