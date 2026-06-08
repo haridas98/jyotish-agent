@@ -1,3 +1,4 @@
+import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -21,3 +22,33 @@ def test_health_api_reports_deploy_commit_from_env(settings, monkeypatch, tmp_pa
 
     assert response.status_code == 200
     assert response.data["deploy_commit"] == "env-commit"
+
+
+@pytest.mark.django_db
+def test_database_health_api_runs_select_one():
+    response = APIClient().get(reverse("health-db"))
+
+    assert response.status_code == 200
+    assert response.data == {"status": "ok", "database": "connected", "check": 1}
+
+
+def test_vl_health_api_reports_not_configured(settings):
+    settings.VL_DATABASE_URL = ""
+
+    response = APIClient().get(reverse("health-vl"))
+
+    assert response.status_code == 200
+    assert response.data["status"] == "not_configured"
+    assert response.data["database"] == "vl"
+
+
+def test_vl_health_api_reports_error_as_unavailable(monkeypatch):
+    monkeypatch.setattr(
+        "apps.health.views.check_vl_database",
+        lambda database_url: {"status": "error", "database": "vl", "detail": "connection refused"},
+    )
+
+    response = APIClient().get(reverse("health-vl"))
+
+    assert response.status_code == 503
+    assert response.data == {"status": "error", "database": "vl", "detail": "connection refused"}

@@ -510,6 +510,16 @@ def _witness_capture_queue(path: str | Path) -> dict[str, Any]:
     items = [_witness_capture_queue_item(row) for row in raw_items if isinstance(row, dict)]
     raw_next_item = payload.get("next_item") if isinstance(payload.get("next_item"), dict) else None
     next_item = _witness_capture_queue_item(raw_next_item) if raw_next_item else (items[0] if items else None)
+    next_command = _preferred_safe_command(
+        payload.get("next_command"),
+        (next_item or {}).get("next_command"),
+        sanitizer=_safe_witness_next_command,
+    )
+    manual_review_command = _preferred_safe_command(
+        payload.get("manual_review_command"),
+        (next_item or {}).get("manual_review_command"),
+        sanitizer=_safe_witness_manual_review_command,
+    )
     return {
         "available": True,
         "status": "loaded",
@@ -537,10 +547,8 @@ def _witness_capture_queue(path: str | Path) -> dict[str, Any]:
         "next_action_label": str(payload.get("next_action_label") or (next_item or {}).get("next_action_label") or ""),
         "next_command_kind": str(payload.get("next_command_kind") or (next_item or {}).get("next_command_kind") or ""),
         "next_step_label": str(payload.get("next_step_label") or (next_item or {}).get("next_step_label") or ""),
-        "next_command": str(payload.get("next_command") or (next_item or {}).get("next_command") or ""),
-        "manual_review_command": str(
-            payload.get("manual_review_command") or (next_item or {}).get("manual_review_command") or ""
-        ),
+        "next_command": next_command,
+        "manual_review_command": manual_review_command,
     }
 
 
@@ -596,10 +604,48 @@ def _witness_capture_queue_item(row: dict[str, Any]) -> dict[str, Any]:
         "next_action_label": str(row.get("next_action_label") or ""),
         "next_command_kind": str(row.get("next_command_kind") or ""),
         "next_step_label": str(row.get("next_step_label") or ""),
-        "next_command": str(row.get("next_command") or ""),
-        "manual_review_command": str(row.get("manual_review_command") or ""),
+        "next_command": _safe_witness_next_command(row.get("next_command")),
+        "manual_review_command": _safe_witness_manual_review_command(row.get("manual_review_command")),
         "blocker_count": int(row.get("blocker_count") or 0),
     }
+
+
+def _preferred_safe_command(primary: Any, fallback: Any, *, sanitizer) -> str:
+    if str(primary or "").strip():
+        return sanitizer(primary)
+    return sanitizer(fallback)
+
+
+def _safe_witness_next_command(value: Any) -> str:
+    command = str(value or "").strip()
+    if not command or _has_mutating_witness_command(command):
+        return ""
+    safe_tokens = (
+        "audit_",
+        "build_",
+        "capture_",
+        "compare_manual_witness_values",
+        "preflight_witness_review",
+        "run_accuracy_fixtures",
+    )
+    return command if any(token in command for token in safe_tokens) else ""
+
+
+def _safe_witness_manual_review_command(value: Any) -> str:
+    command = str(value or "").strip()
+    if not command or _has_mutating_witness_command(command):
+        return ""
+    return command if "preflight_witness_review" in command else ""
+
+
+def _has_mutating_witness_command(command: str) -> bool:
+    mutating_tokens = (
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed",
+        "promote_jhora_witness_",
+        "seal_witness_case",
+    )
+    return any(token in command for token in mutating_tokens)
 
 
 def _string_list(value: Any) -> list[str]:

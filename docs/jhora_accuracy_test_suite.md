@@ -63,6 +63,8 @@ The Witness Summary API exposes this file as `witness_capture_queue`, and the Ac
 remaining target, first blockers, and markdown path. Override the source with `WITNESS_CAPTURE_QUEUE_PATH` if needed.
 New capture queues also include root `next_item`, `next_action_key`, `next_action_label`, `next_command_kind`, `next_step_label`,
 `next_command`, and `manual_review_command` so the current CLI capture/review step can be shown without opening the markdown file.
+The Witness Summary API sanitizes these executable commands: `mark_*`, `promote_*`, and `seal_witness_case` are hidden
+even if an old/manual queue artifact contains them.
 Queue items include both `suggested_actions` keys and `suggested_action_labels` for readable markdown/UI display.
 Review/status actions are exposed as a `manual_review_command` preflight command; only the preflight/seal output should
 be used for commands that actually mark evidence reviewed.

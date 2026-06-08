@@ -3,6 +3,8 @@ import json
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from apps.calculations.witness_summary import build_witness_summary
+
 
 def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_path):
     jhora_path = tmp_path / "jhora-accuracy.json"
@@ -676,6 +678,61 @@ def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
     assert profile["status"] == "load_error"
     assert profile["authoritative"] is False
     assert profile["source_report"] == str(profile_path)
+
+
+def test_witness_capture_queue_hides_mutating_commands(tmp_path):
+    capture_queue_path = tmp_path / "witness-capture-queue.json"
+    capture_queue_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-witness-capture-queue-v1",
+                "summary": {"queue_count": 2},
+                "next_command": ".\\.venv\\Scripts\\python.exe manage.py seal_witness_case --case one",
+                "manual_review_command": (
+                    ".\\.venv\\Scripts\\python.exe manage.py mark_jhora_witness_reviewed --case one"
+                ),
+                "items": [
+                    {
+                        "priority": 1,
+                        "id": "one",
+                        "next_command": (
+                            ".\\.venv\\Scripts\\python.exe manage.py capture_jhora_complete_export --case one"
+                        ),
+                        "manual_review_command": (
+                            ".\\.venv\\Scripts\\python.exe manage.py "
+                            "mark_parashara_light_witness_reviewed --case one"
+                        ),
+                    },
+                    {
+                        "priority": 2,
+                        "id": "two",
+                        "next_command": (
+                            ".\\.venv\\Scripts\\python.exe manage.py promote_jhora_witness_batch --case two"
+                        ),
+                        "manual_review_command": (
+                            ".\\.venv\\Scripts\\python.exe manage.py preflight_witness_review "
+                            "--jhora two --parashara-light two\\packet.json"
+                        ),
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        witness_capture_queue_path=capture_queue_path,
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+    )
+
+    queue = summary["witness_capture_queue"]
+    assert queue["next_command"] == ""
+    assert queue["manual_review_command"] == ""
+    assert "capture_jhora_complete_export" in queue["items"][0]["next_command"]
+    assert queue["items"][0]["manual_review_command"] == ""
+    assert queue["items"][1]["next_command"] == ""
+    assert "preflight_witness_review" in queue["items"][1]["manual_review_command"]
 
 
 def test_birth_timezone_audit_reports_unknown_timezone_source(tmp_path):
