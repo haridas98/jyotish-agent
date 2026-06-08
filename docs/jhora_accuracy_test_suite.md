@@ -36,7 +36,8 @@ for the parity queue. It does not mark PL evidence reviewed; screenshots, UI sta
 `build_witness_review_batch_packets` writes one markdown packet per paired JHora/PL case plus `..\.tmp\witness-review\_index.md` and
 `..\.tmp\witness-review\_index.json`. The Witness Summary API exposes the JSON index as `witness_review_batch`,
 and the Accuracy tab shows the written/skipped/error counts plus generated/reviewer metadata next to the seal gate.
-The JSON index also includes `next_actions` with per-case JHora/PL blockers and suggested capture/review actions.
+The JSON index also includes `next_actions` with per-case JHora/PL blockers, suggested capture/review action keys
+and human-readable labels.
 Each written batch row also carries `review_checklist` and `review_checklist_summary`; the plain CLI summary and
 `_index.md` show the same checklist statuses without exposing mark/seal commands.
 Each checklist item includes `next_step` in JSON and markdown, so UI/agents can show the next safe manual action.

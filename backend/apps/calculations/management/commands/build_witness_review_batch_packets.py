@@ -11,6 +11,7 @@ from django.utils import timezone
 from apps.calculations.management.commands.build_witness_review_packet import (
     build_witness_review_packet,
 )
+from apps.calculations.witness_action_labels import suggested_action_labels
 from apps.calculations.witness_batch import audit_jhora_pl_witness_batch
 
 
@@ -247,7 +248,7 @@ def _index_markdown(
     lines.extend(["", "## Next Actions", ""])
     if next_actions:
         for row in next_actions:
-            actions = ", ".join(row.get("suggested_actions", [])) or "review"
+            actions = ", ".join(row.get("suggested_action_labels", []) or row.get("suggested_actions", [])) or "review"
             lines.append(f"- `{row['id']}` - {row.get('status', 'pending')}: {actions}")
     else:
         lines.append("- none")
@@ -288,7 +289,9 @@ def _next_review_target(*, written: list[dict[str, Any]], next_actions: list[dic
         return {"next_review_case_id": str(row.get("id") or ""), "next_review_step": next_steps}
     if next_actions:
         row = next_actions[0]
-        actions = ", ".join(row.get("suggested_actions", [])) or str(row.get("status") or "review")
+        actions = ", ".join(row.get("suggested_action_labels", []) or row.get("suggested_actions", [])) or str(
+            row.get("status") or "review"
+        )
         return {"next_review_case_id": str(row.get("id") or ""), "next_review_step": actions}
     return {"next_review_case_id": "", "next_review_step": "none"}
 
@@ -300,6 +303,7 @@ def _public_next_actions(rows: Any) -> list[dict[str, Any]]:
     for row in rows:
         if not isinstance(row, dict):
             continue
+        suggested_actions = _string_list(row.get("suggested_actions"))
         public_rows.append(
             {
                 "id": str(row.get("id") or ""),
@@ -308,7 +312,8 @@ def _public_next_actions(rows: Any) -> list[dict[str, Any]]:
                 "status": str(row.get("status") or ""),
                 "missing_for_authoritative_review": _string_list(row.get("missing_for_authoritative_review")),
                 "missing_secondary_witness": _string_list(row.get("missing_secondary_witness")),
-                "suggested_actions": _string_list(row.get("suggested_actions")),
+                "suggested_actions": suggested_actions,
+                "suggested_action_labels": suggested_action_labels(suggested_actions),
             }
         )
     return public_rows

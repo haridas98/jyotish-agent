@@ -39,6 +39,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
         "attach_pl_witness_packet_or_manual_values"
         in next_action_by_id["vrindavan-1990-08-15-1024"]["suggested_actions"]
     )
+    assert "Attach PL witness values" in next_action_by_id["vrindavan-1990-08-15-1024"]["suggested_action_labels"]
     written = payload["written"][0]
     assert written["id"] == "sterlitamak-1998-04-30-1345"
     assert written["ack_required"] is True
@@ -95,6 +96,7 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert "missing_jhora_or_pl_pair" in index
     assert "## Next Actions" in index
     assert "vrindavan-1990-08-15-1024" in index
+    assert "Attach PL witness values" in index
     index_json = json.loads((output_root / "_index.json").read_text(encoding="utf-8"))
     assert index_json["summary"]["written_count"] == 1
     assert index_json["summary"]["reviewable_count"] == 1
@@ -107,6 +109,8 @@ def test_build_witness_review_batch_packets_writes_paired_cases_and_skips_unpair
     assert index_json["written"][0]["review_checklist_summary"] == written["review_checklist_summary"]
     assert index_json["written"][0]["review_checklist_next_steps_summary"] == written["review_checklist_next_steps_summary"]
     assert index_json["written"][0]["safe_next_step"] == "human ACK required before mark/seal"
+    index_next_action_by_id = {row["id"]: row for row in index_json["next_actions"]}
+    assert "Attach PL witness values" in index_next_action_by_id["vrindavan-1990-08-15-1024"]["suggested_action_labels"]
     assert any(row["id"] == "vrindavan-1990-08-15-1024" for row in index_json["next_actions"])
 
 
