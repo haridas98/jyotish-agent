@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from django.conf import settings
 from django.db import connection
 from rest_framework.response import Response
@@ -18,6 +20,7 @@ class HealthView(APIView):
                 "status": "ok",
                 "service": "jyotish-agent",
                 "debug": settings.DEBUG,
+                "deploy_commit": _deploy_commit(),
             }
         )
 
@@ -42,3 +45,13 @@ class VLHealthView(APIView):
         status = 200 if result["status"] in {"ok", "not_configured"} else 503
         return Response(result, status=status)
 
+
+def _deploy_commit() -> str:
+    value = os.getenv("JYOTISH_DEPLOY_COMMIT", "").strip()
+    if value:
+        return value
+    path = settings.ROOT_DIR / ".deploy-commit"
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
