@@ -42,6 +42,8 @@ include = ["config*", "apps*"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
+addopts = ["--basetemp=.tmp-pytest"]
+cache_dir = ".tmp-pytest-cache"
 python_files = ["test_*.py", "*_test.py", "tests.py"]
 testpaths = ["apps"]
 

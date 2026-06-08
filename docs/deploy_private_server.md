@@ -40,7 +40,7 @@ Current host `31.76.79.2` is an archive-based systemd deploy, not a git checkout
 - Backend: `jyotish-agent-backend.service`, gunicorn on `0.0.0.0:18100`.
 - Runtime files to preserve: `.env`, `.tmp/`, `.private_corpus/`, `ephe/`, `backend/.venv/`, `frontend/node_modules/`.
 - Deploy marker: `/srv/jyotish-agent/app/.deploy-commit`.
-- Verification: `GET http://31.76.79.2:18100/api/health` must return `deploy_commit`.
+- Verification: `GET http://31.76.79.2:18100/api/health` must return the deployed `deploy_commit`.
 
 Deploy from local workspace:
 
@@ -57,8 +57,9 @@ $env:JYOTISH_PUBLIC_FRONTEND_URL = "http://31.76.79.2:13130/"
 
 The helper creates `git archive`, uploads it with `pscp.exe`, unpacks it on the server, updates `.deploy-commit`,
 runs Django checks/migrations, builds frontend, restarts systemd services, verifies local health, and checks public URLs
-when `JYOTISH_PUBLIC_HEALTH_URL` / `JYOTISH_PUBLIC_FRONTEND_URL` or matching params are set. Pass `-BackendOnly` for
-backend-only changes. Set `JYOTISH_DEPLOY_PASSWORD` locally or use Pageant/SSH keys; do not commit secrets.
+when `JYOTISH_PUBLIC_HEALTH_URL` / `JYOTISH_PUBLIC_FRONTEND_URL` or matching params are set. Backend health must return
+the current archive commit; a stale backend/proxy now fails deploy. Pass `-BackendOnly` for backend-only changes. Set
+`JYOTISH_DEPLOY_PASSWORD` locally or use Pageant/SSH keys; do not commit secrets.
 
 Manual equivalent:
 

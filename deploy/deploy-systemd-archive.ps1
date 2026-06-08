@@ -33,7 +33,8 @@ function Invoke-Checked {
 function Invoke-HttpCheck {
   param(
     [string]$Url,
-    [switch]$PrintContent
+    [switch]$PrintContent,
+    [string]$ExpectedDeployCommit = ""
   )
   if (-not $Url) {
     return
@@ -41,6 +42,12 @@ function Invoke-HttpCheck {
 
   $response = Invoke-WebRequest -UseBasicParsing -Uri $Url -TimeoutSec 20
   Write-Host "HTTP $($response.StatusCode) $Url"
+  if ($ExpectedDeployCommit) {
+    $health = $response.Content | ConvertFrom-Json
+    if ($health.deploy_commit -ne $ExpectedDeployCommit) {
+      throw "Deploy commit mismatch for $Url. Expected $ExpectedDeployCommit, got $($health.deploy_commit)."
+    }
+  }
   if ($PrintContent) {
     Write-Host $response.Content
   }
@@ -79,6 +86,13 @@ $restartCommand = if ($BackendOnly) {
   "cd ../frontend && npm run build && systemctl restart jyotish-agent-backend.service jyotish-agent-frontend.service"
 }
 
+$remoteHealthCheckCommand = @'
+health=$(curl -fsS http://127.0.0.1:18100/api/health)
+echo "$health"
+./.venv/bin/python -c 'import json, sys; data=json.loads(sys.argv[1]); expected=sys.argv[2]; actual=data.get("deploy_commit"); raise SystemExit(0 if actual == expected else f"deploy_commit mismatch: expected {expected}, got {actual}")' "$health" "__DEPLOY_COMMIT__"
+'@ -replace "`r?`n", "; "
+$remoteHealthCheckCommand = $remoteHealthCheckCommand.Replace("__DEPLOY_COMMIT__", $commit)
+
 $remoteCommand = @(
   "set -e",
   "cd $AppPath",
@@ -90,13 +104,13 @@ $remoteCommand = @(
   "./.venv/bin/python manage.py migrate --noinput",
   $restartCommand,
   "sleep 2",
-  "curl -fsS http://127.0.0.1:18100/api/health",
+  $remoteHealthCheckCommand,
   "curl -I --max-time 15 http://127.0.0.1:13130/ >/dev/null"
 ) -join "; "
 
 Invoke-Checked "plink.exe" ($sshArgs + @("${UserName}@${HostName}", $remoteCommand))
 
-Invoke-HttpCheck -Url $PublicHealthUrl -PrintContent
+Invoke-HttpCheck -Url $PublicHealthUrl -PrintContent -ExpectedDeployCommit $commit
 Invoke-HttpCheck -Url $PublicFrontendUrl
 
 Write-Host "Deployed $commit to $HostName"
