@@ -158,6 +158,34 @@ def test_smoke_ai_helpers_command_can_continue_on_error(monkeypatch):
     assert payload["results"][1]["status"] == "ok"
 
 
+@override_settings(QWEN_MODEL="qwen-test")
+def test_smoke_ai_helpers_reports_unexpected_provider_payload(monkeypatch):
+    monkeypatch.setattr(
+        "apps.reports.qwen_generation.qwen_chat_completions_client",
+        lambda: lambda prompt: ["not", "a", "valid", "llm", "payload"],
+    )
+
+    stdout = io.StringIO()
+    call_command(
+        "smoke_ai_helpers",
+        "--providers",
+        "qwen",
+        "--continue-on-error",
+        stdout=stdout,
+    )
+
+    payload = json.loads(stdout.getvalue())
+    assert payload["status"] == "failed"
+    assert payload["results"][0]["status"] == "failed"
+    assert payload["results"][0]["provider"] == "qwen"
+    assert payload["results"][0]["model"] == "qwen-test"
+    assert (
+        payload["results"][0]["setup_hint"]
+        == "Run FreeQwenApi and set QWEN_API_BASE_URL/QWEN_MODEL in backend .env."
+    )
+    assert "must be str" in payload["results"][0]["error"]
+
+
 @override_settings(NEMOTRON_MODEL="nemotron-test")
 def test_smoke_ai_helpers_failure_includes_nemotron_setup_hint(monkeypatch):
     monkeypatch.setattr(

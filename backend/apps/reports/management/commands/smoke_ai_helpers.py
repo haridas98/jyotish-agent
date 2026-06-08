@@ -65,14 +65,18 @@ def _smoke_provider(provider: str, prompt: str) -> dict[str, Any]:
             "section_count": len(sections),
             "message_excerpt": _message_excerpt(raw_output, sections),
         }
-    except DraftGenerationUnavailable as exc:
-        return {
-            "status": "failed",
-            "provider": provider,
-            "model": _model(provider),
-            "error": str(exc),
-            "setup_hint": _setup_hint(provider),
-        }
+    except (DraftGenerationUnavailable, ValueError, TypeError) as exc:
+        return _failure_result(provider, exc)
+
+
+def _failure_result(provider: str, exc: Exception) -> dict[str, Any]:
+    return {
+        "status": "failed",
+        "provider": provider,
+        "model": _model(provider),
+        "error": str(exc),
+        "setup_hint": _setup_hint(provider),
+    }
 
 
 def _normalize_provider_output(provider: str, raw_output: str | dict[str, Any]) -> dict[str, Any]:
