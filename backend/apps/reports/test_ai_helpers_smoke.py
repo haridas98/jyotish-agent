@@ -96,6 +96,34 @@ def test_smoke_ai_helpers_default_providers_use_local_qwen_and_deepseek(monkeypa
     assert [result["provider"] for result in payload["results"]] == ["qwen", "free_deepseek"]
 
 
+@override_settings(FREE_DEEPSEEK_MODEL="deepseek-test")
+def test_smoke_ai_helpers_uses_deepseek_section_block_normalizer(monkeypatch):
+    monkeypatch.setattr(
+        "apps.reports.deepseek_generation.free_deepseek_chat_client",
+        lambda: lambda prompt: (
+            "Section 1: Smoke\n"
+            "Body: deepseek ok\n"
+            'Key points: ["parsed"]\n'
+            'Practical steps: ["check"]\n'
+        ),
+    )
+
+    stdout = io.StringIO()
+    call_command("smoke_ai_helpers", "--providers", "free_deepseek", stdout=stdout)
+
+    payload = json.loads(stdout.getvalue())
+    assert payload["status"] == "ok"
+    assert payload["results"] == [
+        {
+            "status": "ok",
+            "provider": "free_deepseek",
+            "model": "deepseek-test",
+            "section_count": 1,
+            "message_excerpt": "deepseek ok",
+        }
+    ]
+
+
 @override_settings(QWEN_MODEL="qwen-test", FREE_DEEPSEEK_MODEL="deepseek-test")
 def test_smoke_ai_helpers_command_can_continue_on_error(monkeypatch):
     monkeypatch.setattr(

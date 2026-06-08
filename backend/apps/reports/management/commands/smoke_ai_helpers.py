@@ -56,7 +56,7 @@ def _provider_keys(value: str) -> list[str]:
 def _smoke_provider(provider: str, prompt: str) -> dict[str, Any]:
     try:
         raw_output = _runner(provider)(prompt)
-        normalized = _normalize_llm_output(raw_output)
+        normalized = _normalize_provider_output(provider, raw_output)
         sections = normalized.get("sections") if isinstance(normalized.get("sections"), list) else []
         return {
             "status": "ok",
@@ -73,6 +73,12 @@ def _smoke_provider(provider: str, prompt: str) -> dict[str, Any]:
             "error": str(exc),
             "setup_hint": _setup_hint(provider),
         }
+
+
+def _normalize_provider_output(provider: str, raw_output: str | dict[str, Any]) -> dict[str, Any]:
+    if provider == "free_deepseek":
+        return deepseek_generation._normalize_deepseek_output(raw_output)
+    return _normalize_llm_output(raw_output)
 
 
 def _runner(provider: str) -> ProviderRunner:
