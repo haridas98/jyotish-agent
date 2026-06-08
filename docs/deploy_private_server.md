@@ -47,6 +47,20 @@ Deploy from local workspace:
 ```powershell
 git status --short --branch
 git rev-parse --short HEAD
+.\deploy\deploy-systemd-archive.ps1 `
+  -HostName 31.76.79.2 `
+  -UserName root `
+  -HostKey "SHA256:..."
+```
+
+The helper creates `git archive`, uploads it with `pscp.exe`, unpacks it on the server, updates `.deploy-commit`,
+runs Django checks/migrations, builds frontend, restarts systemd services, and verifies local health. Pass
+`-BackendOnly` for backend-only changes. Set `JYOTISH_DEPLOY_PASSWORD` locally or use Pageant/SSH keys; do not commit
+secrets.
+
+Manual equivalent:
+
+```powershell
 git archive --format=tar --output=.tmp\deploy-jyotish-agent-<commit>.tar HEAD
 pscp .tmp\deploy-jyotish-agent-<commit>.tar root@31.76.79.2:/tmp/deploy-jyotish-agent-<commit>.tar
 ```
