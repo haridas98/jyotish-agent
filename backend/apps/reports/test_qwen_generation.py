@@ -99,6 +99,7 @@ def test_generate_birth_chart_qwen_analysis_reuses_matching_cached_record(monkey
         output_json={
             "kind": "birth_chart_qwen",
             "provider": "qwen",
+            "prompt_version": "qwen-overview-v1",
             "review_status": "private_final",
             "source_policy": "private_shastra_research_first",
             "engine_label": "Сгенерировано с помощью QWEN",
@@ -115,6 +116,45 @@ def test_generate_birth_chart_qwen_analysis_reuses_matching_cached_record(monkey
 
     assert result["sections"][0]["title"] == "Cached"
     assert result["provider"] == "qwen"
+
+
+@pytest.mark.django_db
+def test_generate_birth_chart_qwen_analysis_uses_compact_overview_prompt(monkeypatch):
+    from apps.reports.qwen_generation import generate_birth_chart_qwen_analysis
+
+    captured = {}
+    monkeypatch.setattr(
+        "apps.reports.qwen_generation.build_analysis_packet",
+        lambda *args, **kwargs: {
+            "schema_version": "jyotish-analysis-packet-v1",
+            "prompt_markdown": "x" * 100_000,
+            "context": {
+                "birth": {"date": "1998-04-30", "time": "13:45"},
+                "chart": {"grahas": [{"body": "Sun", "rashi": "Aries"}]},
+            },
+        },
+    )
+
+    def runner(prompt):
+        captured["prompt"] = prompt
+        return json.dumps(
+            {
+                "language": "ru",
+                "sections": [{"title": "Smoke", "body": "qwen compact ok", "citation_titles": []}],
+            }
+        )
+
+    result = generate_birth_chart_qwen_analysis(
+        {"birth_date": "1998-04-30"},
+        qwen_runner=runner,
+        refresh_evidence=False,
+    )
+
+    assert result["provider"] == "qwen"
+    assert result["prompt_version"] == "qwen-overview-v1"
+    assert captured["prompt"].count("OVERVIEW PACKET JSON") == 1
+    assert "x" * 1000 not in captured["prompt"]
+    assert len(captured["prompt"]) < 5000
 
 
 @pytest.mark.django_db

@@ -13,17 +13,16 @@ from .analysis_packet import build_analysis_packet
 from .birth_report import CitationSearch, InterpretationProvider
 from .codex_cli_generation import (
     _coverage_status,
-    _has_full_report_coverage,
     _record_packet_snapshot,
     _review_status,
     _source_policy,
-    render_codex_cli_analysis_prompt,
-    render_codex_cli_repair_prompt,
 )
+from .deepseek_generation import _deepseek_overview_packet
 from .draft_generation import DraftGenerationUnavailable, _normalize_llm_output
 from .models import GeneratedAnalysisDraft
 
 QwenRunner = Callable[[str], dict[str, Any] | str]
+QWEN_PROMPT_VERSION = "qwen-overview-v1"
 
 QWEN_CACHE_KEYS = (
     "birth_date",
@@ -74,22 +73,13 @@ def generate_birth_chart_qwen_analysis(
     prompt = render_qwen_analysis_prompt(packet, private_research_mode=private_research_mode)
     runner = qwen_runner or qwen_chat_completions_client()
     output = _normalize_llm_output(runner(prompt))
-    if private_research_mode and not _has_full_report_coverage(output):
-        output = _normalize_llm_output(
-            runner(
-                render_qwen_repair_prompt(
-                    packet,
-                    output,
-                    private_research_mode=private_research_mode,
-                )
-            )
-        )
     output["coverage_status"] = _coverage_status(output, private_research_mode)
     output["review_status"] = _review_status(private_research_mode, output)
     output["source_policy"] = _source_policy(private_research_mode)
     output["kind"] = "birth_chart_qwen"
     output["provider"] = "qwen"
     output["model"] = settings.QWEN_MODEL
+    output["prompt_version"] = QWEN_PROMPT_VERSION
     output["engine_label"] = "Сгенерировано с помощью QWEN"
 
     record = GeneratedAnalysisDraft.objects.create(
@@ -112,12 +102,15 @@ def _cached_qwen_analysis(data: dict[str, Any]) -> dict[str, Any] | None:
         if not _qwen_cache_input_matches(record.input_snapshot, data):
             continue
         output = dict(record.output_json or {})
+        if output.get("prompt_version") != QWEN_PROMPT_VERSION:
+            continue
         output["coverage_status"] = _coverage_status(output, True)
         output["review_status"] = _review_status(True, output)
         output["source_policy"] = output.get("source_policy") or record.source_policy
         output["kind"] = output.get("kind") or record.kind
         output["provider"] = output.get("provider") or record.provider or "qwen"
         output["model"] = output.get("model") or record.model
+        output["prompt_version"] = output.get("prompt_version") or QWEN_PROMPT_VERSION
         output["engine_label"] = output.get("engine_label") or "Сгенерировано с помощью QWEN"
         output["id"] = record.id
         return output
@@ -142,28 +135,36 @@ def _qwen_cache_input_matches(snapshot: object, data: dict[str, Any]) -> bool:
 
 
 def render_qwen_analysis_prompt(packet: dict[str, Any], *, private_research_mode: bool = True) -> str:
-    prompt = render_codex_cli_analysis_prompt(packet, private_research_mode=private_research_mode)
-    return prompt.replace(
-        "Ты Codex CLI внутри jyotish-agent. Не редактируй файлы и не запускай команды.",
-        "Ты QWEN внутри jyotish-agent. Не редактируй файлы и не запускай команды.",
-        1,
+    source_policy = "private_shastra_research_first" if private_research_mode else "citation_first"
+    return (
+        "You are QWEN inside jyotish-agent. Do not edit files and do not run commands.\n"
+        "Return only valid JSON. Write a short Russian birth-chart overview, not a final full report.\n"
+        "Use only facts and source hints from the JSON below. Do not invent citations, verse numbers, or links.\n"
+        "Avoid fatalistic claims. Remedial advice must stay in a Vaishnava frame: Krishna shelter, sadhana, "
+        "service to Vaishnavas, and Srila Prabhupada's guidance.\n"
+        f"source_policy={source_policy}; review_status must stay draft/private_partial until human review.\n\n"
+        "OUTPUT JSON schema:\n"
+        "{\n"
+        '  "review_status": "private_partial",\n'
+        '  "language": "ru",\n'
+        '  "sections": [\n'
+        "    {\n"
+        '      "title": "string",\n'
+        '      "body": "string",\n'
+        '      "citation_titles": ["string"],\n'
+        '      "key_points": ["string"],\n'
+        '      "practical_steps": ["string"],\n'
+        '      "review_notes": ["string"]\n'
+        "    }\n"
+        "  ]\n"
+        "}\n\n"
+        "Make 5-8 sections: main picture, character/dharma, work/money, relationships, cautious health/risk, "
+        "spiritual practice, what to verify in PL/JHora.\n\n"
+        "OVERVIEW PACKET JSON:\n"
+        "```json\n"
+        f"{json.dumps(_deepseek_overview_packet(packet), ensure_ascii=False, indent=2)}\n"
+        "```\n"
     )
-
-
-def render_qwen_repair_prompt(
-    packet: dict[str, Any],
-    previous_output: dict[str, Any],
-    *,
-    private_research_mode: bool = True,
-) -> str:
-    prompt = render_codex_cli_repair_prompt(
-        packet,
-        previous_output,
-        private_research_mode=private_research_mode,
-    )
-    return prompt.replace("EXPAND INCOMPLETE REPORT.", "EXPAND INCOMPLETE QWEN REPORT.", 1)
-
-
 def qwen_chat_completions_client() -> QwenRunner:
     endpoint = f"{settings.QWEN_API_BASE_URL}/chat/completions"
     model = settings.QWEN_MODEL
