@@ -1015,6 +1015,72 @@ select {
   width: min(100%, 142px);
 }
 
+.essential-chart-pair {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.essential-chart-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  text-align: left;
+}
+
+.essential-chart-card.active {
+  background: #f5fbfa;
+  border-color: #8bc8bf;
+  box-shadow: inset 0 3px 0 var(--green-2);
+}
+
+.essential-chart-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.essential-chart-title {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.essential-chart-title strong {
+  color: var(--green);
+  font-size: 15px;
+}
+
+.essential-chart-title span {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.essential-chart-preview {
+  align-items: center;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  justify-self: center;
+  min-width: 0;
+  width: min(100%, 172px);
+}
+
+.essential-chart-preview em {
+  color: var(--muted);
+  font-style: normal;
+  text-align: center;
+}
+
 .varga-study-board {
   background: #ffffff;
   border: 1px solid var(--line);
@@ -4259,7 +4325,15 @@ button,
     grid-template-columns: 1fr;
   }
 
+  .essential-chart-pair {
+    grid-template-columns: 1fr;
+  }
+
   .reference-chart-preview {
+    width: min(100%, 220px);
+  }
+
+  .essential-chart-preview {
     width: min(100%, 220px);
   }
 

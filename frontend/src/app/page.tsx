@@ -1118,6 +1118,56 @@ function VargaStudyBoard({
   );
 }
 
+function EssentialChartPairBoard({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  onSelect: (code: string) => void;
+}) {
+  const d9 = chart?.vargas?.D9 ?? null;
+  const items = [
+    { code: "D1", title: "D1 Раши", hint: "основа карты", available: Boolean(chart), varga: null },
+    { code: "D9", title: "D9 Навамша", hint: "дхарма, брак, сила грах", available: Boolean(d9), varga: d9 },
+  ];
+
+  return (
+    <div className="essential-chart-pair" aria-label="Главная пара карт D1 и D9">
+      {items.map((item) => (
+        <button
+          type="button"
+          className={`essential-chart-card${activeCode === item.code ? " active" : ""}`}
+          disabled={!item.available}
+          key={item.code}
+          onClick={() => onSelect(item.code)}
+        >
+          <div className="essential-chart-title">
+            <strong>{item.title}</strong>
+            <span>{item.hint}</span>
+          </div>
+          <div className="essential-chart-preview">
+            {item.available ? (
+              chartStyle === "south" ? (
+                <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
+              ) : (
+                <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
+              )
+            ) : (
+              <em>нет расчёта</em>
+            )}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function FeaturedVargaBoard({
   chart,
   activeCode,
@@ -5561,6 +5611,13 @@ export default function Home() {
                 chartStyle={chartStyle}
                 activeReference={chartReference}
                 onSelect={setChartReference}
+              />
+              <EssentialChartPairBoard
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                chartReference={chartReference}
+                onSelect={selectVargaCode}
               />
               <div className="chart-mode-strip">
                 <VargaFocusGroups
