@@ -3279,3 +3279,256 @@ button,
     padding: 14px;
   }
 }
+
+.chart-svg {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.chart-style-toggle {
+  background: #eef5ff;
+  border: 1px solid #c8dcff;
+  border-radius: 8px;
+  display: flex;
+  overflow: hidden;
+}
+
+.chart-style-toggle button {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: #344054;
+  min-height: 34px;
+  padding: 7px 11px;
+}
+
+.chart-style-toggle button.active {
+  background: var(--green);
+  color: #ffffff;
+}
+
+.south-chart-box {
+  background: #ffffff;
+  border: 1px solid #c99a43;
+}
+
+.south-chart-grid {
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+.south-chart-cell,
+.south-chart-center {
+  border-bottom: 1px solid #c99a43;
+  border-right: 1px solid #c99a43;
+  min-width: 0;
+}
+
+.south-chart-cell:nth-child(4n),
+.south-chart-center:nth-child(4n) {
+  border-right: 0;
+}
+
+.south-chart-cell:nth-child(n + 13),
+.south-chart-center:nth-child(n + 13) {
+  border-bottom: 0;
+}
+
+.south-chart-cell {
+  align-content: center;
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  padding: 6px;
+  text-align: center;
+}
+
+.south-chart-cell strong {
+  color: var(--green);
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.south-chart-cell span,
+.south-chart-cell em {
+  color: #123a7a;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.south-chart-empty {
+  color: var(--muted);
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.south-chart-grid-mini .south-chart-cell {
+  gap: 1px;
+  padding: 3px;
+}
+
+.south-chart-grid-mini .south-chart-cell strong {
+  font-size: 8px;
+}
+
+.south-chart-grid-mini .south-chart-cell span,
+.south-chart-grid-mini .south-chart-cell em {
+  font-size: 8px;
+}
+
+.core-info-strip {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.core-info-strip div {
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+  min-height: 58px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.core-info-strip div:nth-child(3n) {
+  border-right: 0;
+}
+
+.core-info-strip div:nth-child(n + 4) {
+  border-bottom: 0;
+}
+
+.core-info-strip span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.core-info-strip strong {
+  color: var(--ink);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.planet-table .table-row {
+  grid-template-columns: 78px 76px 82px minmax(110px, 1fr) 86px 70px;
+}
+
+.compact-table .table-row {
+  grid-template-columns: minmax(76px, 1fr) minmax(84px, 1fr);
+}
+
+.combustion-badge {
+  background: #eef2f7;
+  border-radius: 999px;
+  color: var(--muted);
+  justify-self: start;
+  padding: 3px 7px;
+}
+
+.combustion-badge.active {
+  background: #fff0e8;
+  color: #b44416;
+  font-weight: 900;
+}
+
+.varga-gallery {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.varga-chart-card {
+  background: #ffffff;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  min-height: 180px;
+  min-width: 0;
+  padding: 9px;
+  text-align: left;
+}
+
+.varga-chart-card.active {
+  background: #edf8f5;
+  box-shadow: inset 0 3px 0 var(--green);
+}
+
+.varga-chart-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.varga-chart-card .varga-snapshot-head {
+  background: transparent;
+  border: 0;
+  min-height: 0;
+  padding: 0;
+}
+
+.varga-mini-chart {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+}
+
+.chart-svg-mini .chart-rashi-label {
+  font-size: 8px;
+  stroke-width: 1.2px;
+}
+
+.chart-svg-mini .chart-graha-detail {
+  font-size: 8px;
+  stroke-width: 1.2px;
+}
+
+.varga-mini-placeholder {
+  align-items: center;
+  border: 1px dashed #c8d3df;
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .core-info-strip,
+  .planet-table .table-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .core-info-strip div,
+  .core-info-strip div:nth-child(3n),
+  .core-info-strip div:nth-child(n + 4) {
+    border-bottom: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+
+  .varga-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

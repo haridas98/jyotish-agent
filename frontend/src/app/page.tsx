@@ -601,26 +601,47 @@ function northIndianHouseItems(chart: BirthChart | null, varga: ActiveVargaChart
 function ChartPreview({
   chart,
   varga,
+  chartStyle,
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
+  chartStyle: "north" | "south";
 }) {
-  return <NorthIndianChartPreview chart={chart} varga={varga} />;
+  return chartStyle === "south" ? (
+    <SouthIndianChartPreview chart={chart} varga={varga} />
+  ) : (
+    <NorthIndianChartPreview chart={chart} varga={varga} />
+  );
 }
 
 function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; varga: ActiveVargaChart | null }) {
+  return (
+    <div className="chart-box" aria-label="Предпросмотр североиндийской карты">
+      <NorthIndianChartSvg chart={chart} varga={varga} />
+    </div>
+  );
+}
+
+function NorthIndianChartSvg({
+  chart,
+  varga,
+  compact = false,
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  compact?: boolean;
+}) {
   const houses = northIndianHouseItems(chart, varga);
   return (
-    <div className="chart-box" aria-label="Предпросмотр карты раши">
-      <svg viewBox="0 0 400 400" role="img" aria-label="Североиндийская сетка карты">
+      <svg className={compact ? "chart-svg chart-svg-mini" : "chart-svg"} viewBox="0 0 400 400" role="img" aria-label="Североиндийская сетка карты">
         <rect x="1.5" y="1.5" width="397" height="397" fill="white" stroke="#b88a2f" strokeWidth="1.5" />
         <path d="M2 2 L398 398 M398 2 L2 398" stroke="#c99a43" strokeWidth="1" />
         <path d="M200 2 L398 200 L200 398 L2 200 Z" fill="none" stroke="#c99a43" strokeWidth="1" />
         {houses.map((house) => {
           const cell = northIndianHouseCells[house.house];
           const signLabel = rashiChartLabel(house.rashiIndex, house.rashi);
-          const textLines = northIndianCellLines(house);
-          const lineGap = textLines.length > 5 ? 11 : 13;
+          const textLines = northIndianCellLines(house, compact);
+          const lineGap = compact ? (textLines.length > 4 ? 10 : 12) : (textLines.length > 5 ? 11 : 13);
           const centerY = safeSymbolCenterY(cell.centerY, textLines.length, lineGap);
           const firstLineY = firstSymbolLineY(centerY, textLines.length, lineGap);
           return (
@@ -652,11 +673,80 @@ function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; v
           </text>
         ) : null}
       </svg>
+  );
+}
+
+const southIndianSignCells: Record<number, { row: number; col: number }> = {
+  11: { row: 0, col: 0 },
+  0: { row: 0, col: 1 },
+  1: { row: 0, col: 2 },
+  2: { row: 0, col: 3 },
+  10: { row: 1, col: 0 },
+  3: { row: 1, col: 3 },
+  9: { row: 2, col: 0 },
+  4: { row: 2, col: 3 },
+  8: { row: 3, col: 0 },
+  7: { row: 3, col: 1 },
+  6: { row: 3, col: 2 },
+  5: { row: 3, col: 3 },
+};
+
+function SouthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; varga: ActiveVargaChart | null }) {
+  return (
+    <div className="chart-box south-chart-box" aria-label="Предпросмотр южноиндийской карты">
+      <SouthIndianChartGrid chart={chart} varga={varga} />
     </div>
   );
 }
 
-function northIndianCellLines(house: NorthIndianHouseItem) {
+function SouthIndianChartGrid({
+  chart,
+  varga,
+  compact = false,
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  compact?: boolean;
+}) {
+  const placements = activeChartPlacements(chart, varga);
+  const bySign = placementsBySign(placements);
+  const lagnaIndex = lagnaRashiIndex(chart, placements);
+  return (
+    <div className={compact ? "south-chart-grid south-chart-grid-mini" : "south-chart-grid"}>
+      {Array.from({ length: 16 }, (_, index) => {
+        const row = Math.floor(index / 4);
+        const col = index % 4;
+        const signIndex = Object.entries(southIndianSignCells).find(([, cell]) => cell.row === row && cell.col === col)?.[0];
+        if (signIndex === undefined) return <div className="south-chart-center" key={index} />;
+        const rashiIndex = Number(signIndex);
+        const house = lagnaIndex === null ? null : ((rashiIndex - lagnaIndex + 12) % 12) + 1;
+        const cellPlacements = bySign.get(rashiIndex) ?? [];
+        return (
+          <div className="south-chart-cell" key={rashiIndex}>
+            <strong>{house ? `${house} ` : ""}{rashiChartLabels[rashiIndex]}</strong>
+            {cellPlacements.slice(0, compact ? 4 : 7).map((placement) => (
+              <span key={`${rashiIndex}-${placement.body}`}>
+                {placement.isLagna ? "As" : northGrahaLabel(placement.body)}
+              </span>
+            ))}
+            {cellPlacements.length > (compact ? 4 : 7) ? <em>+{cellPlacements.length - (compact ? 4 : 7)}</em> : null}
+          </div>
+        );
+      })}
+      {!chart ? <span className="south-chart-empty">ожидает расчёта</span> : null}
+    </div>
+  );
+}
+
+function northIndianCellLines(house: NorthIndianHouseItem, compact = false) {
+  if (compact) {
+    const placements = house.placements.map((placement) => (placement.isLagna ? "As" : northGrahaLabel(placement.body)));
+    return [
+      `${house.house} ${rashiChartLabel(house.rashiIndex, house.rashi)}`,
+      ...placements.slice(0, 4),
+      ...(placements.length > 4 ? [`+${placements.length - 4}`] : []),
+    ];
+  }
   return [
     `${house.house} ${rashiChartLabel(house.rashiIndex, house.rashi)}`,
     ...house.placements.map(compactPlacementLine),
@@ -699,49 +789,85 @@ function symbolLines(symbols: string[], maxPerLine?: number) {
   return lines;
 }
 
-const vargaSnapshotCodes = ["D1", "D9", "D10", "D30", "D3", "D60"];
+const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"];
 
-function VargaSnapshotGrid({ chart }: { chart: BirthChart | null }) {
+const vargaPurposeLabels: Record<string, string> = {
+  D1: "Раши / тело",
+  D2: "Деньги",
+  D3: "Братья",
+  D4: "Дом",
+  D7: "Дети",
+  D9: "Навамша",
+  D10: "Карьера",
+  D12: "Родители",
+  D16: "Комфорт",
+  D20: "Садхана",
+  D24: "Учёба",
+  D27: "Сила",
+  D30: "Риски",
+  D40: "Материнская линия",
+  D45: "Отцовская линия",
+  D60: "Карма",
+};
+
+function VargaSnapshotGrid({
+  chart,
+  activeCode,
+  chartStyle,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  onSelect: (code: string) => void;
+}) {
   const items = vargaSnapshotCodes.map((code) => {
     if (code === "D1") {
       return {
         code,
         name: "Раши",
-        placements: chart?.grahas.map((graha) => ({ body: graha.body, rashi: graha.rashi })) ?? [],
+        available: Boolean(chart),
+        varga: null,
       };
     }
     const varga = chart?.vargas?.[code];
     return {
       code,
       name: varga?.name ?? "Варга",
-      placements: varga?.placements ?? [],
+      available: Boolean(varga),
+      varga: varga ?? null,
     };
   });
 
   return (
-    <div className="varga-snapshot-grid" aria-label="Быстрый обзор варг">
+    <div className="varga-gallery" aria-label="Быстрый обзор варга-карт">
       {items.map((item) => (
-        <div className="varga-snapshot-card" key={item.code}>
+        <button
+          type="button"
+          className={`varga-chart-card${activeCode === item.code ? " active" : ""}`}
+          disabled={!item.available}
+          key={item.code}
+          onClick={() => onSelect(item.code)}
+        >
           <div className="varga-snapshot-head">
             <strong>{item.code}</strong>
-            <span>{item.name}</span>
+            <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
           </div>
-          <div className="varga-snapshot-body">
-            {item.placements.slice(0, 7).map((placement) => (
-              <span key={`${item.code}-${placement.body}`}>
-                {shortGraha(placement.body)} {placement.rashi}
-              </span>
-            ))}
-            {!item.placements.length ? <em>ожидает</em> : null}
+          <div className="varga-mini-chart">
+            {item.available ? (
+              chartStyle === "south" ? (
+                <SouthIndianChartGrid chart={chart} varga={item.varga} compact />
+              ) : (
+                <NorthIndianChartSvg chart={chart} varga={item.varga} compact />
+              )
+            ) : (
+              <div className="varga-mini-placeholder">нет расчёта</div>
+            )}
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
-}
-
-function shortGraha(body: string) {
-  return grahaSymbol(body);
 }
 
 function northGrahaLabel(body: string) {
@@ -781,6 +907,7 @@ function isoDateOffset(days: number) {
 }
 
 function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
+  const sun = grahas.find((graha) => graha.body === "Surya");
   if (grahas.length === 0) {
     return (
       <div className="readiness-panel">
@@ -797,6 +924,7 @@ function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
         <span>Долгота</span>
         <span>Раши</span>
         <span>Накшатра</span>
+        <span>Аста</span>
         <span>D9</span>
       </div>
       {grahas.map((graha) => (
@@ -807,11 +935,65 @@ function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
           <span>
             {graha.nakshatra} {graha.pada}
           </span>
+          <span className={combustionStatus(graha, sun).combust ? "combustion-badge active" : "combustion-badge"}>
+            {combustionStatus(graha, sun).label}
+          </span>
           <span>{graha.navamsa}</span>
         </div>
       ))}
     </div>
   );
+}
+
+function CoreInfoStrip({ chart }: { chart: BirthChart | null }) {
+  const moon = chart?.grahas.find((graha) => graha.body === "Chandra");
+  const sun = chart?.grahas.find((graha) => graha.body === "Surya");
+  const items = [
+    ["Лагна", chart?.ascendant ? `${chart.ascendant.rashi}, ${chart.ascendant.nakshatra} ${chart.ascendant.pada}` : "ожидает"],
+    ["Луна", moon ? `${moon.rashi}, ${moon.nakshatra} ${moon.pada}` : "ожидает"],
+    ["Сурья", sun ? `${sun.rashi}, ${formatSignDegrees(sun.longitude)}` : "ожидает"],
+    ["Панчанга", chart?.panchanga.tithi?.name ?? chart?.panchanga.nakshatra?.name ?? "ожидает"],
+    ["Место", chart?.place.label ?? chart?.place.name ?? "ожидает"],
+    ["UTC", chart?.birth.utc_offset ?? chart?.birth.timezone ?? "ожидает"],
+  ];
+
+  return (
+    <div className="core-info-strip" aria-label="Основная информация карты">
+      {items.map(([label, value]) => (
+        <div key={label}>
+          <span>{label}</span>
+          <strong>{value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const combustionThresholds: Record<string, number> = {
+  Chandra: 12,
+  Mangala: 17,
+  Budha: 14,
+  Guru: 11,
+  Shukra: 10,
+  Shani: 15,
+};
+
+function combustionStatus(graha: GrahaPosition, sun: GrahaPosition | undefined) {
+  if (!sun || graha.body === "Surya" || graha.body === "Rahu" || graha.body === "Ketu") {
+    return { combust: false, label: "—" };
+  }
+  const threshold = combustionThresholds[graha.body];
+  if (!threshold) return { combust: false, label: "—" };
+  const distance = angularDistance(graha.longitude, sun.longitude);
+  return {
+    combust: distance <= threshold,
+    label: distance <= threshold ? `Аста ${distance.toFixed(1)}°` : `${distance.toFixed(1)}°`,
+  };
+}
+
+function angularDistance(a: number, b: number) {
+  const diff = Math.abs((((a - b) % 360) + 540) % 360 - 180);
+  return diff;
 }
 
 function VargaTable({ placements, code }: { placements: VargaPlacement[]; code: string }) {
@@ -3448,6 +3630,7 @@ export default function Home() {
   const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
+  const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [draftAnalysis, setDraftAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
@@ -4555,7 +4738,43 @@ export default function Home() {
         <header className="topbar">
           <div className="mantra">Hare Krishna Hare Krishna Krishna Krishna Hare Hare</div>
           <div className="top-actions">
-            <button type="button">Источники</button>
+            <button type="button" onClick={() => setActiveAnalysisTab("overview")}>Обзор</button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveAnalysisTab("transits");
+                document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Сегодня
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveAnalysisTab("compatibility");
+                document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Совместимость
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveAnalysisTab("guidance");
+                document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Отчёт
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveAnalysisTab("sources");
+                document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Источники
+            </button>
             <button
               type="button"
               onClick={() => document.getElementById("calculation-settings")?.scrollIntoView({ behavior: "smooth" })}
@@ -4569,7 +4788,7 @@ export default function Home() {
           <section className="panel private-gate" aria-live="polite">
             <div>
               <h2>Закрытый доступ</h2>
-              <p>Зарегистрируйтесь или войдите. Новые аккаунты начинают работать только после одобрения администратора.</p>
+              <p>Зарегистрируйтесь или войдите. Сейчас аккаунт активируется сразу, чтобы астрологи могли проверить ресурс.</p>
             </div>
             <div className="auth-grid private-gate-auth">
               <label>
@@ -4869,6 +5088,22 @@ export default function Home() {
               <div className="panel-heading">
                 <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
                 <div className="chart-controls">
+                  <div className="chart-style-toggle" aria-label="Стиль карты">
+                    <button
+                      type="button"
+                      className={chartStyle === "north" ? "active" : ""}
+                      onClick={() => setChartStyle("north")}
+                    >
+                      Север
+                    </button>
+                    <button
+                      type="button"
+                      className={chartStyle === "south" ? "active" : ""}
+                      onClick={() => setChartStyle("south")}
+                    >
+                      Юг
+                    </button>
+                  </div>
                   <label className="compact-control">
                     <span>Карта</span>
                     <select
@@ -4885,8 +5120,9 @@ export default function Home() {
                 </div>
               </div>
               <div className="chart-layout">
-                <ChartPreview chart={chart} varga={selectedVarga} />
+                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} />
                 <div className="chart-data-stack">
+                  <CoreInfoStrip chart={chart} />
                   {chartMode === "D1" ? (
                     <GrahaTable grahas={chart?.grahas ?? []} />
                   ) : (
@@ -4905,7 +5141,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
-              <VargaSnapshotGrid chart={chart} />
+              <VargaSnapshotGrid chart={chart} activeCode={chartMode} chartStyle={chartStyle} onSelect={setChartMode} />
             </section>
 
             <section className="analysis-workspace" id="reports">

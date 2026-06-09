@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db
-def test_register_creates_inactive_user_pending_approval():
+def test_register_creates_active_user_and_logs_in():
     client = APIClient()
 
     response = client.post(
@@ -19,11 +19,12 @@ def test_register_creates_inactive_user_pending_approval():
         format="json",
     )
 
-    assert response.status_code == 202
-    assert response.data["status"] == "pending_approval"
+    assert response.status_code == 201
+    assert response.data["status"] == "active"
     assert response.data["user"]["username"] == "haridas"
     user = get_user_model().objects.get(username="haridas")
-    assert user.is_active is False
+    assert user.is_active is True
+    assert "_auth_user_id" in client.session
 
 
 @pytest.mark.django_db

@@ -38,12 +38,14 @@ class RegisterView(APIView):
                 username=username,
                 email=email,
                 password=password,
-                is_active=False,
+                is_active=True,
             )
         except IntegrityError:
             return Response({"error": "username already exists"}, status=409)
 
-        return Response({"user": user_payload(user), "status": "pending_approval"}, status=202)
+        login(request, user)
+        request.session.set_expiry(settings.SESSION_COOKIE_AGE)
+        return Response({"user": user_payload(user), "status": "active"}, status=201)
 
 
 class LoginView(APIView):
