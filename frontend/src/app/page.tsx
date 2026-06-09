@@ -939,6 +939,20 @@ const vargaPurposeLabels: Record<string, string> = {
   D60: "Карма",
 };
 
+const vargaPriorityLabels: Record<string, string> = {
+  D1: "основа",
+  D7: "семья",
+  D9: "must",
+  D10: "дело",
+  D12: "род",
+  D20: "дух",
+  D24: "учёба",
+  D30: "риск",
+  D40: "мать",
+  D45: "отец",
+  D60: "тонко",
+};
+
 const vargaFocusGroups: Array<{
   key: string;
   label: string;
@@ -1080,7 +1094,10 @@ function VargaStudyBoard({
             onClick={() => onSelect(item.code)}
           >
             <div className="varga-study-card-head">
-              <strong>{item.code}</strong>
+              <div>
+                <strong>{item.code}</strong>
+                {vargaPriorityLabels[item.code] ? <em>{vargaPriorityLabels[item.code]}</em> : null}
+              </div>
               <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
             </div>
             <div className="varga-study-preview">
@@ -1139,7 +1156,10 @@ function FeaturedVargaBoard({
             onClick={() => onSelect(item.code)}
           >
             <div className="featured-varga-title">
-              <strong>{item.code}</strong>
+              <div>
+                <strong>{item.code}</strong>
+                {vargaPriorityLabels[item.code] ? <em>{vargaPriorityLabels[item.code]}</em> : null}
+              </div>
               <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
             </div>
             <div className="featured-varga-preview">
