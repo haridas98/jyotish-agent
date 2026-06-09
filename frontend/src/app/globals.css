@@ -709,6 +709,49 @@ select {
   flex-wrap: wrap;
 }
 
+.chart-heading-tools {
+  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.chart-quick-switch {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  overflow: hidden;
+}
+
+.chart-quick-switch button {
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 34px;
+  min-width: 42px;
+  padding: 6px 8px;
+}
+
+.chart-quick-switch button:last-child {
+  border-right: 0;
+}
+
+.chart-quick-switch button.active {
+  background: #e6f6f3;
+  color: var(--green);
+}
+
+.chart-quick-switch button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .varga-focus-groups span {
   color: var(--muted);
   font-size: 12px;
@@ -4310,6 +4353,18 @@ button,
 
   .varga-study-head {
     display: grid;
+  }
+
+  .chart-heading-tools,
+  .chart-quick-switch,
+  .chart-reference-toggle {
+    width: 100%;
+  }
+
+  .chart-quick-switch button,
+  .chart-reference-toggle button {
+    flex: 1;
+    min-width: 0;
   }
 
   .varga-study-grid {

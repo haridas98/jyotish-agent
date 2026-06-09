@@ -1015,6 +1015,37 @@ function availableVargaCodes(chart: BirthChart | null) {
   return Array.from(codes).sort((left, right) => vargaCodeNumber(left) - vargaCodeNumber(right) || left.localeCompare(right));
 }
 
+const chartQuickSwitchCodes = ["D1", "D9", "D10", "D12", "D30", "D60"] as const;
+
+function ChartQuickSwitch({
+  chart,
+  activeCode,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  onSelect: (code: string) => void;
+}) {
+  return (
+    <div className="chart-quick-switch" aria-label="Быстрый выбор D-карты">
+      {chartQuickSwitchCodes.map((code) => {
+        const available = code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]);
+        return (
+          <button
+            type="button"
+            className={activeCode === code ? "active" : ""}
+            disabled={!available}
+            key={code}
+            onClick={() => onSelect(code)}
+          >
+            {code}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function VargaFocusGroups({
   chart,
   activeCode,
@@ -5582,7 +5613,10 @@ export default function Home() {
             <section className="panel chart-panel">
               <div className="panel-heading">
                 <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
-                <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
+                <div className="chart-heading-tools">
+                  <ChartQuickSwitch chart={chart} activeCode={chartMode} onSelect={selectVargaCode} />
+                  <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
+                </div>
               </div>
               <div className="chart-layout">
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} />
