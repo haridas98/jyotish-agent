@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import {
-  askBirthCodexAnalysis,
-  askCompatibilityCodexAnalysis,
+  askAnalysis,
+  type AnalysisChatProvider,
   type AnalysisHistoryDetail,
   type AnalysisHistoryItem,
   type CodexAnalysisChatMessage,
@@ -126,6 +126,7 @@ function AnalysisChatBox({
 }) {
   const [messages, setMessages] = useState<CodexAnalysisChatMessage[]>(initialMessages);
   const [question, setQuestion] = useState("");
+  const [provider, setProvider] = useState<AnalysisChatProvider>("qwen");
   const [status, setStatus] = useState(
     mode === "disabled" ? "Диалог пока доступен только для Codex-обзоров." : "Можно задать вопрос по сохранённому обзору.",
   );
@@ -141,10 +142,7 @@ function AnalysisChatBox({
     setBusy(true);
     setStatus("Готовлю ответ по сохранённому обзору...");
     try {
-      const result =
-        mode === "compatibility"
-          ? await askCompatibilityCodexAnalysis(analysisId, cleanQuestion, nextMessages)
-          : await askBirthCodexAnalysis(analysisId, cleanQuestion, nextMessages);
+      const result = await askAnalysis(analysisId, provider, cleanQuestion, nextMessages);
       setMessages([...nextMessages, { role: "assistant", content: result.answer }]);
       setStatus("Ответ сохранён в истории диалога.");
     } catch (error) {
@@ -162,7 +160,14 @@ function AnalysisChatBox({
     <section className="analysis-chat">
       <div className="analysis-chat-head">
         <h2>Диалог</h2>
-        <span>{status}</span>
+        <div className="analysis-chat-tools">
+          <select value={provider} onChange={(event) => setProvider(event.target.value as AnalysisChatProvider)} disabled={mode === "disabled" || busy}>
+            <option value="qwen">Qwen</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="codex">Codex</option>
+          </select>
+          <span>{status}</span>
+        </div>
       </div>
       <div className="analysis-chat-thread">
         {messages.length ? (

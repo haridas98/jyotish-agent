@@ -131,6 +131,10 @@ def _deepseek_cache_input_matches(snapshot: object, data: dict[str, Any]) -> boo
                 return False
         elif snapshot.get(key) != data.get(key):
             return False
+    for key in ("profile_id", "related_profile_ids"):
+        if snapshot.get(key) or data.get(key):
+            if snapshot.get(key) != data.get(key):
+                return False
     return True
 
 
@@ -179,6 +183,9 @@ def _deepseek_overview_packet(packet: dict[str, Any]) -> dict[str, Any]:
         "houses": _limit_list(chart.get("houses", []), 12),
         "dashas": _compact_dashas(chart.get("dashas")),
         "person_summary": _compact_person_summary(context.get("person_summary", {})),
+        "selected_profile_context": context.get("selected_profile_context", {}),
+        "related_profile_context": context.get("related_profile_context", []),
+        "current_period_context": context.get("current_period_context", {}),
         "baseline_sections": [_compact_section(section) for section in _limit_list(context.get("sections", []), 12)],
         "approved_shastra_citations": context.get("approved_shastra_citations", []),
         "shastra_source_traces": _compact_source_traces(context.get("shastra_source_traces")),

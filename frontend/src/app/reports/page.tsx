@@ -5,7 +5,7 @@ import { HistoryList } from "@/app/analysis-history-ui";
 import { ProductShell } from "@/app/product-shell";
 import { fetchAnalysisHistory, type AnalysisHistoryItem } from "@/lib/api";
 
-const PERSONAL_HISTORY_KINDS = "birth_chart_codex_cli,birth_chart_qwen,birth_chart_deepseek,birth_chart_nemotron";
+const PERSONAL_HISTORY_KINDS = "birth_chart_codex_cli,birth_chart_qwen,birth_chart_deepseek,birth_chart_nemotron,current_day_transit_overview";
 
 export default function ReportsPage() {
   const [items, setItems] = useState<AnalysisHistoryItem[]>([]);

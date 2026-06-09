@@ -28,6 +28,7 @@ import {
   generateBirthReport,
   generateCompatibilityAnalysisPacket,
   generateCompatibilityCodexAnalysis,
+  generateCurrentDayOverview,
   listChartProfiles,
   loginUser,
   logoutUser,
@@ -1965,13 +1966,35 @@ function WorkflowPlanStrip({ plan }: { plan?: WorkflowInterpretationPlan }) {
   );
 }
 
-function TransitPanel({ report, status }: { report: TransitReport | null; status: string }) {
+function TransitPanel({
+  report,
+  status,
+  currentDayStatus,
+  currentDayOverview,
+  onGenerateCurrentDay,
+}: {
+  report: TransitReport | null;
+  status: string;
+  currentDayStatus: string;
+  currentDayOverview: GeneratedDraftAnalysis | null;
+  onGenerateCurrentDay: () => void;
+}) {
   const rows = report?.transits.slice(0, 9) ?? [];
   return (
     <section className="panel workflow-panel">
       <div className="panel-heading">
         <h2>Транзиты</h2>
         <span>{status}</span>
+      </div>
+      <div className="current-day-strip">
+        <div>
+          <strong>Обзор нынешнего дня</strong>
+          <span>{currentDayStatus}</span>
+          {currentDayOverview ? <small>Сохранён в истории личных обзоров</small> : null}
+        </div>
+        <button type="button" className="secondary-button" onClick={onGenerateCurrentDay}>
+          Сохранить сегодня
+        </button>
       </div>
       <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {rows.length ? (
@@ -3639,6 +3662,8 @@ export default function Home() {
   const [qwenAnalysisStatus, setQwenAnalysisStatus] = useState("QWEN разбор ещё не генерировался");
   const [deepseekAnalysis, setDeepseekAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
   const [deepseekAnalysisStatus, setDeepseekAnalysisStatus] = useState("DeepSeek обзор ещё не генерировался");
+  const [currentDayOverview, setCurrentDayOverview] = useState<GeneratedDraftAnalysis | null>(null);
+  const [currentDayStatus, setCurrentDayStatus] = useState("Текущий день ещё не сохранялся");
   const [nemotronAnalysis, setNemotronAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
   const [nemotronAnalysisStatus, setNemotronAnalysisStatus] = useState("Nemotron обзор ещё не генерировался");
   const [codexChatMessages, setCodexChatMessages] = useState<CodexAnalysisChatMessage[]>([]);
@@ -3697,6 +3722,7 @@ export default function Home() {
   const [authPassword, setAuthPassword] = useState("");
   const [authStatus, setAuthStatus] = useState("Войдите, чтобы сохранять карты");
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
+  const [relatedProfileIds, setRelatedProfileIds] = useState<number[]>([]);
   const [profileStatus, setProfileStatus] = useState("Сохранённые карты не загружены");
   const autoCalculationStartedRef = useRef(false);
   const privateAccessLocked = PRIVATE_APP_REQUIRE_AUTH && !currentUser;
@@ -4059,6 +4085,7 @@ export default function Home() {
       birth_time: profile.birth_time ?? "",
       place_name: profile.place.label,
       profile_id: profile.id,
+      ...(relatedProfileIds.length ? { related_profile_ids: relatedProfileIds.filter((id) => id !== profile.id) } : {}),
       ...profile.calculation_settings,
       place_id: profile.place.external_id || String(profile.place.id),
       country_code: profile.place.country_code,
@@ -4109,6 +4136,14 @@ export default function Home() {
     return profile ? profileBirthPayload(profile) : null;
   }
 
+  function toggleRelatedProfile(profileId: number) {
+    setRelatedProfileIds((current) =>
+      current.includes(profileId)
+        ? current.filter((id) => id !== profileId)
+        : [...current, profileId],
+    );
+  }
+
   function buildBirthPayload(): BirthChartRequest | null {
     const manualLat = Number(manualLatitude.replace(",", "."));
     const manualLon = Number(manualLongitude.replace(",", "."));
@@ -4123,6 +4158,7 @@ export default function Home() {
       birth_time: birthTime,
       gender,
       place_name: selectedPlace?.label ?? placeName,
+      ...(relatedProfileIds.length ? { related_profile_ids: relatedProfileIds } : {}),
       ...calculationSettingsPayload(),
       ...(selectedPlace
         ? {
@@ -4168,6 +4204,7 @@ export default function Home() {
     try {
       const items = await listChartProfiles();
       setProfiles(items);
+      setRelatedProfileIds((current) => current.filter((id) => items.some((profile) => profile.id === id)));
       setProfileStatus(items.length ? `${items.length} сохранённых карт` : "Сохранённых карт пока нет");
     } catch (error) {
       setProfiles([]);
@@ -4373,6 +4410,33 @@ export default function Home() {
     } catch (error) {
       setDualCalculationReport(null);
       setDualCalculationStatus(error instanceof Error ? error.message : "JHora witness API недоступен");
+    }
+  }
+
+  async function handleGenerateCurrentDayOverview() {
+    const payload = lastBirthPayload ?? buildBirthPayload();
+    if (!payload) return;
+    const today = isoDateOffset(0);
+    const nowTime = new Date().toTimeString().slice(0, 5);
+    setCurrentDayOverview(null);
+    setCurrentDayStatus("Сохраняю обзор нынешнего дня...");
+    setActiveAnalysisTab("transits");
+    try {
+      const [overviewResult, transitResult] = await Promise.allSettled([
+        generateCurrentDayOverview({ ...payload, as_of_date: today, as_of_time: nowTime }),
+        calculateTransits({ ...payload, as_of_date: today, as_of_time: nowTime }),
+      ]);
+      if (transitResult.status === "fulfilled") {
+        setTransitReport(transitResult.value);
+      }
+      if (overviewResult.status !== "fulfilled") {
+        throw overviewResult.reason;
+      }
+      setCurrentDayOverview(overviewResult.value);
+      setCurrentDayStatus(`Сохранён обзор #${overviewResult.value.id}: ${overviewResult.value.sections.length} раздела`);
+    } catch (error) {
+      setCurrentDayOverview(null);
+      setCurrentDayStatus(error instanceof Error ? error.message : "Не удалось сохранить обзор нынешнего дня");
     }
   }
 
@@ -4601,6 +4665,8 @@ export default function Home() {
       setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setDeepseekAnalysis(null);
       setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
+      setCurrentDayOverview(null);
+      setCurrentDayStatus("Текущий день ещё не сохранялся");
       setNemotronAnalysis(null);
       setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setLastBirthPayload(payload);
@@ -4630,6 +4696,8 @@ export default function Home() {
       setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setDeepseekAnalysis(null);
       setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
+      setCurrentDayOverview(null);
+      setCurrentDayStatus("Текущий день ещё не сохранялся");
       setNemotronAnalysis(null);
       setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setLastBirthPayload(payload);
@@ -4648,6 +4716,8 @@ export default function Home() {
       setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
       setDeepseekAnalysis(null);
       setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
+      setCurrentDayOverview(null);
+      setCurrentDayStatus("Текущий день ещё не сохранялся");
       setNemotronAnalysis(null);
       setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setTransitReport(null);
@@ -4742,7 +4812,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => {
-                setActiveAnalysisTab("transits");
+                void handleGenerateCurrentDayOverview();
                 document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
             >
@@ -5060,6 +5130,15 @@ export default function Home() {
                 </div>
               </div>
               <p>{profileStatus}</p>
+              {relatedProfileIds.length ? (
+                <p className="related-profile-summary">
+                  Контекст AI:{" "}
+                  {profiles
+                    .filter((profile) => relatedProfileIds.includes(profile.id))
+                    .map((profile) => profile.display_name)
+                    .join(", ")}
+                </p>
+              ) : null}
               {profiles.length ? (
                 <div className="profile-list">
                   {profiles.map((profile) => (
@@ -5073,6 +5152,14 @@ export default function Home() {
                             : "Расчёт ещё не сохранён"}
                         </small>
                       </div>
+                      <label className="related-profile-toggle">
+                        <input
+                          type="checkbox"
+                          checked={relatedProfileIds.includes(profile.id)}
+                          onChange={() => toggleRelatedProfile(profile.id)}
+                        />
+                        Контекст AI
+                      </label>
                       <button type="button" className="secondary-button" onClick={() => handleCalculateProfile(profile)}>
                         Загрузить
                       </button>
@@ -5198,7 +5285,15 @@ export default function Home() {
                     chatDisabled={!draftAnalysis || codexChatBusy}
                   />
                 ) : null}
-                {activeAnalysisTab === "transits" ? <TransitPanel report={transitReport} status={workflowStatus} /> : null}
+                {activeAnalysisTab === "transits" ? (
+                  <TransitPanel
+                    report={transitReport}
+                    status={workflowStatus}
+                    currentDayStatus={currentDayStatus}
+                    currentDayOverview={currentDayOverview}
+                    onGenerateCurrentDay={handleGenerateCurrentDayOverview}
+                  />
+                ) : null}
                 {activeAnalysisTab === "tithiPravesha" ? (
                   <TithiPraveshaPanel report={tithiPraveshaReport} status={workflowStatus} />
                 ) : null}

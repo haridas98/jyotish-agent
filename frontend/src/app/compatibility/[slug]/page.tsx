@@ -30,7 +30,7 @@ export default function CompatibilityDetailPage() {
     };
   }, [slug]);
 
-  const chatMode = detail?.analysis.kind === "compatibility_codex_cli" ? "compatibility" : "disabled";
+  const chatMode = detail ? "compatibility" : "disabled";
 
   return (
     <ProductShell active="compatibility">

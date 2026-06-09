@@ -131,6 +131,10 @@ def _qwen_cache_input_matches(snapshot: object, data: dict[str, Any]) -> bool:
                 return False
         elif snapshot.get(key) != data.get(key):
             return False
+    for key in ("profile_id", "related_profile_ids"):
+        if snapshot.get(key) or data.get(key):
+            if snapshot.get(key) != data.get(key):
+                return False
     return True
 
 

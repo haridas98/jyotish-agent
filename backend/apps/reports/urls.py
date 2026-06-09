@@ -5,9 +5,11 @@ from .views import (
     AnalysisHistoryDetailView,
     AnalysisHistorySlugDetailView,
     AnalysisHistoryView,
+    AnalysisUniversalChatView,
     BirthAnalysisPacketView,
     BirthCodexAnalysisChatView,
     BirthCodexAnalysisView,
+    BirthCurrentDayOverviewView,
     BirthDeepseekAnalysisView,
     BirthDraftAnalysisView,
     BirthNemotronAnalysisView,
@@ -34,6 +36,7 @@ urlpatterns = [
         AnalysisChatHistoryView.as_view(),
         name="analysis-chat-history",
     ),
+    path("reports/analysis/chat", AnalysisUniversalChatView.as_view(), name="analysis-universal-chat"),
     path("reports/birth-chart", BirthReportView.as_view(), name="birth-report"),
     path(
         "reports/birth-chart/analysis-packet",
@@ -69,6 +72,11 @@ urlpatterns = [
         "reports/birth-chart/codex-analysis/chat",
         BirthCodexAnalysisChatView.as_view(),
         name="birth-codex-analysis-chat",
+    ),
+    path(
+        "reports/birth-chart/current-day",
+        BirthCurrentDayOverviewView.as_view(),
+        name="birth-current-day-overview",
     ),
     path(
         "reports/compatibility/analysis-packet",

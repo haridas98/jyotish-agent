@@ -3515,6 +3515,76 @@ button,
   text-align: center;
 }
 
+.related-profile-toggle {
+  align-items: center;
+  background: #eef8f5;
+  border: 1px solid #b8d8d1;
+  border-radius: 8px;
+  color: var(--green);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 6px;
+  padding: 7px 9px;
+  white-space: nowrap;
+}
+
+.related-profile-toggle input {
+  accent-color: var(--green);
+}
+
+.related-profile-summary {
+  background: #f4fbf8;
+  border: 1px solid #cfe8df;
+  border-radius: 8px;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 10px;
+}
+
+.current-day-strip {
+  align-items: center;
+  background: #f8fbff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 10px;
+}
+
+.current-day-strip div {
+  display: grid;
+  gap: 3px;
+}
+
+.current-day-strip strong {
+  color: var(--ink);
+}
+
+.current-day-strip span,
+.current-day-strip small {
+  color: var(--muted);
+}
+
+.analysis-chat-tools {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.analysis-chat-tools select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font-weight: 800;
+  padding: 7px 9px;
+}
+
 @media (max-width: 680px) {
   .core-info-strip,
   .planet-table .table-row {
@@ -3530,5 +3600,10 @@ button,
 
   .varga-gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .current-day-strip {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

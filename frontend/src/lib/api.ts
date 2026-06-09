@@ -1253,6 +1253,8 @@ export type CodexAnalysisChatResponse = {
   }[];
 };
 
+export type AnalysisChatProvider = "codex" | "qwen" | "deepseek";
+
 export type AnalysisHistoryItem = {
   id: number;
   slug: string;
@@ -2023,6 +2025,41 @@ export async function generateBirthNemotronAnalysis(payload: BirthChartRequest):
 
     return data;
   });
+}
+
+export async function generateCurrentDayOverview(payload: TransitRequest): Promise<GeneratedDraftAnalysis> {
+  const response = await apiFetch("/api/reports/birth-chart/current-day", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function askAnalysis(
+  analysisId: number,
+  provider: AnalysisChatProvider,
+  question: string,
+  history: CodexAnalysisChatMessage[],
+): Promise<CodexAnalysisChatResponse> {
+  const response = await apiFetch("/api/reports/analysis/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ analysis_id: analysisId, provider, question, history }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
 }
 
 export async function askBirthCodexAnalysis(

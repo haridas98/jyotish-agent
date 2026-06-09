@@ -30,7 +30,7 @@ export default function ReportDetailPage() {
     };
   }, [slug]);
 
-  const chatMode = detail?.analysis.kind === "birth_chart_codex_cli" ? "birth" : "disabled";
+  const chatMode = detail ? "birth" : "disabled";
 
   return (
     <ProductShell active="reports">
