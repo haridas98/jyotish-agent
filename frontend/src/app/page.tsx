@@ -880,6 +880,25 @@ const vargaPurposeLabels: Record<string, string> = {
   D60: "Карма",
 };
 
+const vargaReadingNotes: Record<string, { focus: string; pairing: string }> = {
+  D1: { focus: "Основа: дома, управители, тело и общий ход жизни", pairing: "Сверять с D9 и тематической варгой" },
+  D2: { focus: "Ресурсы, накопления, поток денег", pairing: "Сверять с D1, D9 и 2/11 домами" },
+  D3: { focus: "Братья, усилие, инициативность", pairing: "Сверять с 3 домом D1" },
+  D4: { focus: "Дом, недвижимость, внутренний покой", pairing: "Сверять с 4 домом D1" },
+  D7: { focus: "Дети, продолжение рода, творческое плодородие", pairing: "Сверять с 5 домом D1" },
+  D9: { focus: "Дхарма, брак, зрелость планет", pairing: "Главная пара: D1 + D9" },
+  D10: { focus: "Карьера, статус, деятельность", pairing: "Главная пара: D1 + D10" },
+  D12: { focus: "Родители, родовая линия, наследование", pairing: "Сверять с 4/9 домами D1" },
+  D16: { focus: "Комфорт, транспорт, удобства", pairing: "Сверять с D1 и D4" },
+  D20: { focus: "Садхана, вера, духовная практика", pairing: "Сверять с 5/9 домами D1" },
+  D24: { focus: "Обучение, знание, наставники", pairing: "Сверять с 4/5/9 домами D1" },
+  D27: { focus: "Сила, слабость, устойчивость", pairing: "Сверять с D1 и Шадбалой" },
+  D30: { focus: "Риски, болезни, скрытые трудности", pairing: "Сверять с 6/8/12 домами D1" },
+  D40: { focus: "Материнская линия и благословения", pairing: "Сверять с D12" },
+  D45: { focus: "Отцовская линия и глубинные самскары", pairing: "Сверять с D12" },
+  D60: { focus: "Тонкая карма и итоговая проверка", pairing: "Только при очень точном времени" },
+};
+
 const vargaFocusGroups: Array<{
   key: string;
   label: string;
@@ -1398,6 +1417,60 @@ function VargaMatrixTable({
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+function VargaInspector({
+  chart,
+  code,
+  varga,
+}: {
+  chart: BirthChart | null;
+  code: string;
+  varga: ActiveVargaChart | null;
+}) {
+  if (!chart) return null;
+  const placements = activeChartPlacements(chart, varga);
+  const lagna = placements.find((placement) => placement.isLagna || isLagnaBody(placement.body));
+  const grahas = placements.filter((placement) => !placement.isLagna && !isLagnaBody(placement.body));
+  const note = vargaReadingNotes[code] ?? {
+    focus: vargaPurposeLabels[code] ?? varga?.name ?? "Тематическая варга",
+    pairing: "Сверять с D1 и D9",
+  };
+  const chartName = code === "D1" ? "Раши" : varga?.name ?? "Варга";
+
+  return (
+    <div className="varga-inspector" aria-label="Инспектор активной варга-карты">
+      <div className="varga-inspector-head">
+        <div>
+          <span>Активная карта</span>
+          <strong>{code} {chartName}</strong>
+        </div>
+        <small>{vargaPurposeLabels[code] ?? chartName}</small>
+      </div>
+      <div className="varga-inspector-grid">
+        <div>
+          <span>Лагна</span>
+          <strong>{lagna?.rashi ?? "-"}</strong>
+        </div>
+        <div>
+          <span>Область</span>
+          <strong>{note.focus}</strong>
+        </div>
+        <div>
+          <span>Сверка</span>
+          <strong>{note.pairing}</strong>
+        </div>
+      </div>
+      <div className="varga-inspector-placements">
+        {grahas.map((placement) => (
+          <span key={`${code}-${placement.body}`}>
+            <strong>{northGrahaLabel(placement.body)}</strong>
+            {rashiChartLabel(placement.rashiIndex, placement.rashi)}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -5661,6 +5734,7 @@ export default function Home() {
                     onSelect={setPinnedVargaCode}
                   />
                   <CoreInfoStrip chart={chart} />
+                  <VargaInspector chart={chart} code={chartMode} varga={selectedVarga} />
                   <VargaMatrixTable chart={chart} activeCode={chartMode} onSelect={setChartMode} />
                   {chartMode === "D1" ? (
                     <GrahaTable grahas={chart?.grahas ?? []} />
