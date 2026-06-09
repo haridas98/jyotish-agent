@@ -202,6 +202,8 @@ function CompatibilityPersonContextCard({
 }) {
   const seventhHouse = recordOrNull(summary.seventh_house) ?? {};
   const seventhLord = recordOrNull(summary.seventh_lord) ?? {};
+  const relationshipGrahas = recordOrNull(summary.relationship_grahas) ?? {};
+  const birthDashaLord = bodyLabel(asText(summary.birth_dasha_lord));
   const twelfthHouse = houseLine(chart, 12);
   const familyHouses = [2, 4, 8, 12].map((house) => houseLine(chart, house)).join(" · ");
 
@@ -241,6 +243,28 @@ function CompatibilityPersonContextCard({
           <dd>{familyHouses}</dd>
         </div>
       </dl>
+      <div className="compatibility-focus-list">
+        <div>
+          <span>D1: 7 дом</span>
+          <strong>{houseLine(chart, 7)}</strong>
+        </div>
+        <div>
+          <span>D1: 12 дом</span>
+          <strong>{twelfthHouse}</strong>
+        </div>
+        <div>
+          <span>Даша рождения</span>
+          <strong>{birthDashaLord || "нет данных"}</strong>
+        </div>
+      </div>
+      <div className="compatibility-graha-list">
+        {["Shukra", "Mangala", "Guru"].map((body) => (
+          <div key={body}>
+            <span>{bodyLabel(body)}</span>
+            <small>{placementLine(recordOrNull(relationshipGrahas[body]) ?? findGraha(chart, [body]), bodyLabel(body))}</small>
+          </div>
+        ))}
+      </div>
       <div className="compatibility-varga-list">
         {["D7", "D9", "D12", "D30", "D60"].map((code) => (
           <div key={code}>

@@ -2699,10 +2699,6 @@ function CompatibilityPanel({
   codexDisabled,
   codexStatus,
   codexAnalysis,
-  chatMessages,
-  chatStatus,
-  onAskCodexQuestion,
-  chatDisabled,
 }: CompatibilityPanelProps) {
   const rows = report?.kuta_rows ?? [];
   const perspectives = report?.analysis?.perspectives ?? [];
@@ -2710,15 +2706,6 @@ function CompatibilityPanel({
   const scoreLabel = report ? `${report.score.total}/${report.score.max}` : "-";
   const percentLabel = report ? `${report.score.percent.toFixed(1)}%` : "-";
   const levelLabel = report ? compatibilityLevelLabelsRu[report.assessment.level] ?? report.assessment.level : "ожидает";
-  const [chatQuestion, setChatQuestion] = useState("");
-
-  function handleChatSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const question = chatQuestion.trim();
-    if (!question) return;
-    onAskCodexQuestion(question);
-    setChatQuestion("");
-  }
 
   return (
     <section className="panel workflow-panel compatibility-panel">
@@ -2926,69 +2913,17 @@ function CompatibilityPanel({
         <div className="pending-strip">Сначала рассчитай основную карту, затем добавь данные второго человека.</div>
       )}
       {codexAnalysis ? (
-        <div className="compatibility-full-analysis">
-          <div className="panel-heading">
-            <h3>Полный разбор двух карт</h3>
-            <span>#{codexAnalysis.id} · {generatedStatusRu(codexAnalysis.review_status)}</span>
+        <div className="compatibility-saved-analysis-card">
+          <div>
+            <span>Сохранённый AI-разбор</span>
+            <strong>#{codexAnalysis.id} · {generatedStatusRu(codexAnalysis.review_status)}</strong>
+            <small>
+              Разбор, чат и данные пары открываются отдельной страницей. Там сохраняется история вопросов и показываются D1, 7/12 дома и ключевые варги.
+            </small>
           </div>
-          <div className="codex-analysis-chat">
-            <div className="chat-heading">
-              <strong>Вопросы к Codex CLI по совместимости</strong>
-              <span>{chatStatus}</span>
-            </div>
-            {chatMessages.length ? (
-              <div className="chat-thread">
-                {chatMessages.map((message, index) => (
-                  <div className={`chat-message ${message.role}`} key={`${message.role}-${index}-${message.content.slice(0, 24)}`}>
-                    <strong>{message.role === "user" ? "Вы" : "Codex CLI"}</strong>
-                    <p>{message.content}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            <form className="chat-form" onSubmit={handleChatSubmit}>
-              <input
-                type="text"
-                value={chatQuestion}
-                onChange={(event) => setChatQuestion(event.target.value)}
-                placeholder="Спросить про перспективы брака, риски, даши, духовную совместимость..."
-                disabled={chatDisabled}
-              />
-              <button type="submit" className="secondary-button" disabled={chatDisabled || !chatQuestion.trim()}>
-                Спросить
-              </button>
-            </form>
-          </div>
-          {codexAnalysis.sections.map((section, index) => (
-            <article key={`${section.title}-${index}`} className="generated-section">
-              <h3>{section.title}</h3>
-              <p>{section.body}</p>
-              {section.key_points?.length ? (
-                <ul>
-                  {section.key_points.slice(0, 4).map((point) => (
-                    <li key={point}>{point}</li>
-                  ))}
-                </ul>
-              ) : null}
-              {section.practical_steps?.length ? (
-                <div className="generated-actions">
-                  <strong>Что делать</strong>
-                  {section.practical_steps.slice(0, 4).map((step) => (
-                    <span key={step}>{step}</span>
-                  ))}
-                </div>
-              ) : null}
-              {section.source_traces?.length ? (
-                <div className="source-trace-list">
-                  {section.source_traces.slice(0, 3).map((trace, traceIndex) => (
-                    <small key={`${trace.condition_key}-${traceIndex}`}>
-                      {trace.condition_key} · {trace.work_title} · {trace.reference} · {trace.source_status}
-                    </small>
-                  ))}
-                </div>
-              ) : null}
-            </article>
-          ))}
+          <a className="primary-link-button" href={`/compatibility/${codexAnalysis.id}`}>
+            Открыть разбор
+          </a>
         </div>
       ) : null}
     </section>
@@ -5206,18 +5141,8 @@ export default function Home() {
         </div>
         <nav aria-label="Основная навигация">
           <a className="active" href="#chart">Карты</a>
-          <a
-            href="#reports"
-            onClick={(event) => {
-              event.preventDefault();
-              setActiveAnalysisTab("compatibility");
-              document.getElementById("reports")?.scrollIntoView({ block: "start" });
-            }}
-          >
-            Совместимость
-          </a>
+          <a href="/compatibility">Совместимость</a>
           <a href="/reports">История отчётов</a>
-          <a href="/compatibility">История совместимости</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>Отчёт</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("sources")}>Источники</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("accuracy")}>Точность</a>
