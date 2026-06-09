@@ -938,6 +938,119 @@ select {
   text-align: center;
 }
 
+.varga-pair-board {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 0;
+  margin-bottom: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.varga-pair-head {
+  align-items: center;
+  background: #fbfaf5;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.varga-pair-head strong {
+  color: var(--green);
+  font-size: 14px;
+}
+
+.varga-pair-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.varga-pair-strip {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+}
+
+.varga-pair-card {
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  display: grid;
+  flex: 0 0 204px;
+  gap: 7px;
+  min-height: 150px;
+  min-width: 204px;
+  padding: 8px;
+  scroll-snap-align: start;
+  text-align: left;
+}
+
+.varga-pair-card:last-child {
+  border-right: 0;
+}
+
+.varga-pair-card.active {
+  background: #e6f6f3;
+  box-shadow: inset 0 4px 0 var(--green-2);
+}
+
+.varga-pair-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.varga-pair-title {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.varga-pair-title strong {
+  color: var(--green);
+  font-size: 13px;
+}
+
+.varga-pair-title span {
+  color: var(--muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.varga-pair-mini {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.varga-pair-mini div {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 4px;
+}
+
+.varga-pair-mini span {
+  color: #8b6f28;
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+}
+
 .compact-control {
   color: var(--muted);
   display: grid;
@@ -4202,6 +4315,17 @@ button,
 
   .varga-focus-groups {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .varga-pair-head {
+    align-items: start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .varga-pair-card {
+    flex-basis: 198px;
+    min-width: 198px;
   }
 
   .core-info-strip,

@@ -913,6 +913,14 @@ const vargaFocusGroups: Array<{
   { key: "karma", label: "Карма", hint: "D30, D60", codes: ["D30", "D60"], tab: "yogas" },
 ];
 
+const vargaPairPresets = [
+  { key: "dharma", label: "D1 + D9", code: "D9", title: "Дхарма / брак" },
+  { key: "career", label: "D1 + D10", code: "D10", title: "Карьера" },
+  { key: "parents", label: "D1 + D12", code: "D12", title: "Родители" },
+  { key: "trouble", label: "D1 + D30", code: "D30", title: "Риски" },
+  { key: "karma", label: "D1 + D60", code: "D60", title: "Карма" },
+] as const;
+
 function vargaCodeNumber(code: string) {
   const match = code.match(/^D(\d+)$/);
   return match ? Number(match[1]) : Number.POSITIVE_INFINITY;
@@ -1035,6 +1043,73 @@ function VargaFocusGroups({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function VargaPairStrip({
+  chart,
+  activeCode,
+  activePinnedCode,
+  chartStyle,
+  onSelect,
+  onPinSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  activePinnedCode: string;
+  chartStyle: "north" | "south";
+  onSelect: (code: string) => void;
+  onPinSelect: (code: string) => void;
+}) {
+  return (
+    <div className="varga-pair-board" aria-label="Наглядные пары D1 и тематических варг">
+      <div className="varga-pair-head">
+        <strong>Пары чтения</strong>
+        <span>D1 остаётся базой, тематическая варга закрепляется справа</span>
+      </div>
+      <div className="varga-pair-strip">
+        {vargaPairPresets.map((pair) => {
+          const varga = chart?.vargas?.[pair.code] ?? null;
+          const available = Boolean(chart && varga);
+          const active = activeCode === pair.code || (activeCode === "D1" && activePinnedCode === pair.code);
+          return (
+            <button
+              type="button"
+              className={`varga-pair-card${active ? " active" : ""}`}
+              disabled={!available}
+              key={pair.key}
+              onClick={() => {
+                onSelect("D1");
+                onPinSelect(pair.code);
+              }}
+            >
+              <div className="varga-pair-title">
+                <strong>{pair.label}</strong>
+                <span>{pair.title}</span>
+              </div>
+              <div className="varga-pair-mini">
+                <div>
+                  <span>D1</span>
+                  {chartStyle === "south" ? (
+                    <SouthIndianChartGrid chart={chart} varga={null} compact />
+                  ) : (
+                    <NorthIndianChartSvg chart={chart} varga={null} compact />
+                  )}
+                </div>
+                <div>
+                  <span>{pair.code}</span>
+                  {chartStyle === "south" ? (
+                    <SouthIndianChartGrid chart={chart} varga={varga} compact />
+                  ) : (
+                    <NorthIndianChartSvg chart={chart} varga={varga} compact />
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -5722,6 +5797,14 @@ export default function Home() {
                 activeCode={chartMode}
                 chartStyle={chartStyle}
                 onSelect={setChartMode}
+              />
+              <VargaPairStrip
+                chart={chart}
+                activeCode={chartMode}
+                activePinnedCode={activePinnedVargaCode}
+                chartStyle={chartStyle}
+                onSelect={setChartMode}
+                onPinSelect={setPinnedVargaCode}
               />
               <div className="chart-layout">
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} />
