@@ -1254,6 +1254,57 @@ function CoreInfoStrip({ chart }: { chart: BirthChart | null }) {
   );
 }
 
+function PlanetStrengthDigest({ chart }: { chart: BirthChart | null }) {
+  const sun = chart?.grahas.find((graha) => graha.body === "Surya");
+  const combust = chart?.grahas
+    .map((graha) => ({ graha, status: combustionStatus(graha, sun) }))
+    .filter((item) => item.status.combust) ?? [];
+  const shadbala = [...(chart?.classical?.shadbala?.items ?? [])].sort((left, right) => right.known_total - left.known_total);
+  const vimshopaka = [...(chart?.classical?.vimshopaka_bala?.items ?? [])].sort((left, right) => right.score - left.score);
+  const sav = chart?.classical?.ashtakavarga?.sarva.total;
+  const rows = [
+    {
+      label: "Сожжение",
+      value: combust.length ? combust.map((item) => labelRu(item.graha.body)).join(", ") : "нет",
+      detail: combust[0]?.status.label ?? "астангата по дистанции от Солнца",
+      warn: combust.length > 0,
+    },
+    {
+      label: "Шадбала max",
+      value: shadbala[0] ? `${labelRu(shadbala[0].body)} ${shadbala[0].known_total.toFixed(1)}` : "-",
+      detail: shadbala[0] ? "вирупы, полный компонентный слой" : "ожидает расчёт",
+    },
+    {
+      label: "Шадбала min",
+      value: shadbala.at(-1) ? `${labelRu(shadbala.at(-1)?.body ?? "")} ${shadbala.at(-1)?.known_total.toFixed(1)}` : "-",
+      detail: "быстрая проверка слабого места",
+      warn: Boolean(shadbala.at(-1)),
+    },
+    {
+      label: "Вимшопака",
+      value: vimshopaka[0] ? `${labelRu(vimshopaka[0].body)} ${vimshopaka[0].score.toFixed(1)}/20` : "-",
+      detail: vimshopaka[0]?.primary_scheme ?? "шодаша-варга",
+    },
+    {
+      label: "SAV",
+      value: sav ? String(sav) : "-",
+      detail: "сарва-аштакаварга",
+    },
+  ];
+
+  return (
+    <div className="planet-strength-digest" aria-label="Сила и состояния планет">
+      {rows.map((row) => (
+        <div className={row.warn ? "warn" : ""} key={row.label}>
+          <span>{row.label}</span>
+          <strong>{row.value}</strong>
+          <small>{row.detail}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const combustionThresholds: Record<string, number> = {
   Chandra: 12,
   Mangala: 17,
@@ -5498,6 +5549,7 @@ export default function Home() {
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} />
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} />
+                  <PlanetStrengthDigest chart={chart} />
                   {chartMode === "D1" ? (
                     <GrahaTable grahas={chart?.grahas ?? []} />
                   ) : (

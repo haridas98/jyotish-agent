@@ -1097,6 +1097,47 @@ select {
   padding: 12px;
 }
 
+.planet-strength-digest {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  overflow: hidden;
+}
+
+.planet-strength-digest div {
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 3px;
+  min-height: 66px;
+  padding: 8px;
+}
+
+.planet-strength-digest div:last-child {
+  border-right: 0;
+}
+
+.planet-strength-digest div.warn {
+  background: #fff7ee;
+}
+
+.planet-strength-digest span,
+.planet-strength-digest small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.planet-strength-digest strong {
+  color: var(--green);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.planet-strength-digest div.warn strong {
+  color: var(--red);
+}
+
 .planet-table {
   border: 1px solid var(--line);
   border-radius: 8px;
