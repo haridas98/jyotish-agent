@@ -850,6 +850,17 @@ const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D
 
 const featuredVargaCodes = ["D1", "D9", "D10", "D7", "D12", "D30", "D60"];
 
+type VargaSetKey = "featured" | "shadvarga" | "saptavarga" | "dashavarga" | "shodasha" | "all";
+
+const vargaSetOptions: Array<{ key: VargaSetKey; label: string; codes: readonly string[] }> = [
+  { key: "featured", label: "Главные", codes: featuredVargaCodes },
+  { key: "shadvarga", label: "Shad", codes: ["D1", "D2", "D3", "D9", "D12", "D30"] },
+  { key: "saptavarga", label: "Sapta", codes: ["D1", "D2", "D3", "D7", "D9", "D12", "D30"] },
+  { key: "dashavarga", label: "Dasha", codes: ["D1", "D2", "D3", "D7", "D9", "D10", "D12", "D16", "D30", "D60"] },
+  { key: "shodasha", label: "Shodasha", codes: vargaSnapshotCodes },
+  { key: "all", label: "Все", codes: [] },
+];
+
 const vargaPurposeLabels: Record<string, string> = {
   D1: "Раши / тело",
   D2: "Деньги",
@@ -883,18 +894,40 @@ const vargaFocusGroups: Array<{
   { key: "karma", label: "Карма", hint: "D30, D60", codes: ["D30", "D60"], tab: "yogas" },
 ];
 
+function vargaCodeNumber(code: string) {
+  const match = code.match(/^D(\d+)$/);
+  return match ? Number(match[1]) : Number.POSITIVE_INFINITY;
+}
+
+function availableVargaCodes(chart: BirthChart | null) {
+  const codes = new Set<string>();
+  if (chart) codes.add("D1");
+  Object.keys(chart?.vargas ?? {}).forEach((code) => codes.add(code));
+  return Array.from(codes).sort((left, right) => vargaCodeNumber(left) - vargaCodeNumber(right) || left.localeCompare(right));
+}
+
+function visibleVargaCodes(chart: BirthChart | null, setKey: VargaSetKey) {
+  const available = availableVargaCodes(chart);
+  if (setKey === "all") return available;
+  const option = vargaSetOptions.find((item) => item.key === setKey);
+  const desired = option?.codes ?? featuredVargaCodes;
+  return desired.filter((code) => available.includes(code));
+}
+
 function VargaSnapshotGrid({
   chart,
   activeCode,
   chartStyle,
+  codes,
   onSelect,
 }: {
   chart: BirthChart | null;
   activeCode: string;
   chartStyle: "north" | "south";
+  codes: string[];
   onSelect: (code: string) => void;
 }) {
-  const items = vargaSnapshotCodes.map((code) => {
+  const items = codes.map((code) => {
     if (code === "D1") {
       return {
         code,
@@ -3895,6 +3928,7 @@ export default function Home() {
   const [chartMode, setChartMode] = useState("D1");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
+  const [vargaSet, setVargaSet] = useState<VargaSetKey>("shodasha");
   const [showBirthEditor, setShowBirthEditor] = useState(false);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
@@ -3975,9 +4009,10 @@ export default function Home() {
   }, [chart]);
   const vimshottariPeriods = chart?.dashas?.vimshottari?.mahadashas ?? [];
   const vargaOptions = useMemo(
-    () => ["D1", ...Object.keys(chart?.vargas ?? {}).filter((code) => code !== "D1")],
+    () => availableVargaCodes(chart),
     [chart],
   );
+  const visibleVargaGalleryCodes = useMemo(() => visibleVargaCodes(chart, vargaSet), [chart, vargaSet]);
   const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
   const selectedVargaPlacements = selectedVarga?.placements ?? [];
   const personSummary = birthReport?.person_summary ?? null;
@@ -5528,7 +5563,26 @@ export default function Home() {
                 <strong>D-карты D1-D60</strong>
                 <span>как в Jyotish-программах: клик по плитке сразу открывает нужную карту</span>
               </div>
-              <VargaSnapshotGrid chart={chart} activeCode={chartMode} chartStyle={chartStyle} onSelect={setChartMode} />
+              <div className="varga-set-toggle" aria-label="Набор варга-карт">
+                {vargaSetOptions.map((option) => (
+                  <button
+                    type="button"
+                    className={vargaSet === option.key ? "active" : ""}
+                    key={option.key}
+                    onClick={() => setVargaSet(option.key)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+                <span>{visibleVargaGalleryCodes.length} карт</span>
+              </div>
+              <VargaSnapshotGrid
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                codes={visibleVargaGalleryCodes}
+                onSelect={setChartMode}
+              />
             </section>
 
             <section className="analysis-workspace" id="reports">

@@ -3802,6 +3802,37 @@ button,
   font-size: 15px;
 }
 
+.varga-set-toggle {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.varga-set-toggle button {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 850;
+  min-height: 30px;
+  padding: 5px 9px;
+}
+
+.varga-set-toggle button.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #ffffff;
+}
+
+.varga-set-toggle span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: auto;
+}
+
 .varga-chart-card {
   background: #ffffff;
   border: 0;
