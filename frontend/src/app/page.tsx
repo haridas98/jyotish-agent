@@ -1503,6 +1503,49 @@ function VargaTable({ placements, code }: { placements: VargaPlacement[]; code: 
   );
 }
 
+function VargaSnapshotGrid({ chart }: { chart: BirthChart | null }) {
+  const importantBodies = ["Lagna", "Ascendant", "Surya", "Chandra", "Shukra", "Mangala", "Guru"];
+  const items = vargaSnapshotCodes.map((code) => {
+    const placements = code === "D1"
+      ? activeChartPlacements(chart, null)
+      : (chart?.vargas?.[code]?.placements ?? []).map((placement) => ({
+          body: placement.body,
+          rashi: placement.rashi,
+          rashiIndex: placement.rashi_index,
+          longitude: null,
+          nakshatra: null,
+          pada: null,
+          isLagna: placement.body === "Lagna" || placement.body === "Ascendant",
+        }));
+    const focus = placements.filter((placement) => importantBodies.includes(placement.body)).slice(0, 5);
+    return { code, focus };
+  });
+
+  return (
+    <div className="varga-snapshot-grid" aria-label="Сводка варга-карт D1-D60">
+      {items.map((item) => (
+        <div className="varga-snapshot-card" key={item.code}>
+          <div className="varga-snapshot-head">
+            <strong>{item.code}</strong>
+            <span>{vargaPurposeLabels[item.code] ?? "Варга"}</span>
+          </div>
+          <div className="varga-snapshot-body">
+            {item.focus.length ? (
+              item.focus.map((placement) => (
+                <span key={`${item.code}-${placement.body}`}>
+                  {placement.isLagna ? "As" : northGrahaLabel(placement.body)} {placement.rashi || "-"}
+                </span>
+              ))
+            ) : (
+              <em>нет расчёта</em>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
   if (periods.length === 0) {
     return (
@@ -1601,7 +1644,7 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
   );
 }
 
-function DetailedCalculationsPanel({ summary }: { summary: PersonSummary | null }) {
+function DetailedCalculationsPanel({ summary, chart }: { summary: PersonSummary | null; chart: BirthChart | null }) {
   const detailedPositions = summary?.detailed_positions ?? [];
   const houses = summary?.houses ?? [];
 
@@ -1613,6 +1656,7 @@ function DetailedCalculationsPanel({ summary }: { summary: PersonSummary | null 
       </div>
       <div className="summary-content">
         {!summary ? <div className="pending-strip">Подробные расчёты появятся после построения карты.</div> : null}
+        <VargaSnapshotGrid chart={chart} />
         {detailedPositions.length ? (
           <div className="detailed-positions">
             <div>
@@ -5701,7 +5745,7 @@ export default function Home() {
                 {activeAnalysisTab === "calculations" ? (
                   <div className="analysis-tab-stack">
                     <DualCalculationPanel report={dualCalculationReport} status={dualCalculationStatus} />
-                    <DetailedCalculationsPanel summary={personSummary} />
+                    <DetailedCalculationsPanel summary={personSummary} chart={chart} />
                   </div>
                 ) : null}
                 {activeAnalysisTab === "yogas" ? <ClassicalPanel classical={chart?.classical} /> : null}
