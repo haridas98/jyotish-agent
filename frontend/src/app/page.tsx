@@ -863,13 +863,12 @@ const vargaFocusGroups: Array<{
   label: string;
   hint: string;
   codes: readonly string[];
-  tab?: AnalysisTab;
 }> = [
-  { key: "core", label: "Core", hint: "D1", codes: ["D1"], tab: "overview" },
-  { key: "marriage", label: "Marriage", hint: "D9", codes: ["D9"], tab: "compatibility" },
-  { key: "career", label: "Career", hint: "D10", codes: ["D10"], tab: "timeline" },
-  { key: "parents", label: "Parents", hint: "D12, D40, D45", codes: ["D12", "D40", "D45"], tab: "overview" },
-  { key: "karma", label: "Karma", hint: "D30, D60", codes: ["D30", "D60"], tab: "yogas" },
+  { key: "core", label: "Core", hint: "D1", codes: ["D1"] },
+  { key: "marriage", label: "Marriage", hint: "D9", codes: ["D9"] },
+  { key: "career", label: "Career", hint: "D10", codes: ["D10"] },
+  { key: "parents", label: "Parents", hint: "D12, D40, D45", codes: ["D12", "D40", "D45"] },
+  { key: "karma", label: "Karma", hint: "D30, D60", codes: ["D30", "D60"] },
 ];
 
 function vargaCodeNumber(code: string) {
@@ -888,12 +887,10 @@ function VargaFocusGroups({
   chart,
   activeCode,
   onSelect,
-  onOpenTab,
 }: {
   chart: BirthChart | null;
   activeCode: string;
   onSelect: (code: string) => void;
-  onOpenTab: (tab: AnalysisTab) => void;
 }) {
   return (
     <div className="varga-focus-groups" aria-label="Быстрые группы варга-карт">
@@ -909,7 +906,6 @@ function VargaFocusGroups({
             onClick={() => {
               if (!selectedCode) return;
               onSelect(selectedCode);
-              if (group.tab) onOpenTab(group.tab);
             }}
           >
             <strong>{group.label}</strong>
@@ -5405,7 +5401,6 @@ export default function Home() {
                   chart={chart}
                   activeCode={chartMode}
                   onSelect={setChartMode}
-                  onOpenTab={setActiveAnalysisTab}
                 />
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
