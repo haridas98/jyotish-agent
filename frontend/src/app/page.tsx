@@ -496,6 +496,16 @@ type ActiveVargaChart = NonNullable<BirthChart["vargas"]>[string];
 
 type ChartReference = "lagna" | "moon" | "sun";
 
+const chartReferenceOptions: Array<{
+  key: ChartReference;
+  label: string;
+  hint: string;
+}> = [
+  { key: "lagna", label: "Лагна", hint: "D1" },
+  { key: "moon", label: "Луна", hint: "Chandra" },
+  { key: "sun", label: "Солнце", hint: "Surya" },
+];
+
 type ChartPlacement = {
   body: string;
   rashi: string;
@@ -637,6 +647,33 @@ function ChartPreview({
     <SouthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} />
   ) : (
     <NorthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} />
+  );
+}
+
+function ChartReferenceToggle({
+  chart,
+  value,
+  onChange,
+}: {
+  chart: BirthChart | null;
+  value: ChartReference;
+  onChange: (value: ChartReference) => void;
+}) {
+  return (
+    <div className="chart-reference-toggle" aria-label="Точка отсчёта домов">
+      {chartReferenceOptions.map((option) => (
+        <button
+          type="button"
+          className={value === option.key ? "active" : ""}
+          disabled={!chart}
+          key={option.key}
+          onClick={() => onChange(option.key)}
+        >
+          <strong>{option.label}</strong>
+          <span>{option.hint}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -961,12 +998,14 @@ function VargaStudyBoard({
   activeGroupKey,
   activeCode,
   chartStyle,
+  chartReference,
   onSelect,
 }: {
   chart: BirthChart | null;
   activeGroupKey: string;
   activeCode: string;
   chartStyle: "north" | "south";
+  chartReference: ChartReference;
   onSelect: (code: string) => void;
 }) {
   const group = vargaFocusGroups.find((item) => item.key === activeGroupKey) ?? vargaFocusGroups[0];
@@ -1003,9 +1042,9 @@ function VargaStudyBoard({
             <div className="varga-study-preview">
               {item.available ? (
                 chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} compact />
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} compact />
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 )
               ) : (
                 <em>нет расчёта</em>
@@ -1022,11 +1061,13 @@ function FeaturedVargaBoard({
   chart,
   activeCode,
   chartStyle,
+  chartReference,
   onSelect,
 }: {
   chart: BirthChart | null;
   activeCode: string;
   chartStyle: "north" | "south";
+  chartReference: ChartReference;
   onSelect: (code: string) => void;
 }) {
   const items = featuredVargaCodes.map((code) => {
@@ -1060,9 +1101,9 @@ function FeaturedVargaBoard({
             <div className="featured-varga-preview">
               {item.available ? (
                 chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} compact />
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} compact />
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 )
               ) : (
                 <em>нет расчёта</em>
@@ -3897,6 +3938,7 @@ export default function Home() {
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
   const [activeVargaFocusKey, setActiveVargaFocusKey] = useState("core");
+  const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [chartStyleHydrated, setChartStyleHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
@@ -5450,9 +5492,10 @@ export default function Home() {
             <section className="panel chart-panel">
               <div className="panel-heading">
                 <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
+                <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
               </div>
               <div className="chart-layout">
-                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} />
+                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} />
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} />
                   {chartMode === "D1" ? (
@@ -5485,12 +5528,14 @@ export default function Home() {
                 activeGroupKey={activeVargaFocusKey}
                 activeCode={chartMode}
                 chartStyle={chartStyle}
+                chartReference={chartReference}
                 onSelect={selectVargaCode}
               />
               <FeaturedVargaBoard
                 chart={chart}
                 activeCode={chartMode}
                 chartStyle={chartStyle}
+                chartReference={chartReference}
                 onSelect={selectVargaCode}
               />
               <p className="calculation-result">{calculatedLabel}</p>

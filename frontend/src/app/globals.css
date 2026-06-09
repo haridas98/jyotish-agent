@@ -704,6 +704,11 @@ select {
   padding: 10px;
 }
 
+.chart-panel > .panel-heading {
+  align-items: start;
+  flex-wrap: wrap;
+}
+
 .varga-focus-groups span {
   color: var(--muted);
   font-size: 12px;
