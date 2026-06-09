@@ -5606,18 +5606,18 @@ export default function Home() {
                   ) : null}
                 </div>
               </div>
-              <ReferenceChartBoard
-                chart={chart}
-                chartStyle={chartStyle}
-                activeReference={chartReference}
-                onSelect={setChartReference}
-              />
               <EssentialChartPairBoard
                 chart={chart}
                 activeCode={chartMode}
                 chartStyle={chartStyle}
                 chartReference={chartReference}
                 onSelect={selectVargaCode}
+              />
+              <ReferenceChartBoard
+                chart={chart}
+                chartStyle={chartStyle}
+                activeReference={chartReference}
+                onSelect={setChartReference}
               />
               <div className="chart-mode-strip">
                 <VargaFocusGroups
