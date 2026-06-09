@@ -4213,12 +4213,11 @@ button,
 .varga-gallery {
   border: 1px solid var(--line);
   border-radius: 8px;
-  display: flex;
+  display: grid;
   gap: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 10px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x proximity;
+  overflow: hidden;
 }
 
 .varga-gallery-head {
@@ -4269,20 +4268,19 @@ button,
   background: #ffffff;
   border: 0;
   border-radius: 0;
+  border-bottom: 1px solid var(--line);
   border-right: 1px solid var(--line);
   color: inherit;
   cursor: pointer;
   display: grid;
   gap: 8px;
-  flex: 0 0 138px;
-  min-height: 154px;
-  min-width: 138px;
+  min-height: 172px;
+  min-width: 0;
   padding: 9px;
-  scroll-snap-align: start;
   text-align: left;
 }
 
-.varga-chart-card:last-child {
+.varga-chart-card:nth-child(4n) {
   border-right: 0;
 }
 
@@ -4305,7 +4303,9 @@ button,
 
 .varga-mini-chart {
   aspect-ratio: 1 / 1;
+  justify-self: center;
   min-width: 0;
+  width: min(100%, 132px);
 }
 
 .chart-svg-mini .chart-rashi-label {
@@ -4458,8 +4458,17 @@ button,
   }
 
   .varga-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-left: -2px;
     margin-right: -2px;
+  }
+
+  .varga-chart-card:nth-child(4n) {
+    border-right: 1px solid var(--line);
+  }
+
+  .varga-chart-card:nth-child(2n) {
+    border-right: 0;
   }
 
   .current-day-strip {

@@ -5917,8 +5917,8 @@ export default function Home() {
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
               <div className="varga-gallery-head">
-                <strong>D-карты D1-D60</strong>
-                <span>как в Jyotish-программах: клик по плитке сразу открывает нужную карту</span>
+                <strong>Атлас D-карт D1-D60</strong>
+                <span>Shodasha varga видны сеткой; клик по плитке открывает карту</span>
               </div>
               <div className="varga-set-toggle" aria-label="Набор варга-карт">
                 {vargaSetOptions.map((option) => (
