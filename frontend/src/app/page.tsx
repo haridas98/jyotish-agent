@@ -862,13 +862,50 @@ const vargaFocusGroups: Array<{
   key: string;
   label: string;
   hint: string;
+  title: string;
+  description: string;
   codes: readonly string[];
 }> = [
-  { key: "core", label: "Core", hint: "D1", codes: ["D1"] },
-  { key: "marriage", label: "Marriage", hint: "D9", codes: ["D9"] },
-  { key: "career", label: "Career", hint: "D10", codes: ["D10"] },
-  { key: "parents", label: "Parents", hint: "D12, D40, D45", codes: ["D12", "D40", "D45"] },
-  { key: "karma", label: "Karma", hint: "D30, D60", codes: ["D30", "D60"] },
+  {
+    key: "core",
+    label: "Core",
+    hint: "D1, D9, D60",
+    title: "База чтения",
+    description: "D1 даёт каркас карты, D9 уточняет силу и дхарму, D60 требует точного времени.",
+    codes: ["D1", "D9", "D60"],
+  },
+  {
+    key: "marriage",
+    label: "Marriage",
+    hint: "D9, D1, D7",
+    title: "Отношения и брак",
+    description: "Проверяются 7 дом D1, Навамша D9, дети/потомство через D7 и общая сила Шукра/Гуру.",
+    codes: ["D9", "D1", "D7"],
+  },
+  {
+    key: "career",
+    label: "Career",
+    hint: "D10, D1, D24",
+    title: "Работа и призвание",
+    description: "D10 показывает карму профессии, D24 поддерживает обучение и квалификацию, D1 держит контекст.",
+    codes: ["D10", "D1", "D24"],
+  },
+  {
+    key: "parents",
+    label: "Parents",
+    hint: "D12, D40, D45",
+    title: "Родители и род",
+    description: "D12 даёт родителей, D40 материнскую линию, D45 отцовскую линию.",
+    codes: ["D12", "D40", "D45"],
+  },
+  {
+    key: "karma",
+    label: "Karma",
+    hint: "D30, D60",
+    title: "Риски и карма",
+    description: "D30 показывает трудности и повреждения, D60 — тонкий кармический слой при точном времени.",
+    codes: ["D30", "D60"],
+  },
 ];
 
 function vargaCodeNumber(code: string) {
@@ -886,17 +923,19 @@ function availableVargaCodes(chart: BirthChart | null) {
 function VargaFocusGroups({
   chart,
   activeCode,
+  activeGroupKey,
   onSelect,
 }: {
   chart: BirthChart | null;
   activeCode: string;
-  onSelect: (code: string) => void;
+  activeGroupKey: string;
+  onSelect: (groupKey: string, code: string) => void;
 }) {
   return (
     <div className="varga-focus-groups" aria-label="Быстрые группы варга-карт">
       {vargaFocusGroups.map((group) => {
         const selectedCode = group.codes.find((code) => (code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])));
-        const active = group.codes.includes(activeCode);
+        const active = group.key === activeGroupKey;
         return (
           <button
             type="button"
@@ -905,7 +944,7 @@ function VargaFocusGroups({
             key={group.key}
             onClick={() => {
               if (!selectedCode) return;
-              onSelect(selectedCode);
+              onSelect(group.key, selectedCode);
             }}
           >
             <strong>{group.label}</strong>
@@ -913,6 +952,68 @@ function VargaFocusGroups({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function VargaStudyBoard({
+  chart,
+  activeGroupKey,
+  activeCode,
+  chartStyle,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeGroupKey: string;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  onSelect: (code: string) => void;
+}) {
+  const group = vargaFocusGroups.find((item) => item.key === activeGroupKey) ?? vargaFocusGroups[0];
+  const items = group.codes.map((code) => {
+    if (code === "D1") {
+      return { code, name: "Раши", available: Boolean(chart), varga: null };
+    }
+    const varga = chart?.vargas?.[code];
+    return { code, name: varga?.name ?? "Варга", available: Boolean(varga), varga: varga ?? null };
+  });
+
+  return (
+    <div className="varga-study-board" aria-label="Фокусный набор варга-карт">
+      <div className="varga-study-head">
+        <div>
+          <strong>{group.title}</strong>
+          <span>{group.description}</span>
+        </div>
+        <small>{group.hint}</small>
+      </div>
+      <div className="varga-study-grid">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={`varga-study-card${activeCode === item.code ? " active" : ""}`}
+            disabled={!item.available}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <div className="varga-study-card-head">
+              <strong>{item.code}</strong>
+              <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
+            </div>
+            <div className="varga-study-preview">
+              {item.available ? (
+                chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} compact />
+                )
+              ) : (
+                <em>нет расчёта</em>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -3795,6 +3896,7 @@ export default function Home() {
   const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
+  const [activeVargaFocusKey, setActiveVargaFocusKey] = useState("core");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [chartStyleHydrated, setChartStyleHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
@@ -3883,6 +3985,17 @@ export default function Home() {
   const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
   const selectedVargaPlacements = selectedVarga?.placements ?? [];
   const personSummary = birthReport?.person_summary ?? null;
+
+  function selectVargaFocusGroup(groupKey: string, code: string) {
+    setActiveVargaFocusKey(groupKey);
+    setChartMode(code);
+  }
+
+  function selectVargaCode(code: string) {
+    const matchingGroup = vargaFocusGroups.find((group) => group.codes.includes(code));
+    if (matchingGroup) setActiveVargaFocusKey(matchingGroup.key);
+    setChartMode(code);
+  }
 
   function resetCodexChat() {
     setCodexChatMessages([]);
@@ -5359,19 +5472,27 @@ export default function Home() {
                   ) : null}
                 </div>
               </div>
-              <FeaturedVargaBoard
-                chart={chart}
-                activeCode={chartMode}
-                chartStyle={chartStyle}
-                onSelect={setChartMode}
-              />
               <div className="chart-mode-strip">
                 <VargaFocusGroups
                   chart={chart}
                   activeCode={chartMode}
-                  onSelect={setChartMode}
+                  activeGroupKey={activeVargaFocusKey}
+                  onSelect={selectVargaFocusGroup}
                 />
               </div>
+              <VargaStudyBoard
+                chart={chart}
+                activeGroupKey={activeVargaFocusKey}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                onSelect={selectVargaCode}
+              />
+              <FeaturedVargaBoard
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                onSelect={selectVargaCode}
+              />
               <p className="calculation-result">{calculatedLabel}</p>
             </section>
 
