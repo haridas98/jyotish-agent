@@ -831,6 +831,7 @@ def _analysis_history_payload(record: GeneratedAnalysisDraft, *, include_output:
         payload["excerpt"] = str(output.get("answer") or "")[:360]
     if include_output:
         payload["output_json"] = output
+        payload["packet_snapshot"] = record.packet_snapshot if isinstance(record.packet_snapshot, dict) else {}
         payload["prompt_markdown"] = record.prompt_markdown
     return payload
 

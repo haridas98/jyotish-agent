@@ -1275,6 +1275,7 @@ export type AnalysisHistoryItem = {
 export type AnalysisHistoryDetail = {
   analysis: AnalysisHistoryItem & {
     output_json?: GeneratedDraftAnalysis & Record<string, unknown>;
+    packet_snapshot?: Record<string, unknown>;
     prompt_markdown?: string;
   };
   chat_messages: (CodexAnalysisChatMessage & {

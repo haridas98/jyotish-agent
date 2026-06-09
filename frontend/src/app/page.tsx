@@ -4418,6 +4418,30 @@ export default function Home() {
     }
   }
 
+  function handleExportCurrentChart() {
+    if (!chart) {
+      setStatus("Сначала рассчитайте карту для экспорта");
+      return;
+    }
+    const exportPayload = {
+      exported_at: new Date().toISOString(),
+      birth_request: lastBirthPayload ?? buildBirthPayload(),
+      chart,
+      report: birthReport,
+    };
+    const objectUrl = URL.createObjectURL(
+      new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" }),
+    );
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = `jyotish-${chart.birth.date}-${chartMode}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+    setStatus("Карта экспортирована в JSON");
+  }
+
   function handleSelectCompatibilityPersonAProfile(profileId: string) {
     setCompatibilityPersonAProfileId(profileId);
     setCompatibilityReport(null);
@@ -4947,6 +4971,7 @@ export default function Home() {
           <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>Отчёт</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("sources")}>Источники</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("accuracy")}>Точность</a>
+          <a href="#calculation-settings">Настройки</a>
         </nav>
         <blockquote>
           yatha shastram
@@ -4970,49 +4995,9 @@ export default function Home() {
             </span>
           </div>
           <div className="top-actions">
-            <button type="button" onClick={() => setActiveAnalysisTab("overview")}>Обзор</button>
-            <button
-              type="button"
-              onClick={() => {
-                void handleGenerateCurrentDayOverview();
-                document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              Сегодня
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveAnalysisTab("compatibility");
-                document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              Совместимость
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveAnalysisTab("guidance");
-                document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              Отчёт
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveAnalysisTab("sources");
-                document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              Источники
-            </button>
-            <button
-              type="button"
-              onClick={() => document.getElementById("calculation-settings")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              Настройки
-            </button>
+            <button type="button" onClick={handleSaveProfile} disabled={!chart}>Сохранить</button>
+            <button type="button" onClick={handleExportCurrentChart} disabled={!chart}>Экспорт</button>
+            <button type="button" onClick={() => window.print()} disabled={!chart}>Печать</button>
           </div>
         </header>
 
@@ -5381,22 +5366,6 @@ export default function Home() {
                 onSelect={setChartMode}
               />
               <div className="chart-mode-strip">
-                <div className="chart-style-toggle" aria-label="Стиль карты">
-                  <button
-                    type="button"
-                    className={chartStyle === "north" ? "active" : ""}
-                    onClick={() => setChartStyle("north")}
-                  >
-                    Северный
-                  </button>
-                  <button
-                    type="button"
-                    className={chartStyle === "south" ? "active" : ""}
-                    onClick={() => setChartStyle("south")}
-                  >
-                    Южный
-                  </button>
-                </div>
                 <VargaFocusGroups
                   chart={chart}
                   activeCode={chartMode}

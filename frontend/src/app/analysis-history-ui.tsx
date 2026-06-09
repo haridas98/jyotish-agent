@@ -79,6 +79,8 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
         </dl>
       </header>
 
+      {chatMode === "compatibility" ? <CompatibilityPairContext detail={detail} /> : null}
+
       <section className="analysis-body">
         {sections.length ? (
           sections.map((section, index) => (
@@ -112,6 +114,142 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
         mode={chatMode}
       />
     </div>
+  );
+}
+
+function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail }) {
+  const packet = isRecord(detail.analysis.packet_snapshot) ? detail.analysis.packet_snapshot : {};
+  const snapshot = detail.analysis.input_snapshot;
+  const context = recordOrNull(packet.context) ?? {};
+  const personA = recordOrNull(context.person_a) ?? recordOrNull(packet.person_a) ?? {};
+  const personB = recordOrNull(context.person_b) ?? recordOrNull(packet.person_b) ?? {};
+  const personAInput = recordOrNull(personA.input) ?? recordOrNull(snapshot.person_a) ?? {};
+  const personBInput = recordOrNull(personB.input) ?? recordOrNull(snapshot.person_b) ?? {};
+  const compatibility = recordOrNull(context.compatibility) ?? recordOrNull(packet.compatibility) ?? {};
+  const analysis = recordOrNull(compatibility.analysis) ?? {};
+  const summaries = recordOrNull(analysis.chart_summaries) ?? {};
+  const score = recordOrNull(compatibility.score) ?? {};
+  const assessment = recordOrNull(compatibility.assessment) ?? {};
+  const kutaRows = recordArray(compatibility.kuta_rows).slice(0, 6);
+  const hasSavedPacket = Object.keys(packet).length > 0;
+
+  return (
+    <section className="compatibility-detail-context">
+      <div className="compatibility-context-head">
+        <div>
+          <h2>Данные пары</h2>
+          <p>
+            {hasSavedPacket
+              ? "Сохранённый пакет расчёта: D1, ключевые варги, 7 дом и факторы совместимости."
+              : "Старый обзор без сохранённого расчётного пакета: показываю входные данные и обязательные слои проверки."}
+          </p>
+        </div>
+        <div className="compatibility-context-score">
+          <span>Ашта-кута</span>
+          <strong>{scoreText(score)}</strong>
+          <small>{asText(assessment.level) || asText(assessment.note) || "оценка в тексте обзора"}</small>
+        </div>
+      </div>
+
+      <div className="compatibility-context-grid">
+        <CompatibilityPersonContextCard
+          label="Человек A"
+          input={personAInput}
+          chart={recordOrNull(personA.chart) ?? {}}
+          summary={recordOrNull(summaries.person_a) ?? {}}
+        />
+        <CompatibilityPersonContextCard
+          label="Человек B"
+          input={personBInput}
+          chart={recordOrNull(personB.chart) ?? {}}
+          summary={recordOrNull(summaries.person_b) ?? {}}
+        />
+      </div>
+
+      <div className="compatibility-checklist">
+        <strong>Что обязательно учитывать</strong>
+        <span>7 дом, управитель 7 дома и планеты в 7 доме в обеих D1.</span>
+        <span>D9: навамша лагны, Шукры/Гуру, брачная устойчивость и дхармический слой союза.</span>
+        <span>2, 4, 8, 12 дома: семья, быт, близость, расходы, уединение и скрытые напряжения.</span>
+        <span>D7/D12/D30/D60: дети, родители/родовые темы, риски и глубинная кармическая подоплёка.</span>
+      </div>
+
+      {kutaRows.length ? (
+        <div className="compatibility-context-table">
+          {kutaRows.map((row) => (
+            <div key={asText(row.key) || asText(row.name)}>
+              <strong>{asText(row.name) || asText(row.key)}</strong>
+              <span>{asText(row.score)}/{asText(row.max_score)}</span>
+              <small>{asText(row.details) || asText(row.status)}</small>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function CompatibilityPersonContextCard({
+  label,
+  input,
+  chart,
+  summary,
+}: {
+  label: string;
+  input: Record<string, unknown>;
+  chart: Record<string, unknown>;
+  summary: Record<string, unknown>;
+}) {
+  const seventhHouse = recordOrNull(summary.seventh_house) ?? {};
+  const seventhLord = recordOrNull(summary.seventh_lord) ?? {};
+  const twelfthHouse = houseLine(chart, 12);
+  const familyHouses = [2, 4, 8, 12].map((house) => houseLine(chart, house)).join(" · ");
+
+  return (
+    <article className="compatibility-person-card">
+      <div>
+        <span>{label}</span>
+        <strong>{formatBirthSnapshot(input)}</strong>
+      </div>
+      <dl className="compatibility-person-facts">
+        <div>
+          <dt>Лагна</dt>
+          <dd>{placementLine(recordOrNull(summary.lagna) ?? recordOrNull(chart.ascendant), "Лагна")}</dd>
+        </div>
+        <div>
+          <dt>Луна</dt>
+          <dd>{placementLine(recordOrNull(summary.moon) ?? findGraha(chart, ["Chandra", "Moon"]), "Луна")}</dd>
+        </div>
+        <div>
+          <dt>7 дом</dt>
+          <dd>
+            {asText(seventhHouse.rashi) || "-"}
+            {asText(seventhHouse.lord) ? `, упр. ${bodyLabel(asText(seventhHouse.lord))}` : ""}
+            {textArray(seventhHouse.planets).length ? `, планеты: ${textArray(seventhHouse.planets).map(bodyLabel).join(", ")}` : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>Управитель 7</dt>
+          <dd>{placementLine(seventhLord, bodyLabel(asText(seventhLord.body) || asText(seventhHouse.lord)))}</dd>
+        </div>
+        <div>
+          <dt>12 дом</dt>
+          <dd>{twelfthHouse}</dd>
+        </div>
+        <div>
+          <dt>2/4/8/12</dt>
+          <dd>{familyHouses}</dd>
+        </div>
+      </dl>
+      <div className="compatibility-varga-list">
+        {["D7", "D9", "D12", "D30", "D60"].map((code) => (
+          <div key={code}>
+            <span>{code}</span>
+            <small>{vargaLine(chart, code)}</small>
+          </div>
+        ))}
+      </div>
+    </article>
   );
 }
 
@@ -225,6 +363,89 @@ function formatBirthSnapshot(snapshot: Record<string, unknown>) {
   const time = asText(snapshot.birth_time);
   const place = asText(snapshot.place_name || snapshot.place_id);
   return [date, time, place].filter(Boolean).join(" · ") || "Данные рождения не указаны";
+}
+
+function scoreText(score: Record<string, unknown>) {
+  const total = asText(score.total);
+  const max = asText(score.max);
+  const percent = typeof score.percent === "number" ? `${score.percent.toFixed(1)}%` : asText(score.percent);
+  return [total && max ? `${total}/${max}` : "", percent].filter(Boolean).join(" · ") || "-";
+}
+
+function houseLine(chart: Record<string, unknown>, houseNumber: number) {
+  const houses = recordArray(chart.houses);
+  const house = houses.find((row) => Number(row.house) === houseNumber);
+  const grahas = recordArray(chart.grahas)
+    .filter((row) => Number(row.house) === houseNumber)
+    .map((row) => bodyLabel(asText(row.body)))
+    .filter(Boolean);
+  const rashi = asText(house?.rashi);
+  return `${houseNumber}: ${rashi || "-"}${grahas.length ? ` (${grahas.join(", ")})` : ""}`;
+}
+
+function vargaLine(chart: Record<string, unknown>, code: string) {
+  const vargas = recordOrNull(chart.vargas) ?? {};
+  const varga = recordOrNull(vargas[code]);
+  const placements = recordArray(varga?.placements);
+  if (!placements.length) return "нет данных";
+  const important = placements.filter((row) => {
+    const body = asText(row.body);
+    return ["Lagna", "Ascendant", "Shukra", "Venus", "Mangala", "Mars", "Guru", "Jupiter", "Chandra", "Moon"].includes(body);
+  });
+  return (important.length ? important : placements.slice(0, 4))
+    .slice(0, 6)
+    .map((row) => `${bodyLabel(asText(row.body))} ${asText(row.rashi) || "-"}`)
+    .join("; ");
+}
+
+function placementLine(row: Record<string, unknown> | null, fallbackBody = "") {
+  if (!row) return "-";
+  const body = bodyLabel(asText(row.body) || fallbackBody);
+  const rashi = asText(row.rashi);
+  const house = asText(row.house);
+  const nakshatra = asText(row.nakshatra);
+  const parts = [body, rashi, house ? `дом ${house}` : "", nakshatra ? `накш. ${nakshatra}` : ""].filter(Boolean);
+  return parts.join(" · ") || "-";
+}
+
+function findGraha(chart: Record<string, unknown>, names: string[]) {
+  return recordArray(chart.grahas).find((row) => names.includes(asText(row.body))) ?? null;
+}
+
+function bodyLabel(value: string) {
+  const labels: Record<string, string> = {
+    Ascendant: "Лагна",
+    Lagna: "Лагна",
+    Chandra: "Луна",
+    Moon: "Луна",
+    Surya: "Солнце",
+    Sun: "Солнце",
+    Shukra: "Шукра",
+    Venus: "Шукра",
+    Mangala: "Мангала",
+    Mars: "Мангала",
+    Guru: "Гуру",
+    Jupiter: "Гуру",
+    Budha: "Будха",
+    Mercury: "Будха",
+    Shani: "Шани",
+    Saturn: "Шани",
+    Rahu: "Раху",
+    Ketu: "Кету",
+  };
+  return labels[value] ?? value;
+}
+
+function recordOrNull(value: unknown): Record<string, unknown> | null {
+  return isRecord(value) ? value : null;
+}
+
+function recordArray(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+function textArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(asText).filter(Boolean) : [];
 }
 
 function asText(value: unknown) {

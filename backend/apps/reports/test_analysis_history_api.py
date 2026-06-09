@@ -51,6 +51,7 @@ def test_analysis_history_detail_resolves_slug_and_returns_chat_messages():
         provider="codex_cli",
         model="codex_exec",
         input_snapshot={"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+        packet_snapshot={"schema_version": "saved-packet-v1", "context": {"lagna": "Mesha"}},
         output_json={"sections": [{"title": "Career", "body": "Body."}]},
     )
     chat = GeneratedAnalysisDraft.objects.create(
@@ -67,6 +68,7 @@ def test_analysis_history_detail_resolves_slug_and_returns_chat_messages():
     assert response.status_code == 200
     assert response.data["analysis"]["id"] == report.id
     assert response.data["analysis"]["output_json"]["sections"][0]["title"] == "Career"
+    assert response.data["analysis"]["packet_snapshot"]["schema_version"] == "saved-packet-v1"
     assert response.data["chat_messages"] == [
         {
             "role": "user",
