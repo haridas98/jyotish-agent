@@ -5242,6 +5242,7 @@ export default function Home() {
         </div>
         <nav aria-label="Основная навигация">
           <a className="active" href="#chart">Карты</a>
+          <a href="#varga-charts">D-карты</a>
           <a href="/compatibility">Совместимость</a>
           <a href="/reports">История отчётов</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>Отчёт</a>
@@ -5610,7 +5611,7 @@ export default function Home() {
           </section>
 
           <section className="main-stack">
-            <section className="panel chart-panel">
+            <section className="panel chart-panel" id="varga-charts">
               <div className="panel-heading">
                 <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
                 <div className="chart-heading-tools">

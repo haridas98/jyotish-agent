@@ -10,6 +10,7 @@ type ProductShellProps = {
 
 const navItems = [
   { key: "charts", href: "/", label: "Карты" },
+  { key: "vargas", href: "/#varga-charts", label: "D-карты" },
   { key: "reports", href: "/reports", label: "Личные обзоры" },
   { key: "compatibility", href: "/compatibility", label: "Совместимость" },
 ] as const;
