@@ -677,6 +677,50 @@ function ChartReferenceToggle({
   );
 }
 
+function ReferenceChartBoard({
+  chart,
+  chartStyle,
+  activeReference,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  chartStyle: "north" | "south";
+  activeReference: ChartReference;
+  onSelect: (value: ChartReference) => void;
+}) {
+  return (
+    <div className="reference-chart-board" aria-label="D1 от Лагны, Луны и Солнца">
+      <div className="reference-chart-head">
+        <strong>Сударшана D1</strong>
+        <span>Лагна, Чандра и Сурья рядом</span>
+      </div>
+      <div className="reference-chart-grid">
+        {chartReferenceOptions.map((option) => (
+          <button
+            type="button"
+            className={`reference-chart-card${activeReference === option.key ? " active" : ""}`}
+            disabled={!chart}
+            key={option.key}
+            onClick={() => onSelect(option.key)}
+          >
+            <div>
+              <strong>{option.label}</strong>
+              <span>{option.hint}</span>
+            </div>
+            <div className="reference-chart-preview">
+              {chartStyle === "south" ? (
+                <SouthIndianChartGrid chart={chart} varga={null} chartReference={option.key} compact />
+              ) : (
+                <NorthIndianChartSvg chart={chart} varga={null} chartReference={option.key} compact />
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NorthIndianChartPreview({
   chart,
   varga,
@@ -5567,6 +5611,12 @@ export default function Home() {
                   ) : null}
                 </div>
               </div>
+              <ReferenceChartBoard
+                chart={chart}
+                chartStyle={chartStyle}
+                activeReference={chartReference}
+                onSelect={setChartReference}
+              />
               <div className="chart-mode-strip">
                 <VargaFocusGroups
                   chart={chart}

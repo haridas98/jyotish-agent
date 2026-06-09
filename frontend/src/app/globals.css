@@ -909,6 +909,88 @@ select {
   padding: 10px;
 }
 
+.reference-chart-board {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.reference-chart-head {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.reference-chart-head strong {
+  color: var(--green);
+  font-size: 15px;
+}
+
+.reference-chart-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.reference-chart-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(130px, 1fr));
+}
+
+.reference-chart-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px;
+  text-align: left;
+}
+
+.reference-chart-card.active {
+  background: #f5fbfa;
+  border-color: #8bc8bf;
+  box-shadow: inset 0 3px 0 var(--green-2);
+}
+
+.reference-chart-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.reference-chart-card > div:first-child {
+  align-items: baseline;
+  display: flex;
+  gap: 7px;
+  justify-content: space-between;
+}
+
+.reference-chart-card strong {
+  color: var(--green);
+  font-size: 13px;
+}
+
+.reference-chart-card span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.reference-chart-preview {
+  align-items: center;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  justify-self: center;
+  min-width: 0;
+  width: min(100%, 142px);
+}
+
 .varga-study-board {
   background: #ffffff;
   border: 1px solid var(--line);
@@ -3183,6 +3265,10 @@ select {
   .varga-study-grid {
     grid-template-columns: repeat(2, minmax(150px, 1fr));
   }
+
+  .reference-chart-grid {
+    grid-template-columns: repeat(3, minmax(110px, 1fr));
+  }
 }
 
 @media (max-width: 1220px) {
@@ -4086,6 +4172,19 @@ button,
 
   .varga-study-grid {
     grid-template-columns: 1fr;
+  }
+
+  .reference-chart-head {
+    align-items: start;
+    display: grid;
+  }
+
+  .reference-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-chart-preview {
+    width: min(100%, 220px);
   }
 
   .varga-study-preview {
