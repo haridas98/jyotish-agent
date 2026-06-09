@@ -493,6 +493,20 @@ type NorthIndianHouseItem = {
 
 type ActiveVargaChart = NonNullable<BirthChart["vargas"]>[string];
 
+type ChartReference = "lagna" | "moon" | "sun";
+
+const chartReferenceLabels: Record<ChartReference, string> = {
+  lagna: "Лагна",
+  moon: "Чандра",
+  sun: "Сурья",
+};
+
+const chartReferenceOptions: Array<{ key: ChartReference; label: string; hint: string }> = [
+  { key: "lagna", label: "Лагна", hint: "дома" },
+  { key: "moon", label: "Чандра", hint: "ум" },
+  { key: "sun", label: "Сурья", hint: "дхарма" },
+];
+
 type ChartPlacement = {
   body: string;
   rashi: string;
@@ -575,17 +589,37 @@ function lagnaRashiIndex(chart: BirthChart | null, placements: ChartPlacement[])
   return fromPlacements ?? normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
 }
 
-function northIndianHouseItems(chart: BirthChart | null, varga: ActiveVargaChart | null): NorthIndianHouseItem[] {
+function chartReferenceRashiIndex(
+  chart: BirthChart | null,
+  placements: ChartPlacement[],
+  reference: ChartReference,
+) {
+  if (reference === "moon") {
+    const moon = placements.find((placement) => placement.body === "Chandra" || placement.body === "Moon");
+    return moon?.rashiIndex ?? lagnaRashiIndex(chart, placements);
+  }
+  if (reference === "sun") {
+    const sun = placements.find((placement) => placement.body === "Surya" || placement.body === "Sun");
+    return sun?.rashiIndex ?? lagnaRashiIndex(chart, placements);
+  }
+  return lagnaRashiIndex(chart, placements);
+}
+
+function northIndianHouseItems(
+  chart: BirthChart | null,
+  varga: ActiveVargaChart | null,
+  chartReference: ChartReference = "lagna",
+): NorthIndianHouseItem[] {
   if (!chart) return [];
   const placements = activeChartPlacements(chart, varga);
   const bySign = placementsBySign(placements);
-  const lagnaIndex = lagnaRashiIndex(chart, placements) ?? 0;
-  const rows = !varga && chart.houses.length
+  const referenceIndex = chartReferenceRashiIndex(chart, placements, chartReference) ?? 0;
+  const rows = !varga && chartReference === "lagna" && chart.houses.length
     ? chart.houses
     : Array.from({ length: 12 }, (_, index) => ({
         house: index + 1,
-        rashi_index: (lagnaIndex + index) % 12,
-        rashi: rashiNames[(lagnaIndex + index) % 12],
+        rashi_index: (referenceIndex + index) % 12,
+        rashi: rashiNames[(referenceIndex + index) % 12],
       }));
 
   return rows.map((house) => {
@@ -603,22 +637,32 @@ function ChartPreview({
   chart,
   varga,
   chartStyle,
+  chartReference = "lagna",
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartStyle: "north" | "south";
+  chartReference?: ChartReference;
 }) {
   return chartStyle === "south" ? (
-    <SouthIndianChartPreview chart={chart} varga={varga} />
+    <SouthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} />
   ) : (
-    <NorthIndianChartPreview chart={chart} varga={varga} />
+    <NorthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} />
   );
 }
 
-function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; varga: ActiveVargaChart | null }) {
+function NorthIndianChartPreview({
+  chart,
+  varga,
+  chartReference = "lagna",
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  chartReference?: ChartReference;
+}) {
   return (
     <div className="chart-box" aria-label="Предпросмотр североиндийской карты">
-      <NorthIndianChartSvg chart={chart} varga={varga} />
+      <NorthIndianChartSvg chart={chart} varga={varga} chartReference={chartReference} />
     </div>
   );
 }
@@ -626,13 +670,15 @@ function NorthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; v
 function NorthIndianChartSvg({
   chart,
   varga,
+  chartReference = "lagna",
   compact = false,
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
+  chartReference?: ChartReference;
   compact?: boolean;
 }) {
-  const houses = northIndianHouseItems(chart, varga);
+  const houses = northIndianHouseItems(chart, varga, chartReference);
   return (
       <svg className={compact ? "chart-svg chart-svg-mini" : "chart-svg"} viewBox="0 0 400 400" role="img" aria-label="Североиндийская сетка карты">
         <rect x="1.5" y="1.5" width="397" height="397" fill="white" stroke="#b88a2f" strokeWidth="1.5" />
@@ -692,10 +738,18 @@ const southIndianSignCells: Record<number, { row: number; col: number }> = {
   5: { row: 3, col: 3 },
 };
 
-function SouthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; varga: ActiveVargaChart | null }) {
+function SouthIndianChartPreview({
+  chart,
+  varga,
+  chartReference = "lagna",
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  chartReference?: ChartReference;
+}) {
   return (
     <div className="chart-box south-chart-box" aria-label="Предпросмотр южноиндийской карты">
-      <SouthIndianChartGrid chart={chart} varga={varga} />
+      <SouthIndianChartGrid chart={chart} varga={varga} chartReference={chartReference} />
     </div>
   );
 }
@@ -703,15 +757,17 @@ function SouthIndianChartPreview({ chart, varga }: { chart: BirthChart | null; v
 function SouthIndianChartGrid({
   chart,
   varga,
+  chartReference = "lagna",
   compact = false,
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
+  chartReference?: ChartReference;
   compact?: boolean;
 }) {
   const placements = activeChartPlacements(chart, varga);
   const bySign = placementsBySign(placements);
-  const lagnaIndex = lagnaRashiIndex(chart, placements);
+  const lagnaIndex = chartReferenceRashiIndex(chart, placements, chartReference);
   return (
     <div className={compact ? "south-chart-grid south-chart-grid-mini" : "south-chart-grid"}>
       {Array.from({ length: 16 }, (_, index) => {
@@ -986,11 +1042,13 @@ function ChartWorkbenchSummary({
   chart,
   chartMode,
   chartStyle,
+  chartReference,
   selectedRelatedCount,
 }: {
   chart: BirthChart | null;
   chartMode: string;
   chartStyle: "north" | "south";
+  chartReference: ChartReference;
   selectedRelatedCount: number;
 }) {
   const vargaCount = chart ? 1 + Object.keys(chart.vargas ?? {}).length : 0;
@@ -998,6 +1056,7 @@ function ChartWorkbenchSummary({
     ["Карты", chart ? `${vargaCount} D-карт` : "ожидают расчёта"],
     ["Активная", chartMode],
     ["Стиль", chartStyle === "north" ? "Северный" : "Южный"],
+    ["Основа", chartReferenceLabels[chartReference]],
     ["AI-контекст", selectedRelatedCount ? `${selectedRelatedCount} связ.` : "без связей"],
   ];
 
@@ -3835,6 +3894,7 @@ export default function Home() {
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
+  const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [showBirthEditor, setShowBirthEditor] = useState(false);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
@@ -4841,6 +4901,7 @@ export default function Home() {
         throw reportResult.reason ?? savedCalculation.reason;
       }
       setChartMode("D1");
+      setChartReference("lagna");
       setShowBirthEditor(false);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
@@ -4872,6 +4933,7 @@ export default function Home() {
       const result = await generateBirthReport(payload);
       setChart(result.chart);
       setChartMode("D1");
+      setChartReference("lagna");
       setShowBirthEditor(false);
       setBirthReport(result.report);
       setDraftAnalysis(null);
@@ -5389,6 +5451,21 @@ export default function Home() {
                       Юг
                     </button>
                   </div>
+                  <div className="chart-reference-toggle" aria-label="Основа домов карты">
+                    {chartReferenceOptions.map((option) => (
+                      <button
+                        type="button"
+                        className={chartReference === option.key ? "active" : ""}
+                        disabled={!chart}
+                        key={option.key}
+                        onClick={() => setChartReference(option.key)}
+                        title={`${option.label}: ${option.hint}`}
+                      >
+                        <strong>{option.label}</strong>
+                        <span>{option.hint}</span>
+                      </button>
+                    ))}
+                  </div>
                   <label className="compact-control">
                     <span>Карта</span>
                     <select
@@ -5409,6 +5486,7 @@ export default function Home() {
                   chart={chart}
                   chartMode={chartMode}
                   chartStyle={chartStyle}
+                  chartReference={chartReference}
                   selectedRelatedCount={relatedProfileIds.length}
                 />
                 <VargaFocusGroups
@@ -5425,7 +5503,7 @@ export default function Home() {
                 onSelect={setChartMode}
               />
               <div className="chart-layout">
-                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} />
+                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} />
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} />
                   {chartMode === "D1" ? (

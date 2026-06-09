@@ -724,7 +724,7 @@ select {
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   overflow: hidden;
 }
 
@@ -787,6 +787,52 @@ select {
 .varga-focus-groups strong {
   color: var(--green);
   font-size: 13px;
+}
+
+.chart-reference-toggle {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  overflow: hidden;
+}
+
+.chart-reference-toggle button {
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 1px;
+  min-height: 34px;
+  min-width: 78px;
+  padding: 5px 9px;
+  text-align: left;
+}
+
+.chart-reference-toggle button:last-child {
+  border-right: 0;
+}
+
+.chart-reference-toggle button.active {
+  background: #fff7e8;
+  color: #9b5a08;
+}
+
+.chart-reference-toggle button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.chart-reference-toggle strong {
+  color: inherit;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.chart-reference-toggle span {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.1;
 }
 
 .featured-varga-board {
@@ -3175,7 +3221,7 @@ select {
 
 @media (min-width: 1180px) {
   .content-grid.chart-ready .chart-workbench-bar {
-    grid-template-columns: minmax(340px, 0.8fr) minmax(520px, 1.2fr);
+    grid-template-columns: minmax(520px, 1fr) minmax(520px, 1fr);
   }
 
   .content-grid.chart-ready .chart-layout {
