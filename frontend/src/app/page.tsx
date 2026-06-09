@@ -3875,6 +3875,7 @@ export default function Home() {
       birth_date: profile.birth_date,
       birth_time: profile.birth_time ?? "",
       place_name: profile.place.label,
+      profile_id: profile.id,
       ...profile.calculation_settings,
       place_id: profile.place.external_id || String(profile.place.id),
       country_code: profile.place.country_code,
@@ -4531,6 +4532,8 @@ export default function Home() {
           >
             Совместимость
           </a>
+          <a href="/reports">История отчётов</a>
+          <a href="/compatibility">История совместимости</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>Отчёт</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("sources")}>Источники</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("accuracy")}>Точность</a>

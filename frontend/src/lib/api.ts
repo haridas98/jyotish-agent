@@ -40,6 +40,8 @@ export type BirthChartRequest = CalculationSettingsRequest & {
   birth_time: string;
   gender?: "male" | "female" | "unknown";
   place_name: string;
+  profile_id?: number;
+  related_profile_ids?: number[];
   place_id?: string;
   country_code?: string;
   timezone?: string;
@@ -1251,6 +1253,40 @@ export type CodexAnalysisChatResponse = {
   }[];
 };
 
+export type AnalysisHistoryItem = {
+  id: number;
+  slug: string;
+  kind: string;
+  provider: string;
+  model: string;
+  review_status: string;
+  source_policy: string;
+  engine_label: string;
+  section_count: number;
+  created_at: string;
+  input_snapshot: Record<string, unknown>;
+  chat_count: number;
+  first_section_title?: string;
+  excerpt?: string;
+};
+
+export type AnalysisHistoryDetail = {
+  analysis: AnalysisHistoryItem & {
+    output_json?: GeneratedDraftAnalysis & Record<string, unknown>;
+    prompt_markdown?: string;
+  };
+  chat_messages: (CodexAnalysisChatMessage & {
+    analysis_message_id?: number;
+    created_at?: string;
+  })[];
+};
+
+export type AnalysisHistoryQuery = {
+  kind?: string;
+  profileId?: number;
+  limit?: number;
+};
+
 export type TransitRow = {
   body: string;
   longitude: number;
@@ -2025,6 +2061,63 @@ export async function askCompatibilityCodexAnalysis(
   }
 
   return data;
+}
+
+export async function fetchAnalysisHistory(query: AnalysisHistoryQuery = {}): Promise<AnalysisHistoryItem[]> {
+  const params = new URLSearchParams();
+  if (query.kind) params.set("kind", query.kind);
+  if (query.profileId) params.set("profile_id", String(query.profileId));
+  if (query.limit) params.set("limit", String(query.limit));
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const response = await apiFetch(`/api/reports/history${suffix}`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data.items ?? [];
+}
+
+export async function fetchAnalysisHistoryDetail(id: number): Promise<AnalysisHistoryDetail> {
+  const response = await apiFetch(`/api/reports/history/${encodeURIComponent(id)}`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function fetchAnalysisHistoryBySlug(slug: string): Promise<AnalysisHistoryDetail> {
+  const response = await apiFetch(`/api/reports/history/slug/${encodeURIComponent(slug)}`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data;
+}
+
+export async function fetchAnalysisChatHistory(analysisId: number): Promise<CodexAnalysisChatMessage[]> {
+  const response = await apiFetch(`/api/reports/history/${encodeURIComponent(analysisId)}/chat`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+
+  return data.messages ?? [];
 }
 
 export async function calculateTransits(payload: TransitRequest): Promise<TransitReport> {

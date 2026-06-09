@@ -1,6 +1,10 @@
 from django.urls import path
 
 from .views import (
+    AnalysisChatHistoryView,
+    AnalysisHistoryDetailView,
+    AnalysisHistorySlugDetailView,
+    AnalysisHistoryView,
     BirthAnalysisPacketView,
     BirthCodexAnalysisChatView,
     BirthCodexAnalysisView,
@@ -18,6 +22,18 @@ from .views import (
 )
 
 urlpatterns = [
+    path("reports/history", AnalysisHistoryView.as_view(), name="analysis-history"),
+    path("reports/history/<int:analysis_id>", AnalysisHistoryDetailView.as_view(), name="analysis-history-detail"),
+    path(
+        "reports/history/slug/<path:analysis_slug>",
+        AnalysisHistorySlugDetailView.as_view(),
+        name="analysis-history-slug-detail",
+    ),
+    path(
+        "reports/history/<int:analysis_id>/chat",
+        AnalysisChatHistoryView.as_view(),
+        name="analysis-chat-history",
+    ),
     path("reports/birth-chart", BirthReportView.as_view(), name="birth-report"),
     path(
         "reports/birth-chart/analysis-packet",
