@@ -938,6 +938,101 @@ select {
   text-align: center;
 }
 
+.chart-perspective-board {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 0;
+  margin-bottom: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chart-perspective-head {
+  align-items: center;
+  background: #f6faf8;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.chart-perspective-head strong {
+  color: var(--green);
+  font-size: 14px;
+}
+
+.chart-perspective-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chart-perspective-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.chart-perspective-card {
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  display: grid;
+  gap: 7px;
+  min-height: 150px;
+  min-width: 0;
+  padding: 8px;
+  text-align: left;
+}
+
+.chart-perspective-card:last-child {
+  border-right: 0;
+}
+
+.chart-perspective-card.active {
+  background: #e6f6f3;
+  box-shadow: inset 0 4px 0 var(--green-2);
+}
+
+.chart-perspective-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.chart-perspective-title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chart-perspective-title strong {
+  color: var(--green);
+  font-size: 13px;
+}
+
+.chart-perspective-title span {
+  color: var(--muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-perspective-preview {
+  align-items: center;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  justify-self: center;
+  max-width: 112px;
+  min-width: 0;
+  width: min(100%, 112px);
+}
+
 .varga-pair-board {
   background: #ffffff;
   border: 1px solid var(--line);
@@ -4315,6 +4410,24 @@ button,
 
   .varga-focus-groups {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chart-perspective-head {
+    align-items: start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .chart-perspective-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chart-perspective-card:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .chart-perspective-card:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
   }
 
   .varga-pair-head {

@@ -507,6 +507,19 @@ const chartReferenceOptions: Array<{ key: ChartReference; label: string; hint: s
   { key: "sun", label: "Сурья", hint: "дхарма" },
 ];
 
+const chartPerspectivePresets: Array<{
+  key: string;
+  label: string;
+  hint: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+}> = [
+  { key: "north-lagna", label: "Север D1", hint: "дома от Лагны", chartStyle: "north", chartReference: "lagna" },
+  { key: "north-moon", label: "Чандра D1", hint: "дома от Луны", chartStyle: "north", chartReference: "moon" },
+  { key: "north-sun", label: "Сурья D1", hint: "дома от Солнца", chartStyle: "north", chartReference: "sun" },
+  { key: "south-sign", label: "Южный D1", hint: "знаки фиксированы", chartStyle: "south", chartReference: "lagna" },
+];
+
 type ChartPlacement = {
   body: string;
   rashi: string;
@@ -1043,6 +1056,63 @@ function VargaFocusGroups({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function ChartPerspectiveStrip({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  onSelect,
+  onStyle,
+  onReference,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  onSelect: (code: string) => void;
+  onStyle: (style: "north" | "south") => void;
+  onReference: (reference: ChartReference) => void;
+}) {
+  return (
+    <div className="chart-perspective-board" aria-label="Быстрые ракурсы D1">
+      <div className="chart-perspective-head">
+        <strong>Ракурсы D1</strong>
+        <span>один клик переключает стиль и основу домов</span>
+      </div>
+      <div className="chart-perspective-grid">
+        {chartPerspectivePresets.map((preset) => {
+          const active = activeCode === "D1" && chartStyle === preset.chartStyle && chartReference === preset.chartReference;
+          return (
+            <button
+              type="button"
+              className={`chart-perspective-card${active ? " active" : ""}`}
+              disabled={!chart}
+              key={preset.key}
+              onClick={() => {
+                onSelect("D1");
+                onStyle(preset.chartStyle);
+                onReference(preset.chartReference);
+              }}
+            >
+              <div className="chart-perspective-title">
+                <strong>{preset.label}</strong>
+                <span>{preset.hint}</span>
+              </div>
+              <div className="chart-perspective-preview">
+                {preset.chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={null} chartReference={preset.chartReference} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={null} chartReference={preset.chartReference} compact />
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -5797,6 +5867,15 @@ export default function Home() {
                 activeCode={chartMode}
                 chartStyle={chartStyle}
                 onSelect={setChartMode}
+              />
+              <ChartPerspectiveStrip
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                chartReference={chartReference}
+                onSelect={setChartMode}
+                onStyle={setChartStyle}
+                onReference={setChartReference}
               />
               <VargaPairStrip
                 chart={chart}
