@@ -963,11 +963,11 @@ const vargaFocusGroups: Array<{
 }> = [
   {
     key: "core",
-    label: "Core",
-    hint: "D1, D9, D60",
-    title: "База чтения",
-    description: "D1 даёт каркас карты, D9 уточняет силу и дхарму, D60 требует точного времени.",
-    codes: ["D1", "D9", "D60"],
+    label: "Must",
+    hint: "D1, D9, D10, D12, D30, D60",
+    title: "Главные карты для чтения",
+    description: "D1 и D9 держат основу, D10 показывает дело, D12 род, D30 риски, D60 тонкий кармический слой.",
+    codes: ["D1", "D9", "D10", "D12", "D30", "D60"],
   },
   {
     key: "marriage",

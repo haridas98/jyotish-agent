@@ -1059,7 +1059,7 @@ select {
 .varga-study-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
 }
 
 .varga-study-card {
@@ -1114,7 +1114,7 @@ select {
   justify-content: center;
   justify-self: center;
   min-width: 0;
-  width: min(100%, 176px);
+  width: min(100%, 168px);
 }
 
 .varga-study-preview em {
