@@ -1071,6 +1071,53 @@ function FeaturedVargaBoard({
   );
 }
 
+function PinnedVargaPanel({
+  chart,
+  code,
+  options,
+  chartStyle,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  code: string;
+  options: string[];
+  chartStyle: "north" | "south";
+  onSelect: (code: string) => void;
+}) {
+  const varga = code ? chart?.vargas?.[code] ?? null : null;
+  return (
+    <div className="pinned-varga-panel" aria-label="Закреплённая варга-карта">
+      <div className="pinned-varga-head">
+        <div>
+          <strong>{code || "D-карта"}</strong>
+          <span>{code ? (vargaPurposeLabels[code] ?? varga?.name ?? "Варга") : "нет доступных варг"}</span>
+        </div>
+        <label>
+          <span>Сравнить</span>
+          <select value={code} disabled={!options.length} onChange={(event) => onSelect(event.target.value)}>
+            {options.map((option) => (
+              <option value={option} key={option}>
+                {option} {vargaPurposeLabels[option] ?? chart?.vargas?.[option]?.name ?? ""}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="pinned-varga-chart">
+        {chart && code ? (
+          chartStyle === "south" ? (
+            <SouthIndianChartGrid chart={chart} varga={varga} />
+          ) : (
+            <NorthIndianChartSvg chart={chart} varga={varga} />
+          )
+        ) : (
+          <em>ожидает расчёта</em>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ChartWorkbenchSummary({
   chart,
   chartMode,
@@ -3926,6 +3973,7 @@ export default function Home() {
   const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
+  const [pinnedVargaCode, setPinnedVargaCode] = useState("D9");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [vargaSet, setVargaSet] = useState<VargaSetKey>("shodasha");
@@ -4013,6 +4061,10 @@ export default function Home() {
     [chart],
   );
   const visibleVargaGalleryCodes = useMemo(() => visibleVargaCodes(chart, vargaSet), [chart, vargaSet]);
+  const pinnedVargaOptions = useMemo(() => vargaOptions.filter((code) => code !== "D1"), [vargaOptions]);
+  const activePinnedVargaCode = pinnedVargaOptions.includes(pinnedVargaCode)
+    ? pinnedVargaCode
+    : (pinnedVargaOptions[0] ?? "");
   const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
   const selectedVargaPlacements = selectedVarga?.placements ?? [];
   const personSummary = birthReport?.person_summary ?? null;
@@ -5540,6 +5592,13 @@ export default function Home() {
               <div className="chart-layout">
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} />
                 <div className="chart-data-stack">
+                  <PinnedVargaPanel
+                    chart={chart}
+                    code={activePinnedVargaCode}
+                    options={pinnedVargaOptions}
+                    chartStyle={chartStyle}
+                    onSelect={setPinnedVargaCode}
+                  />
                   <CoreInfoStrip chart={chart} />
                   {chartMode === "D1" ? (
                     <GrahaTable grahas={chart?.grahas ?? []} />
