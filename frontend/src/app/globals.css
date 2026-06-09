@@ -1089,6 +1089,70 @@ select {
   font-style: normal;
 }
 
+.varga-matrix {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  max-height: 280px;
+  min-width: 0;
+  overflow: auto;
+}
+
+.varga-matrix-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 70px repeat(6, minmax(58px, 1fr));
+  min-width: 480px;
+  padding: 6px 8px;
+}
+
+.varga-matrix-row:first-child {
+  border-top: 0;
+}
+
+.varga-matrix-head {
+  background: #f7fafb;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.varga-matrix-row strong {
+  color: var(--green);
+  font-size: 12px;
+}
+
+.varga-matrix-row span {
+  color: var(--ink);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.varga-matrix-head span {
+  color: var(--muted);
+}
+
+.varga-matrix-head button {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 850;
+  min-height: 26px;
+  padding: 3px 5px;
+}
+
+.varga-matrix-head button.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #ffffff;
+}
+
 .readiness-panel {
   border: 1px solid var(--line);
   border-radius: 8px;

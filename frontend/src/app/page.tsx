@@ -1349,6 +1349,59 @@ function VargaTable({ placements, code }: { placements: VargaPlacement[]; code: 
   );
 }
 
+const vargaMatrixCodes = ["D1", "D9", "D10", "D12", "D30", "D60"];
+
+function vargaMatrixRashi(chart: BirthChart, body: string, code: string) {
+  if (code === "D1") {
+    if (isLagnaBody(body)) return chart.ascendant?.rashi ?? "-";
+    return chart.grahas.find((graha) => graha.body === body)?.rashi ?? "-";
+  }
+  return chart.vargas?.[code]?.placements.find((placement) => placement.body === body)?.rashi ?? "-";
+}
+
+function VargaMatrixTable({
+  chart,
+  activeCode,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  onSelect: (code: string) => void;
+}) {
+  if (!chart) return null;
+  const codes = vargaMatrixCodes.filter((code) => code === "D1" || chart.vargas?.[code]);
+  const rows = [
+    ...(chart.ascendant ? [{ body: "Lagna" }] : []),
+    ...chart.grahas.map((graha) => ({ body: graha.body })),
+  ];
+
+  return (
+    <div className="varga-matrix" aria-label="Матрица положений по варгам">
+      <div className="varga-matrix-row varga-matrix-head">
+        <span>Граха</span>
+        {codes.map((code) => (
+          <button
+            type="button"
+            className={activeCode === code ? "active" : ""}
+            key={code}
+            onClick={() => onSelect(code)}
+          >
+            {code}
+          </button>
+        ))}
+      </div>
+      {rows.map((row) => (
+        <div className="varga-matrix-row" key={row.body}>
+          <strong>{isLagnaBody(row.body) ? "As" : labelRu(row.body)}</strong>
+          {codes.map((code) => (
+            <span key={`${row.body}-${code}`}>{vargaMatrixRashi(chart, row.body, code)}</span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
   if (periods.length === 0) {
     return (
@@ -5608,6 +5661,7 @@ export default function Home() {
                     onSelect={setPinnedVargaCode}
                   />
                   <CoreInfoStrip chart={chart} />
+                  <VargaMatrixTable chart={chart} activeCode={chartMode} onSelect={setChartMode} />
                   {chartMode === "D1" ? (
                     <GrahaTable grahas={chart?.grahas ?? []} />
                   ) : (
