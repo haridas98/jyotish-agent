@@ -139,6 +139,28 @@ select {
   font-size: 15px;
 }
 
+.topbar-title {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.topbar-title strong {
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.topbar-title span {
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .top-actions {
   display: flex;
   gap: 8px;
@@ -174,6 +196,54 @@ button {
 
 .birth-panel {
   padding: 10px;
+}
+
+.content-grid.chart-ready {
+  grid-template-columns: 1fr;
+}
+
+.content-grid.chart-ready .birth-panel {
+  position: static;
+}
+
+.birth-compact-strip {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(150px, 0.4fr) auto;
+}
+
+.birth-compact-strip div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.birth-compact-strip span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.birth-compact-strip strong {
+  color: var(--ink);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.birth-panel:not(.compact) .birth-compact-strip {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+.birth-panel.compact {
+  padding: 9px 10px;
+}
+
+.birth-panel.compact > :not(.birth-compact-strip) {
+  display: none;
 }
 
 .panel-heading {
@@ -717,6 +787,109 @@ select {
 .varga-focus-groups strong {
   color: var(--green);
   font-size: 13px;
+}
+
+.featured-varga-board {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 0;
+  margin-bottom: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.featured-varga-head {
+  align-items: center;
+  background: #f7fafb;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.featured-varga-head strong {
+  color: var(--green);
+  font-size: 14px;
+}
+
+.featured-varga-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.featured-varga-strip {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+}
+
+.featured-varga-card {
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  display: grid;
+  flex: 0 0 118px;
+  gap: 6px;
+  min-height: 132px;
+  min-width: 118px;
+  padding: 8px;
+  scroll-snap-align: start;
+  text-align: left;
+}
+
+.featured-varga-card:last-child {
+  border-right: 0;
+}
+
+.featured-varga-card.active {
+  background: #e6f6f3;
+  box-shadow: inset 0 4px 0 var(--green-2);
+}
+
+.featured-varga-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.featured-varga-title {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.featured-varga-title strong {
+  color: var(--green);
+  font-size: 13px;
+}
+
+.featured-varga-title span {
+  color: var(--muted);
+  flex: 1;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.featured-varga-preview {
+  align-items: center;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.featured-varga-preview em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  text-align: center;
 }
 
 .compact-control {
@@ -3000,6 +3173,22 @@ select {
   }
 }
 
+@media (min-width: 1180px) {
+  .content-grid.chart-ready .chart-workbench-bar {
+    grid-template-columns: minmax(340px, 0.8fr) minmax(520px, 1.2fr);
+  }
+
+  .content-grid.chart-ready .chart-layout {
+    grid-template-columns: minmax(430px, 520px) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .birth-compact-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Modern product UI refresh */
 :root {
   --bg: #f3f6fb;
@@ -3132,6 +3321,15 @@ textarea {
   color: #344054;
   font-family: inherit;
   font-weight: 700;
+}
+
+.topbar-title strong {
+  font-family: inherit;
+  font-weight: 850;
+}
+
+.topbar-title span {
+  color: #4f6170;
 }
 
 .content-grid {

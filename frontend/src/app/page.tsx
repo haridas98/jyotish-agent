@@ -792,6 +792,8 @@ function symbolLines(symbols: string[], maxPerLine?: number) {
 
 const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"];
 
+const featuredVargaCodes = ["D1", "D9", "D10", "D7", "D12", "D30", "D60"];
+
 const vargaPurposeLabels: Record<string, string> = {
   D1: "Раши / тело",
   D2: "Деньги",
@@ -923,6 +925,63 @@ function VargaFocusGroups({
   );
 }
 
+function FeaturedVargaBoard({
+  chart,
+  activeCode,
+  chartStyle,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  onSelect: (code: string) => void;
+}) {
+  const items = featuredVargaCodes.map((code) => {
+    if (code === "D1") {
+      return { code, name: "Раши", available: Boolean(chart), varga: null };
+    }
+    const varga = chart?.vargas?.[code];
+    return { code, name: varga?.name ?? "Варга", available: Boolean(varga), varga: varga ?? null };
+  });
+
+  return (
+    <div className="featured-varga-board" aria-label="Ключевые варга-карты">
+      <div className="featured-varga-head">
+        <strong>Ключевые D-карты</strong>
+        <span>D1, D9, D10 и тонкие деления видны сразу</span>
+      </div>
+      <div className="featured-varga-strip">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={`featured-varga-card${activeCode === item.code ? " active" : ""}`}
+            disabled={!item.available}
+            aria-current={activeCode === item.code ? "true" : undefined}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <div className="featured-varga-title">
+              <strong>{item.code}</strong>
+              <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
+            </div>
+            <div className="featured-varga-preview">
+              {item.available ? (
+                chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} compact />
+                )
+              ) : (
+                <em>нет расчёта</em>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ChartWorkbenchSummary({
   chart,
   chartMode,
@@ -950,6 +1009,45 @@ function ChartWorkbenchSummary({
           <strong>{value}</strong>
         </div>
       ))}
+    </div>
+  );
+}
+
+function BirthCompactStrip({
+  birthDate,
+  birthTime,
+  placeName,
+  selectedPlace,
+  chart,
+  collapsed,
+  onToggle,
+}: {
+  birthDate: string;
+  birthTime: string;
+  placeName: string;
+  selectedPlace: PlaceCandidate | null;
+  chart: BirthChart | null;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  const placeLabel = selectedPlace?.label ?? chart?.place.label ?? chart?.place.name ?? placeName;
+  const utcLabel = chart?.birth.utc_offset ?? selectedPlace?.timezone ?? "timezone";
+
+  return (
+    <div className="birth-compact-strip">
+      <div>
+        <span>Карта рождения</span>
+        <strong>
+          {birthDate} · {birthTime} · {placeLabel}
+        </strong>
+      </div>
+      <div>
+        <span>UTC / TZ</span>
+        <strong>{utcLabel}</strong>
+      </div>
+      <button type="button" className="secondary-button" onClick={onToggle}>
+        {collapsed ? "Изменить данные" : "Свернуть"}
+      </button>
     </div>
   );
 }
@@ -3737,6 +3835,7 @@ export default function Home() {
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
+  const [showBirthEditor, setShowBirthEditor] = useState(false);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [draftAnalysis, setDraftAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
@@ -4742,6 +4841,7 @@ export default function Home() {
         throw reportResult.reason ?? savedCalculation.reason;
       }
       setChartMode("D1");
+      setShowBirthEditor(false);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
       setQwenAnalysis(null);
@@ -4772,6 +4872,7 @@ export default function Home() {
       const result = await generateBirthReport(payload);
       setChart(result.chart);
       setChartMode("D1");
+      setShowBirthEditor(false);
       setBirthReport(result.report);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
@@ -4889,7 +4990,12 @@ export default function Home() {
 
       <section className="workspace">
         <header className="topbar">
-          <div className="mantra">Hare Krishna Hare Krishna Krishna Krishna Hare Hare</div>
+          <div className="topbar-title">
+            <strong>Карта рождения</strong>
+            <span>
+              {birthDate} · {birthTime} · {selectedPlace?.label ?? chart?.place.label ?? placeName}
+            </span>
+          </div>
           <div className="top-actions">
             <button type="button" onClick={() => setActiveAnalysisTab("overview")}>Обзор</button>
             <button
@@ -4964,8 +5070,17 @@ export default function Home() {
             <p className="status-line">{authStatus}</p>
           </section>
         ) : (
-        <div className="content-grid">
-          <section className="panel birth-panel" id="chart">
+        <div className={`content-grid${chart ? " chart-ready" : ""}`}>
+          <section className={`panel birth-panel${chart && !showBirthEditor ? " compact" : ""}`} id="chart">
+            <BirthCompactStrip
+              birthDate={birthDate}
+              birthTime={birthTime}
+              placeName={placeName}
+              selectedPlace={selectedPlace}
+              chart={chart}
+              collapsed={Boolean(chart && !showBirthEditor)}
+              onToggle={() => setShowBirthEditor((value) => !value)}
+            />
             <div className="panel-heading">
               <h2>Данные рождения</h2>
               <button type="button" className="secondary-button">Пример</button>
@@ -5303,6 +5418,12 @@ export default function Home() {
                   onOpenTab={setActiveAnalysisTab}
                 />
               </div>
+              <FeaturedVargaBoard
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                onSelect={setChartMode}
+              />
               <div className="chart-layout">
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} />
                 <div className="chart-data-stack">
