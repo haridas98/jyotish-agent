@@ -841,7 +841,7 @@ select {
   border-radius: 8px;
   display: grid;
   gap: 0;
-  margin-bottom: 10px;
+  margin-top: 10px;
   min-width: 0;
   overflow: hidden;
 }
@@ -880,11 +880,11 @@ select {
   border-radius: 0;
   border-right: 1px solid var(--line);
   display: grid;
-  flex: 0 0 118px;
-  gap: 6px;
-  min-height: 132px;
-  min-width: 118px;
-  padding: 8px;
+  flex: 0 0 64px;
+  gap: 4px;
+  min-height: 78px;
+  min-width: 64px;
+  padding: 5px;
   scroll-snap-align: start;
   text-align: left;
 }
@@ -904,20 +904,20 @@ select {
 }
 
 .featured-varga-title {
-  display: flex;
-  gap: 6px;
+  display: grid;
+  gap: 1px;
   min-width: 0;
 }
 
 .featured-varga-title strong {
   color: var(--green);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .featured-varga-title span {
   color: var(--muted);
   flex: 1;
-  font-size: 11px;
+  font-size: 9px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -928,14 +928,27 @@ select {
   aspect-ratio: 1 / 1;
   display: flex;
   justify-content: center;
+  justify-self: center;
   min-width: 0;
+  width: min(100%, 48px);
 }
 
 .featured-varga-preview em {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   font-style: normal;
   text-align: center;
+}
+
+.chart-mode-strip {
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+  margin-top: 10px;
+  padding: 10px;
 }
 
 .chart-perspective-board {
@@ -4410,6 +4423,10 @@ button,
 
   .varga-focus-groups {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chart-mode-strip {
+    grid-template-columns: 1fr;
   }
 
   .chart-perspective-head {
