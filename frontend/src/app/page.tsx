@@ -811,6 +811,20 @@ const vargaPurposeLabels: Record<string, string> = {
   D60: "Карма",
 };
 
+const vargaFocusGroups: Array<{
+  key: string;
+  label: string;
+  hint: string;
+  codes: readonly string[];
+  tab?: AnalysisTab;
+}> = [
+  { key: "core", label: "База", hint: "D1, D9", codes: ["D1", "D9"], tab: "overview" },
+  { key: "marriage", label: "Брак", hint: "D9", codes: ["D9"], tab: "compatibility" },
+  { key: "career", label: "Карьера", hint: "D10", codes: ["D10"], tab: "timeline" },
+  { key: "parents", label: "Род", hint: "D12, D40, D45", codes: ["D12", "D40", "D45"], tab: "overview" },
+  { key: "karma", label: "Карма", hint: "D30, D60", codes: ["D30", "D60"], tab: "yogas" },
+];
+
 function VargaSnapshotGrid({
   chart,
   activeCode,
@@ -847,6 +861,7 @@ function VargaSnapshotGrid({
           type="button"
           className={`varga-chart-card${activeCode === item.code ? " active" : ""}`}
           disabled={!item.available}
+          aria-current={activeCode === item.code ? "true" : undefined}
           key={item.code}
           onClick={() => onSelect(item.code)}
         >
@@ -866,6 +881,74 @@ function VargaSnapshotGrid({
             )}
           </div>
         </button>
+      ))}
+    </div>
+  );
+}
+
+function VargaFocusGroups({
+  chart,
+  activeCode,
+  onSelect,
+  onOpenTab,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  onSelect: (code: string) => void;
+  onOpenTab: (tab: AnalysisTab) => void;
+}) {
+  return (
+    <div className="varga-focus-groups" aria-label="Быстрые группы варга-карт">
+      {vargaFocusGroups.map((group) => {
+        const selectedCode = group.codes.find((code) => (code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])));
+        const active = group.codes.includes(activeCode);
+        return (
+          <button
+            type="button"
+            className={active ? "active" : ""}
+            disabled={!selectedCode}
+            key={group.key}
+            onClick={() => {
+              if (!selectedCode) return;
+              onSelect(selectedCode);
+              if (group.tab) onOpenTab(group.tab);
+            }}
+          >
+            <strong>{group.label}</strong>
+            <span>{group.hint}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ChartWorkbenchSummary({
+  chart,
+  chartMode,
+  chartStyle,
+  selectedRelatedCount,
+}: {
+  chart: BirthChart | null;
+  chartMode: string;
+  chartStyle: "north" | "south";
+  selectedRelatedCount: number;
+}) {
+  const vargaCount = chart ? 1 + Object.keys(chart.vargas ?? {}).length : 0;
+  const items = [
+    ["Карты", chart ? `${vargaCount} D-карт` : "ожидают расчёта"],
+    ["Активная", chartMode],
+    ["Стиль", chartStyle === "north" ? "Северный" : "Южный"],
+    ["AI-контекст", selectedRelatedCount ? `${selectedRelatedCount} связ.` : "без связей"],
+  ];
+
+  return (
+    <div className="chart-workbench-summary" aria-label="Сводка рабочего стола карты">
+      {items.map(([label, value]) => (
+        <div key={label}>
+          <span>{label}</span>
+          <strong>{value}</strong>
+        </div>
       ))}
     </div>
   );
@@ -5206,6 +5289,20 @@ export default function Home() {
                   </label>
                 </div>
               </div>
+              <div className="chart-workbench-bar">
+                <ChartWorkbenchSummary
+                  chart={chart}
+                  chartMode={chartMode}
+                  chartStyle={chartStyle}
+                  selectedRelatedCount={relatedProfileIds.length}
+                />
+                <VargaFocusGroups
+                  chart={chart}
+                  activeCode={chartMode}
+                  onSelect={setChartMode}
+                  onOpenTab={setActiveAnalysisTab}
+                />
+              </div>
               <div className="chart-layout">
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} />
                 <div className="chart-data-stack">
@@ -5228,6 +5325,10 @@ export default function Home() {
                 </div>
               </div>
               <p className="calculation-result">{calculatedLabel}</p>
+              <div className="varga-gallery-head">
+                <strong>D-карты D1-D60</strong>
+                <span>как в Jyotish-программах: клик по плитке сразу открывает нужную карту</span>
+              </div>
               <VargaSnapshotGrid chart={chart} activeCode={chartMode} chartStyle={chartStyle} onSelect={setChartMode} />
             </section>
 
