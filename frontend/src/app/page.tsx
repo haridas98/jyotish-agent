@@ -980,19 +980,24 @@ function VargaSnapshotGrid({
 function VargaFocusGroups({
   chart,
   activeCode,
+  activePinnedCode,
   onSelect,
+  onPinSelect,
   onOpenTab,
 }: {
   chart: BirthChart | null;
   activeCode: string;
+  activePinnedCode: string;
   onSelect: (code: string) => void;
+  onPinSelect: (code: string) => void;
   onOpenTab: (tab: AnalysisTab) => void;
 }) {
   return (
     <div className="varga-focus-groups" aria-label="Быстрые группы варга-карт">
       {vargaFocusGroups.map((group) => {
         const selectedCode = group.codes.find((code) => (code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])));
-        const active = group.codes.includes(activeCode);
+        const pinnedCode = group.codes.find((code) => code !== "D1" && Boolean(chart?.vargas?.[code])) ?? selectedCode;
+        const active = activeCode === "D1" ? group.codes.includes(activePinnedCode) : group.codes.includes(activeCode);
         return (
           <button
             type="button"
@@ -1001,7 +1006,8 @@ function VargaFocusGroups({
             key={group.key}
             onClick={() => {
               if (!selectedCode) return;
-              onSelect(selectedCode);
+              onSelect("D1");
+              if (pinnedCode && pinnedCode !== "D1") onPinSelect(pinnedCode);
               if (group.tab) onOpenTab(group.tab);
             }}
           >
@@ -5579,7 +5585,9 @@ export default function Home() {
                 <VargaFocusGroups
                   chart={chart}
                   activeCode={chartMode}
+                  activePinnedCode={activePinnedVargaCode}
                   onSelect={setChartMode}
+                  onPinSelect={setPinnedVargaCode}
                   onOpenTab={setActiveAnalysisTab}
                 />
               </div>
