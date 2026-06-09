@@ -76,6 +76,7 @@ import {
 
 const PRIVATE_APP_REQUIRE_AUTH = process.env.NEXT_PUBLIC_PRIVATE_APP_REQUIRE_AUTH === "true";
 const ENABLE_NEMOTRON_ANALYSIS = process.env.NEXT_PUBLIC_ENABLE_NEMOTRON === "true";
+const CHART_STYLE_STORAGE_KEY = "jyotish-chart-style";
 
 const sourceRows = [
   ["Айанамша", "Lahiri", "Рабочий профиль; JHora diff подключён", "ready"],
@@ -3799,6 +3800,7 @@ export default function Home() {
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
+  const [chartStyleHydrated, setChartStyleHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
@@ -3897,6 +3899,17 @@ export default function Home() {
     setCompatibilityChatStatus("Сначала сгенерируйте полный разбор совместимости");
     setCompatibilityChatBusy(false);
   }
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(CHART_STYLE_STORAGE_KEY);
+    if (saved === "north" || saved === "south") setChartStyle(saved);
+    setChartStyleHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!chartStyleHydrated) return;
+    window.localStorage.setItem(CHART_STYLE_STORAGE_KEY, chartStyle);
+  }, [chartStyle, chartStyleHydrated]);
 
   useEffect(() => {
     if (!draftAnalysis) {
@@ -5210,6 +5223,13 @@ export default function Home() {
                     Варги
                     <select value={vargaScheme} onChange={(event) => setVargaScheme(event.target.value)}>
                       <option value="parashara">Parashara</option>
+                    </select>
+                  </label>
+                  <label>
+                    Стиль карты
+                    <select value={chartStyle} onChange={(event) => setChartStyle(event.target.value as "north" | "south")}>
+                      <option value="north">Северный</option>
+                      <option value="south">Южный</option>
                     </select>
                   </label>
                   <label>
