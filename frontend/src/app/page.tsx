@@ -1503,7 +1503,15 @@ function VargaTable({ placements, code }: { placements: VargaPlacement[]; code: 
   );
 }
 
-function VargaSnapshotGrid({ chart }: { chart: BirthChart | null }) {
+function VargaSnapshotGrid({
+  chart,
+  activeCode,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  onSelect: (code: string) => void;
+}) {
   const importantBodies = ["Lagna", "Ascendant", "Surya", "Chandra", "Shukra", "Mangala", "Guru"];
   const items = vargaSnapshotCodes.map((code) => {
     const placements = code === "D1"
@@ -1518,13 +1526,19 @@ function VargaSnapshotGrid({ chart }: { chart: BirthChart | null }) {
           isLagna: placement.body === "Lagna" || placement.body === "Ascendant",
         }));
     const focus = placements.filter((placement) => importantBodies.includes(placement.body)).slice(0, 5);
-    return { code, focus };
+    return { code, focus, available: focus.length > 0 };
   });
 
   return (
     <div className="varga-snapshot-grid" aria-label="Сводка варга-карт D1-D60">
       {items.map((item) => (
-        <div className="varga-snapshot-card" key={item.code}>
+        <button
+          type="button"
+          className={`varga-snapshot-card${activeCode === item.code ? " active" : ""}`}
+          disabled={!item.available}
+          key={item.code}
+          onClick={() => onSelect(item.code)}
+        >
           <div className="varga-snapshot-head">
             <strong>{item.code}</strong>
             <span>{vargaPurposeLabels[item.code] ?? "Варга"}</span>
@@ -1540,7 +1554,7 @@ function VargaSnapshotGrid({ chart }: { chart: BirthChart | null }) {
               <em>нет расчёта</em>
             )}
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -1644,7 +1658,17 @@ function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
   );
 }
 
-function DetailedCalculationsPanel({ summary, chart }: { summary: PersonSummary | null; chart: BirthChart | null }) {
+function DetailedCalculationsPanel({
+  summary,
+  chart,
+  activeCode,
+  onSelectVarga,
+}: {
+  summary: PersonSummary | null;
+  chart: BirthChart | null;
+  activeCode: string;
+  onSelectVarga: (code: string) => void;
+}) {
   const detailedPositions = summary?.detailed_positions ?? [];
   const houses = summary?.houses ?? [];
 
@@ -1656,7 +1680,7 @@ function DetailedCalculationsPanel({ summary, chart }: { summary: PersonSummary 
       </div>
       <div className="summary-content">
         {!summary ? <div className="pending-strip">Подробные расчёты появятся после построения карты.</div> : null}
-        <VargaSnapshotGrid chart={chart} />
+        <VargaSnapshotGrid chart={chart} activeCode={activeCode} onSelect={onSelectVarga} />
         {detailedPositions.length ? (
           <div className="detailed-positions">
             <div>
@@ -5745,7 +5769,12 @@ export default function Home() {
                 {activeAnalysisTab === "calculations" ? (
                   <div className="analysis-tab-stack">
                     <DualCalculationPanel report={dualCalculationReport} status={dualCalculationStatus} />
-                    <DetailedCalculationsPanel summary={personSummary} chart={chart} />
+                    <DetailedCalculationsPanel
+                      summary={personSummary}
+                      chart={chart}
+                      activeCode={chartMode}
+                      onSelectVarga={selectVargaCode}
+                    />
                   </div>
                 ) : null}
                 {activeAnalysisTab === "yogas" ? <ClassicalPanel classical={chart?.classical} /> : null}
