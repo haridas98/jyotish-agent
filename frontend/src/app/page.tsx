@@ -495,31 +495,6 @@ type ActiveVargaChart = NonNullable<BirthChart["vargas"]>[string];
 
 type ChartReference = "lagna" | "moon" | "sun";
 
-const chartReferenceLabels: Record<ChartReference, string> = {
-  lagna: "Лагна",
-  moon: "Чандра",
-  sun: "Сурья",
-};
-
-const chartReferenceOptions: Array<{ key: ChartReference; label: string; hint: string }> = [
-  { key: "lagna", label: "Лагна", hint: "дома" },
-  { key: "moon", label: "Чандра", hint: "ум" },
-  { key: "sun", label: "Сурья", hint: "дхарма" },
-];
-
-const chartPerspectivePresets: Array<{
-  key: string;
-  label: string;
-  hint: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-}> = [
-  { key: "north-lagna", label: "Север D1", hint: "дома от Лагны", chartStyle: "north", chartReference: "lagna" },
-  { key: "north-moon", label: "Чандра D1", hint: "дома от Луны", chartStyle: "north", chartReference: "moon" },
-  { key: "north-sun", label: "Сурья D1", hint: "дома от Солнца", chartStyle: "north", chartReference: "sun" },
-  { key: "south-sign", label: "Южный D1", hint: "знаки фиксированы", chartStyle: "south", chartReference: "lagna" },
-];
-
 type ChartPlacement = {
   body: string;
   rashi: string;
@@ -863,17 +838,6 @@ const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D
 
 const featuredVargaCodes = vargaSnapshotCodes;
 
-type VargaSetKey = "featured" | "shadvarga" | "saptavarga" | "dashavarga" | "shodasha" | "all";
-
-const vargaSetOptions: Array<{ key: VargaSetKey; label: string; codes: readonly string[] }> = [
-  { key: "featured", label: "Главные", codes: featuredVargaCodes },
-  { key: "shadvarga", label: "Shad", codes: ["D1", "D2", "D3", "D9", "D12", "D30"] },
-  { key: "saptavarga", label: "Sapta", codes: ["D1", "D2", "D3", "D7", "D9", "D12", "D30"] },
-  { key: "dashavarga", label: "Dasha", codes: ["D1", "D2", "D3", "D7", "D9", "D10", "D12", "D16", "D30", "D60"] },
-  { key: "shodasha", label: "Shodasha", codes: vargaSnapshotCodes },
-  { key: "all", label: "Все", codes: [] },
-];
-
 const vargaPurposeLabels: Record<string, string> = {
   D1: "Раши / тело",
   D2: "Деньги",
@@ -893,25 +857,6 @@ const vargaPurposeLabels: Record<string, string> = {
   D60: "Карма",
 };
 
-const vargaReadingNotes: Record<string, { focus: string; pairing: string }> = {
-  D1: { focus: "Основа: дома, управители, тело и общий ход жизни", pairing: "Сверять с D9 и тематической варгой" },
-  D2: { focus: "Ресурсы, накопления, поток денег", pairing: "Сверять с D1, D9 и 2/11 домами" },
-  D3: { focus: "Братья, усилие, инициативность", pairing: "Сверять с 3 домом D1" },
-  D4: { focus: "Дом, недвижимость, внутренний покой", pairing: "Сверять с 4 домом D1" },
-  D7: { focus: "Дети, продолжение рода, творческое плодородие", pairing: "Сверять с 5 домом D1" },
-  D9: { focus: "Дхарма, брак, зрелость планет", pairing: "Главная пара: D1 + D9" },
-  D10: { focus: "Карьера, статус, деятельность", pairing: "Главная пара: D1 + D10" },
-  D12: { focus: "Родители, родовая линия, наследование", pairing: "Сверять с 4/9 домами D1" },
-  D16: { focus: "Комфорт, транспорт, удобства", pairing: "Сверять с D1 и D4" },
-  D20: { focus: "Садхана, вера, духовная практика", pairing: "Сверять с 5/9 домами D1" },
-  D24: { focus: "Обучение, знание, наставники", pairing: "Сверять с 4/5/9 домами D1" },
-  D27: { focus: "Сила, слабость, устойчивость", pairing: "Сверять с D1 и Шадбалой" },
-  D30: { focus: "Риски, болезни, скрытые трудности", pairing: "Сверять с 6/8/12 домами D1" },
-  D40: { focus: "Материнская линия и благословения", pairing: "Сверять с D12" },
-  D45: { focus: "Отцовская линия и глубинные самскары", pairing: "Сверять с D12" },
-  D60: { focus: "Тонкая карма и итоговая проверка", pairing: "Только при очень точном времени" },
-};
-
 const vargaFocusGroups: Array<{
   key: string;
   label: string;
@@ -926,14 +871,6 @@ const vargaFocusGroups: Array<{
   { key: "karma", label: "Karma", hint: "D30, D60", codes: ["D30", "D60"], tab: "yogas" },
 ];
 
-const vargaPairPresets = [
-  { key: "dharma", label: "D1 + D9", code: "D9", title: "Дхарма / брак" },
-  { key: "career", label: "D1 + D10", code: "D10", title: "Карьера" },
-  { key: "parents", label: "D1 + D12", code: "D12", title: "Родители" },
-  { key: "trouble", label: "D1 + D30", code: "D30", title: "Риски" },
-  { key: "karma", label: "D1 + D60", code: "D60", title: "Карма" },
-] as const;
-
 function vargaCodeNumber(code: string) {
   const match = code.match(/^D(\d+)$/);
   return match ? Number(match[1]) : Number.POSITIVE_INFINITY;
@@ -944,77 +881,6 @@ function availableVargaCodes(chart: BirthChart | null) {
   if (chart) codes.add("D1");
   Object.keys(chart?.vargas ?? {}).forEach((code) => codes.add(code));
   return Array.from(codes).sort((left, right) => vargaCodeNumber(left) - vargaCodeNumber(right) || left.localeCompare(right));
-}
-
-function visibleVargaCodes(chart: BirthChart | null, setKey: VargaSetKey) {
-  const available = availableVargaCodes(chart);
-  if (setKey === "all") return available;
-  const option = vargaSetOptions.find((item) => item.key === setKey);
-  const desired = option?.codes ?? featuredVargaCodes;
-  return desired.filter((code) => available.includes(code));
-}
-
-function VargaSnapshotGrid({
-  chart,
-  activeCode,
-  chartStyle,
-  codes,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  codes: string[];
-  onSelect: (code: string) => void;
-}) {
-  const items = codes.map((code) => {
-    if (code === "D1") {
-      return {
-        code,
-        name: "Раши",
-        available: Boolean(chart),
-        varga: null,
-      };
-    }
-    const varga = chart?.vargas?.[code];
-    return {
-      code,
-      name: varga?.name ?? "Варга",
-      available: Boolean(varga),
-      varga: varga ?? null,
-    };
-  });
-
-  return (
-    <div className="varga-gallery" aria-label="Быстрый обзор варга-карт">
-      {items.map((item) => (
-        <button
-          type="button"
-          className={`varga-chart-card${activeCode === item.code ? " active" : ""}`}
-          disabled={!item.available}
-          aria-current={activeCode === item.code ? "true" : undefined}
-          key={item.code}
-          onClick={() => onSelect(item.code)}
-        >
-          <div className="varga-snapshot-head">
-            <strong>{item.code}</strong>
-            <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
-          </div>
-          <div className="varga-mini-chart">
-            {item.available ? (
-              chartStyle === "south" ? (
-                <SouthIndianChartGrid chart={chart} varga={item.varga} compact />
-              ) : (
-                <NorthIndianChartSvg chart={chart} varga={item.varga} compact />
-              )
-            ) : (
-              <div className="varga-mini-placeholder">нет расчёта</div>
-            )}
-          </div>
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function VargaFocusGroups({
@@ -1050,130 +916,6 @@ function VargaFocusGroups({
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function ChartPerspectiveStrip({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-  onStyle,
-  onReference,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-  onStyle: (style: "north" | "south") => void;
-  onReference: (reference: ChartReference) => void;
-}) {
-  return (
-    <div className="chart-perspective-board" aria-label="Быстрые ракурсы D1">
-      <div className="chart-perspective-head">
-        <strong>Ракурсы D1</strong>
-        <span>один клик переключает стиль и основу домов</span>
-      </div>
-      <div className="chart-perspective-grid">
-        {chartPerspectivePresets.map((preset) => {
-          const active = activeCode === "D1" && chartStyle === preset.chartStyle && chartReference === preset.chartReference;
-          return (
-            <button
-              type="button"
-              className={`chart-perspective-card${active ? " active" : ""}`}
-              disabled={!chart}
-              key={preset.key}
-              onClick={() => {
-                onSelect("D1");
-                onStyle(preset.chartStyle);
-                onReference(preset.chartReference);
-              }}
-            >
-              <div className="chart-perspective-title">
-                <strong>{preset.label}</strong>
-                <span>{preset.hint}</span>
-              </div>
-              <div className="chart-perspective-preview">
-                {preset.chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={null} chartReference={preset.chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={null} chartReference={preset.chartReference} compact />
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function VargaPairStrip({
-  chart,
-  activeCode,
-  activePinnedCode,
-  chartStyle,
-  onSelect,
-  onPinSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  activePinnedCode: string;
-  chartStyle: "north" | "south";
-  onSelect: (code: string) => void;
-  onPinSelect: (code: string) => void;
-}) {
-  return (
-    <div className="varga-pair-board" aria-label="Наглядные пары D1 и тематических варг">
-      <div className="varga-pair-head">
-        <strong>Пары чтения</strong>
-        <span>D1 остаётся базой, тематическая варга закрепляется справа</span>
-      </div>
-      <div className="varga-pair-strip">
-        {vargaPairPresets.map((pair) => {
-          const varga = chart?.vargas?.[pair.code] ?? null;
-          const available = Boolean(chart && varga);
-          const active = activeCode === pair.code || (activeCode === "D1" && activePinnedCode === pair.code);
-          return (
-            <button
-              type="button"
-              className={`varga-pair-card${active ? " active" : ""}`}
-              disabled={!available}
-              key={pair.key}
-              onClick={() => {
-                onSelect("D1");
-                onPinSelect(pair.code);
-              }}
-            >
-              <div className="varga-pair-title">
-                <strong>{pair.label}</strong>
-                <span>{pair.title}</span>
-              </div>
-              <div className="varga-pair-mini">
-                <div>
-                  <span>D1</span>
-                  {chartStyle === "south" ? (
-                    <SouthIndianChartGrid chart={chart} varga={null} compact />
-                  ) : (
-                    <NorthIndianChartSvg chart={chart} varga={null} compact />
-                  )}
-                </div>
-                <div>
-                  <span>{pair.code}</span>
-                  {chartStyle === "south" ? (
-                    <SouthIndianChartGrid chart={chart} varga={varga} compact />
-                  ) : (
-                    <NorthIndianChartSvg chart={chart} varga={varga} compact />
-                  )}
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -1231,87 +973,6 @@ function FeaturedVargaBoard({
           </button>
         ))}
       </div>
-    </div>
-  );
-}
-
-function PinnedVargaPanel({
-  chart,
-  code,
-  options,
-  chartStyle,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  code: string;
-  options: string[];
-  chartStyle: "north" | "south";
-  onSelect: (code: string) => void;
-}) {
-  const varga = code ? chart?.vargas?.[code] ?? null : null;
-  return (
-    <div className="pinned-varga-panel" aria-label="Закреплённая варга-карта">
-      <div className="pinned-varga-head">
-        <div>
-          <strong>{code || "D-карта"}</strong>
-          <span>{code ? (vargaPurposeLabels[code] ?? varga?.name ?? "Варга") : "нет доступных варг"}</span>
-        </div>
-        <label>
-          <span>Сравнить</span>
-          <select value={code} disabled={!options.length} onChange={(event) => onSelect(event.target.value)}>
-            {options.map((option) => (
-              <option value={option} key={option}>
-                {option} {vargaPurposeLabels[option] ?? chart?.vargas?.[option]?.name ?? ""}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <div className="pinned-varga-chart">
-        {chart && code ? (
-          chartStyle === "south" ? (
-            <SouthIndianChartGrid chart={chart} varga={varga} />
-          ) : (
-            <NorthIndianChartSvg chart={chart} varga={varga} />
-          )
-        ) : (
-          <em>ожидает расчёта</em>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ChartWorkbenchSummary({
-  chart,
-  chartMode,
-  chartStyle,
-  chartReference,
-  selectedRelatedCount,
-}: {
-  chart: BirthChart | null;
-  chartMode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  selectedRelatedCount: number;
-}) {
-  const vargaCount = chart ? 1 + Object.keys(chart.vargas ?? {}).length : 0;
-  const items = [
-    ["Карты", chart ? `${vargaCount} D-карт` : "ожидают расчёта"],
-    ["Активная", chartMode],
-    ["Стиль", chartStyle === "north" ? "Северный" : "Южный"],
-    ["Основа", chartReferenceLabels[chartReference]],
-    ["AI-контекст", selectedRelatedCount ? `${selectedRelatedCount} связ.` : "без связей"],
-  ];
-
-  return (
-    <div className="chart-workbench-summary" aria-label="Сводка рабочего стола карты">
-      {items.map(([label, value]) => (
-        <div key={label}>
-          <span>{label}</span>
-          <strong>{value}</strong>
-        </div>
-      ))}
     </div>
   );
 }
@@ -1503,113 +1164,6 @@ function VargaTable({ placements, code }: { placements: VargaPlacement[]; code: 
           <span>{placement.rashi}</span>
         </div>
       ))}
-    </div>
-  );
-}
-
-const vargaMatrixCodes = ["D1", "D9", "D10", "D12", "D30", "D60"];
-
-function vargaMatrixRashi(chart: BirthChart, body: string, code: string) {
-  if (code === "D1") {
-    if (isLagnaBody(body)) return chart.ascendant?.rashi ?? "-";
-    return chart.grahas.find((graha) => graha.body === body)?.rashi ?? "-";
-  }
-  return chart.vargas?.[code]?.placements.find((placement) => placement.body === body)?.rashi ?? "-";
-}
-
-function VargaMatrixTable({
-  chart,
-  activeCode,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  onSelect: (code: string) => void;
-}) {
-  if (!chart) return null;
-  const codes = vargaMatrixCodes.filter((code) => code === "D1" || chart.vargas?.[code]);
-  const rows = [
-    ...(chart.ascendant ? [{ body: "Lagna" }] : []),
-    ...chart.grahas.map((graha) => ({ body: graha.body })),
-  ];
-
-  return (
-    <div className="varga-matrix" aria-label="Матрица положений по варгам">
-      <div className="varga-matrix-row varga-matrix-head">
-        <span>Граха</span>
-        {codes.map((code) => (
-          <button
-            type="button"
-            className={activeCode === code ? "active" : ""}
-            key={code}
-            onClick={() => onSelect(code)}
-          >
-            {code}
-          </button>
-        ))}
-      </div>
-      {rows.map((row) => (
-        <div className="varga-matrix-row" key={row.body}>
-          <strong>{isLagnaBody(row.body) ? "As" : labelRu(row.body)}</strong>
-          {codes.map((code) => (
-            <span key={`${row.body}-${code}`}>{vargaMatrixRashi(chart, row.body, code)}</span>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function VargaInspector({
-  chart,
-  code,
-  varga,
-}: {
-  chart: BirthChart | null;
-  code: string;
-  varga: ActiveVargaChart | null;
-}) {
-  if (!chart) return null;
-  const placements = activeChartPlacements(chart, varga);
-  const lagna = placements.find((placement) => placement.isLagna || isLagnaBody(placement.body));
-  const grahas = placements.filter((placement) => !placement.isLagna && !isLagnaBody(placement.body));
-  const note = vargaReadingNotes[code] ?? {
-    focus: vargaPurposeLabels[code] ?? varga?.name ?? "Тематическая варга",
-    pairing: "Сверять с D1 и D9",
-  };
-  const chartName = code === "D1" ? "Раши" : varga?.name ?? "Варга";
-
-  return (
-    <div className="varga-inspector" aria-label="Инспектор активной варга-карты">
-      <div className="varga-inspector-head">
-        <div>
-          <span>Активная карта</span>
-          <strong>{code} {chartName}</strong>
-        </div>
-        <small>{vargaPurposeLabels[code] ?? chartName}</small>
-      </div>
-      <div className="varga-inspector-grid">
-        <div>
-          <span>Лагна</span>
-          <strong>{lagna?.rashi ?? "-"}</strong>
-        </div>
-        <div>
-          <span>Область</span>
-          <strong>{note.focus}</strong>
-        </div>
-        <div>
-          <span>Сверка</span>
-          <strong>{note.pairing}</strong>
-        </div>
-      </div>
-      <div className="varga-inspector-placements">
-        {grahas.map((placement) => (
-          <span key={`${code}-${placement.body}`}>
-            <strong>{northGrahaLabel(placement.body)}</strong>
-            {rashiChartLabel(placement.rashiIndex, placement.rashi)}
-          </span>
-        ))}
-      </div>
     </div>
   );
 }
@@ -4244,10 +3798,7 @@ export default function Home() {
   const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
-  const [pinnedVargaCode, setPinnedVargaCode] = useState("D9");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
-  const [chartReference, setChartReference] = useState<ChartReference>("lagna");
-  const [vargaSet, setVargaSet] = useState<VargaSetKey>("shodasha");
   const [showBirthEditor, setShowBirthEditor] = useState(false);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
@@ -4331,11 +3882,6 @@ export default function Home() {
     () => availableVargaCodes(chart),
     [chart],
   );
-  const visibleVargaGalleryCodes = useMemo(() => visibleVargaCodes(chart, vargaSet), [chart, vargaSet]);
-  const pinnedVargaOptions = useMemo(() => vargaOptions.filter((code) => code !== "D1"), [vargaOptions]);
-  const activePinnedVargaCode = pinnedVargaOptions.includes(pinnedVargaCode)
-    ? pinnedVargaCode
-    : (pinnedVargaOptions[0] ?? "");
   const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
   const selectedVargaPlacements = selectedVarga?.placements ?? [];
   const personSummary = birthReport?.person_summary ?? null;
@@ -5259,7 +4805,6 @@ export default function Home() {
         throw reportResult.reason ?? savedCalculation.reason;
       }
       setChartMode("D1");
-      setChartReference("lagna");
       setShowBirthEditor(false);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
@@ -5291,7 +4836,6 @@ export default function Home() {
       const result = await generateBirthReport(payload);
       setChart(result.chart);
       setChartMode("D1");
-      setChartReference("lagna");
       setShowBirthEditor(false);
       setBirthReport(result.report);
       setDraftAnalysis(null);
@@ -5794,7 +5338,7 @@ export default function Home() {
                 <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
               </div>
               <div className="chart-layout">
-                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} />
+                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} />
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} />
                   {chartMode === "D1" ? (
