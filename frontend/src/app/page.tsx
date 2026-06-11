@@ -5168,6 +5168,7 @@ export default function Home() {
   );
   const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
   const selectedVargaPlacements = selectedVarga?.placements ?? [];
+  const activeChartPointCount = chartMode === "D1" ? (chart ? chart.grahas.length + (chart.ascendant ? 1 : 0) : 0) : selectedVargaPlacements.length;
   const activeChartContext = priorityVargaContexts[chartMode] ?? { scope: "Варга", detail: "дополнительный слой чтения" };
   const activeChartReferenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
   const activeChartStyleLabel = chartStyle === "south" ? "Южный стиль" : "Северный стиль";
@@ -6648,6 +6649,7 @@ export default function Home() {
                   <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
                   <span>Отсчёт {activeChartReferenceLabel} · {activeChartContext.scope}: {activeChartContext.detail}</span>
                   <div className="chart-mode-summary" aria-label="Текущий вид карты">
+                    <span>{chartMode} · {activeChartPointCount || "нет"} точек</span>
                     <span>{activeChartStyleLabel}</span>
                     <span>{activeTermLanguageLabel}</span>
                     <a href="#display-settings">Изменить вид</a>
