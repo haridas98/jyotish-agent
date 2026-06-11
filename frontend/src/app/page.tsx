@@ -1666,6 +1666,12 @@ function PrimaryVargaTabs({
   }));
   const quickGroups = vargaFocusGroups.filter((group) => group.key !== "jaimini");
   const activeGroup = vargaFocusGroups.find((group) => group.key === activeGroupKey) ?? vargaFocusGroups[0];
+  const activeAvailable = activeCode === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[activeCode]);
+  const activeStatus = !chart
+    ? "ожидает расчёт"
+    : activeAvailable
+      ? "рассчитана"
+      : unavailableVargaLabel(activeCode);
 
   return (
     <div className="primary-varga-tabs" aria-label="Быстрый выбор главных D-карт">
@@ -1696,6 +1702,10 @@ function PrimaryVargaTabs({
       <div className="primary-varga-coverage">
         <span>{coverage.ready.length}/{coverage.total}</span>
         <strong>{coverage.pendingJaimini.length ? "Jaimini ждёт сверки" : "D-карты"}</strong>
+      </div>
+      <div className={`primary-varga-status${activeAvailable ? " ready" : ""}`}>
+        <span>{activeCode}</span>
+        <strong>{activeStatus}</strong>
       </div>
       <div className="primary-focus-tabs" aria-label="Сценарии чтения">
         {quickGroups.map((group) => {
