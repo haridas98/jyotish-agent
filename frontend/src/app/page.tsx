@@ -1689,6 +1689,58 @@ function VargaReadingStrip({
   );
 }
 
+function VargaCompareStrip({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  onSelect: (code: string) => void;
+}) {
+  const codes = Array.from(new Set(["D1", "D9", activeCode])).filter((code) => code === "D1" || Boolean(chart?.vargas?.[code]));
+  if (!chart || codes.length < 2) return null;
+
+  return (
+    <div className="varga-compare-strip" aria-label="Быстрое сравнение D1, D9 и активной варги">
+      <div className="varga-compare-head">
+        <strong>Сравнить</strong>
+        <span>D1 / D9 / активная</span>
+      </div>
+      <div className="varga-compare-list">
+        {codes.map((code) => {
+          const varga = code === "D1" ? null : chart.vargas?.[code] ?? null;
+          const context = priorityVargaContexts[code] ?? { scope: "Варга", detail: "дробная карта" };
+          return (
+            <button
+              type="button"
+              className={`varga-compare-card${activeCode === code ? " active" : ""}`}
+              onClick={() => onSelect(code)}
+              key={code}
+            >
+              <div>
+                <strong>{code}</strong>
+                <span>{context.scope}</span>
+              </div>
+              <div className="varga-compare-preview">
+                {chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={varga} chartReference={chartReference} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={varga} chartReference={chartReference} compact />
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function VargaAtlasBoard({
   chart,
   activeCode,
@@ -6494,6 +6546,13 @@ export default function Home() {
                 onSelect={selectVargaCode}
               />
               <VargaReadingStrip chart={chart} activeCode={chartMode} onSelect={selectVargaCode} />
+              <VargaCompareStrip
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                chartReference={chartReference}
+                onSelect={selectVargaCode}
+              />
               <div className="chart-workspace-tabs" role="tablist" aria-label="Режимы карты">
                 {chartWorkspaceTabs.map((tab) => (
                   <button
