@@ -1787,8 +1787,7 @@ select {
 }
 
 .chart-graha-detail.dignity-moolatrikona,
-.south-chart-cell span.dignity-moolatrikona,
-.graha-status-badge.moolatrikona {
+.south-chart-cell span.dignity-moolatrikona {
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
@@ -1848,16 +1847,6 @@ select {
 .active-calculation-table > .planet-table {
   border: 0;
   border-radius: 0;
-}
-
-.graha-status-legend {
-  align-items: center;
-  background: #fbfdfc;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 7px 10px;
 }
 
 .glossary-wrap {
@@ -2002,6 +1991,10 @@ select {
 .graha-table .table-row {
   grid-template-columns: 78px 76px 82px minmax(116px, 1fr) 66px 88px 76px;
   min-width: 682px;
+}
+
+.graha-table .lagna-row {
+  background: #f5fbfa;
 }
 
 .table-head {
@@ -5368,46 +5361,10 @@ button,
   font-weight: 900;
 }
 
-.graha-status-list {
-  align-items: center;
-  display: flex;
-  gap: 4px;
-  min-width: 0;
-}
-
-.graha-status-badge,
-.graha-status-muted {
-  appearance: none;
-  background: #eef2f7;
-  border: 0;
-  border-radius: 999px;
+.graha-status-text {
   color: #415066;
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 12px;
-  font-weight: 900;
-  justify-content: center;
-  min-width: 22px;
-  padding: 2px 6px;
-}
-
-.graha-status-muted {
-  cursor: default;
-}
-
-.graha-status-badge.exaltation {
-  background: #e9f8ef;
-  color: #0d7f52;
-}
-
-.graha-status-badge.debilitation {
-  background: #fff0ed;
-  color: #b42318;
-}
-
-.graha-status-badge.retrograde {
-  background: #eef5ff;
-  color: #123a7a;
+  font-weight: 800;
+  justify-self: start;
 }
 
 .chart-svg-mini .chart-rashi-label {
