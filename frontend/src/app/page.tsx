@@ -88,7 +88,6 @@ const sourceRows = [
 
 const analysisTabs = [
   { key: "overview", label: "Обзор", hint: "контекст" },
-  { key: "compatibility", label: "Совместимость", hint: "две карты" },
   { key: "calculations", label: "Расчёт", hint: "D1, D9" },
   { key: "yogas", label: "Силы", hint: "бала, йоги" },
   { key: "timeline", label: "Даши", hint: "периоды" },
@@ -6652,6 +6651,10 @@ export default function Home() {
                     ))}
                   </select>
                 </label>
+                <a className="analysis-page-link" href="/compatibility">
+                  <strong>Совместимость</strong>
+                  <span>отдельная страница</span>
+                </a>
               </div>
               <div className="analysis-panel-slot">
                 {activeAnalysisTab === "overview" ? <PersonSummaryPanel summary={personSummary} /> : null}
@@ -6714,46 +6717,6 @@ export default function Home() {
                 {activeAnalysisTab === "prashna" ? <PrashnaPanel report={prashnaReport} status={workflowStatus} /> : null}
                 {activeAnalysisTab === "mundane" ? <MundanePanel report={mundaneReport} status={workflowStatus} /> : null}
                 {activeAnalysisTab === "muhurta" ? <MuhurtaPanel report={muhurtaReport} status={workflowStatus} /> : null}
-                {activeAnalysisTab === "compatibility" ? (
-                  <CompatibilityPanel
-                    report={compatibilityReport}
-                    status={compatibilityStatus}
-                    partnerBirthDate={partnerBirthDate}
-                    setPartnerBirthDate={setPartnerBirthDate}
-                    partnerBirthTime={partnerBirthTime}
-                    setPartnerBirthTime={setPartnerBirthTime}
-                    partnerPlaceName={partnerPlaceName}
-                    setPartnerPlaceName={setPartnerPlaceName}
-                    partnerPlaceMatches={partnerPlaceMatches}
-                    selectedPartnerPlace={selectedPartnerPlace}
-                    showPartnerPlaceSuggestions={showPartnerPlaceSuggestions}
-                    setShowPartnerPlaceSuggestions={setShowPartnerPlaceSuggestions}
-                    partnerPlaceSearchStatus={partnerPlaceSearchStatus}
-                    onSelectPartnerPlace={selectPartnerPlace}
-                    onSelectPersonAProfile={handleSelectCompatibilityPersonAProfile}
-                    onSelectPersonBProfile={handleSelectCompatibilityPersonBProfile}
-                    onSavePartnerProfile={handleSavePartnerProfile}
-                    onSubmit={handleCompatibilitySubmit}
-                    onGeneratePacket={handleCompatibilityPacket}
-                    onGenerateCodexAnalysis={handleCompatibilityCodexAnalysis}
-                    disabled={!chart && !compatibilityPersonAProfileId}
-                    savePartnerDisabled={!currentUser || !selectedPartnerPlace}
-                    packetDisabled={!chart && !compatibilityPersonAProfileId}
-                    packetStatus={compatibilityPacketStatus}
-                    codexDisabled={!chart && !compatibilityPersonAProfileId}
-                    codexStatus={compatibilityCodexStatus}
-                    codexAnalysis={compatibilityCodexAnalysis}
-                    chatMessages={compatibilityChatMessages}
-                    chatStatus={compatibilityChatStatus}
-                    onAskCodexQuestion={handleAskCompatibilityQuestion}
-                    chatDisabled={!compatibilityCodexAnalysis || compatibilityChatBusy}
-                    profiles={profiles}
-                    selectedPersonAProfileId={compatibilityPersonAProfileId}
-                    selectedPersonBProfileId={compatibilityPersonBProfileId}
-                    partnerProfileName={partnerProfileName}
-                    setPartnerProfileName={setPartnerProfileName}
-                  />
-                ) : null}
                 {activeAnalysisTab === "accuracy" ? (
                   <AccuracyReportPanel
                     witnessSummary={witnessSummary}
