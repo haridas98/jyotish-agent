@@ -1273,6 +1273,7 @@ const shodashaVargaCodes = [
 
 const jaiminiVargaCodes = ["D5", "D6", "D8", "D11"] as const;
 const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"] as const;
+const jaiminiVargaCodeSet = new Set<string>(jaiminiVargaCodes);
 
 const vargaSchemeGroups = [
   { key: "shadvarga", label: "Shad", title: "Shadvarga", hint: "D1, D2, D3, D9, D12, D30", codes: ["D1", "D2", "D3", "D9", "D12", "D30"] },
@@ -1415,7 +1416,12 @@ function vargaCoverage(chart: BirthChart | null) {
   const available = new Set(availableVargaCodes(chart));
   const ready = vargaSnapshotCodes.filter((code) => available.has(code));
   const missing = vargaSnapshotCodes.filter((code) => !available.has(code));
-  return { ready, missing, total: vargaSnapshotCodes.length };
+  const pendingJaimini = missing.filter((code) => jaiminiVargaCodeSet.has(code));
+  return { ready, missing, pendingJaimini, total: vargaSnapshotCodes.length };
+}
+
+function unavailableVargaLabel(code: string) {
+  return jaiminiVargaCodeSet.has(code) ? "нужна сверка" : "нет расчёта";
 }
 
 const chartQuickSwitchCodes = vargaSnapshotCodes;
@@ -1567,7 +1573,7 @@ function VargaStudyBoard({
                   <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 )
               ) : (
-                <em>нет расчёта</em>
+                <em>{unavailableVargaLabel(item.code)}</em>
               )}
             </div>
           </button>
@@ -1625,7 +1631,7 @@ function EssentialChartPairBoard({
                 <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
               )
             ) : (
-              <em>нет расчёта</em>
+              <em>{unavailableVargaLabel(item.code)}</em>
             )}
           </div>
         </button>
@@ -1665,7 +1671,13 @@ function PriorityVargaRibbon({
         <div className="varga-coverage-pill">
           <span>{coverage.ready.length}/{coverage.total}</span>
           <strong>{activeCode} · {activeContext.scope}</strong>
-          <small>{coverage.missing.length ? `нет ${coverage.missing.slice(0, 4).join(", ")}` : "все основные варги рассчитаны"}</small>
+          <small>
+            {coverage.pendingJaimini.length
+              ? `Jaimini ждёт сверки: ${coverage.pendingJaimini.join(", ")}`
+              : coverage.missing.length
+                ? `нет ${coverage.missing.slice(0, 4).join(", ")}`
+                : "все основные варги рассчитаны"}
+          </small>
         </div>
       </div>
       <div className="priority-varga-ribbon-grid">
@@ -1693,7 +1705,7 @@ function PriorityVargaRibbon({
                   <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 )
               ) : (
-                <em>нет расчёта</em>
+                <em>{unavailableVargaLabel(item.code)}</em>
               )}
             </div>
           </button>
@@ -1834,7 +1846,7 @@ function VargaAtlasBoard({
                   <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 )
               ) : (
-                <em>нет</em>
+                <em>{unavailableVargaLabel(item.code)}</em>
               )}
             </div>
           </button>
@@ -2246,7 +2258,7 @@ function VargaSnapshotGrid({
                 <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
               )
             ) : (
-              <em>нет расчёта</em>
+              <em>{unavailableVargaLabel(item.code)}</em>
             )}
           </div>
         </button>
