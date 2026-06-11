@@ -999,48 +999,6 @@ select {
   white-space: nowrap;
 }
 
-.chart-workspace-tabs {
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 10px;
-  overflow: hidden;
-}
-
-.chart-workspace-tabs button {
-  background: #ffffff;
-  border: 0;
-  border-right: 1px solid var(--line);
-  display: grid;
-  gap: 2px;
-  min-height: 44px;
-  padding: 7px 10px;
-  text-align: left;
-}
-
-.chart-workspace-tabs button:last-child {
-  border-right: 0;
-}
-
-.chart-workspace-tabs button.active {
-  background: #e6f6f3;
-  box-shadow: inset 0 -3px 0 var(--green);
-  color: var(--green);
-}
-
-.chart-workspace-tabs strong {
-  font-size: 13px;
-  line-height: 1.1;
-}
-
-.chart-workspace-tabs span {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.15;
-}
-
 .chart-workspace-body {
   min-width: 0;
 }
@@ -2072,6 +2030,14 @@ select {
   align-items: start;
 }
 
+.chart-visual-stack {
+  display: grid;
+  gap: 8px;
+  justify-items: stretch;
+  min-width: 0;
+  width: min(100%, 520px);
+}
+
 .chart-box {
   aspect-ratio: 1 / 1;
   position: relative;
@@ -2149,6 +2115,63 @@ select {
   display: grid;
   gap: 8px;
   min-width: 0;
+}
+
+.chart-notation-legend {
+  align-items: center;
+  background: #fffefa;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(128px, 1fr) repeat(4, auto);
+  padding: 7px 8px;
+}
+
+.chart-notation-legend > div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.chart-notation-legend strong {
+  color: var(--green);
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.chart-notation-legend > div > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.chart-notation-legend > span {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.chart-notation-legend b {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.chart-notation-legend b.dignity-exaltation {
+  color: #0d7f52;
+}
+
+.chart-notation-legend b.dignity-debilitation {
+  color: #b42318;
+}
+
+.chart-notation-legend b.dignity-moolatrikona {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
 }
 
 .active-calculation-table {
@@ -5612,14 +5635,12 @@ button,
     padding: 14px;
   }
 
-  .analysis-tab-shell,
-  .chart-workspace-tabs {
+  .analysis-tab-shell {
     grid-template-columns: 1fr;
   }
 
-  .chart-workspace-tabs button {
-    border-bottom: 1px solid var(--line);
-    border-right: 0;
+  .chart-notation-legend {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

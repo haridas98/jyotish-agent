@@ -950,6 +950,28 @@ function ChartPreview({
   );
 }
 
+function ChartNotationLegend({ termLanguage }: { termLanguage: TermLanguage }) {
+  const sample = {
+    retrograde: `(${grahaTermLabel("Guru", termLanguage, "short")})`,
+    exaltation: `${grahaTermLabel("Surya", termLanguage, "short")}↑`,
+    debilitation: `${grahaTermLabel("Shukra", termLanguage, "short")}↓`,
+    moolatrikona: grahaTermLabel("Mangala", termLanguage, "short"),
+  };
+
+  return (
+    <div className="chart-notation-legend" aria-label="Обозначения в карте">
+      <div>
+        <strong>Обозначения карты</strong>
+        <span>В таблице статусы написаны словами</span>
+      </div>
+      <span><b>{sample.retrograde}</b><GlossaryTerm termKey="retrograde">ретроградность</GlossaryTerm></span>
+      <span><b className="dignity-exaltation">{sample.exaltation}</b><GlossaryTerm termKey="exaltation">экзальтация</GlossaryTerm></span>
+      <span><b className="dignity-debilitation">{sample.debilitation}</b><GlossaryTerm termKey="debilitation">дебилитация</GlossaryTerm></span>
+      <span><b className="dignity-moolatrikona">{sample.moolatrikona}</b><GlossaryTerm termKey="moolatrikona">мулатрикона</GlossaryTerm></span>
+    </div>
+  );
+}
+
 function ChartReferenceToggle({
   chart,
   value,
@@ -6717,7 +6739,10 @@ export default function Home() {
                 <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
               </div>
               <div className="chart-layout">
-                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
+                <div className="chart-visual-stack">
+                  <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
+                  <ChartNotationLegend termLanguage={termLanguage} />
+                </div>
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} termLanguage={termLanguage} />
                   <PlanetStrengthDigest chart={chart} />
