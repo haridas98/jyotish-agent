@@ -114,6 +114,8 @@ export type GrahaPosition = {
   longitude: number;
   latitude: number | null;
   speed_longitude: number | null;
+  retrograde?: boolean;
+  dignity?: string | null;
   ephemeris_engine?: string | null;
   ephemeris_flags?: number | null;
   rashi: string;
@@ -135,6 +137,7 @@ export type VargaPlacement = {
   body: string;
   rashi_index: number;
   rashi: string;
+  dignity?: string | null;
 };
 
 export type VargaChart = {
@@ -1202,6 +1205,7 @@ export type ShastraEvidencePayload = {
 
 export type GeneratedDraftAnalysis = {
   id: number;
+  slug?: string;
   kind: string;
   review_status: string;
   coverage_status?: string;

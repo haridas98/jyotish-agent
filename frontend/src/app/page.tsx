@@ -77,6 +77,7 @@ import {
 const PRIVATE_APP_REQUIRE_AUTH = process.env.NEXT_PUBLIC_PRIVATE_APP_REQUIRE_AUTH === "true";
 const ENABLE_NEMOTRON_ANALYSIS = process.env.NEXT_PUBLIC_ENABLE_NEMOTRON === "true";
 const CHART_STYLE_STORAGE_KEY = "jyotish-chart-style";
+const TERM_LANGUAGE_STORAGE_KEY = "jyotish-term-language";
 
 const sourceRows = [
   ["Айанамша", "Lahiri", "Рабочий профиль; JHora diff подключён", "ready"],
@@ -278,6 +279,111 @@ const bodyLabelsRu: Record<string, string> = {
   Ketu: "Кету",
   Moon: "Луна",
   Sun: "Солнце",
+};
+
+type TermLanguage = "sanskrit" | "ru" | "en";
+type GrahaDignity = "exaltation" | "debilitation" | "moolatrikona";
+
+const bodyAliases: Record<string, string> = {
+  Ascendant: "Lagna",
+  Lagna: "Lagna",
+  Sun: "Surya",
+  Surya: "Surya",
+  Moon: "Chandra",
+  Chandra: "Chandra",
+  Mars: "Mangala",
+  Mangala: "Mangala",
+  Mercury: "Budha",
+  Budha: "Budha",
+  Jupiter: "Guru",
+  Guru: "Guru",
+  Venus: "Shukra",
+  Shukra: "Shukra",
+  Saturn: "Shani",
+  Shani: "Shani",
+  Rahu: "Rahu",
+  Ketu: "Ketu",
+};
+
+const termBodyLabels: Record<TermLanguage, Record<string, { long: string; short: string }>> = {
+  sanskrit: {
+    Lagna: { long: "Lagna", short: "As" },
+    Surya: { long: "Surya", short: "Su" },
+    Chandra: { long: "Chandra", short: "Mo" },
+    Mangala: { long: "Mangala", short: "Ma" },
+    Budha: { long: "Budha", short: "Me" },
+    Guru: { long: "Guru", short: "Ju" },
+    Shukra: { long: "Shukra", short: "Ve" },
+    Shani: { long: "Shani", short: "Sa" },
+    Rahu: { long: "Rahu", short: "Ra" },
+    Ketu: { long: "Ketu", short: "Ke" },
+  },
+  ru: {
+    Lagna: { long: "Лагна", short: "Ас" },
+    Surya: { long: "Солнце", short: "Сл" },
+    Chandra: { long: "Луна", short: "Лн" },
+    Mangala: { long: "Марс", short: "Ма" },
+    Budha: { long: "Меркурий", short: "Ме" },
+    Guru: { long: "Юпитер", short: "Юп" },
+    Shukra: { long: "Венера", short: "Ве" },
+    Shani: { long: "Сатурн", short: "Са" },
+    Rahu: { long: "Раху", short: "Ра" },
+    Ketu: { long: "Кету", short: "Ке" },
+  },
+  en: {
+    Lagna: { long: "Ascendant", short: "As" },
+    Surya: { long: "Sun", short: "Su" },
+    Chandra: { long: "Moon", short: "Mo" },
+    Mangala: { long: "Mars", short: "Ma" },
+    Budha: { long: "Mercury", short: "Me" },
+    Guru: { long: "Jupiter", short: "Ju" },
+    Shukra: { long: "Venus", short: "Ve" },
+    Shani: { long: "Saturn", short: "Sa" },
+    Rahu: { long: "Rahu", short: "Ra" },
+    Ketu: { long: "Ketu", short: "Ke" },
+  },
+};
+
+const rashiTermLabels: Record<TermLanguage, string[]> = {
+  sanskrit: ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena"],
+  ru: ["Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева", "Весы", "Скорпион", "Стрелец", "Козерог", "Водолей", "Рыбы"],
+  en: ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"],
+};
+
+const rashiTermShortLabels: Record<TermLanguage, string[]> = {
+  sanskrit: ["Mesha", "Vrish", "Mith", "Karka", "Simha", "Kanya", "Tula", "Vrisch", "Dhanu", "Makara", "Kumbh", "Meena"],
+  ru: ["Овен", "Телец", "Близн", "Рак", "Лев", "Дева", "Весы", "Скорп", "Стрел", "Козер", "Водол", "Рыбы"],
+  en: ["Aries", "Taurus", "Gem", "Cancer", "Leo", "Virgo", "Libra", "Scorp", "Sag", "Cap", "Aquar", "Pisces"],
+};
+
+const exaltationSigns: Record<string, number> = {
+  Surya: 0,
+  Chandra: 1,
+  Mangala: 9,
+  Budha: 5,
+  Guru: 3,
+  Shukra: 11,
+  Shani: 6,
+};
+
+const debilitationSigns: Record<string, number> = {
+  Surya: 6,
+  Chandra: 7,
+  Mangala: 3,
+  Budha: 11,
+  Guru: 9,
+  Shukra: 5,
+  Shani: 0,
+};
+
+const moolatrikonaSigns: Record<string, number> = {
+  Surya: 4,
+  Chandra: 1,
+  Mangala: 0,
+  Budha: 5,
+  Guru: 8,
+  Shukra: 6,
+  Shani: 10,
 };
 
 const summaryLabelsRu: Record<string, string> = {
@@ -514,6 +620,15 @@ type ChartPlacement = {
   longitude: number | null;
   nakshatra: string | null;
   pada: number | null;
+  retrograde: boolean;
+  dignity: GrahaDignity | null;
+};
+
+type ChartTextLine = {
+  text: string;
+  kind: "rashi" | "graha";
+  dignity?: GrahaDignity | null;
+  retrograde?: boolean;
 };
 
 function normalizeRashiIndex(value: number | null | undefined) {
@@ -531,14 +646,78 @@ function isLagnaBody(body: string) {
   return body === "Lagna" || body === "Ascendant";
 }
 
+function canonicalBody(body: string | null | undefined) {
+  const clean = body?.trim() ?? "";
+  return bodyAliases[clean] ?? clean;
+}
+
+function grahaTermLabel(body: string, language: TermLanguage, mode: "short" | "long" = "long") {
+  const canonical = canonicalBody(body);
+  return termBodyLabels[language][canonical]?.[mode] ?? (mode === "short" ? northGrahaLabel(body) : labelRu(body));
+}
+
+function rashiTermLabel(index: number | null, fallback: string | null | undefined, language: TermLanguage, compact = false) {
+  const normalized = index ?? rashiIndexFromName(fallback);
+  if (normalized === null) return fallback || "-";
+  return (compact ? rashiTermShortLabels[language] : rashiTermLabels[language])[normalized] ?? fallback ?? "-";
+}
+
+function rashiTermFromName(name: string | null | undefined, language: TermLanguage, compact = false) {
+  return rashiTermLabel(rashiIndexFromName(name), name, language, compact);
+}
+
+function dignityForPlacement(body: string, rashiIndex: number | null, explicit?: string | null): GrahaDignity | null {
+  const normalizedExplicit = explicit?.trim().toLowerCase();
+  if (normalizedExplicit === "exaltation" || normalizedExplicit === "debilitation" || normalizedExplicit === "moolatrikona") {
+    return normalizedExplicit;
+  }
+  const canonical = canonicalBody(body);
+  if (rashiIndex === null || canonical === "Lagna") return null;
+  if (exaltationSigns[canonical] === rashiIndex) return "exaltation";
+  if (debilitationSigns[canonical] === rashiIndex) return "debilitation";
+  if (moolatrikonaSigns[canonical] === rashiIndex) return "moolatrikona";
+  return null;
+}
+
+function isRetrogradeGraha(graha: Pick<GrahaPosition, "speed_longitude"> & { retrograde?: boolean }) {
+  return graha.retrograde === true || (typeof graha.speed_longitude === "number" && graha.speed_longitude < 0);
+}
+
+function dignitySymbol(dignity: GrahaDignity | null | undefined) {
+  if (dignity === "exaltation") return "↑";
+  if (dignity === "debilitation") return "↓";
+  return "";
+}
+
+function dignityLabel(dignity: GrahaDignity | null | undefined) {
+  if (dignity === "exaltation") return "экз.";
+  if (dignity === "debilitation") return "деб.";
+  if (dignity === "moolatrikona") return "мул.";
+  return "";
+}
+
+function chartPlacementLabel(placement: ChartPlacement, language: TermLanguage) {
+  const base = placement.isLagna ? grahaTermLabel("Lagna", language, "short") : grahaTermLabel(placement.body, language, "short");
+  const retro = placement.retrograde ? `(${base})` : base;
+  return `${retro}${dignitySymbol(placement.dignity)}`;
+}
+
 function activeChartPlacements(chart: BirthChart | null, varga: ActiveVargaChart | null): ChartPlacement[] {
   if (!chart) return [];
 
   if (varga) {
     return varga.placements.map((placement) => ({
+      ...(() => {
+        const rashiIndex = normalizeRashiIndex(placement.rashi_index) ?? rashiIndexFromName(placement.rashi);
+        const natal = chart.grahas.find((graha) => canonicalBody(graha.body) === canonicalBody(placement.body));
+        return {
+          rashiIndex,
+          retrograde: natal ? isRetrogradeGraha(natal) : false,
+          dignity: dignityForPlacement(placement.body, rashiIndex, placement.dignity ?? natal?.dignity ?? null),
+        };
+      })(),
       body: placement.body,
       rashi: placement.rashi,
-      rashiIndex: normalizeRashiIndex(placement.rashi_index) ?? rashiIndexFromName(placement.rashi),
       isLagna: isLagnaBody(placement.body),
       longitude: null,
       nakshatra: null,
@@ -556,18 +735,25 @@ function activeChartPlacements(chart: BirthChart | null, varga: ActiveVargaChart
       longitude: chart.ascendant.longitude,
       nakshatra: chart.ascendant.nakshatra,
       pada: chart.ascendant.pada,
+      retrograde: false,
+      dignity: null,
     });
   }
   placements.push(
-    ...chart.grahas.map((graha) => ({
-      body: graha.body,
-      rashi: graha.rashi,
-      rashiIndex: normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi),
-      isLagna: false,
-      longitude: graha.longitude,
-      nakshatra: graha.nakshatra,
-      pada: graha.pada,
-    })),
+    ...chart.grahas.map((graha) => {
+      const rashiIndex = normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi);
+      return {
+        body: graha.body,
+        rashi: graha.rashi,
+        rashiIndex,
+        isLagna: false,
+        longitude: graha.longitude,
+        nakshatra: graha.nakshatra,
+        pada: graha.pada,
+        retrograde: isRetrogradeGraha(graha),
+        dignity: dignityForPlacement(graha.body, rashiIndex, graha.dignity),
+      };
+    }),
   );
   return placements;
 }
@@ -637,16 +823,18 @@ function ChartPreview({
   varga,
   chartStyle,
   chartReference = "lagna",
+  termLanguage = "sanskrit",
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartStyle: "north" | "south";
   chartReference?: ChartReference;
+  termLanguage?: TermLanguage;
 }) {
   return chartStyle === "south" ? (
-    <SouthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} />
+    <SouthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
   ) : (
-    <NorthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} />
+    <NorthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
   );
 }
 
@@ -725,14 +913,16 @@ function NorthIndianChartPreview({
   chart,
   varga,
   chartReference = "lagna",
+  termLanguage = "sanskrit",
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartReference?: ChartReference;
+  termLanguage?: TermLanguage;
 }) {
   return (
     <div className="chart-box" aria-label="Предпросмотр североиндийской карты">
-      <NorthIndianChartSvg chart={chart} varga={varga} chartReference={chartReference} />
+      <NorthIndianChartSvg chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
     </div>
   );
 }
@@ -742,11 +932,13 @@ function NorthIndianChartSvg({
   varga,
   chartReference = "lagna",
   compact = false,
+  termLanguage = "sanskrit",
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartReference?: ChartReference;
   compact?: boolean;
+  termLanguage?: TermLanguage;
 }) {
   const houses = northIndianHouseItems(chart, varga, chartReference);
   return (
@@ -756,14 +948,14 @@ function NorthIndianChartSvg({
         <path d="M200 2 L398 200 L200 398 L2 200 Z" fill="none" stroke="#c99a43" strokeWidth="1" />
         {houses.map((house) => {
           const cell = northIndianHouseCells[house.house];
-          const signLabel = rashiChartLabel(house.rashiIndex, house.rashi);
-          const textLines = northIndianCellLines(house, compact);
+          const signLabel = rashiChartLabel(house.rashiIndex, house.rashi, termLanguage, compact);
+          const textLines = northIndianCellLines(house, compact, termLanguage);
           const lineGap = compact ? (textLines.length > 4 ? 10 : 12) : (textLines.length > 5 ? 11 : 13);
           const centerY = safeSymbolCenterY(cell.centerY, textLines.length, lineGap);
           const firstLineY = firstSymbolLineY(centerY, textLines.length, lineGap);
           return (
             <g className="chart-house-group" key={house.house}>
-              <title>{`Знак ${signLabel}: ${house.placements.map(fullPlacementTitle).join("; ") || "пусто"}`}</title>
+              <title>{`Знак ${signLabel}: ${house.placements.map((placement) => fullPlacementTitle(placement, termLanguage)).join("; ") || "пусто"}`}</title>
               <text
                 className={`chart-cell-text${textLines.length > 5 ? " dense" : ""}`}
                 x={cell.centerX}
@@ -772,12 +964,12 @@ function NorthIndianChartSvg({
               >
                 {textLines.map((line, index) => (
                   <tspan
-                    className={index === 0 ? "chart-rashi-label" : "chart-graha-detail"}
-                    key={`${house.house}-${line}-${index}`}
+                    className={`${line.kind === "rashi" ? "chart-rashi-label" : "chart-graha-detail"}${line.dignity ? ` dignity-${line.dignity}` : ""}${line.retrograde ? " retrograde" : ""}`}
+                    key={`${house.house}-${line.text}-${index}`}
                     x={cell.centerX}
                     dy={index === 0 ? 0 : lineGap}
                   >
-                    {line}
+                    {line.text}
                   </tspan>
                 ))}
               </text>
@@ -812,14 +1004,16 @@ function SouthIndianChartPreview({
   chart,
   varga,
   chartReference = "lagna",
+  termLanguage = "sanskrit",
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartReference?: ChartReference;
+  termLanguage?: TermLanguage;
 }) {
   return (
     <div className="chart-box south-chart-box" aria-label="Предпросмотр южноиндийской карты">
-      <SouthIndianChartGrid chart={chart} varga={varga} chartReference={chartReference} />
+      <SouthIndianChartGrid chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
     </div>
   );
 }
@@ -829,11 +1023,13 @@ function SouthIndianChartGrid({
   varga,
   chartReference = "lagna",
   compact = false,
+  termLanguage = "sanskrit",
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartReference?: ChartReference;
   compact?: boolean;
+  termLanguage?: TermLanguage;
 }) {
   const placements = activeChartPlacements(chart, varga);
   const bySign = placementsBySign(placements);
@@ -850,10 +1046,10 @@ function SouthIndianChartGrid({
         const cellPlacements = bySign.get(rashiIndex) ?? [];
         return (
           <div className="south-chart-cell" key={rashiIndex}>
-            <strong>{house ? `${house} ` : ""}{rashiChartLabels[rashiIndex]}</strong>
+            <strong>{house ? `${house} ` : ""}{rashiChartLabel(rashiIndex, rashiNames[rashiIndex], termLanguage, compact)}</strong>
             {cellPlacements.slice(0, compact ? 4 : 7).map((placement) => (
-              <span key={`${rashiIndex}-${placement.body}`}>
-                {placement.isLagna ? "As" : northGrahaLabel(placement.body)}
+              <span className={`${placement.dignity ? `dignity-${placement.dignity}` : ""}${placement.retrograde ? " retrograde" : ""}`} key={`${rashiIndex}-${placement.body}`}>
+                {chartPlacementLabel(placement, termLanguage)}
               </span>
             ))}
             {cellPlacements.length > (compact ? 4 : 7) ? <em>+{cellPlacements.length - (compact ? 4 : 7)}</em> : null}
@@ -865,36 +1061,47 @@ function SouthIndianChartGrid({
   );
 }
 
-function northIndianCellLines(house: NorthIndianHouseItem, compact = false) {
+function northIndianCellLines(house: NorthIndianHouseItem, compact = false, termLanguage: TermLanguage = "sanskrit"): ChartTextLine[] {
   if (compact) {
-    const placements = house.placements.map((placement) => (placement.isLagna ? "As" : northGrahaLabel(placement.body)));
+    const placements = house.placements.map((placement) => ({
+      text: chartPlacementLabel(placement, termLanguage),
+      kind: "graha" as const,
+      dignity: placement.dignity,
+      retrograde: placement.retrograde,
+    }));
     return [
-      `${house.house} ${rashiChartLabel(house.rashiIndex, house.rashi)}`,
+      { text: `${house.house} ${rashiChartLabel(house.rashiIndex, house.rashi, termLanguage, true)}`, kind: "rashi" },
       ...placements.slice(0, 4),
-      ...(placements.length > 4 ? [`+${placements.length - 4}`] : []),
+      ...(placements.length > 4 ? [{ text: `+${placements.length - 4}`, kind: "graha" as const }] : []),
     ];
   }
   return [
-    `${house.house} ${rashiChartLabel(house.rashiIndex, house.rashi)}`,
-    ...house.placements.map(compactPlacementLine),
+    { text: `${house.house} ${rashiChartLabel(house.rashiIndex, house.rashi, termLanguage, true)}`, kind: "rashi" },
+    ...house.placements.map((placement) => compactPlacementLine(placement, termLanguage)),
   ];
 }
 
-function compactPlacementLine(placement: ChartPlacement) {
-  const label = placement.isLagna ? "As" : northGrahaLabel(placement.body);
-  if (placement.longitude === null) return label;
-  return `${label} ${formatSignDegrees(placement.longitude)}`;
+function compactPlacementLine(placement: ChartPlacement, termLanguage: TermLanguage): ChartTextLine {
+  const label = chartPlacementLabel(placement, termLanguage);
+  return {
+    text: placement.longitude === null ? label : `${label} ${formatSignDegrees(placement.longitude)}`,
+    kind: "graha",
+    dignity: placement.dignity,
+    retrograde: placement.retrograde,
+  };
 }
 
-function fullPlacementTitle(placement: ChartPlacement) {
-  const label = placement.isLagna ? "Lagna" : labelRu(placement.body);
+function fullPlacementTitle(placement: ChartPlacement, termLanguage: TermLanguage = "sanskrit") {
+  const label = placement.isLagna ? grahaTermLabel("Lagna", termLanguage) : grahaTermLabel(placement.body, termLanguage);
   if (placement.longitude === null) return label;
   const nakshatra = placement.nakshatra ? `, ${placement.nakshatra} ${placement.pada ?? ""}` : "";
-  return `${label}: ${formatSignDegrees(placement.longitude)}${nakshatra}`;
+  const dignity = dignityLabel(placement.dignity);
+  const retrograde = placement.retrograde ? ", ретроградная" : "";
+  return `${label}: ${formatSignDegrees(placement.longitude)}${nakshatra}${dignity ? `, ${dignity}` : ""}${retrograde}`;
 }
 
-function rashiChartLabel(index: number | null, fallback: string) {
-  return index === null ? fallback || "-" : rashiChartLabels[index] ?? fallback;
+function rashiChartLabel(index: number | null, fallback: string, termLanguage: TermLanguage = "sanskrit", compact = true) {
+  return rashiTermLabel(index, fallback, termLanguage, compact);
 }
 
 function formatSignDegrees(value: number) {
@@ -1336,7 +1543,34 @@ function isoDateOffset(days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
+function grahaDignity(graha: GrahaPosition) {
+  const rashiIndex = normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi);
+  return dignityForPlacement(graha.body, rashiIndex, graha.dignity);
+}
+
+function GrahaStatusBadges({ graha }: { graha: GrahaPosition }) {
+  const dignity = grahaDignity(graha);
+  const badges = [
+    ...(isRetrogradeGraha(graha) ? [{ key: "retrograde", label: "()", title: "ретроградность" }] : []),
+    ...(dignity === "moolatrikona" ? [{ key: "moolatrikona", label: "_", title: "мулатрикона" }] : []),
+    ...(dignity === "exaltation" ? [{ key: "exaltation", label: "↑", title: "экзальтация" }] : []),
+    ...(dignity === "debilitation" ? [{ key: "debilitation", label: "↓", title: "дебилитация" }] : []),
+  ];
+
+  if (!badges.length) return <span className="graha-status-muted">-</span>;
+
+  return (
+    <span className="graha-status-list" aria-label="Статусы грахи">
+      {badges.map((badge) => (
+        <span className={`graha-status-badge ${badge.key}`} title={badge.title} key={badge.key}>
+          {badge.label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function GrahaTable({ grahas, termLanguage }: { grahas: GrahaPosition[]; termLanguage: TermLanguage }) {
   const sun = grahas.find((graha) => graha.body === "Surya");
   if (grahas.length === 0) {
     return (
@@ -1354,34 +1588,36 @@ function GrahaTable({ grahas }: { grahas: GrahaPosition[] }) {
         <span>Долгота</span>
         <span>Раши</span>
         <span>Накшатра</span>
+        <span>Статус</span>
         <span>Аста</span>
         <span>D9</span>
       </div>
       {grahas.map((graha) => (
         <div className="table-row" key={graha.body}>
-          <strong>{labelRu(graha.body)}</strong>
+          <strong>{grahaTermLabel(graha.body, termLanguage)}</strong>
           <span>{formatDegrees(graha.longitude)}</span>
-          <span>{graha.rashi}</span>
+          <span>{rashiTermFromName(graha.rashi, termLanguage)}</span>
           <span>
             {graha.nakshatra} {graha.pada}
           </span>
+          <GrahaStatusBadges graha={graha} />
           <span className={combustionStatus(graha, sun).combust ? "combustion-badge active" : "combustion-badge"}>
             {combustionStatus(graha, sun).label}
           </span>
-          <span>{graha.navamsa}</span>
+          <span>{rashiTermFromName(graha.navamsa, termLanguage)}</span>
         </div>
       ))}
     </div>
   );
 }
 
-function CoreInfoStrip({ chart }: { chart: BirthChart | null }) {
+function CoreInfoStrip({ chart, termLanguage }: { chart: BirthChart | null; termLanguage: TermLanguage }) {
   const moon = chart?.grahas.find((graha) => graha.body === "Chandra");
   const sun = chart?.grahas.find((graha) => graha.body === "Surya");
   const items = [
-    ["Лагна", chart?.ascendant ? `${chart.ascendant.rashi}, ${chart.ascendant.nakshatra} ${chart.ascendant.pada}` : "ожидает"],
-    ["Луна", moon ? `${moon.rashi}, ${moon.nakshatra} ${moon.pada}` : "ожидает"],
-    ["Сурья", sun ? `${sun.rashi}, ${formatSignDegrees(sun.longitude)}` : "ожидает"],
+    ["Лагна", chart?.ascendant ? `${rashiTermFromName(chart.ascendant.rashi, termLanguage)}, ${chart.ascendant.nakshatra} ${chart.ascendant.pada}` : "ожидает"],
+    [grahaTermLabel("Chandra", termLanguage), moon ? `${rashiTermFromName(moon.rashi, termLanguage)}, ${moon.nakshatra} ${moon.pada}` : "ожидает"],
+    [grahaTermLabel("Surya", termLanguage), sun ? `${rashiTermFromName(sun.rashi, termLanguage)}, ${formatSignDegrees(sun.longitude)}` : "ожидает"],
     ["Панчанга", chart?.panchanga.tithi?.name ?? chart?.panchanga.nakshatra?.name ?? "ожидает"],
     ["Место", chart?.place.label ?? chart?.place.name ?? "ожидает"],
     ["UTC", chart?.birth.utc_offset ?? chart?.birth.timezone ?? "ожидает"],
@@ -1477,7 +1713,7 @@ function angularDistance(a: number, b: number) {
   return diff;
 }
 
-function VargaTable({ placements, code }: { placements: VargaPlacement[]; code: string }) {
+function VargaTable({ placements, code, termLanguage }: { placements: VargaPlacement[]; code: string; termLanguage: TermLanguage }) {
   if (placements.length === 0) {
     return (
       <div className="readiness-panel">
@@ -1495,8 +1731,8 @@ function VargaTable({ placements, code }: { placements: VargaPlacement[]; code: 
       </div>
       {placements.map((placement) => (
         <div className="table-row" key={placement.body}>
-          <strong>{labelRu(placement.body)}</strong>
-          <span>{placement.rashi}</span>
+          <strong>{grahaTermLabel(placement.body, termLanguage)}</strong>
+          <span>{rashiTermFromName(placement.rashi, termLanguage)}</span>
         </div>
       ))}
     </div>
@@ -1516,15 +1752,7 @@ function VargaSnapshotGrid({
   const items = vargaSnapshotCodes.map((code) => {
     const placements = code === "D1"
       ? activeChartPlacements(chart, null)
-      : (chart?.vargas?.[code]?.placements ?? []).map((placement) => ({
-          body: placement.body,
-          rashi: placement.rashi,
-          rashiIndex: placement.rashi_index,
-          longitude: null,
-          nakshatra: null,
-          pada: null,
-          isLagna: placement.body === "Lagna" || placement.body === "Ascendant",
-        }));
+      : activeChartPlacements(chart, chart?.vargas?.[code] ?? null);
     const focus = placements.filter((placement) => importantBodies.includes(placement.body)).slice(0, 5);
     return { code, focus, available: focus.length > 0 };
   });
@@ -3090,7 +3318,7 @@ function CompatibilityPanel({
               Разбор, чат и данные пары открываются отдельной страницей. Там сохраняется история вопросов и показываются D1, 7/12 дома и ключевые варги.
             </small>
           </div>
-          <a className="primary-link-button" href={`/compatibility/${codexAnalysis.id}`}>
+          <a className="primary-link-button" href={`/compatibility/${codexAnalysis.slug ?? codexAnalysis.id}`}>
             Открыть разбор
           </a>
         </div>
@@ -4139,6 +4367,7 @@ export default function Home() {
   const [activeVargaFocusKey, setActiveVargaFocusKey] = useState("core");
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
+  const [termLanguage, setTermLanguage] = useState<TermLanguage>("sanskrit");
   const [chartStyleHydrated, setChartStyleHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
@@ -4253,13 +4482,18 @@ export default function Home() {
   useEffect(() => {
     const saved = window.localStorage.getItem(CHART_STYLE_STORAGE_KEY);
     if (saved === "north" || saved === "south") setChartStyle(saved);
+    const savedTermLanguage = window.localStorage.getItem(TERM_LANGUAGE_STORAGE_KEY);
+    if (savedTermLanguage === "sanskrit" || savedTermLanguage === "ru" || savedTermLanguage === "en") {
+      setTermLanguage(savedTermLanguage);
+    }
     setChartStyleHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!chartStyleHydrated) return;
     window.localStorage.setItem(CHART_STYLE_STORAGE_KEY, chartStyle);
-  }, [chartStyle, chartStyleHydrated]);
+    window.localStorage.setItem(TERM_LANGUAGE_STORAGE_KEY, termLanguage);
+  }, [chartStyle, chartStyleHydrated, termLanguage]);
 
   useEffect(() => {
     if (!draftAnalysis) {
@@ -5559,6 +5793,14 @@ export default function Home() {
                     </select>
                   </label>
                   <label>
+                    Язык терминов
+                    <select value={termLanguage} onChange={(event) => setTermLanguage(event.target.value as TermLanguage)}>
+                      <option value="sanskrit">Санскрит</option>
+                      <option value="ru">Русский</option>
+                      <option value="en">English</option>
+                    </select>
+                  </label>
+                  <label>
                     Восход
                     <select value={sunriseSource} onChange={(event) => setSunriseSource(event.target.value)}>
                       <option value="noaa">NOAA</option>
@@ -5688,14 +5930,14 @@ export default function Home() {
                 </div>
               </div>
               <div className="chart-layout">
-                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} />
+                <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
                 <div className="chart-data-stack">
-                  <CoreInfoStrip chart={chart} />
+                  <CoreInfoStrip chart={chart} termLanguage={termLanguage} />
                   <PlanetStrengthDigest chart={chart} />
                   {chartMode === "D1" ? (
-                    <GrahaTable grahas={chart?.grahas ?? []} />
+                    <GrahaTable grahas={chart?.grahas ?? []} termLanguage={termLanguage} />
                   ) : (
-                    <VargaTable placements={selectedVargaPlacements} code={chartMode} />
+                    <VargaTable placements={selectedVargaPlacements} code={chartMode} termLanguage={termLanguage} />
                   )}
                   {chartFacts.length ? (
                     <div className="fact-grid">
