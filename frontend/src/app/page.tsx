@@ -1644,14 +1644,18 @@ function PrimaryVargaTabs({
   chart,
   activeCode,
   activeGroupKey,
+  workspaceTab,
   onSelect,
   onSelectGroup,
+  onWorkspaceTabChange,
 }: {
   chart: BirthChart | null;
   activeCode: string;
   activeGroupKey: string;
+  workspaceTab: ChartWorkspaceTab;
   onSelect: (code: string) => void;
   onSelectGroup: (groupKey: string, code: string) => void;
+  onWorkspaceTabChange: (tab: ChartWorkspaceTab) => void;
 }) {
   const coverage = vargaCoverage(chart);
   const items = primaryVargaTabCodes.map((code) => ({
@@ -1736,6 +1740,19 @@ function PrimaryVargaTabs({
         <strong>{activeGroup.title}</strong>
         <span>{activeGroup.description}</span>
         <em>{activeGroup.codes.join(" · ")}</em>
+      </div>
+      <div className="primary-workspace-shortcuts" aria-label="Быстрый переход по рабочим блокам карты">
+        {chartWorkspaceTabs.map((tab) => (
+          <button
+            type="button"
+            className={workspaceTab === tab.key ? "active" : ""}
+            key={tab.key}
+            onClick={() => onWorkspaceTabChange(tab.key)}
+          >
+            <strong>{tab.label}</strong>
+            <span>{tab.hint}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -6690,8 +6707,10 @@ export default function Home() {
                 chart={chart}
                 activeCode={chartMode}
                 activeGroupKey={activeVargaFocusKey}
+                workspaceTab={chartWorkspaceTab}
                 onSelect={selectVargaCode}
                 onSelectGroup={selectVargaFocusGroup}
+                onWorkspaceTabChange={setChartWorkspaceTab}
               />
               <div className="chart-reference-row">
                 <strong>Отсчёт домов</strong>
@@ -6720,21 +6739,6 @@ export default function Home() {
                     </div>
                   ) : null}
                 </div>
-              </div>
-              <div className="chart-workspace-tabs" role="tablist" aria-label="Режимы карты">
-                {chartWorkspaceTabs.map((tab) => (
-                  <button
-                    type="button"
-                    className={chartWorkspaceTab === tab.key ? "active" : ""}
-                    key={tab.key}
-                    onClick={() => setChartWorkspaceTab(tab.key)}
-                    role="tab"
-                    aria-selected={chartWorkspaceTab === tab.key}
-                  >
-                    <strong>{tab.label}</strong>
-                    <span>{tab.hint}</span>
-                  </button>
-                ))}
               </div>
               <div className="chart-workspace-body">
                 {chartWorkspaceTab === "essentials" ? (
