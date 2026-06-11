@@ -104,6 +104,7 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
         </dl>
       </header>
 
+      {chatMode === "birth" ? <BirthChartContext detail={detail} /> : null}
       {chatMode === "compatibility" ? <CompatibilityPairContext detail={detail} /> : null}
 
       <section className="analysis-body">
@@ -210,6 +211,58 @@ function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail })
           ))}
         </div>
       ) : null}
+    </section>
+  );
+}
+
+function BirthChartContext({ detail }: { detail: AnalysisHistoryDetail }) {
+  const packet = isRecord(detail.analysis.packet_snapshot) ? detail.analysis.packet_snapshot : {};
+  const context = recordOrNull(packet.context) ?? {};
+  const chart = recordOrNull(context.chart) ?? {};
+  const layers = recordOrNull(packet.chart_layers) ?? recordOrNull(context.chart_layers) ?? {};
+  const birth = recordOrNull(context.birth) ?? recordOrNull(packet.birth) ?? recordOrNull(chart.birth) ?? detail.analysis.input_snapshot;
+  const place = recordOrNull(context.place) ?? recordOrNull(packet.place) ?? recordOrNull(chart.place) ?? {};
+  const facts = recordOrNull(context.chart_facts) ?? recordOrNull(packet.chart_facts) ?? {};
+  const cards = birthReferenceCards(chart, layers);
+
+  return (
+    <section className="birth-detail-context">
+      <div className="birth-context-head">
+        <div>
+          <h2>Контекст карты</h2>
+          <p>{formatBirthSnapshot(birth)}{asText(place.label || place.name) ? ` · ${asText(place.label || place.name)}` : ""}</p>
+        </div>
+        <div className="birth-context-facts">
+          <div>
+            <span>Лагна</span>
+            <strong>{placementLine(recordOrNull(chart.ascendant), "Лагна")}</strong>
+          </div>
+          <div>
+            <span>Луна</span>
+            <strong>{placementLine(findGraha(chart, ["Chandra", "Moon"]), "Луна")}</strong>
+          </div>
+          <div>
+            <span>Даша</span>
+            <strong>{birthDashaLine(chart, layers)}</strong>
+          </div>
+        </div>
+      </div>
+      <div className="birth-mini-chart-board" aria-label="Опорные D-карты личного обзора">
+        {cards.map((card) => (
+          <div className="birth-mini-chart-card" key={card.title}>
+            <div>
+              <strong>{card.title}</strong>
+              <span>{card.hint}</span>
+            </div>
+            {card.placements.length ? <MiniRashiGrid placements={card.placements} highlightRashi={card.highlightRashi} /> : null}
+            {card.lines.map((line) => <small key={line}>{line}</small>)}
+          </div>
+        ))}
+      </div>
+      <div className="birth-context-strip">
+        <span>{asText(facts.panchanga) || "Panchanga и варги сохранены в расчётном пакете обзора."}</span>
+        <span>{asText(facts.vimshopaka) || "D9/D10/D12/D30/D60 вынесены отдельно, чтобы не искать их в тексте."}</span>
+      </div>
     </section>
   );
 }
@@ -377,6 +430,44 @@ function compatibilityReferenceCards(chart: Record<string, unknown>, summary: Re
     },
   ];
   return cards.map((card) => ({ ...card, lines: card.lines.length ? card.lines.slice(0, 3) : ["нет данных"] }));
+}
+
+function birthReferenceCards(chart: Record<string, unknown>, layers: Record<string, unknown>) {
+  const d1Placements = d1MiniPlacements(chart);
+  const fallbackD1Placements = layerGrahaMiniPlacements(layers);
+  const d1 = d1Placements.length ? d1Placements : fallbackD1Placements;
+  const lagnaRashi = asText(recordOrNull(chart.ascendant)?.rashi) || d1.find((row) => row.body === "Lagna" || row.body === "Ascendant")?.rashi || "";
+  const cards: CompatibilityReferenceCard[] = [
+    {
+      title: "D1",
+      hint: "раши",
+      lines: [
+        placementLine(recordOrNull(chart.ascendant), "Лагна"),
+        placementLine(findGraha(chart, ["Chandra", "Moon"]), "Луна"),
+      ].filter((line) => line && line !== "-"),
+      placements: d1,
+      highlightRashi: lagnaRashi,
+    },
+    birthVargaCard(chart, layers, "D9", "навамша", ["Lagna", "Ascendant", "Shukra", "Venus", "Guru", "Jupiter"]),
+    birthVargaCard(chart, layers, "D10", "карьера", ["Lagna", "Ascendant", "Surya", "Sun", "Shani", "Saturn", "Budha", "Mercury"]),
+    birthVargaCard(chart, layers, "D12", "род", ["Lagna", "Ascendant", "Surya", "Sun", "Chandra", "Moon"]),
+    birthVargaCard(chart, layers, "D30", "риски", ["Lagna", "Ascendant", "Mangala", "Mars", "Shani", "Saturn", "Rahu", "Ketu"]),
+    birthVargaCard(chart, layers, "D60", "карма", ["Lagna", "Ascendant", "Surya", "Sun", "Chandra", "Moon", "Guru", "Jupiter"]),
+  ];
+  return cards.map((card) => ({ ...card, lines: card.lines.length ? card.lines.slice(0, 3) : ["нет данных"] }));
+}
+
+function birthVargaCard(chart: Record<string, unknown>, layers: Record<string, unknown>, code: string, hint: string, bodies: string[]): CompatibilityReferenceCard {
+  const placements = vargaMiniPlacements(chart, code);
+  const fallbackPlacements = layerVargaMiniPlacements(layers, code);
+  const activePlacements = placements.length ? placements : fallbackPlacements;
+  return {
+    title: code,
+    hint,
+    lines: vargaFocusLinesFromPlacements(activePlacements, bodies),
+    placements: activePlacements,
+    highlightRashi: activePlacements.find((row) => row.body === "Lagna" || row.body === "Ascendant")?.rashi ?? "",
+  };
 }
 
 function MiniRashiGrid({ placements, highlightRashi }: { placements: MiniChartPlacement[]; highlightRashi: string }) {
@@ -560,6 +651,12 @@ function d1MiniPlacements(chart: Record<string, unknown>) {
   return placements;
 }
 
+function layerGrahaMiniPlacements(layers: Record<string, unknown>) {
+  return recordArray(layers.graha_positions)
+    .map((row) => ({ body: asText(row.body), rashi: asText(row.rashi) }))
+    .filter((row) => row.body && row.rashi);
+}
+
 function vargaLine(chart: Record<string, unknown>, code: string) {
   const vargas = recordOrNull(chart.vargas) ?? {};
   const varga = recordOrNull(vargas[code]);
@@ -585,6 +682,13 @@ function vargaFocusLines(chart: Record<string, unknown>, code: string, bodies: s
   return rows.map((row) => `${bodyLabel(asText(row.body))} ${asText(row.rashi) || "-"}`);
 }
 
+function vargaFocusLinesFromPlacements(placements: MiniChartPlacement[], bodies: string[]) {
+  if (!placements.length) return [];
+  const selected = placements.filter((row) => bodies.includes(row.body));
+  const rows = selected.length ? selected : placements.slice(0, 3);
+  return rows.map((row) => `${bodyLabel(row.body)} ${row.rashi || "-"}`);
+}
+
 function vargaMiniPlacements(chart: Record<string, unknown>, code: string) {
   const vargas = recordOrNull(chart.vargas) ?? {};
   const varga = recordOrNull(vargas[code]);
@@ -593,8 +697,23 @@ function vargaMiniPlacements(chart: Record<string, unknown>, code: string) {
     .filter((row) => row.body && row.rashi);
 }
 
+function layerVargaMiniPlacements(layers: Record<string, unknown>, code: string) {
+  const vargas = recordOrNull(layers.vargas) ?? {};
+  const varga = recordOrNull(vargas[code]);
+  return recordArray(varga?.placements)
+    .map((row) => ({ body: asText(row.body), rashi: asText(row.rashi) }))
+    .filter((row) => row.body && row.rashi);
+}
+
 function vargaLagnaRashi(chart: Record<string, unknown>, code: string) {
   return vargaMiniPlacements(chart, code).find((row) => row.body === "Lagna" || row.body === "Ascendant")?.rashi ?? "";
+}
+
+function birthDashaLine(chart: Record<string, unknown>, layers: Record<string, unknown>) {
+  const dashas = recordOrNull(chart.dashas) ?? recordOrNull(layers.dashas) ?? {};
+  const vimshottari = recordOrNull(dashas.vimshottari) ?? {};
+  const first = recordArray(vimshottari.mahadashas)[0];
+  return bodyLabel(asText(first?.lord || first?.body || first?.name)) || "нет данных";
 }
 
 function placementLine(row: Record<string, unknown> | null, fallbackBody = "") {
