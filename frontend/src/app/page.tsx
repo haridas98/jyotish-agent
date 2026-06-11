@@ -103,6 +103,7 @@ const analysisTabs = [
 ] as const;
 
 type AnalysisTab = (typeof analysisTabs)[number]["key"];
+type ChartWorkspaceTab = "essentials" | "references" | "vargas";
 
 const primaryAnalysisTabKeys = new Set<AnalysisTab>([
   "overview",
@@ -115,6 +116,11 @@ const primaryAnalysisTabKeys = new Set<AnalysisTab>([
 ]);
 const primaryAnalysisTabs = analysisTabs.filter((tab) => primaryAnalysisTabKeys.has(tab.key));
 const secondaryAnalysisTabs = analysisTabs.filter((tab) => !primaryAnalysisTabKeys.has(tab.key));
+const chartWorkspaceTabs: Array<{ key: ChartWorkspaceTab; label: string; hint: string }> = [
+  { key: "essentials", label: "Основные", hint: "D1/D9" },
+  { key: "vargas", label: "D-карты", hint: "D1-D60" },
+  { key: "references", label: "Отсчёты", hint: "Луна, 7/12" },
+];
 
 const stateLabels: Record<string, string> = {
   draft: "в работе",
@@ -4393,6 +4399,7 @@ export default function Home() {
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [termLanguage, setTermLanguage] = useState<TermLanguage>("sanskrit");
+  const [chartWorkspaceTab, setChartWorkspaceTab] = useState<ChartWorkspaceTab>("essentials");
   const [chartStyleHydrated, setChartStyleHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
@@ -5969,42 +5976,67 @@ export default function Home() {
                   ) : null}
                 </div>
               </div>
-              <EssentialChartPairBoard
-                chart={chart}
-                activeCode={chartMode}
-                chartStyle={chartStyle}
-                chartReference={chartReference}
-                onSelect={selectVargaCode}
-              />
-              <ReferenceChartBoard
-                chart={chart}
-                chartStyle={chartStyle}
-                activeReference={chartReference}
-                onSelect={setChartReference}
-              />
-              <div className="chart-mode-strip">
-                <VargaFocusGroups
-                  chart={chart}
-                  activeCode={chartMode}
-                  activeGroupKey={activeVargaFocusKey}
-                  onSelect={selectVargaFocusGroup}
-                />
+              <div className="chart-workspace-tabs" role="tablist" aria-label="Режимы карты">
+                {chartWorkspaceTabs.map((tab) => (
+                  <button
+                    type="button"
+                    className={chartWorkspaceTab === tab.key ? "active" : ""}
+                    key={tab.key}
+                    onClick={() => setChartWorkspaceTab(tab.key)}
+                    role="tab"
+                    aria-selected={chartWorkspaceTab === tab.key}
+                  >
+                    <strong>{tab.label}</strong>
+                    <span>{tab.hint}</span>
+                  </button>
+                ))}
               </div>
-              <VargaStudyBoard
-                chart={chart}
-                activeGroupKey={activeVargaFocusKey}
-                activeCode={chartMode}
-                chartStyle={chartStyle}
-                chartReference={chartReference}
-                onSelect={selectVargaCode}
-              />
-              <FeaturedVargaBoard
-                chart={chart}
-                activeCode={chartMode}
-                chartStyle={chartStyle}
-                chartReference={chartReference}
-                onSelect={selectVargaCode}
-              />
+              <div className="chart-workspace-body">
+                {chartWorkspaceTab === "essentials" ? (
+                  <EssentialChartPairBoard
+                    chart={chart}
+                    activeCode={chartMode}
+                    chartStyle={chartStyle}
+                    chartReference={chartReference}
+                    onSelect={selectVargaCode}
+                  />
+                ) : null}
+                {chartWorkspaceTab === "references" ? (
+                  <ReferenceChartBoard
+                    chart={chart}
+                    chartStyle={chartStyle}
+                    activeReference={chartReference}
+                    onSelect={setChartReference}
+                  />
+                ) : null}
+                {chartWorkspaceTab === "vargas" ? (
+                  <>
+                    <div className="chart-mode-strip">
+                      <VargaFocusGroups
+                        chart={chart}
+                        activeCode={chartMode}
+                        activeGroupKey={activeVargaFocusKey}
+                        onSelect={selectVargaFocusGroup}
+                      />
+                    </div>
+                    <VargaStudyBoard
+                      chart={chart}
+                      activeGroupKey={activeVargaFocusKey}
+                      activeCode={chartMode}
+                      chartStyle={chartStyle}
+                      chartReference={chartReference}
+                      onSelect={selectVargaCode}
+                    />
+                    <FeaturedVargaBoard
+                      chart={chart}
+                      activeCode={chartMode}
+                      chartStyle={chartStyle}
+                      chartReference={chartReference}
+                      onSelect={selectVargaCode}
+                    />
+                  </>
+                ) : null}
+              </div>
               <p className="calculation-result">{calculatedLabel}</p>
             </section>
 
@@ -6018,7 +6050,14 @@ export default function Home() {
                   <strong>Совместимость</strong>
                   <span>D1/D7/D9/D12</span>
                 </button>
-                <button type="button" onClick={() => document.getElementById("varga-charts")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                <button
+                  type="button"
+                  className={chartWorkspaceTab === "vargas" ? "active" : ""}
+                  onClick={() => {
+                    setChartWorkspaceTab("vargas");
+                    document.getElementById("varga-charts")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                >
                   <strong>D-карты</strong>
                   <span>D1-D60</span>
                 </button>
