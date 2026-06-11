@@ -6384,35 +6384,6 @@ export default function Home() {
             </section>
 
             <section className="analysis-workspace" id="reports">
-              <div className="workflow-shortcuts" aria-label="Основные рабочие режимы">
-                <button type="button" className={activeAnalysisTab === "guidance" ? "active" : ""} onClick={() => setActiveAnalysisTab("guidance")}>
-                  <strong>Личный обзор</strong>
-                  <span>AI и диалог</span>
-                </button>
-                <button type="button" className={activeAnalysisTab === "compatibility" ? "active" : ""} onClick={() => setActiveAnalysisTab("compatibility")}>
-                  <strong>Совместимость</strong>
-                  <span>D1/D7/D9/D12</span>
-                </button>
-                <button
-                  type="button"
-                  className={chartWorkspaceTab === "vargas" ? "active" : ""}
-                  onClick={() => {
-                    setChartWorkspaceTab("vargas");
-                    document.getElementById("varga-charts")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                >
-                  <strong>D-карты</strong>
-                  <span>D1-D60</span>
-                </button>
-                <button type="button" className={activeAnalysisTab === "transits" ? "active" : ""} onClick={() => setActiveAnalysisTab("transits")}>
-                  <strong>Сегодня</strong>
-                  <span>транзиты</span>
-                </button>
-                <a href="/reports">
-                  <strong>История</strong>
-                  <span>обзоры</span>
-                </a>
-              </div>
               <div className="analysis-tab-shell">
                 <div className="analysis-tabs" role="tablist" aria-label="Разделы анализа">
                   {primaryAnalysisTabs.map((tab) => (

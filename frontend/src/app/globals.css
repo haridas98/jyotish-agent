@@ -4707,55 +4707,6 @@ button,
   height: auto;
 }
 
-.workflow-shortcuts {
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  display: grid;
-  gap: 0;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin-bottom: 10px;
-  overflow: hidden;
-}
-
-.workflow-shortcuts button,
-.workflow-shortcuts a {
-  background: #ffffff;
-  border: 0;
-  border-right: 1px solid var(--line);
-  color: var(--ink);
-  display: grid;
-  gap: 2px;
-  min-height: 54px;
-  padding: 9px 12px;
-  text-align: left;
-  text-decoration: none;
-}
-
-.workflow-shortcuts button:last-child,
-.workflow-shortcuts a:last-child {
-  border-right: 0;
-}
-
-.workflow-shortcuts button:hover,
-.workflow-shortcuts a:hover,
-.workflow-shortcuts button.active {
-  background: #e9f6f4;
-  color: var(--green);
-}
-
-.workflow-shortcuts strong {
-  font-size: 13px;
-  line-height: 1.1;
-}
-
-.workflow-shortcuts span {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.2;
-}
-
 .analysis-tab-shell {
   align-items: stretch;
   display: grid;
@@ -4882,14 +4833,11 @@ button,
     padding: 14px;
   }
 
-  .workflow-shortcuts,
   .analysis-tab-shell,
   .chart-workspace-tabs {
     grid-template-columns: 1fr;
   }
 
-  .workflow-shortcuts button,
-  .workflow-shortcuts a,
   .chart-workspace-tabs button {
     border-bottom: 1px solid var(--line);
     border-right: 0;
