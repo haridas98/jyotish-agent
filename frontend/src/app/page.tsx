@@ -88,7 +88,7 @@ const sourceRows = [
 
 const analysisTabs = [
   { key: "overview", label: "Обзор", hint: "контекст" },
-  { key: "calculations", label: "Расчёт", hint: "D1, D9" },
+  { key: "calculations", label: "Расчёт", hint: "таблицы" },
   { key: "yogas", label: "Силы", hint: "бала, йоги" },
   { key: "timeline", label: "Даши", hint: "периоды" },
   { key: "transits", label: "Транзиты", hint: "гочара" },
@@ -117,7 +117,7 @@ const primaryAnalysisTabKeys = new Set<AnalysisTab>([
 const primaryAnalysisTabs = analysisTabs.filter((tab) => primaryAnalysisTabKeys.has(tab.key));
 const secondaryAnalysisTabs = analysisTabs.filter((tab) => !primaryAnalysisTabKeys.has(tab.key));
 const chartWorkspaceTabs: Array<{ key: ChartWorkspaceTab; label: string; hint: string }> = [
-  { key: "essentials", label: "Основные", hint: "D1/D9" },
+  { key: "essentials", label: "Ключевые", hint: "D1-D60" },
   { key: "vargas", label: "D-карты", hint: "D1-D60" },
   { key: "references", label: "Отсчёты", hint: "Луна, 7/12" },
 ];
