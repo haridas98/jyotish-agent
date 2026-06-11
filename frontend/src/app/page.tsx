@@ -62,6 +62,7 @@ import {
   type TajakaReport,
   type TithiPraveshaReport,
   type TransitReport,
+  type TransitRow,
   type User,
   type VargaPlacement,
   type WitnessSummary,
@@ -2835,6 +2836,8 @@ function TransitPanel({
   onGenerateCurrentDay: () => void;
 }) {
   const rows = report?.transits.slice(0, 9) ?? [];
+  const slowRows = rows.filter((row) => ["Guru", "Shani", "Rahu", "Ketu"].includes(row.body));
+  const fastRows = rows.filter((row) => ["Surya", "Chandra", "Mangala", "Budha", "Shukra"].includes(row.body));
   return (
     <section className="panel workflow-panel">
       <div className="panel-heading">
@@ -2851,6 +2854,31 @@ function TransitPanel({
           Сохранить сегодня
         </button>
       </div>
+      {rows.length ? (
+        <div className="transit-visual-board">
+          <TransitRashiBoard rows={rows} />
+          <div className="transit-focus-panel">
+            <div>
+              <strong>Медленные влияния</strong>
+              <span>Guru, Shani, Rahu, Ketu</span>
+            </div>
+            <div className="transit-focus-grid">
+              {(slowRows.length ? slowRows : rows.slice(0, 4)).map((row) => (
+                <TransitFocusCard row={row} key={`slow-${row.body}`} />
+              ))}
+            </div>
+            <div>
+              <strong>Личный ритм дня</strong>
+              <span>Surya, Chandra и быстрые грахи</span>
+            </div>
+            <div className="transit-focus-grid compact">
+              {(fastRows.length ? fastRows : rows.slice(0, 5)).map((row) => (
+                <TransitFocusCard row={row} key={`fast-${row.body}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
       <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {rows.length ? (
         <div className="workflow-table">
@@ -2873,6 +2901,49 @@ function TransitPanel({
         <div className="pending-strip">Транзиты появятся после расчёта карты.</div>
       )}
     </section>
+  );
+}
+
+function TransitRashiBoard({ rows }: { rows: TransitRow[] }) {
+  const byRashi = new Map<number, TransitRow[]>();
+  rows.forEach((row) => {
+    const index = rashiIndexFromName(row.rashi);
+    if (index === null) return;
+    const existing = byRashi.get(index) ?? [];
+    existing.push(row);
+    byRashi.set(index, existing);
+  });
+
+  return (
+    <div className="transit-rashi-board" aria-label="Карта текущих транзитов">
+      {Array.from({ length: 16 }, (_, index) => {
+        const row = Math.floor(index / 4);
+        const col = index % 4;
+        const signIndex = Object.entries(southIndianSignCells).find(([, cell]) => cell.row === row && cell.col === col)?.[0];
+        if (signIndex === undefined) return <div className="transit-rashi-center" key={index} />;
+        const rashiIndex = Number(signIndex);
+        const items = byRashi.get(rashiIndex) ?? [];
+        return (
+          <div className="transit-rashi-cell" key={rashiIndex}>
+            <span>{rashiChartLabels[rashiIndex]}</span>
+            {items.slice(0, 4).map((item) => (
+              <strong key={item.body}>{northGrahaLabels[item.body] ?? item.body.slice(0, 2)}</strong>
+            ))}
+            {items.length > 4 ? <em>+{items.length - 4}</em> : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TransitFocusCard({ row }: { row: TransitRow }) {
+  return (
+    <div className="transit-focus-card">
+      <strong>{labelRu(row.body)}</strong>
+      <span>{row.rashi}</span>
+      <small>Лагна {row.house_from_lagna ?? "-"} · Луна {row.house_from_moon ?? "-"}</small>
+    </div>
   );
 }
 
