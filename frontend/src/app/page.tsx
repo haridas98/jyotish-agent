@@ -1343,14 +1343,24 @@ function availableVargaCodes(chart: BirthChart | null) {
   return Array.from(codes).sort((left, right) => vargaCodeNumber(left) - vargaCodeNumber(right) || left.localeCompare(right));
 }
 
-const chartQuickSwitchCodes = ["D1", "D9", "D10", "D12", "D30", "D60"] as const;
+const chartQuickSwitchCodes = vargaSnapshotCodes;
 
-const priorityVargaContexts: Record<(typeof chartQuickSwitchCodes)[number], { scope: string; detail: string }> = {
+const priorityVargaContexts: Record<string, { scope: string; detail: string }> = {
   D1: { scope: "Основа", detail: "тело, характер, дома" },
+  D2: { scope: "Ресурс", detail: "деньги, питание, опора" },
+  D3: { scope: "Смелость", detail: "братья, усилие, воля" },
+  D4: { scope: "Дом", detail: "недвижимость, счастье" },
+  D7: { scope: "Дети", detail: "потомство, творчество" },
   D9: { scope: "Дхарма", detail: "брак, сила грах" },
   D10: { scope: "Карьера", detail: "дело, статус, работа" },
   D12: { scope: "Род", detail: "отец, мать, наследие" },
+  D16: { scope: "Комфорт", detail: "транспорт, удобства" },
+  D20: { scope: "Дух", detail: "садхана, вера" },
+  D24: { scope: "Учёба", detail: "знание, образование" },
+  D27: { scope: "Сила", detail: "выносливость, слабости" },
   D30: { scope: "Риски", detail: "трудности, повреждения" },
+  D40: { scope: "Мат. род", detail: "линия матери" },
+  D45: { scope: "Отц. род", detail: "линия отца" },
   D60: { scope: "Карма", detail: "тонкий итог при точном времени" },
 };
 
@@ -1561,7 +1571,7 @@ function PriorityVargaRibbon({
     <div className="priority-varga-ribbon" aria-label="Главные D-карты">
       <div className="priority-varga-ribbon-head">
         <strong>D-карты</strong>
-        <span>D1, D9, D10, D12, D30, D60</span>
+        <span>Shodasha Varga: D1-D60</span>
       </div>
       <div className="priority-varga-ribbon-grid">
         {items.map((item) => (
