@@ -206,6 +206,7 @@ function CompatibilityPersonContextCard({
   const birthDashaLord = bodyLabel(asText(summary.birth_dasha_lord));
   const twelfthHouse = houseLine(chart, 12);
   const familyHouses = [2, 4, 8, 12].map((house) => houseLine(chart, house)).join(" · ");
+  const chartCards = compatibilityReferenceCards(chart, summary);
 
   return (
     <article className="compatibility-person-card">
@@ -257,6 +258,19 @@ function CompatibilityPersonContextCard({
           <strong>{birthDashaLord || "нет данных"}</strong>
         </div>
       </div>
+      <div className="compatibility-mini-chart-board" aria-label={`${label}: опорные карты и отсчёты`}>
+        {chartCards.map((card) => (
+          <div className="compatibility-mini-chart-card" key={card.title}>
+            <div>
+              <strong>{card.title}</strong>
+              <span>{card.hint}</span>
+            </div>
+            {card.lines.map((line) => (
+              <small key={line}>{line}</small>
+            ))}
+          </div>
+        ))}
+      </div>
       <div className="compatibility-graha-list">
         {["Shukra", "Mangala", "Guru"].map((body) => (
           <div key={body}>
@@ -275,6 +289,49 @@ function CompatibilityPersonContextCard({
       </div>
     </article>
   );
+}
+
+function compatibilityReferenceCards(chart: Record<string, unknown>, summary: Record<string, unknown>) {
+  const seventhHouse = recordOrNull(summary.seventh_house) ?? {};
+  const seventhLord = recordOrNull(summary.seventh_lord) ?? {};
+  const lagna = placementLine(recordOrNull(summary.lagna) ?? recordOrNull(chart.ascendant), "Лагна");
+  const moon = placementLine(recordOrNull(summary.moon) ?? findGraha(chart, ["Chandra", "Moon"]), "Луна");
+  const seventh = [
+    asText(seventhHouse.rashi) ? `7 дом: ${asText(seventhHouse.rashi)}` : houseLine(chart, 7),
+    placementLine(seventhLord, bodyLabel(asText(seventhLord.body) || asText(seventhHouse.lord))),
+  ].filter((line) => line && line !== "-");
+  return [
+    {
+      title: "D1",
+      hint: "лагна / Луна",
+      lines: [lagna, moon].filter((line) => line && line !== "-"),
+    },
+    {
+      title: "D1 от 7",
+      hint: "брак",
+      lines: seventh.length ? seventh : [houseLine(chart, 7)],
+    },
+    {
+      title: "D1 от 12",
+      hint: "близость",
+      lines: [houseLine(chart, 12), houseLine(chart, 8)],
+    },
+    {
+      title: "D7",
+      hint: "дети",
+      lines: vargaFocusLines(chart, "D7", ["Lagna", "Ascendant", "Guru", "Jupiter", "Shukra", "Venus"]),
+    },
+    {
+      title: "D9",
+      hint: "навамша",
+      lines: vargaFocusLines(chart, "D9", ["Lagna", "Ascendant", "Shukra", "Venus", "Guru", "Jupiter"]),
+    },
+    {
+      title: "D12",
+      hint: "род",
+      lines: vargaFocusLines(chart, "D12", ["Lagna", "Ascendant", "Surya", "Sun", "Chandra", "Moon"]),
+    },
+  ].map((card) => ({ ...card, lines: card.lines.length ? card.lines.slice(0, 3) : ["нет данных"] }));
 }
 
 function AnalysisChatBox({
@@ -420,6 +477,16 @@ function vargaLine(chart: Record<string, unknown>, code: string) {
     .slice(0, 6)
     .map((row) => `${bodyLabel(asText(row.body))} ${asText(row.rashi) || "-"}`)
     .join("; ");
+}
+
+function vargaFocusLines(chart: Record<string, unknown>, code: string, bodies: string[]) {
+  const vargas = recordOrNull(chart.vargas) ?? {};
+  const varga = recordOrNull(vargas[code]);
+  const placements = recordArray(varga?.placements);
+  if (!placements.length) return [];
+  const selected = placements.filter((row) => bodies.includes(asText(row.body)));
+  const rows = selected.length ? selected : placements.slice(0, 3);
+  return rows.map((row) => `${bodyLabel(asText(row.body))} ${asText(row.rashi) || "-"}`);
 }
 
 function placementLine(row: Record<string, unknown> | null, fallbackBody = "") {
