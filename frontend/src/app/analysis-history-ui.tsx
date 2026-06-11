@@ -23,6 +23,31 @@ type AnalysisReaderProps = {
 };
 
 type AnalysisSection = GeneratedDraftAnalysis["sections"][number];
+type MiniChartPlacement = { body: string; rashi: string };
+type CompatibilityReferenceCard = {
+  title: string;
+  hint: string;
+  lines: string[];
+  placements: MiniChartPlacement[];
+  highlightRashi: string;
+};
+
+const miniRashiNames = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena"];
+const miniRashiShort = ["Me", "Vr", "Mi", "Ka", "Si", "Kn", "Tu", "Vr", "Dh", "Mk", "Ku", "Pi"];
+const miniSouthCells: Record<number, { row: number; col: number }> = {
+  11: { row: 0, col: 0 },
+  0: { row: 0, col: 1 },
+  1: { row: 0, col: 2 },
+  2: { row: 0, col: 3 },
+  10: { row: 1, col: 0 },
+  3: { row: 1, col: 3 },
+  9: { row: 2, col: 0 },
+  4: { row: 2, col: 3 },
+  8: { row: 3, col: 0 },
+  7: { row: 3, col: 1 },
+  6: { row: 3, col: 2 },
+  5: { row: 3, col: 3 },
+};
 
 export function HistoryList({ items, basePath, emptyText }: HistoryListProps) {
   if (!items.length) {
@@ -265,6 +290,9 @@ function CompatibilityPersonContextCard({
               <strong>{card.title}</strong>
               <span>{card.hint}</span>
             </div>
+            {card.placements.length ? (
+              <MiniRashiGrid placements={card.placements} highlightRashi={card.highlightRashi} />
+            ) : null}
             {card.lines.map((line) => (
               <small key={line}>{line}</small>
             ))}
@@ -296,42 +324,93 @@ function compatibilityReferenceCards(chart: Record<string, unknown>, summary: Re
   const seventhLord = recordOrNull(summary.seventh_lord) ?? {};
   const lagna = placementLine(recordOrNull(summary.lagna) ?? recordOrNull(chart.ascendant), "Лагна");
   const moon = placementLine(recordOrNull(summary.moon) ?? findGraha(chart, ["Chandra", "Moon"]), "Луна");
+  const d1Placements = d1MiniPlacements(chart);
+  const lagnaRashi = asText((recordOrNull(summary.lagna) ?? recordOrNull(chart.ascendant))?.rashi);
+  const seventhRashi = asText(seventhHouse.rashi) || houseRashi(chart, 7);
+  const twelfthRashi = houseRashi(chart, 12);
   const seventh = [
     asText(seventhHouse.rashi) ? `7 дом: ${asText(seventhHouse.rashi)}` : houseLine(chart, 7),
     placementLine(seventhLord, bodyLabel(asText(seventhLord.body) || asText(seventhHouse.lord))),
   ].filter((line) => line && line !== "-");
-  return [
+  const cards: CompatibilityReferenceCard[] = [
     {
       title: "D1",
       hint: "лагна / Луна",
       lines: [lagna, moon].filter((line) => line && line !== "-"),
+      placements: d1Placements,
+      highlightRashi: lagnaRashi,
     },
     {
       title: "D1 от 7",
       hint: "брак",
       lines: seventh.length ? seventh : [houseLine(chart, 7)],
+      placements: d1Placements,
+      highlightRashi: seventhRashi,
     },
     {
       title: "D1 от 12",
       hint: "близость",
       lines: [houseLine(chart, 12), houseLine(chart, 8)],
+      placements: d1Placements,
+      highlightRashi: twelfthRashi,
     },
     {
       title: "D7",
       hint: "дети",
       lines: vargaFocusLines(chart, "D7", ["Lagna", "Ascendant", "Guru", "Jupiter", "Shukra", "Venus"]),
+      placements: vargaMiniPlacements(chart, "D7"),
+      highlightRashi: vargaLagnaRashi(chart, "D7"),
     },
     {
       title: "D9",
       hint: "навамша",
       lines: vargaFocusLines(chart, "D9", ["Lagna", "Ascendant", "Shukra", "Venus", "Guru", "Jupiter"]),
+      placements: vargaMiniPlacements(chart, "D9"),
+      highlightRashi: vargaLagnaRashi(chart, "D9"),
     },
     {
       title: "D12",
       hint: "род",
       lines: vargaFocusLines(chart, "D12", ["Lagna", "Ascendant", "Surya", "Sun", "Chandra", "Moon"]),
+      placements: vargaMiniPlacements(chart, "D12"),
+      highlightRashi: vargaLagnaRashi(chart, "D12"),
     },
-  ].map((card) => ({ ...card, lines: card.lines.length ? card.lines.slice(0, 3) : ["нет данных"] }));
+  ];
+  return cards.map((card) => ({ ...card, lines: card.lines.length ? card.lines.slice(0, 3) : ["нет данных"] }));
+}
+
+function MiniRashiGrid({ placements, highlightRashi }: { placements: MiniChartPlacement[]; highlightRashi: string }) {
+  const byRashi = new Map<number, MiniChartPlacement[]>();
+  placements.forEach((placement) => {
+    const index = rashiIndex(placement.rashi);
+    if (index === null) return;
+    const existing = byRashi.get(index) ?? [];
+    existing.push(placement);
+    byRashi.set(index, existing);
+  });
+  const highlightIndex = rashiIndex(highlightRashi);
+
+  return (
+    <div className="compatibility-mini-rashi-grid" aria-hidden="true">
+      {Array.from({ length: 16 }, (_, cellIndex) => {
+        const row = Math.floor(cellIndex / 4);
+        const col = cellIndex % 4;
+        const signEntry = Object.entries(miniSouthCells).find(([, cell]) => cell.row === row && cell.col === col);
+        if (!signEntry) return <div className="compatibility-mini-rashi-center" key={cellIndex} />;
+        const signIndex = Number(signEntry[0]);
+        const items = byRashi.get(signIndex) ?? [];
+        return (
+          <div className={highlightIndex === signIndex ? "compatibility-mini-rashi-cell active" : "compatibility-mini-rashi-cell"} key={signIndex}>
+            <span>{miniRashiShort[signIndex]}</span>
+            {items.slice(0, 3).map((item) => (
+              <strong key={`${signIndex}-${item.body}`}>{miniBodyLabel(item.body)}</strong>
+            ))}
+            {items.length > 3 ? <em>+{items.length - 3}</em> : null}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function AnalysisChatBox({
@@ -464,6 +543,23 @@ function houseLine(chart: Record<string, unknown>, houseNumber: number) {
   return `${houseNumber}: ${rashi || "-"}${grahas.length ? ` (${grahas.join(", ")})` : ""}`;
 }
 
+function houseRashi(chart: Record<string, unknown>, houseNumber: number) {
+  const houses = recordArray(chart.houses);
+  const house = houses.find((row) => Number(row.house) === houseNumber);
+  return asText(house?.rashi);
+}
+
+function d1MiniPlacements(chart: Record<string, unknown>) {
+  const ascendant = recordOrNull(chart.ascendant);
+  const placements = recordArray(chart.grahas)
+    .map((row) => ({ body: asText(row.body), rashi: asText(row.rashi) }))
+    .filter((row) => row.body && row.rashi);
+  if (ascendant && asText(ascendant.rashi)) {
+    placements.unshift({ body: "Lagna", rashi: asText(ascendant.rashi) });
+  }
+  return placements;
+}
+
 function vargaLine(chart: Record<string, unknown>, code: string) {
   const vargas = recordOrNull(chart.vargas) ?? {};
   const varga = recordOrNull(vargas[code]);
@@ -487,6 +583,18 @@ function vargaFocusLines(chart: Record<string, unknown>, code: string, bodies: s
   const selected = placements.filter((row) => bodies.includes(asText(row.body)));
   const rows = selected.length ? selected : placements.slice(0, 3);
   return rows.map((row) => `${bodyLabel(asText(row.body))} ${asText(row.rashi) || "-"}`);
+}
+
+function vargaMiniPlacements(chart: Record<string, unknown>, code: string) {
+  const vargas = recordOrNull(chart.vargas) ?? {};
+  const varga = recordOrNull(vargas[code]);
+  return recordArray(varga?.placements)
+    .map((row) => ({ body: asText(row.body), rashi: asText(row.rashi) }))
+    .filter((row) => row.body && row.rashi);
+}
+
+function vargaLagnaRashi(chart: Record<string, unknown>, code: string) {
+  return vargaMiniPlacements(chart, code).find((row) => row.body === "Lagna" || row.body === "Ascendant")?.rashi ?? "";
 }
 
 function placementLine(row: Record<string, unknown> | null, fallbackBody = "") {
@@ -525,6 +633,52 @@ function bodyLabel(value: string) {
     Ketu: "Кету",
   };
   return labels[value] ?? value;
+}
+
+function miniBodyLabel(value: string) {
+  const labels: Record<string, string> = {
+    Ascendant: "As",
+    Lagna: "As",
+    Chandra: "Mo",
+    Moon: "Mo",
+    Surya: "Su",
+    Sun: "Su",
+    Shukra: "Ve",
+    Venus: "Ve",
+    Mangala: "Ma",
+    Mars: "Ma",
+    Guru: "Ju",
+    Jupiter: "Ju",
+    Budha: "Me",
+    Mercury: "Me",
+    Shani: "Sa",
+    Saturn: "Sa",
+    Rahu: "Ra",
+    Ketu: "Ke",
+  };
+  return labels[value] ?? value.slice(0, 2);
+}
+
+function rashiIndex(value: string) {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  const aliases: Record<string, number> = {
+    aries: 0,
+    taurus: 1,
+    gemini: 2,
+    cancer: 3,
+    leo: 4,
+    virgo: 5,
+    libra: 6,
+    scorpio: 7,
+    sagittarius: 8,
+    capricorn: 9,
+    aquarius: 10,
+    pisces: 11,
+  };
+  const byName = miniRashiNames.findIndex((name) => name.toLowerCase() === normalized);
+  if (byName >= 0) return byName;
+  return aliases[normalized] ?? null;
 }
 
 function recordOrNull(value: unknown): Record<string, unknown> | null {
