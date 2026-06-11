@@ -1771,7 +1771,7 @@ select {
   border-radius: 8px;
   display: grid;
   gap: 0;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   margin-top: 10px;
   overflow: hidden;
 }
@@ -1784,7 +1784,8 @@ select {
   border-bottom: 0;
   border-left: 0;
   display: grid;
-  min-height: 112px;
+  gap: 0;
+  min-height: 186px;
   min-width: 0;
   padding: 0;
   text-align: left;
@@ -1832,13 +1833,13 @@ select {
 }
 
 .varga-snapshot-body {
-  align-content: start;
-  display: grid;
-  gap: 3px;
-  padding: 7px;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px;
 }
 
-.varga-snapshot-body span,
 .varga-snapshot-body em {
   color: var(--ink);
   font-size: 11px;
@@ -1847,6 +1848,11 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.varga-snapshot-body .chart-svg,
+.varga-snapshot-body .south-chart-grid {
+  width: min(100%, 132px);
 }
 
 .varga-snapshot-body em {
