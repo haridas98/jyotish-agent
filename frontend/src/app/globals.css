@@ -1492,7 +1492,7 @@ select {
   border-radius: 8px;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px) auto;
   margin-bottom: 10px;
   overflow: hidden;
   padding: 6px;
@@ -1542,6 +1542,32 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.primary-varga-picker {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.primary-varga-picker span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.primary-varga-picker select {
+  background: #fbfdfc;
+  border: 1px solid #dbe6e7;
+  border-radius: 8px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 33px;
+  min-width: 0;
+  padding: 5px 8px;
+  width: 100%;
 }
 
 .primary-varga-coverage {
@@ -4514,6 +4540,15 @@ select {
 @media (max-width: 1380px) {
   .chart-layout {
     grid-template-columns: 1fr;
+  }
+
+  .primary-varga-tabs {
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 210px);
+  }
+
+  .primary-varga-coverage {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .varga-study-grid {

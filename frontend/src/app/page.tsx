@@ -1655,6 +1655,11 @@ function PrimaryVargaTabs({
     available: code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]),
     context: priorityVargaContexts[code],
   }));
+  const allItems = vargaSnapshotCodes.map((code) => ({
+    code,
+    available: code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]),
+    label: `${code} · ${priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга"}`,
+  }));
 
   return (
     <div className="primary-varga-tabs" aria-label="Быстрый выбор главных D-карт">
@@ -1672,6 +1677,16 @@ function PrimaryVargaTabs({
           </button>
         ))}
       </div>
+      <label className="primary-varga-picker">
+        <span>Все D-карты</span>
+        <select value={activeCode} onChange={(event) => onSelect(event.target.value)} disabled={!chart}>
+          {allItems.map((item) => (
+            <option value={item.code} disabled={!item.available} key={item.code}>
+              {item.label}{item.available ? "" : ` (${unavailableVargaLabel(item.code)})`}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="primary-varga-coverage">
         <span>{coverage.ready.length}/{coverage.total}</span>
         <strong>{coverage.pendingJaimini.length ? "Jaimini ждёт сверки" : "D-карты"}</strong>
