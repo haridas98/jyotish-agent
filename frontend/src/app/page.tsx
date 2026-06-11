@@ -1232,6 +1232,14 @@ const vargaFocusGroups: Array<{
     codes: ["D12", "D40", "D45"],
   },
   {
+    key: "sadhana",
+    label: "Sadhana",
+    hint: "D20, D9, D1",
+    title: "Садхана и духовная опора",
+    description: "D20 показывает духовную практику, D9 — дхармическую зрелость, D1 — общий носитель жизни.",
+    codes: ["D20", "D9", "D1"],
+  },
+  {
     key: "karma",
     label: "Karma",
     hint: "D30, D60",
@@ -1240,6 +1248,10 @@ const vargaFocusGroups: Array<{
     codes: ["D30", "D60"],
   },
 ];
+
+function availableCodeForVargaGroup(chart: BirthChart | null, group: (typeof vargaFocusGroups)[number]) {
+  return group.codes.find((code) => (code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])));
+}
 
 function vargaCodeNumber(code: string) {
   const match = code.match(/^D(\d+)$/);
@@ -1298,7 +1310,7 @@ function VargaFocusGroups({
   return (
     <div className="varga-focus-groups" aria-label="Быстрые группы варга-карт">
       {vargaFocusGroups.map((group) => {
-        const selectedCode = group.codes.find((code) => (code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])));
+        const selectedCode = availableCodeForVargaGroup(chart, group);
         const active = group.key === activeGroupKey;
         return (
           <button
@@ -1312,6 +1324,39 @@ function VargaFocusGroups({
             }}
           >
             <strong>{group.label}</strong>
+            <span>{group.hint}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function VargaTaskMatrix({
+  chart,
+  activeGroupKey,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeGroupKey: string;
+  onSelect: (groupKey: string, code: string) => void;
+}) {
+  return (
+    <div className="varga-task-matrix" aria-label="D-карты по жизненным задачам">
+      {vargaFocusGroups.map((group) => {
+        const selectedCode = availableCodeForVargaGroup(chart, group);
+        return (
+          <button
+            type="button"
+            className={activeGroupKey === group.key ? "active" : ""}
+            disabled={!selectedCode}
+            key={group.key}
+            onClick={() => {
+              if (!selectedCode) return;
+              onSelect(group.key, selectedCode);
+            }}
+          >
+            <strong>{group.title}</strong>
             <span>{group.hint}</span>
           </button>
         );
@@ -6011,6 +6056,11 @@ export default function Home() {
                 ) : null}
                 {chartWorkspaceTab === "vargas" ? (
                   <>
+                    <VargaTaskMatrix
+                      chart={chart}
+                      activeGroupKey={activeVargaFocusKey}
+                      onSelect={selectVargaFocusGroup}
+                    />
                     <div className="chart-mode-strip">
                       <VargaFocusGroups
                         chart={chart}
