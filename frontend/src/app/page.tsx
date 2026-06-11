@@ -1156,8 +1156,6 @@ function symbolLines(symbols: string[], maxPerLine?: number) {
 
 const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"];
 
-const featuredVargaCodes = vargaSnapshotCodes;
-
 const vargaPurposeLabels: Record<string, string> = {
   D1: "Раши / тело",
   D2: "Деньги",
@@ -1442,68 +1440,6 @@ function EssentialChartPairBoard({
           </div>
         </button>
       ))}
-    </div>
-  );
-}
-
-function FeaturedVargaBoard({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-}) {
-  const items = featuredVargaCodes.map((code) => {
-    if (code === "D1") {
-      return { code, name: "Раши", available: Boolean(chart), varga: null };
-    }
-    const varga = chart?.vargas?.[code];
-    return { code, name: varga?.name ?? "Варга", available: Boolean(varga), varga: varga ?? null };
-  });
-
-  return (
-    <div className="featured-varga-board" aria-label="Ключевые варга-карты">
-      <div className="featured-varga-head">
-        <strong>D-карты</strong>
-        <span>D1-D60 в одной рабочей ленте</span>
-      </div>
-      <div className="featured-varga-strip">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={`featured-varga-card${activeCode === item.code ? " active" : ""}`}
-            disabled={!item.available}
-            aria-current={activeCode === item.code ? "true" : undefined}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <div className="featured-varga-title">
-              <div>
-                <strong>{item.code}</strong>
-                {vargaPriorityLabels[item.code] ? <em>{vargaPriorityLabels[item.code]}</em> : null}
-              </div>
-              <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
-            </div>
-            <div className="featured-varga-preview">
-              {item.available ? (
-                chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                )
-              ) : (
-                <em>нет расчёта</em>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
@@ -6090,13 +6026,6 @@ export default function Home() {
                       onSelect={selectVargaCode}
                     />
                     <VargaAtlasBoard
-                      chart={chart}
-                      activeCode={chartMode}
-                      chartStyle={chartStyle}
-                      chartReference={chartReference}
-                      onSelect={selectVargaCode}
-                    />
-                    <FeaturedVargaBoard
                       chart={chart}
                       activeCode={chartMode}
                       chartStyle={chartStyle}
