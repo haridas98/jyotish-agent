@@ -2038,7 +2038,14 @@ function VargaAtlasBoard({
                   <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 )
               ) : (
-                <em>{item.previewStatus}</em>
+                <div className="varga-atlas-placeholder">
+                  {chartStyle === "south" ? (
+                    <SouthIndianChartGrid chart={null} varga={null} chartReference={chartReference} compact />
+                  ) : (
+                    <NorthIndianChartSvg chart={null} varga={null} chartReference={chartReference} compact />
+                  )}
+                  <em>{item.previewStatus}</em>
+                </div>
               )}
             </div>
           </button>

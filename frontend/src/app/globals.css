@@ -1191,10 +1191,38 @@ select {
   width: min(100%, 92px);
 }
 
+.varga-atlas-placeholder {
+  aspect-ratio: 1 / 1;
+  display: grid;
+  position: relative;
+  width: 100%;
+}
+
+.varga-atlas-placeholder .chart-svg,
+.varga-atlas-placeholder .south-chart-grid {
+  opacity: 0.5;
+}
+
+.varga-atlas-placeholder .chart-empty-label,
+.varga-atlas-placeholder .south-chart-empty {
+  display: none;
+}
+
 .varga-atlas-preview em {
+  align-self: center;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #dbe6e7;
+  border-radius: 999px;
   color: var(--muted);
   font-size: 10px;
   font-style: normal;
+  font-weight: 900;
+  justify-self: center;
+  line-height: 1;
+  padding: 4px 6px;
+  position: absolute;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .reference-chart-board {
