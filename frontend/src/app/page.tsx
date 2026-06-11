@@ -5085,6 +5085,7 @@ export default function Home() {
   const activeChartContext = priorityVargaContexts[chartMode] ?? { scope: "Варга", detail: "дополнительный слой чтения" };
   const activeChartReferenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
   const activeChartStyleLabel = chartStyle === "south" ? "Южный стиль" : "Северный стиль";
+  const activeTermLanguageLabel = termLanguage === "sanskrit" ? "Санскрит" : termLanguage === "ru" ? "Русский" : "English";
   const personSummary = birthReport?.person_summary ?? null;
 
   function selectVargaFocusGroup(groupKey: string, code: string) {
@@ -6555,7 +6556,12 @@ export default function Home() {
               <div className="panel-heading">
                 <div className="chart-title-block">
                   <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
-                  <span>{activeChartStyleLabel} · отсчёт {activeChartReferenceLabel} · {activeChartContext.scope}: {activeChartContext.detail}</span>
+                  <span>Отсчёт {activeChartReferenceLabel} · {activeChartContext.scope}: {activeChartContext.detail}</span>
+                  <div className="chart-mode-summary" aria-label="Текущий вид карты">
+                    <span>{activeChartStyleLabel}</span>
+                    <span>{activeTermLanguageLabel}</span>
+                    <a href="#display-settings">Изменить вид</a>
+                  </div>
                 </div>
                 <div className="chart-heading-tools">
                   <div className="chart-action-strip" aria-label="Действия с текущей картой">
