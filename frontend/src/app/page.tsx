@@ -600,7 +600,7 @@ type NorthIndianHouseItem = {
 
 type ActiveVargaChart = NonNullable<BirthChart["vargas"]>[string];
 
-type ChartReference = "lagna" | "moon" | "sun";
+type ChartReference = "lagna" | "moon" | "sun" | "seventh" | "twelfth";
 
 const chartReferenceOptions: Array<{
   key: ChartReference;
@@ -610,6 +610,8 @@ const chartReferenceOptions: Array<{
   { key: "lagna", label: "Лагна", hint: "D1" },
   { key: "moon", label: "Луна", hint: "Chandra" },
   { key: "sun", label: "Солнце", hint: "Surya" },
+  { key: "seventh", label: "7 дом", hint: "брак" },
+  { key: "twelfth", label: "12 дом", hint: "близость" },
 ];
 
 type ChartPlacement = {
@@ -774,6 +776,11 @@ function lagnaRashiIndex(chart: BirthChart | null, placements: ChartPlacement[])
   return fromPlacements ?? normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
 }
 
+function houseReferenceRashiIndex(chart: BirthChart | null, houseNumber: number) {
+  const house = chart?.houses.find((row) => row.house === houseNumber);
+  return normalizeRashiIndex(house?.rashi_index) ?? rashiIndexFromName(house?.rashi);
+}
+
 function chartReferenceRashiIndex(
   chart: BirthChart | null,
   placements: ChartPlacement[],
@@ -786,6 +793,12 @@ function chartReferenceRashiIndex(
   if (reference === "sun") {
     const sun = placements.find((placement) => placement.body === "Surya" || placement.body === "Sun");
     return sun?.rashiIndex ?? lagnaRashiIndex(chart, placements);
+  }
+  if (reference === "seventh") {
+    return houseReferenceRashiIndex(chart, 7) ?? lagnaRashiIndex(chart, placements);
+  }
+  if (reference === "twelfth") {
+    return houseReferenceRashiIndex(chart, 12) ?? lagnaRashiIndex(chart, placements);
   }
   return lagnaRashiIndex(chart, placements);
 }
@@ -877,10 +890,10 @@ function ReferenceChartBoard({
   onSelect: (value: ChartReference) => void;
 }) {
   return (
-    <div className="reference-chart-board" aria-label="D1 от Лагны, Луны и Солнца">
+    <div className="reference-chart-board" aria-label="D1 от Лагны, Луны, Солнца, 7 и 12 дома">
       <div className="reference-chart-head">
         <strong>Сударшана D1</strong>
-        <span>Лагна, Чандра и Сурья рядом</span>
+        <span>Лагна, Чандра, Сурья, 7 и 12 дома рядом</span>
       </div>
       <div className="reference-chart-grid">
         {chartReferenceOptions.map((option) => (
