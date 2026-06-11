@@ -1983,9 +1983,19 @@ function VargaAtlasBoard({
   onSelect: (code: string) => void;
 }) {
   const items = vargaSnapshotCodes.map((code) => {
-    if (code === "D1") return { code, name: "Раши", available: Boolean(chart), varga: null };
+    if (code === "D1") {
+      return { code, name: "Раши", available: Boolean(chart), varga: null, status: chart ? "рассчитана" : "нет расчёта", previewStatus: "после расчёта" };
+    }
     const varga = chart?.vargas?.[code];
-    return { code, name: varga?.name ?? "Варга", available: Boolean(varga), varga: varga ?? null };
+    const available = Boolean(varga);
+    return {
+      code,
+      name: varga?.name ?? "Варга",
+      available,
+      varga: varga ?? null,
+      status: available ? "рассчитана" : unavailableVargaLabel(code),
+      previewStatus: jaiminiVargaCodeSet.has(code) ? "после сверки" : "после расчёта",
+    };
   });
   const coverage = vargaCoverage(chart);
   const missingText = coverage.missing.length ? coverage.missing.slice(0, 6).join(", ") : "нет";
@@ -2008,13 +2018,16 @@ function VargaAtlasBoard({
         {items.map((item) => (
           <button
             type="button"
-            className={`varga-atlas-card${activeCode === item.code ? " active" : ""}`}
+            className={`varga-atlas-card${activeCode === item.code ? " active" : ""}${item.available ? " ready" : ""}${jaiminiVargaCodeSet.has(item.code) ? " jaimini" : ""}`}
             disabled={!item.available}
             key={item.code}
             onClick={() => onSelect(item.code)}
           >
             <div className="varga-atlas-title">
-              <strong>{item.code}</strong>
+              <div>
+                <strong>{item.code}</strong>
+                <em>{item.status}</em>
+              </div>
               <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
             </div>
             <div className="varga-atlas-preview">
@@ -2025,7 +2038,7 @@ function VargaAtlasBoard({
                   <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
                 )
               ) : (
-                <em>{unavailableVargaLabel(item.code)}</em>
+                <em>{item.previewStatus}</em>
               )}
             </div>
           </button>

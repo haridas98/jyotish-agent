@@ -1128,21 +1128,49 @@ select {
 }
 
 .varga-atlas-card:disabled {
+  background: #fbfcfc;
   cursor: not-allowed;
-  opacity: 0.46;
 }
 
 .varga-atlas-title {
-  align-items: baseline;
+  align-items: start;
   display: flex;
   gap: 6px;
   justify-content: space-between;
   min-width: 0;
 }
 
+.varga-atlas-title div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
 .varga-atlas-title strong {
   color: var(--green);
   font-size: 12px;
+}
+
+.varga-atlas-title em {
+  background: #eef2f7;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+  padding: 3px 5px;
+  white-space: nowrap;
+}
+
+.varga-atlas-card.ready .varga-atlas-title em {
+  background: #e6f6f3;
+  color: var(--green);
+}
+
+.varga-atlas-card.jaimini:not(.ready) .varga-atlas-title em {
+  background: #fff7e8;
+  color: #9b5a08;
 }
 
 .varga-atlas-title span {
