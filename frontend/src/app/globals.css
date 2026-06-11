@@ -1051,6 +1051,12 @@ select {
   padding: 7px 10px;
 }
 
+.varga-atlas-head > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
 .varga-atlas-head strong {
   color: var(--green);
   font-size: 14px;
@@ -1059,6 +1065,34 @@ select {
 .varga-atlas-head span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.varga-atlas-status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.varga-atlas-status span {
+  background: #ffffff;
+  border: 1px solid #dbe6e7;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  max-width: 176px;
+  overflow: hidden;
+  padding: 5px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.varga-atlas-status b {
+  color: var(--green);
 }
 
 .varga-atlas-grid {
@@ -6134,6 +6168,19 @@ button,
 
   .varga-scheme-matrix button:nth-child(-n + 2) {
     border-bottom: 1px solid var(--line);
+  }
+
+  .varga-atlas-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .varga-atlas-status {
+    justify-content: flex-start;
+  }
+
+  .varga-atlas-status span {
+    max-width: 100%;
   }
 
   .varga-atlas-grid {

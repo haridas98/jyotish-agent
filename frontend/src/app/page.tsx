@@ -1987,12 +1987,22 @@ function VargaAtlasBoard({
     const varga = chart?.vargas?.[code];
     return { code, name: varga?.name ?? "Варга", available: Boolean(varga), varga: varga ?? null };
   });
+  const coverage = vargaCoverage(chart);
+  const missingText = coverage.missing.length ? coverage.missing.slice(0, 6).join(", ") : "нет";
+  const jaiminiText = coverage.pendingJaimini.length ? coverage.pendingJaimini.join(", ") : "нет";
 
   return (
     <div className="varga-atlas-board" aria-label="Атлас D-карт">
       <div className="varga-atlas-head">
-        <strong>Атлас D-карт</strong>
-        <span>20 слоёв одним взглядом</span>
+        <div>
+          <strong>Атлас D-карт</strong>
+          <span>20 слоёв одним взглядом</span>
+        </div>
+        <div className="varga-atlas-status" aria-label="Покрытие атласа D-карт">
+          <span><b>{coverage.ready.length}/{coverage.total}</b> рассчитано</span>
+          <span><b>{missingText}</b> ожидает</span>
+          <span><b>{jaiminiText}</b> Джаимини</span>
+        </div>
       </div>
       <div className="varga-atlas-grid">
         {items.map((item) => (
