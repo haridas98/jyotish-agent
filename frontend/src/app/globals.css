@@ -1347,6 +1347,69 @@ select {
   text-align: center;
 }
 
+.varga-reading-strip {
+  align-items: center;
+  background: #fbfdfc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 8px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.varga-reading-strip > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.varga-reading-strip span,
+.varga-reading-strip small,
+.varga-reading-links span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.varga-reading-strip strong {
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.varga-reading-links {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.varga-reading-links button {
+  background: #ffffff;
+  border: 1px solid #d5e0e4;
+  border-radius: 999px;
+  color: var(--green);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  min-height: 24px;
+  padding: 3px 8px;
+}
+
+.varga-reading-links button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.varga-reading-links button:not(:disabled):hover {
+  background: #eaf6f1;
+  border-color: #8bc8bf;
+}
+
 .varga-study-board {
   background: #ffffff;
   border: 1px solid var(--line);
@@ -4283,6 +4346,15 @@ select {
     align-items: start;
     flex-direction: column;
     gap: 2px;
+  }
+
+  .varga-reading-strip {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .varga-reading-links {
+    justify-content: flex-start;
   }
 
   .priority-varga-card {

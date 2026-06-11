@@ -690,6 +690,10 @@ const jyotishGlossary = {
     label: "Navamsa / D9",
     text: "Девятая варга. Часто используется для дхармы, брака и тонкой силы положения грахи.",
   },
+  varga: {
+    label: "Varga",
+    text: "Дробная карта. Ее читают не отдельно, а вместе с D1 и подходящим жизненным вопросом.",
+  },
   vimshopaka: {
     label: "Vimshopaka Bala",
     text: "Сила по варгам: насколько граха поддержана в divisional charts.",
@@ -1629,6 +1633,39 @@ function PriorityVargaRibbon({
                 <em>нет расчёта</em>
               )}
             </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function VargaReadingStrip({
+  chart,
+  activeCode,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  onSelect: (code: string) => void;
+}) {
+  const context = priorityVargaContexts[activeCode] ?? { scope: "Варга", detail: "дополнительный слой чтения" };
+  const relatedGroup = vargaFocusGroups.find((group) => group.codes.includes(activeCode)) ?? vargaFocusGroups[0];
+  const relatedCodes = relatedGroup.codes.filter((code) => code !== activeCode).slice(0, 5);
+  const available = (code: string) => code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]);
+
+  return (
+    <div className="varga-reading-strip" aria-label="Контекст чтения выбранной D-карты">
+      <div>
+        <span><GlossaryTerm termKey="varga">{activeCode}</GlossaryTerm> · {context.scope}</span>
+        <strong>{vargaPurposeLabels[activeCode] ?? "Дробная карта"}</strong>
+        <small>{context.detail}</small>
+      </div>
+      <div className="varga-reading-links">
+        <span>читать вместе</span>
+        {relatedCodes.map((code) => (
+          <button type="button" disabled={!available(code)} onClick={() => onSelect(code)} key={code}>
+            {code}
           </button>
         ))}
       </div>
@@ -6440,6 +6477,7 @@ export default function Home() {
                 chartReference={chartReference}
                 onSelect={selectVargaCode}
               />
+              <VargaReadingStrip chart={chart} activeCode={chartMode} onSelect={selectVargaCode} />
               <div className="chart-workspace-tabs" role="tablist" aria-label="Режимы карты">
                 {chartWorkspaceTabs.map((tab) => (
                   <button
