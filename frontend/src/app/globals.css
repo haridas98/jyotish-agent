@@ -980,6 +980,25 @@ select {
   color: var(--green);
 }
 
+.chart-reference-row {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-bottom: 10px;
+  padding: 6px 8px;
+}
+
+.chart-reference-row > strong {
+  color: var(--green);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .chart-workspace-tabs {
   background: #ffffff;
   border: 1px solid var(--line);
@@ -4851,6 +4870,11 @@ select {
   .glossary-popover {
     max-width: min(280px, calc(100vw - 48px));
     min-width: 0;
+  }
+
+  .chart-reference-row {
+    align-items: start;
+    grid-template-columns: 1fr;
   }
 
   .priority-varga-ribbon-head {

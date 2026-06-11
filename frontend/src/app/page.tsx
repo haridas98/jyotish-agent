@@ -6684,7 +6684,6 @@ export default function Home() {
                     <button type="button" onClick={handleExportCurrentChart} disabled={!chart}>Экспорт</button>
                     <button type="button" onClick={() => window.print()} disabled={!chart}>Печать</button>
                   </div>
-                  <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
                 </div>
               </div>
               <PrimaryVargaTabs
@@ -6694,6 +6693,10 @@ export default function Home() {
                 onSelect={selectVargaCode}
                 onSelectGroup={selectVargaFocusGroup}
               />
+              <div className="chart-reference-row">
+                <strong>Отсчёт домов</strong>
+                <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
+              </div>
               <div className="chart-layout">
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
                 <div className="chart-data-stack">
