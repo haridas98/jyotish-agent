@@ -2304,6 +2304,12 @@ function ActiveCalculationTable({
           <GlossaryTerm termKey="combustion">Asta</GlossaryTerm>
         </div>
       </div>
+      {!isD1 && selectedVarga?.method ? (
+        <div className="active-varga-method">
+          <strong>Метод</strong>
+          <span>{selectedVarga.method}</span>
+        </div>
+      ) : null}
       {isD1 ? (
         <GrahaTable chart={chart} termLanguage={termLanguage} />
       ) : (
