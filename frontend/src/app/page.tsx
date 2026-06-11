@@ -6738,6 +6738,7 @@ export default function Home() {
                 <strong>Отсчёт домов</strong>
                 <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
               </div>
+              <VargaReadingStrip chart={chart} activeCode={chartMode} onSelect={selectVargaCode} />
               <div className="chart-layout">
                 <div className="chart-visual-stack">
                   <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
@@ -6767,13 +6768,22 @@ export default function Home() {
               </div>
               <div className="chart-workspace-body">
                 {chartWorkspaceTab === "essentials" ? (
-                  <EssentialChartPairBoard
-                    chart={chart}
-                    activeCode={chartMode}
-                    chartStyle={chartStyle}
-                    chartReference={chartReference}
-                    onSelect={selectVargaCode}
-                  />
+                  <>
+                    <VargaCompareStrip
+                      chart={chart}
+                      activeCode={chartMode}
+                      chartStyle={chartStyle}
+                      chartReference={chartReference}
+                      onSelect={selectVargaCode}
+                    />
+                    <EssentialChartPairBoard
+                      chart={chart}
+                      activeCode={chartMode}
+                      chartStyle={chartStyle}
+                      chartReference={chartReference}
+                      onSelect={selectVargaCode}
+                    />
+                  </>
                 ) : null}
                 {chartWorkspaceTab === "references" ? (
                   <ReferenceChartBoard
