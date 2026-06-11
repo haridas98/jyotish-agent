@@ -1425,6 +1425,7 @@ function unavailableVargaLabel(code: string) {
 }
 
 const chartQuickSwitchCodes = vargaSnapshotCodes;
+const primaryVargaTabCodes = ["D1", "D9", "D10", "D12", "D30", "D60"] as const;
 
 const priorityVargaContexts: Record<string, { scope: string; detail: string }> = {
   D1: { scope: "Основа", detail: "тело, характер, дома" },
@@ -1596,8 +1597,7 @@ function EssentialChartPairBoard({
   chartReference: ChartReference;
   onSelect: (code: string) => void;
 }) {
-  const essentialCodes = ["D1", "D9", "D10", "D12", "D30", "D60"];
-  const items = essentialCodes.map((code) => {
+  const items = primaryVargaTabCodes.map((code) => {
     if (code === "D1") return { code, title: "D1 Раши", hint: "основа карты", available: Boolean(chart), varga: null };
     const varga = chart?.vargas?.[code] ?? null;
     return {
@@ -1636,6 +1636,46 @@ function EssentialChartPairBoard({
           </div>
         </button>
       ))}
+    </div>
+  );
+}
+
+function PrimaryVargaTabs({
+  chart,
+  activeCode,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  onSelect: (code: string) => void;
+}) {
+  const coverage = vargaCoverage(chart);
+  const items = primaryVargaTabCodes.map((code) => ({
+    code,
+    available: code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]),
+    context: priorityVargaContexts[code],
+  }));
+
+  return (
+    <div className="primary-varga-tabs" aria-label="Быстрый выбор главных D-карт">
+      <div className="primary-varga-tab-list">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={activeCode === item.code ? "active" : ""}
+            disabled={!item.available}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <strong>{item.code}</strong>
+            <span>{item.context.scope}</span>
+          </button>
+        ))}
+      </div>
+      <div className="primary-varga-coverage">
+        <span>{coverage.ready.length}/{coverage.total}</span>
+        <strong>{coverage.pendingJaimini.length ? "Jaimini ждёт сверки" : "D-карты"}</strong>
+      </div>
     </div>
   );
 }
@@ -6574,6 +6614,7 @@ export default function Home() {
                   <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
                 </div>
               </div>
+              <PrimaryVargaTabs chart={chart} activeCode={chartMode} onSelect={selectVargaCode} />
               <div className="chart-layout">
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
                 <div className="chart-data-stack">
@@ -6598,13 +6639,6 @@ export default function Home() {
                   ) : null}
                 </div>
               </div>
-              <PriorityVargaRibbon
-                chart={chart}
-                activeCode={chartMode}
-                chartStyle={chartStyle}
-                chartReference={chartReference}
-                onSelect={selectVargaCode}
-              />
               <div className="chart-workspace-tabs" role="tablist" aria-label="Режимы карты">
                 {chartWorkspaceTabs.map((tab) => (
                   <button
