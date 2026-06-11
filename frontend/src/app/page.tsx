@@ -6534,6 +6534,8 @@ export default function Home() {
                 <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
                 <div className="chart-heading-tools">
                   <div className="chart-action-strip" aria-label="Действия с текущей картой">
+                    <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>AI-разбор</a>
+                    <a href="/reports">История</a>
                     <button type="button" onClick={handleSaveProfile} disabled={!chart}>Сохранить</button>
                     <button type="button" onClick={handleExportCurrentChart} disabled={!chart}>Экспорт</button>
                     <button type="button" onClick={() => window.print()} disabled={!chart}>Печать</button>
