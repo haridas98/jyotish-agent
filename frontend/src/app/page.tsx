@@ -1508,6 +1508,62 @@ function FeaturedVargaBoard({
   );
 }
 
+function VargaAtlasBoard({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  onSelect: (code: string) => void;
+}) {
+  const items = vargaSnapshotCodes.map((code) => {
+    if (code === "D1") return { code, name: "Раши", available: Boolean(chart), varga: null };
+    const varga = chart?.vargas?.[code];
+    return { code, name: varga?.name ?? "Варга", available: Boolean(varga), varga: varga ?? null };
+  });
+
+  return (
+    <div className="varga-atlas-board" aria-label="Shodasha varga atlas">
+      <div className="varga-atlas-head">
+        <strong>Shodasha Varga atlas</strong>
+        <span>16 карт одним взглядом</span>
+      </div>
+      <div className="varga-atlas-grid">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={`varga-atlas-card${activeCode === item.code ? " active" : ""}`}
+            disabled={!item.available}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <div className="varga-atlas-title">
+              <strong>{item.code}</strong>
+              <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
+            </div>
+            <div className="varga-atlas-preview">
+              {item.available ? (
+                chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                )
+              ) : (
+                <em>нет</em>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BirthCompactStrip({
   birthDate,
   birthTime,
@@ -6028,6 +6084,13 @@ export default function Home() {
                     <VargaStudyBoard
                       chart={chart}
                       activeGroupKey={activeVargaFocusKey}
+                      activeCode={chartMode}
+                      chartStyle={chartStyle}
+                      chartReference={chartReference}
+                      onSelect={selectVargaCode}
+                    />
+                    <VargaAtlasBoard
+                      chart={chart}
                       activeCode={chartMode}
                       chartStyle={chartStyle}
                       chartReference={chartReference}
