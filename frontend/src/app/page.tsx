@@ -662,6 +662,34 @@ const jyotishGlossary = {
     label: "Asta / combustion",
     text: "Сожжение: граха слишком близко к Солнцу и может слабее проявлять свои качества.",
   },
+  retrograde: {
+    label: "Retrograde",
+    text: "Ретроградность. В таблице обозначается скобками: например (Ju).",
+  },
+  moolatrikona: {
+    label: "Moolatrikona",
+    text: "Мулатрикона: сильная собственная область грахи. В таблице обозначается подчёркиванием.",
+  },
+  exaltation: {
+    label: "Exaltation",
+    text: "Экзальтация: знак максимального подъёма качества грахи. В таблице обозначается стрелкой вверх.",
+  },
+  debilitation: {
+    label: "Debilitation",
+    text: "Дебилитация: знак ослабления качества грахи. В таблице обозначается стрелкой вниз.",
+  },
+  dignity: {
+    label: "Dignity",
+    text: "Достоинство грахи: экзальтация, дебилитация, мулатрикона, собственный или иной знак.",
+  },
+  nakshatra: {
+    label: "Nakshatra",
+    text: "Лунная стоянка. В практическом разборе важна вместе с падой и управителем.",
+  },
+  navamsa: {
+    label: "Navamsa / D9",
+    text: "Девятая варга. Часто используется для дхармы, брака и тонкой силы положения грахи.",
+  },
   vimshopaka: {
     label: "Vimshopaka Bala",
     text: "Сила по варгам: насколько граха поддержана в divisional charts.",
@@ -1761,6 +1789,34 @@ function GlossaryTerm({ termKey, children }: { termKey: GlossaryKey; children: R
   );
 }
 
+function StatusGlossaryBadge({ termKey, label, className = "" }: { termKey: GlossaryKey; label: string; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const item = jyotishGlossary[termKey];
+
+  return (
+    <span className="glossary-wrap status-glossary-wrap">
+      <button
+        type="button"
+        className={`graha-status-badge ${className}`}
+        aria-expanded={open}
+        title={item.text}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((value) => !value);
+        }}
+      >
+        {label}
+      </button>
+      {open ? (
+        <span className="glossary-popover" role="note">
+          <strong>{item.label}</strong>
+          <span>{item.text}</span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function isoDateOffset(days: number) {
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -1775,10 +1831,10 @@ function grahaDignity(graha: GrahaPosition) {
 function GrahaStatusBadges({ graha }: { graha: GrahaPosition }) {
   const dignity = grahaDignity(graha);
   const badges = [
-    ...(isRetrogradeGraha(graha) ? [{ key: "retrograde", label: "()", title: "ретроградность" }] : []),
-    ...(dignity === "moolatrikona" ? [{ key: "moolatrikona", label: "_", title: "мулатрикона" }] : []),
-    ...(dignity === "exaltation" ? [{ key: "exaltation", label: "↑", title: "экзальтация" }] : []),
-    ...(dignity === "debilitation" ? [{ key: "debilitation", label: "↓", title: "дебилитация" }] : []),
+    ...(isRetrogradeGraha(graha) ? [{ key: "retrograde" as const, label: "()" }] : []),
+    ...(dignity === "moolatrikona" ? [{ key: "moolatrikona" as const, label: "_" }] : []),
+    ...(dignity === "exaltation" ? [{ key: "exaltation" as const, label: "↑" }] : []),
+    ...(dignity === "debilitation" ? [{ key: "debilitation" as const, label: "↓" }] : []),
   ];
 
   if (!badges.length) return <span className="graha-status-muted">-</span>;
@@ -1786,11 +1842,21 @@ function GrahaStatusBadges({ graha }: { graha: GrahaPosition }) {
   return (
     <span className="graha-status-list" aria-label="Статусы грахи">
       {badges.map((badge) => (
-        <span className={`graha-status-badge ${badge.key}`} title={badge.title} key={badge.key}>
-          {badge.label}
-        </span>
+        <StatusGlossaryBadge termKey={badge.key} label={badge.label} className={badge.key} key={badge.key} />
       ))}
     </span>
+  );
+}
+
+function GrahaStatusLegend() {
+  return (
+    <div className="graha-status-legend" aria-label="Обозначения статусов грах">
+      <StatusGlossaryBadge termKey="retrograde" label="()" className="retrograde" />
+      <StatusGlossaryBadge termKey="moolatrikona" label="_" className="moolatrikona" />
+      <StatusGlossaryBadge termKey="exaltation" label="↑" className="exaltation" />
+      <StatusGlossaryBadge termKey="debilitation" label="↓" className="debilitation" />
+      <GlossaryTerm termKey="combustion">Asta</GlossaryTerm>
+    </div>
   );
 }
 
@@ -1806,15 +1872,15 @@ function GrahaTable({ grahas, termLanguage }: { grahas: GrahaPosition[]; termLan
   }
 
   return (
-    <div className="planet-table">
+    <div className="planet-table graha-table">
       <div className="table-row table-head">
         <span>Граха</span>
         <span>Долгота</span>
         <span>Раши</span>
-        <span>Накшатра</span>
-        <span>Статус</span>
-        <span>Аста</span>
-        <span>D9</span>
+        <span><GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="dignity">Статус</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="combustion">Аста</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="navamsa">D9</GlossaryTerm></span>
       </div>
       {grahas.map((graha) => (
         <div className="table-row" key={graha.body}>
@@ -1996,6 +2062,7 @@ function ActiveCalculationTable({
           <GlossaryTerm termKey="combustion">Asta</GlossaryTerm>
         </div>
       </div>
+      {isD1 ? <GrahaStatusLegend /> : null}
       {isD1 ? (
         <GrahaTable grahas={chart?.grahas ?? []} termLanguage={termLanguage} />
       ) : (

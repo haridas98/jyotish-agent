@@ -24,6 +24,7 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Accuracy comparison harness against Jagannatha Hora exports.
 - Working chart workspace: active chart on the left, current calculation table on the right, and no duplicate chart-style switcher outside calculation settings.
 - Tap/click explanations for core jyotish terms and numbers where practical, including houses, shadbala, combustion, varga names, panchanga terms, and dasha terms.
+- Calculation table should prioritize what an astrologer checks first: graha, longitude, rashi, nakshatra/pada, dignity, retrograde marker, combustion, navamsa, and visible explanations for every symbol.
 - Saved personal AI review history, saved compatibility review history, and review dialogue history.
 - Current-day review workflow based on transits, panchanga, dasha context, and the user's saved birth chart.
 
@@ -40,6 +41,7 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - PDF export.
 - Admin review workflow for rules and citations.
 - Two product modes before public launch: professional workspace for astrologers and simplified guided mode for non-astrologers.
+- Guided learning layer for non-astrologers: tap terms, houses, vargas, dashas, and calculation labels to open short explanations without leaving the current screen.
 - Registration onboarding with basic birth data first, optional birth time completion later, and one free AI review only for the user's own chart.
 - Paid AI review for other saved charts while still allowing users to save and view non-paid charts.
 - Relationship analysis beyond marriage compatibility: father, mother, sibling, boss, subordinate, enemy, teacher, friend, and custom roles.

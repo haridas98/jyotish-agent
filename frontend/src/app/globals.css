@@ -1592,6 +1592,16 @@ select {
   border-radius: 0;
 }
 
+.graha-status-legend {
+  align-items: center;
+  background: #fbfdfc;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 7px 10px;
+}
+
 .glossary-wrap {
   display: inline-flex;
   position: relative;
@@ -1707,7 +1717,8 @@ select {
   border: 1px solid var(--line);
   border-radius: 8px;
   min-width: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .table-row {
@@ -1727,6 +1738,11 @@ select {
 
 .compact-table .table-row {
   grid-template-columns: minmax(76px, 1fr) minmax(84px, 1fr);
+}
+
+.graha-table .table-row {
+  grid-template-columns: 78px 76px 82px minmax(116px, 1fr) 66px 88px 76px;
+  min-width: 682px;
 }
 
 .table-head {
@@ -5012,12 +5028,15 @@ button,
   overflow-wrap: anywhere;
 }
 
-.planet-table .table-row {
-  grid-template-columns: 78px 76px 82px minmax(106px, 1fr) 64px 86px 70px;
+.planet-table .table-row,
+.graha-table .table-row {
+  grid-template-columns: 78px 76px 82px minmax(116px, 1fr) 66px 88px 76px;
+  min-width: 682px;
 }
 
 .compact-table .table-row {
   grid-template-columns: minmax(76px, 1fr) minmax(84px, 1fr);
+  min-width: 0;
 }
 
 .combustion-badge {
@@ -5043,15 +5062,22 @@ button,
 
 .graha-status-badge,
 .graha-status-muted {
+  appearance: none;
   background: #eef2f7;
+  border: 0;
   border-radius: 999px;
   color: #415066;
+  cursor: pointer;
   display: inline-flex;
   font-size: 12px;
   font-weight: 900;
   justify-content: center;
   min-width: 22px;
   padding: 2px 6px;
+}
+
+.graha-status-muted {
+  cursor: default;
 }
 
 .graha-status-badge.exaltation {
@@ -5405,6 +5431,11 @@ button,
   .core-info-strip,
   .planet-table .table-row {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .graha-table .table-row {
+    grid-template-columns: 78px 76px 82px minmax(116px, 1fr) 66px 88px 76px;
+    min-width: 682px;
   }
 
   .core-info-strip div,
