@@ -1612,12 +1612,14 @@ function EssentialChartPairBoard({
   chartStyle,
   chartReference,
   onSelect,
+  onOpenAtlas,
 }: {
   chart: BirthChart | null;
   activeCode: string;
   chartStyle: "north" | "south";
   chartReference: ChartReference;
   onSelect: (code: string) => void;
+  onOpenAtlas: () => void;
 }) {
   const items = primaryVargaTabCodes.map((code) => {
     if (code === "D1") return { code, title: "D1 Раши", hint: "основа карты", available: Boolean(chart), varga: null };
@@ -1632,32 +1634,43 @@ function EssentialChartPairBoard({
   });
 
   return (
-    <div className="essential-chart-pair" aria-label="Главные рабочие D-карты">
-      {items.map((item) => (
-        <button
-          type="button"
-          className={`essential-chart-card${activeCode === item.code ? " active" : ""}`}
-          disabled={!item.available}
-          key={item.code}
-          onClick={() => onSelect(item.code)}
-        >
-          <div className="essential-chart-title">
-            <strong>{item.title}</strong>
-            <span>{item.hint}</span>
-          </div>
-          <div className="essential-chart-preview">
-            {item.available ? (
-              chartStyle === "south" ? (
-                <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-              ) : (
-                <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-              )
-            ) : (
-              <em>{unavailableVargaLabel(item.code)}</em>
-            )}
-          </div>
+    <div className="essential-chart-board" aria-label="Главные рабочие D-карты">
+      <div className="essential-chart-head">
+        <div>
+          <strong>Главные D-карты</strong>
+          <span>D1, D9, D10 и ключевые дополнительные слои</span>
+        </div>
+        <button type="button" onClick={onOpenAtlas}>
+          Открыть атлас D1-D60
         </button>
-      ))}
+      </div>
+      <div className="essential-chart-pair">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={`essential-chart-card${activeCode === item.code ? " active" : ""}`}
+            disabled={!item.available}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <div className="essential-chart-title">
+              <strong>{item.title}</strong>
+              <span>{item.hint}</span>
+            </div>
+            <div className="essential-chart-preview">
+              {item.available ? (
+                chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                )
+              ) : (
+                <em>{unavailableVargaLabel(item.code)}</em>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -6782,6 +6795,7 @@ export default function Home() {
                       chartStyle={chartStyle}
                       chartReference={chartReference}
                       onSelect={selectVargaCode}
+                      onOpenAtlas={() => setChartWorkspaceTab("vargas")}
                     />
                   </>
                 ) : null}
