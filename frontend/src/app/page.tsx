@@ -1558,6 +1558,62 @@ function EssentialChartPairBoard({
   );
 }
 
+function PriorityVargaRibbon({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  onSelect: (code: string) => void;
+}) {
+  const items = chartQuickSwitchCodes.map((code) => {
+    if (code === "D1") return { code, name: "Rashi", available: Boolean(chart), varga: null };
+    const varga = chart?.vargas?.[code];
+    return { code, name: varga?.name ?? "Varga", available: Boolean(varga), varga: varga ?? null };
+  });
+
+  return (
+    <div className="priority-varga-ribbon" aria-label="Главные D-карты">
+      <div className="priority-varga-ribbon-head">
+        <strong>D-карты</strong>
+        <span>D1, D9, D10, D12, D30, D60</span>
+      </div>
+      <div className="priority-varga-ribbon-grid">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={`priority-varga-card${activeCode === item.code ? " active" : ""}`}
+            disabled={!item.available}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <div className="priority-varga-title">
+              <strong>{item.code}</strong>
+              <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
+            </div>
+            <div className="priority-varga-preview">
+              {item.available ? (
+                chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                )
+              ) : (
+                <em>нет расчёта</em>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function VargaAtlasBoard({
   chart,
   activeCode,
@@ -6260,6 +6316,13 @@ export default function Home() {
                   ) : null}
                 </div>
               </div>
+              <PriorityVargaRibbon
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                chartReference={chartReference}
+                onSelect={selectVargaCode}
+              />
               <div className="chart-workspace-tabs" role="tablist" aria-label="Режимы карты">
                 {chartWorkspaceTabs.map((tab) => (
                   <button
