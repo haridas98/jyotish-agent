@@ -1245,19 +1245,22 @@ select {
 }
 
 .priority-varga-ribbon-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
 }
 
 .priority-varga-card {
   background: #ffffff;
   border: 0;
-  border-bottom: 1px solid var(--line);
   border-right: 1px solid var(--line);
   display: grid;
+  flex: 0 0 132px;
   gap: 6px;
   min-width: 0;
   padding: 7px;
+  scroll-snap-align: start;
   text-align: left;
 }
 
@@ -1334,7 +1337,7 @@ select {
   justify-content: center;
   justify-self: center;
   min-width: 0;
-  width: min(100%, 104px);
+  width: min(100%, 100px);
 }
 
 .priority-varga-preview em {
@@ -4107,14 +4110,6 @@ select {
     grid-template-columns: repeat(3, minmax(116px, 1fr));
   }
 
-  .priority-varga-ribbon-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .priority-varga-card:nth-child(3n) {
-    border-right: 0;
-  }
-
   .varga-snapshot-card:nth-child(3n) {
     border-right: 0;
   }
@@ -4216,17 +4211,8 @@ select {
     gap: 2px;
   }
 
-  .priority-varga-ribbon-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .priority-varga-card,
-  .priority-varga-card:nth-child(3n) {
-    border-right: 1px solid var(--line);
-  }
-
-  .priority-varga-card:nth-child(2n) {
-    border-right: 0;
+  .priority-varga-card {
+    flex-basis: 124px;
   }
 
   .product-page-head,
