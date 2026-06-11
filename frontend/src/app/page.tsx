@@ -6186,7 +6186,7 @@ export default function Home() {
           <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>Отчёт</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("sources")}>Источники</a>
           <a href="#reports" onClick={() => setActiveAnalysisTab("accuracy")}>Точность</a>
-          <a href="#calculation-settings">Настройки</a>
+          <a href="#display-settings">Вид</a>
         </nav>
         <blockquote>
           yatha shastram
@@ -6417,21 +6417,6 @@ export default function Home() {
                     </select>
                   </label>
                   <label>
-                    Стиль карты
-                    <select value={chartStyle} onChange={(event) => setChartStyle(event.target.value as "north" | "south")}>
-                      <option value="north">Северный</option>
-                      <option value="south">Южный</option>
-                    </select>
-                  </label>
-                  <label>
-                    Язык терминов
-                    <select value={termLanguage} onChange={(event) => setTermLanguage(event.target.value as TermLanguage)}>
-                      <option value="sanskrit">Санскрит</option>
-                      <option value="ru">Русский</option>
-                      <option value="en">English</option>
-                    </select>
-                  </label>
-                  <label>
                     Восход
                     <select value={sunriseSource} onChange={(event) => setSunriseSource(event.target.value)}>
                       <option value="noaa">NOAA</option>
@@ -6451,6 +6436,27 @@ export default function Home() {
                   </label>
                 </div>
                 <span className="settings-note">SSS ведётся как отдельный профиль; сейчас расчёт Drik.</span>
+              </fieldset>
+              <fieldset className="calculation-settings display-settings" id="display-settings">
+                <legend>Настройки отображения</legend>
+                <div className="settings-grid">
+                  <label>
+                    Стиль карты
+                    <select value={chartStyle} onChange={(event) => setChartStyle(event.target.value as "north" | "south")}>
+                      <option value="north">Северный: дома фиксированы</option>
+                      <option value="south">Южный: знаки фиксированы</option>
+                    </select>
+                  </label>
+                  <label>
+                    Язык терминов
+                    <select value={termLanguage} onChange={(event) => setTermLanguage(event.target.value as TermLanguage)}>
+                      <option value="sanskrit">Санскрит: Surya, Mithuna</option>
+                      <option value="ru">Русский: Солнце, Близнецы</option>
+                      <option value="en">English: Sun, Gemini</option>
+                    </select>
+                  </label>
+                </div>
+                <span className="settings-note">Влияет только на внешний вид карт и таблиц; расчёт не меняется.</span>
               </fieldset>
               <div className="notice">
                 Политика MVP: айанамша Lahiri, рамка Парашары, обязательные ссылки на источники.

@@ -309,6 +309,11 @@ select {
   padding: 0 6px;
 }
 
+.display-settings {
+  background: #f5fbfa;
+  border-color: #c9dedc;
+}
+
 .settings-grid {
   display: grid;
   gap: 6px;
