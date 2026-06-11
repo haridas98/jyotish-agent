@@ -1643,11 +1643,15 @@ function EssentialChartPairBoard({
 function PrimaryVargaTabs({
   chart,
   activeCode,
+  activeGroupKey,
   onSelect,
+  onSelectGroup,
 }: {
   chart: BirthChart | null;
   activeCode: string;
+  activeGroupKey: string;
   onSelect: (code: string) => void;
+  onSelectGroup: (groupKey: string, code: string) => void;
 }) {
   const coverage = vargaCoverage(chart);
   const items = primaryVargaTabCodes.map((code) => ({
@@ -1660,6 +1664,7 @@ function PrimaryVargaTabs({
     available: code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]),
     label: `${code} · ${priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга"}`,
   }));
+  const quickGroups = vargaFocusGroups.filter((group) => group.key !== "jaimini");
 
   return (
     <div className="primary-varga-tabs" aria-label="Быстрый выбор главных D-карт">
@@ -1690,6 +1695,25 @@ function PrimaryVargaTabs({
       <div className="primary-varga-coverage">
         <span>{coverage.ready.length}/{coverage.total}</span>
         <strong>{coverage.pendingJaimini.length ? "Jaimini ждёт сверки" : "D-карты"}</strong>
+      </div>
+      <div className="primary-focus-tabs" aria-label="Сценарии чтения">
+        {quickGroups.map((group) => {
+          const selectedCode = availableCodeForVargaGroup(chart, group);
+          return (
+            <button
+              type="button"
+              className={activeGroupKey === group.key ? "active" : ""}
+              disabled={!selectedCode}
+              key={group.key}
+              onClick={() => {
+                if (!selectedCode) return;
+                onSelectGroup(group.key, selectedCode);
+              }}
+            >
+              {group.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -6629,7 +6653,13 @@ export default function Home() {
                   <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
                 </div>
               </div>
-              <PrimaryVargaTabs chart={chart} activeCode={chartMode} onSelect={selectVargaCode} />
+              <PrimaryVargaTabs
+                chart={chart}
+                activeCode={chartMode}
+                activeGroupKey={activeVargaFocusKey}
+                onSelect={selectVargaCode}
+                onSelectGroup={selectVargaFocusGroup}
+              />
               <div className="chart-layout">
                 <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
                 <div className="chart-data-stack">
