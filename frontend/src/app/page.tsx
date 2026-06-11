@@ -1345,6 +1345,15 @@ function availableVargaCodes(chart: BirthChart | null) {
 
 const chartQuickSwitchCodes = ["D1", "D9", "D10", "D12", "D30", "D60"] as const;
 
+const priorityVargaContexts: Record<(typeof chartQuickSwitchCodes)[number], { scope: string; detail: string }> = {
+  D1: { scope: "Основа", detail: "тело, характер, дома" },
+  D9: { scope: "Дхарма", detail: "брак, сила грах" },
+  D10: { scope: "Карьера", detail: "дело, статус, работа" },
+  D12: { scope: "Род", detail: "отец, мать, наследие" },
+  D30: { scope: "Риски", detail: "трудности, повреждения" },
+  D60: { scope: "Карма", detail: "тонкий итог при точном времени" },
+};
+
 function VargaTaskMatrix({
   chart,
   activeGroupKey,
@@ -1564,8 +1573,12 @@ function PriorityVargaRibbon({
             onClick={() => onSelect(item.code)}
           >
             <div className="priority-varga-title">
-              <strong>{item.code}</strong>
+              <div>
+                <strong>{item.code}</strong>
+                <em>{priorityVargaContexts[item.code].scope}</em>
+              </div>
               <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
+              <small>{priorityVargaContexts[item.code].detail}</small>
             </div>
             <div className="priority-varga-preview">
               {item.available ? (

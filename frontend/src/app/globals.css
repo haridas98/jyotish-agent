@@ -1280,14 +1280,45 @@ select {
   min-width: 0;
 }
 
+.priority-varga-title div {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+}
+
 .priority-varga-title strong {
   color: var(--green);
   font-size: 13px;
   line-height: 1;
 }
 
+.priority-varga-title em {
+  background: #fff7e8;
+  border: 1px solid #efd19d;
+  border-radius: 999px;
+  color: #9b5a08;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+  overflow: hidden;
+  padding: 3px 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .priority-varga-title span {
   color: var(--muted);
+  font-size: 10px;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.priority-varga-title small {
+  color: var(--ink);
   font-size: 10px;
   line-height: 1.15;
   overflow: hidden;
