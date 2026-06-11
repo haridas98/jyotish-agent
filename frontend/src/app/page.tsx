@@ -1358,7 +1358,7 @@ const vargaFocusGroups: Array<{
 }> = [
   {
     key: "core",
-    label: "Must",
+    label: "База",
     hint: "D1, D9, D10, D12, D30, D60",
     title: "Главные карты для чтения",
     description: "D1 и D9 держат основу, D10 показывает дело, D12 род, D30 риски, D60 тонкий кармический слой.",
@@ -1366,7 +1366,7 @@ const vargaFocusGroups: Array<{
   },
   {
     key: "marriage",
-    label: "Marriage",
+    label: "Брак",
     hint: "D9, D1, D7",
     title: "Отношения и брак",
     description: "Проверяются 7 дом D1, Навамша D9, дети/потомство через D7 и общая сила Шукра/Гуру.",
@@ -1374,15 +1374,31 @@ const vargaFocusGroups: Array<{
   },
   {
     key: "career",
-    label: "Career",
+    label: "Дело",
     hint: "D10, D1, D24",
     title: "Работа и призвание",
     description: "D10 показывает карму профессии, D24 поддерживает обучение и квалификацию, D1 держит контекст.",
     codes: ["D10", "D1", "D24"],
   },
   {
+    key: "wealth",
+    label: "Деньги",
+    hint: "D2, D11, D1",
+    title: "Ресурсы и доход",
+    description: "D2 показывает накопление и питание ресурсов, D11 — доходы и прибыли после сверки, D1 держит общий контекст.",
+    codes: ["D2", "D11", "D1"],
+  },
+  {
+    key: "health",
+    label: "Здоровье",
+    hint: "D6, D30, D1",
+    title: "Здоровье, долги и препятствия",
+    description: "D6 нужен для болезней, долгов и врагов после сверки правил; D30 показывает повреждения и риски.",
+    codes: ["D6", "D30", "D1"],
+  },
+  {
     key: "parents",
-    label: "Parents",
+    label: "Род",
     hint: "D12, D40, D45",
     title: "Родители и род",
     description: "D12 даёт родителей, D40 материнскую линию, D45 отцовскую линию.",
@@ -1390,7 +1406,7 @@ const vargaFocusGroups: Array<{
   },
   {
     key: "sadhana",
-    label: "Sadhana",
+    label: "Дух",
     hint: "D20, D9, D1",
     title: "Садхана и духовная опора",
     description: "D20 показывает духовную практику, D9 — дхармическую зрелость, D1 — общий носитель жизни.",
@@ -1398,7 +1414,7 @@ const vargaFocusGroups: Array<{
   },
   {
     key: "jaimini",
-    label: "Jaimini",
+    label: "Дж.",
     hint: "D5, D6, D8, D11",
     title: "Дополнительные карты Джаимини",
     description: "D5, D6, D8 и D11 выделены отдельным набором; откроются после добавления проверенных правил расчёта.",
@@ -1406,7 +1422,7 @@ const vargaFocusGroups: Array<{
   },
   {
     key: "karma",
-    label: "Karma",
+    label: "Карма",
     hint: "D30, D60",
     title: "Риски и карма",
     description: "D30 показывает трудности и повреждения, D60 — тонкий кармический слой при точном времени.",
