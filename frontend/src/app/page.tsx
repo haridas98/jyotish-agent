@@ -5179,7 +5179,11 @@ export default function Home() {
   }
 
   function selectVargaCode(code: string) {
-    const matchingGroup = vargaFocusGroups.find((group) => group.codes.includes(code));
+    const currentGroup = vargaFocusGroups.find((group) => group.key === activeVargaFocusKey);
+    const matchingGroup = currentGroup?.codes.includes(code)
+      ? currentGroup
+      : vargaFocusGroups.find((group) => group.key !== "core" && group.codes.includes(code))
+        ?? vargaFocusGroups.find((group) => group.codes.includes(code));
     if (matchingGroup) setActiveVargaFocusKey(matchingGroup.key);
     setChartMode(code);
   }
