@@ -1665,6 +1665,7 @@ function PrimaryVargaTabs({
     label: `${code} · ${priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга"}`,
   }));
   const quickGroups = vargaFocusGroups.filter((group) => group.key !== "jaimini");
+  const activeGroup = vargaFocusGroups.find((group) => group.key === activeGroupKey) ?? vargaFocusGroups[0];
 
   return (
     <div className="primary-varga-tabs" aria-label="Быстрый выбор главных D-карт">
@@ -1715,6 +1716,11 @@ function PrimaryVargaTabs({
             </button>
           );
         })}
+      </div>
+      <div className="primary-focus-summary">
+        <strong>{activeGroup.title}</strong>
+        <span>{activeGroup.description}</span>
+        <em>{activeGroup.codes.join(" · ")}</em>
       </div>
     </div>
   );
