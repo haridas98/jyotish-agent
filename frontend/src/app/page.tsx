@@ -1982,6 +1982,7 @@ function VargaAtlasBoard({
   chartReference: ChartReference;
   onSelect: (code: string) => void;
 }) {
+  const [atlasFilter, setAtlasFilter] = useState<"all" | "ready" | "pending" | "jaimini">("all");
   const items = vargaSnapshotCodes.map((code) => {
     if (code === "D1") {
       return { code, name: "Раши", available: Boolean(chart), varga: null, status: chart ? "рассчитана" : "нет расчёта", previewStatus: "после расчёта" };
@@ -2000,6 +2001,18 @@ function VargaAtlasBoard({
   const coverage = vargaCoverage(chart);
   const missingText = coverage.missing.length ? coverage.missing.slice(0, 6).join(", ") : "нет";
   const jaiminiText = coverage.pendingJaimini.length ? coverage.pendingJaimini.join(", ") : "нет";
+  const filteredItems = items.filter((item) => {
+    if (atlasFilter === "ready") return item.available;
+    if (atlasFilter === "pending") return !item.available && !jaiminiVargaCodeSet.has(item.code);
+    if (atlasFilter === "jaimini") return jaiminiVargaCodeSet.has(item.code);
+    return true;
+  });
+  const atlasFilters = [
+    { key: "all", label: "Все", count: items.length },
+    { key: "ready", label: "Готовые", count: coverage.ready.length },
+    { key: "pending", label: "Ожидают", count: coverage.missing.length - coverage.pendingJaimini.length },
+    { key: "jaimini", label: "Джаимини", count: coverage.pendingJaimini.length },
+  ] as const;
 
   return (
     <div className="varga-atlas-board" aria-label="Атлас D-карт">
@@ -2014,8 +2027,21 @@ function VargaAtlasBoard({
           <span><b>{jaiminiText}</b> Джаимини</span>
         </div>
       </div>
+      <div className="varga-atlas-filter" aria-label="Фильтр атласа D-карт">
+        {atlasFilters.map((filter) => (
+          <button
+            type="button"
+            className={atlasFilter === filter.key ? "active" : ""}
+            key={filter.key}
+            onClick={() => setAtlasFilter(filter.key)}
+          >
+            <span>{filter.label}</span>
+            <strong>{filter.count}</strong>
+          </button>
+        ))}
+      </div>
       <div className="varga-atlas-grid">
-        {items.map((item) => (
+        {filteredItems.map((item) => (
           <button
             type="button"
             className={`varga-atlas-card${activeCode === item.code ? " active" : ""}${item.available ? " ready" : ""}${jaiminiVargaCodeSet.has(item.code) ? " jaimini" : ""}`}
