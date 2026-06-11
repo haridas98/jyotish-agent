@@ -2666,6 +2666,63 @@ select {
   color: var(--green);
 }
 
+.compatibility-relationship-board {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compatibility-relationship-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.compatibility-relationship-head {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.compatibility-relationship-head strong {
+  color: var(--green);
+}
+
+.compatibility-relationship-head span,
+.compatibility-relationship-card small,
+.compatibility-relationship-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.compatibility-relationship-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.compatibility-relationship-grid div {
+  background: #f7fafb;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px;
+}
+
+.compatibility-relationship-grid strong {
+  color: var(--ink);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .compatibility-perspectives {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -4180,6 +4237,7 @@ select {
 
   .compatibility-context-grid,
   .compatibility-person-facts,
+  .compatibility-relationship-board,
   .compatibility-checklist {
     grid-template-columns: 1fr;
   }
@@ -4298,6 +4356,7 @@ select {
   .compatibility-actions,
   .compatibility-score-grid,
   .compatibility-chart-grid,
+  .compatibility-relationship-grid,
   .compatibility-perspective-row,
   .kuta-row {
     grid-template-columns: 1fr;

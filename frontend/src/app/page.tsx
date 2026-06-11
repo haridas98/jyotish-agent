@@ -3431,6 +3431,49 @@ type CompatibilityPanelProps = {
   chatDisabled: boolean;
 };
 
+function CompatibilityRelationshipBoard({
+  summaries,
+}: {
+  summaries: NonNullable<NonNullable<CompatibilityReport["analysis"]>["chart_summaries"]>;
+}) {
+  return (
+    <div className="compatibility-relationship-board" aria-label="Ключевые оси совместимости">
+      {(["person_a", "person_b"] as const).map((key) => {
+        const summary = summaries[key];
+        const title = key === "person_a" ? "Карта A" : "Карта B";
+        const items = [
+          ["Лагна", summary.lagna.rashi ?? "-"],
+          ["Луна", summary.moon.rashi ?? "-"],
+          ["7 дом", summary.seventh_house.rashi ?? "-"],
+          ["Упр. 7", summary.seventh_house.lord ?? "-"],
+          ["Упр. 7 в доме", summary.seventh_lord.house ?? "-"],
+          ["Даша", summary.birth_dasha_lord ?? "-"],
+        ];
+
+        return (
+          <div className="compatibility-relationship-card" key={key}>
+            <div className="compatibility-relationship-head">
+              <strong>{title}</strong>
+              <span>D1 / 7 дом / даша</span>
+            </div>
+            <div className="compatibility-relationship-grid">
+              {items.map(([label, value]) => (
+                <div key={`${key}-${label}`}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+            <small>
+              7 дом показывает партнёрство; управитель 7 дома показывает, через какую сферу включается связь.
+            </small>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CompatibilityPanel({
   report,
   status,
@@ -3618,6 +3661,7 @@ function CompatibilityPanel({
             </div>
           </div>
           {summaries ? (
+            <>
             <div className="compatibility-chart-grid">
               {(["person_a", "person_b"] as const).map((key) => {
                 const summary = summaries[key];
@@ -3635,6 +3679,8 @@ function CompatibilityPanel({
                 );
               })}
             </div>
+            <CompatibilityRelationshipBoard summaries={summaries} />
+            </>
           ) : null}
           {perspectives.length ? (
             <div className="compatibility-perspectives">
