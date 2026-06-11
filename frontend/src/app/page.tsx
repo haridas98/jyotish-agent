@@ -1296,42 +1296,6 @@ function ChartQuickSwitch({
   );
 }
 
-function VargaFocusGroups({
-  chart,
-  activeCode,
-  activeGroupKey,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  activeGroupKey: string;
-  onSelect: (groupKey: string, code: string) => void;
-}) {
-  return (
-    <div className="varga-focus-groups" aria-label="Быстрые группы варга-карт">
-      {vargaFocusGroups.map((group) => {
-        const selectedCode = availableCodeForVargaGroup(chart, group);
-        const active = group.key === activeGroupKey;
-        return (
-          <button
-            type="button"
-            className={active ? "active" : ""}
-            disabled={!selectedCode}
-            key={group.key}
-            onClick={() => {
-              if (!selectedCode) return;
-              onSelect(group.key, selectedCode);
-            }}
-          >
-            <strong>{group.label}</strong>
-            <span>{group.hint}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function VargaTaskMatrix({
   chart,
   activeGroupKey,
@@ -6061,14 +6025,6 @@ export default function Home() {
                       activeGroupKey={activeVargaFocusKey}
                       onSelect={selectVargaFocusGroup}
                     />
-                    <div className="chart-mode-strip">
-                      <VargaFocusGroups
-                        chart={chart}
-                        activeCode={chartMode}
-                        activeGroupKey={activeVargaFocusKey}
-                        onSelect={selectVargaFocusGroup}
-                      />
-                    </div>
                     <VargaStudyBoard
                       chart={chart}
                       activeGroupKey={activeVargaFocusKey}

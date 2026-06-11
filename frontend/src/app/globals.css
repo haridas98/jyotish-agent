@@ -752,44 +752,6 @@ select {
   opacity: 0.45;
 }
 
-.varga-focus-groups span {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.varga-focus-groups {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.varga-focus-groups button {
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 3px;
-  min-height: 58px;
-  padding: 8px 9px;
-  text-align: left;
-}
-
-.varga-focus-groups button.active {
-  background: #e6f6f3;
-  border-color: #8bc8bf;
-  box-shadow: inset 0 3px 0 var(--green-2);
-}
-
-.varga-focus-groups button:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
-}
-
-.varga-focus-groups strong {
-  color: var(--green);
-  font-size: 13px;
-}
-
 .varga-task-matrix {
   display: grid;
   gap: 8px;
@@ -926,8 +888,7 @@ select {
 .chart-workspace-body > .essential-chart-pair,
 .chart-workspace-body > .reference-chart-board,
 .chart-workspace-body > .featured-varga-board,
-.chart-workspace-body > .varga-study-board,
-.chart-workspace-body .chart-mode-strip {
+.chart-workspace-body > .varga-study-board {
   margin-top: 10px;
 }
 
@@ -1058,17 +1019,6 @@ select {
   font-size: 10px;
   font-style: normal;
   text-align: center;
-}
-
-.chart-mode-strip {
-  align-items: stretch;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 1fr;
-  margin-top: 10px;
-  padding: 10px;
 }
 
 .reference-chart-board {
@@ -4612,10 +4562,6 @@ button,
     grid-template-columns: 1fr;
   }
 
-  .varga-focus-groups {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .varga-task-matrix {
     grid-template-columns: 1fr;
   }
@@ -4663,10 +4609,6 @@ button,
 
   .varga-study-preview {
     width: min(100%, 220px);
-  }
-
-  .chart-mode-strip {
-    grid-template-columns: 1fr;
   }
 
   .core-info-strip,
