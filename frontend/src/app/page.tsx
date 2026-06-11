@@ -1375,6 +1375,13 @@ function availableVargaCodes(chart: BirthChart | null) {
   return Array.from(codes).sort((left, right) => vargaCodeNumber(left) - vargaCodeNumber(right) || left.localeCompare(right));
 }
 
+function vargaCoverage(chart: BirthChart | null) {
+  const available = new Set(availableVargaCodes(chart));
+  const ready = vargaSnapshotCodes.filter((code) => available.has(code));
+  const missing = vargaSnapshotCodes.filter((code) => !available.has(code));
+  return { ready, missing, total: vargaSnapshotCodes.length };
+}
+
 const chartQuickSwitchCodes = vargaSnapshotCodes;
 
 const priorityVargaContexts: Record<string, { scope: string; detail: string }> = {
@@ -1598,12 +1605,21 @@ function PriorityVargaRibbon({
     const varga = chart?.vargas?.[code];
     return { code, name: varga?.name ?? "Varga", available: Boolean(varga), varga: varga ?? null };
   });
+  const coverage = vargaCoverage(chart);
+  const activeContext = priorityVargaContexts[activeCode] ?? { scope: "Варга", detail: "дополнительная карта" };
 
   return (
     <div className="priority-varga-ribbon" aria-label="Главные D-карты">
       <div className="priority-varga-ribbon-head">
-        <strong>D-карты</strong>
-        <span>Shodasha Varga: D1-D60</span>
+        <div>
+          <strong>D-карты</strong>
+          <span>Shodasha Varga: D1-D60</span>
+        </div>
+        <div className="varga-coverage-pill">
+          <span>{coverage.ready.length}/{coverage.total}</span>
+          <strong>{activeCode} · {activeContext.scope}</strong>
+          <small>{coverage.missing.length ? `нет ${coverage.missing.slice(0, 4).join(", ")}` : "все основные варги рассчитаны"}</small>
+        </div>
       </div>
       <div className="priority-varga-ribbon-grid">
         {items.map((item) => (
