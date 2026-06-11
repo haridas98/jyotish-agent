@@ -709,6 +709,19 @@ select {
   flex-wrap: wrap;
 }
 
+.chart-title-block {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.chart-title-block span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 .chart-heading-tools {
   align-items: start;
   display: flex;

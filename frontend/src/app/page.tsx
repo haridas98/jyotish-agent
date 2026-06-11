@@ -5076,6 +5076,9 @@ export default function Home() {
   );
   const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
   const selectedVargaPlacements = selectedVarga?.placements ?? [];
+  const activeChartContext = priorityVargaContexts[chartMode] ?? { scope: "Варга", detail: "дополнительный слой чтения" };
+  const activeChartReferenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
+  const activeChartStyleLabel = chartStyle === "south" ? "Южный стиль" : "Северный стиль";
   const personSummary = birthReport?.person_summary ?? null;
 
   function selectVargaFocusGroup(groupKey: string, code: string) {
@@ -6538,7 +6541,10 @@ export default function Home() {
           <section className="main-stack">
             <section className="panel chart-panel" id="varga-charts">
               <div className="panel-heading">
-                <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
+                <div className="chart-title-block">
+                  <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
+                  <span>{activeChartStyleLabel} · отсчёт {activeChartReferenceLabel} · {activeChartContext.scope}: {activeChartContext.detail}</span>
+                </div>
                 <div className="chart-heading-tools">
                   <div className="chart-action-strip" aria-label="Действия с текущей картой">
                     <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>AI-разбор</a>
