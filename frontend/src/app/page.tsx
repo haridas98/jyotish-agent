@@ -1156,6 +1156,15 @@ function symbolLines(symbols: string[], maxPerLine?: number) {
 
 const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"];
 
+const vargaSchemeGroups = [
+  { key: "shadvarga", label: "Shad", title: "Shadvarga", hint: "D1, D2, D3, D9, D12, D30", codes: ["D1", "D2", "D3", "D9", "D12", "D30"] },
+  { key: "saptavarga", label: "Sapta", title: "Saptavarga", hint: "D1, D2, D3, D7, D9, D12, D30", codes: ["D1", "D2", "D3", "D7", "D9", "D12", "D30"] },
+  { key: "dashavarga", label: "Dasha", title: "Dashavarga", hint: "D1, D2, D3, D7, D9, D10, D12, D16, D30, D60", codes: ["D1", "D2", "D3", "D7", "D9", "D10", "D12", "D16", "D30", "D60"] },
+  { key: "shodasha", label: "16", title: "Shodasha Varga", hint: "D1-D60", codes: vargaSnapshotCodes },
+] as const;
+
+type VargaSchemeKey = (typeof vargaSchemeGroups)[number]["key"];
+
 const vargaPurposeLabels: Record<string, string> = {
   D1: "Раши / тело",
   D2: "Деньги",
@@ -1248,7 +1257,11 @@ const vargaFocusGroups: Array<{
 ];
 
 function availableCodeForVargaGroup(chart: BirthChart | null, group: (typeof vargaFocusGroups)[number]) {
-  return group.codes.find((code) => (code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])));
+  return availableCodeForVargaCodes(chart, group.codes);
+}
+
+function availableCodeForVargaCodes(chart: BirthChart | null, codes: readonly string[]) {
+  return codes.find((code) => (code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])));
 }
 
 function vargaCodeNumber(code: string) {
@@ -1320,6 +1333,40 @@ function VargaTaskMatrix({
           >
             <strong>{group.title}</strong>
             <span>{group.hint}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function VargaSchemeMatrix({
+  chart,
+  activeSchemeKey,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeSchemeKey: VargaSchemeKey;
+  onSelect: (schemeKey: VargaSchemeKey, code: string) => void;
+}) {
+  return (
+    <div className="varga-scheme-matrix" aria-label="Classical varga schemes">
+      {vargaSchemeGroups.map((scheme) => {
+        const selectedCode = availableCodeForVargaCodes(chart, scheme.codes);
+        return (
+          <button
+            type="button"
+            className={activeSchemeKey === scheme.key ? "active" : ""}
+            disabled={!selectedCode}
+            key={scheme.key}
+            onClick={() => {
+              if (!selectedCode) return;
+              onSelect(scheme.key, selectedCode);
+            }}
+          >
+            <span>{scheme.label}</span>
+            <strong>{scheme.title}</strong>
+            <small>{scheme.hint}</small>
           </button>
         );
       })}
@@ -4397,6 +4444,7 @@ export default function Home() {
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
   const [activeVargaFocusKey, setActiveVargaFocusKey] = useState("core");
+  const [activeVargaSchemeKey, setActiveVargaSchemeKey] = useState<VargaSchemeKey>("shodasha");
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [termLanguage, setTermLanguage] = useState<TermLanguage>("sanskrit");
@@ -4491,6 +4539,11 @@ export default function Home() {
 
   function selectVargaFocusGroup(groupKey: string, code: string) {
     setActiveVargaFocusKey(groupKey);
+    setChartMode(code);
+  }
+
+  function selectVargaScheme(schemeKey: VargaSchemeKey, code: string) {
+    setActiveVargaSchemeKey(schemeKey);
     setChartMode(code);
   }
 
@@ -6016,6 +6069,11 @@ export default function Home() {
                       chart={chart}
                       activeGroupKey={activeVargaFocusKey}
                       onSelect={selectVargaFocusGroup}
+                    />
+                    <VargaSchemeMatrix
+                      chart={chart}
+                      activeSchemeKey={activeVargaSchemeKey}
+                      onSelect={selectVargaScheme}
                     />
                     <VargaStudyBoard
                       chart={chart}
