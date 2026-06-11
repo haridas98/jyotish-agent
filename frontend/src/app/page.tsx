@@ -1710,7 +1710,8 @@ function PrimaryVargaTabs({
                 onSelectGroup(group.key, selectedCode);
               }}
             >
-              {group.label}
+              <strong>{group.label}</strong>
+              <span>{group.hint}</span>
             </button>
           );
         })}
