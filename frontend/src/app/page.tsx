@@ -1672,6 +1672,7 @@ function PrimaryVargaTabs({
     : activeAvailable
       ? "рассчитана"
       : unavailableVargaLabel(activeCode);
+  const activeContext = priorityVargaContexts[activeCode] ?? { scope: vargaPurposeLabels[activeCode] ?? "Варга", detail: "дополнительный слой чтения" };
 
   return (
     <div className="primary-varga-tabs" aria-label="Быстрый выбор главных D-карт">
@@ -1706,6 +1707,10 @@ function PrimaryVargaTabs({
       <div className={`primary-varga-status${activeAvailable ? " ready" : ""}`}>
         <span>{activeCode}</span>
         <strong>{activeStatus}</strong>
+      </div>
+      <div className="primary-varga-purpose">
+        <strong>{activeContext.scope}</strong>
+        <span>{activeContext.detail}</span>
       </div>
       <div className="primary-focus-tabs" aria-label="Сценарии чтения">
         {quickGroups.map((group) => {
