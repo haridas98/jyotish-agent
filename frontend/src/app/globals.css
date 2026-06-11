@@ -717,6 +717,43 @@ select {
   justify-content: flex-end;
 }
 
+.chart-action-strip {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  overflow: hidden;
+}
+
+.chart-action-strip button {
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--line);
+  color: var(--green);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.chart-action-strip button:last-child {
+  border-right: 0;
+}
+
+.chart-action-strip button:hover:not(:disabled) {
+  background: #e9f6f4;
+}
+
+.chart-action-strip button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .varga-task-matrix {
   display: grid;
   gap: 8px;

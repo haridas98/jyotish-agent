@@ -6193,11 +6193,6 @@ export default function Home() {
               {birthDate} · {birthTime} · {selectedPlace?.label ?? chart?.place.label ?? placeName}
             </span>
           </div>
-          <div className="top-actions">
-            <button type="button" onClick={handleSaveProfile} disabled={!chart}>Сохранить</button>
-            <button type="button" onClick={handleExportCurrentChart} disabled={!chart}>Экспорт</button>
-            <button type="button" onClick={() => window.print()} disabled={!chart}>Печать</button>
-          </div>
         </header>
 
         {privateAccessLocked ? (
@@ -6538,6 +6533,11 @@ export default function Home() {
               <div className="panel-heading">
                 <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
                 <div className="chart-heading-tools">
+                  <div className="chart-action-strip" aria-label="Действия с текущей картой">
+                    <button type="button" onClick={handleSaveProfile} disabled={!chart}>Сохранить</button>
+                    <button type="button" onClick={handleExportCurrentChart} disabled={!chart}>Экспорт</button>
+                    <button type="button" onClick={() => window.print()} disabled={!chart}>Печать</button>
+                  </div>
                   <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
                 </div>
               </div>
