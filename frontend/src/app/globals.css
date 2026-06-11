@@ -855,7 +855,7 @@ select {
   border-radius: 8px;
   display: flex;
   flex-wrap: wrap;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .chart-reference-toggle button {
@@ -868,6 +868,7 @@ select {
   min-height: 34px;
   min-width: 66px;
   padding: 5px 8px;
+  position: relative;
   text-align: left;
 }
 
@@ -895,6 +896,30 @@ select {
   color: var(--muted);
   font-size: 10px;
   line-height: 1.1;
+}
+
+.chart-reference-help {
+  background: #fffefa;
+  border: 1px solid #d9b36d;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(14, 40, 48, 0.16);
+  color: var(--ink);
+  display: grid;
+  font-size: 11px;
+  font-style: normal;
+  gap: 4px;
+  left: 0;
+  line-height: 1.25;
+  min-width: 210px;
+  padding: 8px;
+  position: absolute;
+  top: calc(100% + 6px);
+  white-space: normal;
+  z-index: 30;
+}
+
+.chart-reference-help b {
+  color: var(--green);
 }
 
 .chart-workspace-tabs {
@@ -1418,6 +1443,107 @@ select {
   min-width: 0;
 }
 
+.active-calculation-table {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  min-width: 0;
+  overflow: visible;
+}
+
+.active-calculation-head {
+  align-items: center;
+  background: #fffefa;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.active-calculation-head > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.active-calculation-head strong {
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+.active-calculation-head span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.active-calculation-tags {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.active-calculation-table > .planet-table {
+  border: 0;
+  border-radius: 0;
+}
+
+.glossary-wrap {
+  display: inline-flex;
+  position: relative;
+}
+
+.glossary-trigger {
+  appearance: none;
+  background: #f4fbf8;
+  border: 1px solid #cfe8df;
+  border-radius: 999px;
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1.1;
+  padding: 2px 7px;
+}
+
+.glossary-trigger:hover,
+.glossary-trigger:focus-visible {
+  background: #eaf6f1;
+  outline: none;
+}
+
+.glossary-popover {
+  background: #ffffff;
+  border: 1px solid #d9b36d;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(14, 40, 48, 0.16);
+  color: var(--ink);
+  display: grid;
+  font-size: 12px;
+  gap: 4px;
+  left: 0;
+  line-height: 1.3;
+  min-width: 230px;
+  padding: 9px;
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 40;
+}
+
+.glossary-popover strong {
+  color: var(--green);
+}
+
+.glossary-popover span {
+  color: var(--ink);
+  font-size: 12px;
+}
+
 .readiness-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1467,6 +1593,15 @@ select {
 
 .planet-strength-digest div.warn strong {
   color: var(--red);
+}
+
+.planet-strength-digest .glossary-popover strong {
+  color: var(--green);
+}
+
+.planet-strength-digest .glossary-popover span {
+  color: var(--ink);
+  font-size: 12px;
 }
 
 .planet-table {
@@ -2143,6 +2278,45 @@ select {
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
+}
+
+.workflow-chart-layout {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+}
+
+.workflow-mini-chart-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.workflow-mini-chart-head {
+  display: grid;
+  gap: 2px;
+}
+
+.workflow-mini-chart-head strong {
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+.workflow-mini-chart-head span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.workflow-mini-chart-card .south-chart-grid {
+  border: 1px solid #d9b36d;
+  justify-self: center;
+  width: min(100%, 240px);
 }
 
 .workflow-row {
@@ -3877,6 +4051,7 @@ select {
 
   .content-grid,
   .chart-layout,
+  .workflow-chart-layout,
   .classical-columns {
     grid-template-columns: 1fr;
   }
@@ -3908,6 +4083,21 @@ select {
 @media (max-width: 680px) {
   .product-main {
     padding: 14px;
+  }
+
+  .active-calculation-head {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .active-calculation-tags {
+    justify-content: flex-start;
+  }
+
+  .chart-reference-help,
+  .glossary-popover {
+    max-width: min(280px, calc(100vw - 48px));
+    min-width: 0;
   }
 
   .product-page-head,

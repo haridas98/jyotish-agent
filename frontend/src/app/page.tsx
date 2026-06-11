@@ -633,6 +633,55 @@ const chartReferenceOptions: Array<{
   { key: "twelfth", label: "12 дом", hint: "близость" },
 ];
 
+const jyotishGlossary = {
+  lagna: {
+    label: "Lagna",
+    text: "Точка восходящего знака. От нее обычно считают дома и базовую структуру карты.",
+  },
+  chandra_lagna: {
+    label: "Chandra Lagna",
+    text: "Карта от Луны. Полезна для психики, переживаний, даш и практического проявления событий.",
+  },
+  surya_lagna: {
+    label: "Surya Lagna",
+    text: "Карта от Солнца. Помогает смотреть статус, волю, здоровье и внешнее проявление человека.",
+  },
+  house_7: {
+    label: "7 дом",
+    text: "Дом брака, партнерства, договоров и открытого взаимодействия с другими людьми.",
+  },
+  house_12: {
+    label: "12 дом",
+    text: "Дом потерь, уединения, сна, расходов, мокши, дальних мест и скрытой стороны близости.",
+  },
+  shadbala: {
+    label: "Shadbala",
+    text: "Шесть групп силы грахи. Это расчетная оценка, а не самостоятельный окончательный приговор.",
+  },
+  combustion: {
+    label: "Asta / combustion",
+    text: "Сожжение: граха слишком близко к Солнцу и может слабее проявлять свои качества.",
+  },
+  vimshopaka: {
+    label: "Vimshopaka Bala",
+    text: "Сила по варгам: насколько граха поддержана в divisional charts.",
+  },
+  sav: {
+    label: "Sarvashtakavarga",
+    text: "Сводные бинду по знакам. Используется как быстрый слой оценки поддержки транзитов и домов.",
+  },
+} as const;
+
+type GlossaryKey = keyof typeof jyotishGlossary;
+
+const referenceGlossaryKeys: Partial<Record<ChartReference, GlossaryKey>> = {
+  lagna: "lagna",
+  moon: "chandra_lagna",
+  sun: "surya_lagna",
+  seventh: "house_7",
+  twelfth: "house_12",
+};
+
 type ChartPlacement = {
   body: string;
   rashi: string;
@@ -879,20 +928,37 @@ function ChartReferenceToggle({
   value: ChartReference;
   onChange: (value: ChartReference) => void;
 }) {
+  const [openKey, setOpenKey] = useState<ChartReference | null>(null);
+
   return (
     <div className="chart-reference-toggle" aria-label="Точка отсчёта домов">
-      {chartReferenceOptions.map((option) => (
-        <button
-          type="button"
-          className={value === option.key ? "active" : ""}
-          disabled={!chart}
-          key={option.key}
-          onClick={() => onChange(option.key)}
-        >
-          <strong>{option.label}</strong>
-          <span>{option.hint}</span>
-        </button>
-      ))}
+      {chartReferenceOptions.map((option) => {
+        const glossaryKey = referenceGlossaryKeys[option.key];
+        const glossaryItem = glossaryKey ? jyotishGlossary[glossaryKey] : null;
+        const isOpen = openKey === option.key;
+        return (
+          <button
+            type="button"
+            className={value === option.key ? "active" : ""}
+            disabled={!chart}
+            key={option.key}
+            title={glossaryItem?.text}
+            onClick={() => {
+              onChange(option.key);
+              setOpenKey((current) => (current === option.key ? null : option.key));
+            }}
+          >
+            <strong>{option.label}</strong>
+            <span>{option.hint}</span>
+            {isOpen && glossaryItem ? (
+              <em className="chart-reference-help">
+                <b>{glossaryItem.label}</b>
+                {glossaryItem.text}
+              </em>
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1617,6 +1683,34 @@ function formatPeriodRange(period: DayPeriod) {
   return `${period.name} ${formatIsoTime(period.starts_at)}-${formatIsoTime(period.ends_at)}`;
 }
 
+function GlossaryTerm({ termKey, children }: { termKey: GlossaryKey; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const item = jyotishGlossary[termKey];
+
+  return (
+    <span className="glossary-wrap">
+      <button
+        type="button"
+        className="glossary-trigger"
+        aria-expanded={open}
+        title={item.text}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((value) => !value);
+        }}
+      >
+        {children}
+      </button>
+      {open ? (
+        <span className="glossary-popover" role="note">
+          <strong>{item.label}</strong>
+          <span>{item.text}</span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function isoDateOffset(days: number) {
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -1755,13 +1849,17 @@ function PlanetStrengthDigest({ chart }: { chart: BirthChart | null }) {
 
   return (
     <div className="planet-strength-digest" aria-label="Сила и состояния планет">
-      {rows.map((row) => (
-        <div className={row.warn ? "warn" : ""} key={row.label}>
-          <span>{row.label}</span>
-          <strong>{row.value}</strong>
-          <small>{row.detail}</small>
-        </div>
-      ))}
+      {rows.map((row, index) => {
+        const glossaryKeys: Array<GlossaryKey> = ["combustion", "shadbala", "shadbala", "vimshopaka", "sav"];
+        const glossaryKey = glossaryKeys[index];
+        return (
+          <div className={row.warn ? "warn" : ""} key={row.label}>
+            <span>{glossaryKey ? <GlossaryTerm termKey={glossaryKey}>{row.label}</GlossaryTerm> : row.label}</span>
+            <strong>{row.value}</strong>
+            <small>{row.detail}</small>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1815,6 +1913,44 @@ function VargaTable({ placements, code, termLanguage }: { placements: VargaPlace
           <span>{rashiTermFromName(placement.rashi, termLanguage)}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ActiveCalculationTable({
+  chart,
+  chartMode,
+  selectedVarga,
+  selectedVargaPlacements,
+  termLanguage,
+}: {
+  chart: BirthChart | null;
+  chartMode: string;
+  selectedVarga: ActiveVargaChart | null;
+  selectedVargaPlacements: VargaPlacement[];
+  termLanguage: TermLanguage;
+}) {
+  const isD1 = chartMode === "D1";
+  const title = isD1 ? "Расчеты D1 Rashi" : `Расчеты ${chartMode} ${selectedVarga?.name ?? ""}`.trim();
+  const hint = isD1 ? "Граха, градус, раши, накшатра, статус, сожжение, D9" : "Положение каждой точки в выбранной варге";
+
+  return (
+    <div className="active-calculation-table">
+      <div className="active-calculation-head">
+        <div>
+          <strong>{title}</strong>
+          <span>{hint}</span>
+        </div>
+        <div className="active-calculation-tags">
+          <GlossaryTerm termKey="shadbala">Shadbala</GlossaryTerm>
+          <GlossaryTerm termKey="combustion">Asta</GlossaryTerm>
+        </div>
+      </div>
+      {isD1 ? (
+        <GrahaTable grahas={chart?.grahas ?? []} termLanguage={termLanguage} />
+      ) : (
+        <VargaTable placements={selectedVargaPlacements} code={chartMode} termLanguage={termLanguage} />
+      )}
     </div>
   );
 }
@@ -2947,6 +3083,18 @@ function TransitFocusCard({ row }: { row: TransitRow }) {
   );
 }
 
+function WorkflowMiniChart({ chart, title, hint }: { chart: BirthChart; title: string; hint: string }) {
+  return (
+    <div className="workflow-mini-chart-card">
+      <div className="workflow-mini-chart-head">
+        <strong>{title}</strong>
+        <span>{hint}</span>
+      </div>
+      <SouthIndianChartGrid chart={chart} varga={null} compact />
+    </div>
+  );
+}
+
 function TithiPraveshaPanel({ report, status }: { report: TithiPraveshaReport | null; status: string }) {
   const annualReturn = report?.return;
   return (
@@ -2957,42 +3105,45 @@ function TithiPraveshaPanel({ report, status }: { report: TithiPraveshaReport | 
       </div>
       <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {annualReturn ? (
-        <div className="workflow-table">
-          <div className="workflow-row workflow-head">
-            <span>Показатель</span>
-            <span>Значение</span>
-            <span>Контекст</span>
-            <span>Статус</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Возвращение</strong>
-            <span>{formatDate(annualReturn.date)} · {annualReturn.time}</span>
-            <span>{annualReturn.timezone}</span>
-            <span>Δ {annualReturn.delta_degrees.toFixed(4)}°</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Лагна года</strong>
-            <span>{report.annual_context.lagna.rashi ?? "-"}</span>
-            <span>{report.annual_context.lagna.nakshatra ?? "-"}</span>
-            <span>{statusRu(report.status)}</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Солнце / Луна</strong>
-            <span>{report.annual_context.sun.rashi ?? "-"} / {report.annual_context.moon.rashi ?? "-"}</span>
-            <span>{report.annual_context.moon.nakshatra ?? "-"}</span>
-            <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Панчанга</strong>
-            <span>{report.annual_context.panchanga.tithi?.name ?? "-"}</span>
-            <span>{report.annual_context.panchanga.vara?.name ?? "-"}</span>
-            <span>{workflowStatusRu(report.audit.review_status)}</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Muntha</strong>
-            <span>{report.annual_context.tajaka?.muntha?.rashi ?? "-"}</span>
-            <span>дом {report.annual_context.tajaka?.muntha?.house_from_annual_lagna ?? "-"}</span>
-            <span>{report.annual_context.tajaka?.status ?? "baseline"}</span>
+        <div className="workflow-chart-layout">
+          <WorkflowMiniChart chart={annualReturn.chart} title="Годовая карта" hint="Tithi Pravesha" />
+          <div className="workflow-table">
+            <div className="workflow-row workflow-head">
+              <span>Показатель</span>
+              <span>Значение</span>
+              <span>Контекст</span>
+              <span>Статус</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Возвращение</strong>
+              <span>{formatDate(annualReturn.date)} · {annualReturn.time}</span>
+              <span>{annualReturn.timezone}</span>
+              <span>Δ {annualReturn.delta_degrees.toFixed(4)}°</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Лагна года</strong>
+              <span>{report.annual_context.lagna.rashi ?? "-"}</span>
+              <span>{report.annual_context.lagna.nakshatra ?? "-"}</span>
+              <span>{statusRu(report.status)}</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Солнце / Луна</strong>
+              <span>{report.annual_context.sun.rashi ?? "-"} / {report.annual_context.moon.rashi ?? "-"}</span>
+              <span>{report.annual_context.moon.nakshatra ?? "-"}</span>
+              <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Панчанга</strong>
+              <span>{report.annual_context.panchanga.tithi?.name ?? "-"}</span>
+              <span>{report.annual_context.panchanga.vara?.name ?? "-"}</span>
+              <span>{workflowStatusRu(report.audit.review_status)}</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Muntha</strong>
+              <span>{report.annual_context.tajaka?.muntha?.rashi ?? "-"}</span>
+              <span>дом {report.annual_context.tajaka?.muntha?.house_from_annual_lagna ?? "-"}</span>
+              <span>{report.annual_context.tajaka?.status ?? "baseline"}</span>
+            </div>
           </div>
         </div>
       ) : (
@@ -3053,30 +3204,33 @@ function PrashnaPanel({ report, status }: { report: PrashnaReport | null; status
       </div>
       <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {report ? (
-        <div className="workflow-table">
-          <div className="workflow-row workflow-head">
-            <span>Показатель</span>
-            <span>Значение</span>
-            <span>Контекст</span>
-            <span>Статус</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Лагна</strong>
-            <span>{report.indicators.lagna.rashi ?? "-"}</span>
-            <span>упр. {labelRu(report.indicators.lagna_lord ?? "")}</span>
-            <span>{workflowStatusRu(report.audit.review_status)}</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Луна</strong>
-            <span>{report.indicators.moon.rashi ?? "-"}</span>
-            <span>дом {report.indicators.moon_house_from_lagna ?? "-"}</span>
-            <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Панчанга</strong>
-            <span>{report.indicators.panchanga.tithi?.name ?? "-"}</span>
-            <span>{report.indicators.panchanga.nakshatra?.name ?? "-"}</span>
-            <span>{report.status}</span>
+        <div className="workflow-chart-layout">
+          <WorkflowMiniChart chart={report.chart} title="Prashna" hint="карта вопроса" />
+          <div className="workflow-table">
+            <div className="workflow-row workflow-head">
+              <span>Показатель</span>
+              <span>Значение</span>
+              <span>Контекст</span>
+              <span>Статус</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Лагна</strong>
+              <span>{report.indicators.lagna.rashi ?? "-"}</span>
+              <span>упр. {labelRu(report.indicators.lagna_lord ?? "")}</span>
+              <span>{workflowStatusRu(report.audit.review_status)}</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Луна</strong>
+              <span>{report.indicators.moon.rashi ?? "-"}</span>
+              <span>дом {report.indicators.moon_house_from_lagna ?? "-"}</span>
+              <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Панчанга</strong>
+              <span>{report.indicators.panchanga.tithi?.name ?? "-"}</span>
+              <span>{report.indicators.panchanga.nakshatra?.name ?? "-"}</span>
+              <span>{report.status}</span>
+            </div>
           </div>
         </div>
       ) : (
@@ -3095,33 +3249,36 @@ function MundanePanel({ report, status }: { report: MundaneReport | null; status
       </div>
       <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {report ? (
-        <div className="workflow-table">
-          <div className="workflow-row workflow-head">
-            <span>Показатель</span>
-            <span>Значение</span>
-            <span>Контекст</span>
-            <span>Статус</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Event</strong>
-            <span>{report.event.type}</span>
-            <span>{formatDate(report.event.occurred_at.date)} · {report.event.occurred_at.time}</span>
-            <span>{workflowStatusRu(report.audit.review_status)}</span>
-          </div>
-          <div className="workflow-row">
-            <strong>Оси</strong>
-            <span>10: {report.indicators.tenth_house_rashi ?? "-"}</span>
-            <span>4: {report.indicators.fourth_house_rashi ?? "-"}</span>
-            <span>{report.status}</span>
-          </div>
-          {report.indicators.slow_planets.slice(0, 4).map((row) => (
-            <div className="workflow-row" key={row.body}>
-              <strong>{labelRu(row.body)}</strong>
-              <span>{row.placement.rashi ?? "-"}</span>
-              <span>дом {row.house_from_lagna ?? "-"}</span>
-              <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
+        <div className="workflow-chart-layout">
+          <WorkflowMiniChart chart={report.chart} title="Mundane" hint="event chart" />
+          <div className="workflow-table">
+            <div className="workflow-row workflow-head">
+              <span>Показатель</span>
+              <span>Значение</span>
+              <span>Контекст</span>
+              <span>Статус</span>
             </div>
-          ))}
+            <div className="workflow-row">
+              <strong>Event</strong>
+              <span>{report.event.type}</span>
+              <span>{formatDate(report.event.occurred_at.date)} · {report.event.occurred_at.time}</span>
+              <span>{workflowStatusRu(report.audit.review_status)}</span>
+            </div>
+            <div className="workflow-row">
+              <strong>Оси</strong>
+              <span>10: {report.indicators.tenth_house_rashi ?? "-"}</span>
+              <span>4: {report.indicators.fourth_house_rashi ?? "-"}</span>
+              <span>{report.status}</span>
+            </div>
+            {report.indicators.slow_planets.slice(0, 4).map((row) => (
+              <div className="workflow-row" key={row.body}>
+                <strong>{labelRu(row.body)}</strong>
+                <span>{row.placement.rashi ?? "-"}</span>
+                <span>дом {row.house_from_lagna ?? "-"}</span>
+                <span>{workflowStatusRu(report.audit.public_interpretation_status)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="pending-strip">Mundane/event chart появится после расчёта карты.</div>
@@ -6084,11 +6241,13 @@ export default function Home() {
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} termLanguage={termLanguage} />
                   <PlanetStrengthDigest chart={chart} />
-                  {chartMode === "D1" ? (
-                    <GrahaTable grahas={chart?.grahas ?? []} termLanguage={termLanguage} />
-                  ) : (
-                    <VargaTable placements={selectedVargaPlacements} code={chartMode} termLanguage={termLanguage} />
-                  )}
+                  <ActiveCalculationTable
+                    chart={chart}
+                    chartMode={chartMode}
+                    selectedVarga={selectedVarga}
+                    selectedVargaPlacements={selectedVargaPlacements}
+                    termLanguage={termLanguage}
+                  />
                   {chartFacts.length ? (
                     <div className="fact-grid">
                       {chartFacts.map(([label, value]) => (
