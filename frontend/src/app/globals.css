@@ -1198,7 +1198,7 @@ select {
 .essential-chart-pair {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
   margin-top: 10px;
 }
 
@@ -1252,7 +1252,7 @@ select {
   justify-content: center;
   justify-self: center;
   min-width: 0;
-  width: min(100%, 172px);
+  width: min(100%, 150px);
 }
 
 .essential-chart-preview em {

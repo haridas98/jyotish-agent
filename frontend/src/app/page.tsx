@@ -1549,14 +1549,21 @@ function EssentialChartPairBoard({
   chartReference: ChartReference;
   onSelect: (code: string) => void;
 }) {
-  const d9 = chart?.vargas?.D9 ?? null;
-  const items = [
-    { code: "D1", title: "D1 Раши", hint: "основа карты", available: Boolean(chart), varga: null },
-    { code: "D9", title: "D9 Навамша", hint: "дхарма, брак, сила грах", available: Boolean(d9), varga: d9 },
-  ];
+  const essentialCodes = ["D1", "D9", "D10", "D12", "D30", "D60"];
+  const items = essentialCodes.map((code) => {
+    if (code === "D1") return { code, title: "D1 Раши", hint: "основа карты", available: Boolean(chart), varga: null };
+    const varga = chart?.vargas?.[code] ?? null;
+    return {
+      code,
+      title: `${code} ${vargaPurposeLabels[code] ?? varga?.name ?? "варга"}`,
+      hint: priorityVargaContexts[code]?.detail ?? "ключевая D-карта",
+      available: Boolean(varga),
+      varga,
+    };
+  });
 
   return (
-    <div className="essential-chart-pair" aria-label="Главная пара карт D1 и D9">
+    <div className="essential-chart-pair" aria-label="Главные рабочие D-карты">
       {items.map((item) => (
         <button
           type="button"
