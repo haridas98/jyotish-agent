@@ -117,8 +117,8 @@ const primaryAnalysisTabKeys = new Set<AnalysisTab>([
 const primaryAnalysisTabs = analysisTabs.filter((tab) => primaryAnalysisTabKeys.has(tab.key));
 const secondaryAnalysisTabs = analysisTabs.filter((tab) => !primaryAnalysisTabKeys.has(tab.key));
 const chartWorkspaceTabs: Array<{ key: ChartWorkspaceTab; label: string; hint: string }> = [
-  { key: "essentials", label: "Ключевые", hint: "D1-D60" },
-  { key: "vargas", label: "D-карты", hint: "D1-D60" },
+  { key: "essentials", label: "Главные карты", hint: "D1, D9, D10" },
+  { key: "vargas", label: "Атлас варг", hint: "D1-D60" },
   { key: "references", label: "Отсчёты", hint: "Луна, 7/12" },
 ];
 
@@ -1252,13 +1252,34 @@ function symbolLines(symbols: string[], maxPerLine?: number) {
   return lines;
 }
 
-const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"];
+const shodashaVargaCodes = [
+  "D1",
+  "D2",
+  "D3",
+  "D4",
+  "D7",
+  "D9",
+  "D10",
+  "D12",
+  "D16",
+  "D20",
+  "D24",
+  "D27",
+  "D30",
+  "D40",
+  "D45",
+  "D60",
+] as const;
+
+const jaiminiVargaCodes = ["D5", "D6", "D8", "D11"] as const;
+const vargaSnapshotCodes = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"] as const;
 
 const vargaSchemeGroups = [
   { key: "shadvarga", label: "Shad", title: "Shadvarga", hint: "D1, D2, D3, D9, D12, D30", codes: ["D1", "D2", "D3", "D9", "D12", "D30"] },
   { key: "saptavarga", label: "Sapta", title: "Saptavarga", hint: "D1, D2, D3, D7, D9, D12, D30", codes: ["D1", "D2", "D3", "D7", "D9", "D12", "D30"] },
   { key: "dashavarga", label: "Dasha", title: "Dashavarga", hint: "D1, D2, D3, D7, D9, D10, D12, D16, D30, D60", codes: ["D1", "D2", "D3", "D7", "D9", "D10", "D12", "D16", "D30", "D60"] },
-  { key: "shodasha", label: "16", title: "Shodasha Varga", hint: "D1-D60", codes: vargaSnapshotCodes },
+  { key: "shodasha", label: "16", title: "Shodasha Varga", hint: "D1-D60", codes: shodashaVargaCodes },
+  { key: "jaimini", label: "Jai", title: "Jaimini Vargas", hint: jaiminiVargaCodes.join(", "), codes: jaiminiVargaCodes },
 ] as const;
 
 type VargaSchemeKey = (typeof vargaSchemeGroups)[number]["key"];
@@ -1268,9 +1289,13 @@ const vargaPurposeLabels: Record<string, string> = {
   D2: "Деньги",
   D3: "Братья",
   D4: "Дом",
+  D5: "Власть",
+  D6: "Болезни",
   D7: "Дети",
+  D8: "Внезапное",
   D9: "Навамша",
   D10: "Карьера",
+  D11: "Рудра",
   D12: "Родители",
   D16: "Комфорт",
   D20: "Садхана",
@@ -1284,9 +1309,13 @@ const vargaPurposeLabels: Record<string, string> = {
 
 const vargaPriorityLabels: Record<string, string> = {
   D1: "основа",
+  D5: "джайм.",
+  D6: "джайм.",
   D7: "семья",
+  D8: "джайм.",
   D9: "must",
   D10: "дело",
+  D11: "джайм.",
   D12: "род",
   D20: "дух",
   D24: "учёба",
@@ -1345,6 +1374,14 @@ const vargaFocusGroups: Array<{
     codes: ["D20", "D9", "D1"],
   },
   {
+    key: "jaimini",
+    label: "Jaimini",
+    hint: "D5, D6, D8, D11",
+    title: "Дополнительные карты Джаимини",
+    description: "D5, D6, D8 и D11 выделены отдельным набором; откроются после добавления проверенных правил расчёта.",
+    codes: ["D5", "D6", "D8", "D11"],
+  },
+  {
     key: "karma",
     label: "Karma",
     hint: "D30, D60",
@@ -1388,9 +1425,13 @@ const priorityVargaContexts: Record<string, { scope: string; detail: string }> =
   D2: { scope: "Ресурс", detail: "деньги, питание, опора" },
   D3: { scope: "Смелость", detail: "братья, усилие, воля" },
   D4: { scope: "Дом", detail: "недвижимость, счастье" },
+  D5: { scope: "Власть", detail: "слава, полномочия" },
+  D6: { scope: "Здоровье", detail: "болезни, долги, враги" },
   D7: { scope: "Дети", detail: "потомство, творчество" },
+  D8: { scope: "Внезапное", detail: "скрытые переломы и риски" },
   D9: { scope: "Дхарма", detail: "брак, сила грах" },
   D10: { scope: "Карьера", detail: "дело, статус, работа" },
+  D11: { scope: "Рудра", detail: "разрушение, предельные события" },
   D12: { scope: "Род", detail: "отец, мать, наследие" },
   D16: { scope: "Комфорт", detail: "транспорт, удобства" },
   D20: { scope: "Дух", detail: "садхана, вера" },
@@ -1619,7 +1660,7 @@ function PriorityVargaRibbon({
       <div className="priority-varga-ribbon-head">
         <div>
           <strong>D-карты</strong>
-          <span>Shodasha Varga: D1-D60</span>
+          <span>Атлас D-карт: D1-D60</span>
         </div>
         <div className="varga-coverage-pill">
           <span>{coverage.ready.length}/{coverage.total}</span>
@@ -1767,10 +1808,10 @@ function VargaAtlasBoard({
   });
 
   return (
-    <div className="varga-atlas-board" aria-label="Shodasha varga atlas">
+    <div className="varga-atlas-board" aria-label="Атлас D-карт">
       <div className="varga-atlas-head">
-        <strong>Shodasha Varga atlas</strong>
-        <span>16 карт одним взглядом</span>
+        <strong>Атлас D-карт</strong>
+        <span>20 слоёв одним взглядом</span>
       </div>
       <div className="varga-atlas-grid">
         {items.map((item) => (
@@ -6534,14 +6575,6 @@ export default function Home() {
                 </div>
               </div>
               <PriorityVargaRibbon
-                chart={chart}
-                activeCode={chartMode}
-                chartStyle={chartStyle}
-                chartReference={chartReference}
-                onSelect={selectVargaCode}
-              />
-              <VargaReadingStrip chart={chart} activeCode={chartMode} onSelect={selectVargaCode} />
-              <VargaCompareStrip
                 chart={chart}
                 activeCode={chartMode}
                 chartStyle={chartStyle}
