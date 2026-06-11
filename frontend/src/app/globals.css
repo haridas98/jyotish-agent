@@ -1146,6 +1146,42 @@ select {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.varga-atlas-empty {
+  align-items: center;
+  background: #fbfdfc;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 7px;
+  grid-column: 1 / -1;
+  justify-items: center;
+  min-height: 150px;
+  padding: 18px;
+  text-align: center;
+}
+
+.varga-atlas-empty strong {
+  color: var(--green);
+  font-size: 14px;
+}
+
+.varga-atlas-empty span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  max-width: 430px;
+}
+
+.varga-atlas-empty button {
+  background: #004f57;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 32px;
+  padding: 7px 12px;
+}
+
 .varga-atlas-card {
   background: #ffffff;
   border: 0;

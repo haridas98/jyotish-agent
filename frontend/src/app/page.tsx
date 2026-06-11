@@ -2041,41 +2041,49 @@ function VargaAtlasBoard({
         ))}
       </div>
       <div className="varga-atlas-grid">
-        {filteredItems.map((item) => (
-          <button
-            type="button"
-            className={`varga-atlas-card${activeCode === item.code ? " active" : ""}${item.available ? " ready" : ""}${jaiminiVargaCodeSet.has(item.code) ? " jaimini" : ""}`}
-            disabled={!item.available}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <div className="varga-atlas-title">
-              <div>
-                <strong>{item.code}</strong>
-                <em>{item.status}</em>
-              </div>
-              <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
-            </div>
-            <div className="varga-atlas-preview">
-              {item.available ? (
-                chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                )
-              ) : (
-                <div className="varga-atlas-placeholder">
-                  {chartStyle === "south" ? (
-                    <SouthIndianChartGrid chart={null} varga={null} chartReference={chartReference} compact />
-                  ) : (
-                    <NorthIndianChartSvg chart={null} varga={null} chartReference={chartReference} compact />
-                  )}
-                  <em>{item.previewStatus}</em>
+        {filteredItems.length ? (
+          filteredItems.map((item) => (
+            <button
+              type="button"
+              className={`varga-atlas-card${activeCode === item.code ? " active" : ""}${item.available ? " ready" : ""}${jaiminiVargaCodeSet.has(item.code) ? " jaimini" : ""}`}
+              disabled={!item.available}
+              key={item.code}
+              onClick={() => onSelect(item.code)}
+            >
+              <div className="varga-atlas-title">
+                <div>
+                  <strong>{item.code}</strong>
+                  <em>{item.status}</em>
                 </div>
-              )}
-            </div>
-          </button>
-        ))}
+                <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
+              </div>
+              <div className="varga-atlas-preview">
+                {item.available ? (
+                  chartStyle === "south" ? (
+                    <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                  ) : (
+                    <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                  )
+                ) : (
+                  <div className="varga-atlas-placeholder">
+                    {chartStyle === "south" ? (
+                      <SouthIndianChartGrid chart={null} varga={null} chartReference={chartReference} compact />
+                    ) : (
+                      <NorthIndianChartSvg chart={null} varga={null} chartReference={chartReference} compact />
+                    )}
+                    <em>{item.previewStatus}</em>
+                  </div>
+                )}
+              </div>
+            </button>
+          ))
+        ) : (
+          <div className="varga-atlas-empty">
+            <strong>В этом фильтре пока нет D-карт</strong>
+            <span>Откройте все карты или запустите расчёт, чтобы появились готовые варги.</span>
+            <button type="button" onClick={() => setAtlasFilter("all")}>Показать все</button>
+          </div>
+        )}
       </div>
     </div>
   );
