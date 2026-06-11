@@ -1934,7 +1934,8 @@ select {
 }
 
 .compact-table .table-row {
-  grid-template-columns: minmax(76px, 1fr) minmax(84px, 1fr);
+  grid-template-columns: minmax(82px, 1fr) minmax(92px, 1fr) minmax(82px, 1fr) 68px;
+  min-width: 390px;
 }
 
 .graha-table .table-row {
@@ -5288,8 +5289,8 @@ button,
 }
 
 .compact-table .table-row {
-  grid-template-columns: minmax(76px, 1fr) minmax(84px, 1fr);
-  min-width: 0;
+  grid-template-columns: minmax(82px, 1fr) minmax(92px, 1fr) minmax(82px, 1fr) 68px;
+  min-width: 390px;
 }
 
 .combustion-badge {

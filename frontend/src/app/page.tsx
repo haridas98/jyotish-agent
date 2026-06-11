@@ -2111,7 +2111,28 @@ function angularDistance(a: number, b: number) {
   return diff;
 }
 
-function VargaTable({ placements, code, termLanguage }: { placements: VargaPlacement[]; code: string; termLanguage: TermLanguage }) {
+function VargaPlacementStatusBadges({ placement, natal }: { placement: VargaPlacement; natal?: GrahaPosition }) {
+  const rashiIndex = normalizeRashiIndex(placement.rashi_index) ?? rashiIndexFromName(placement.rashi);
+  const dignity = dignityForPlacement(placement.body, rashiIndex, placement.dignity ?? natal?.dignity ?? null);
+  const badges = [
+    ...(natal && isRetrogradeGraha(natal) ? [{ key: "retrograde" as const, label: "()" }] : []),
+    ...(dignity === "moolatrikona" ? [{ key: "moolatrikona" as const, label: "_" }] : []),
+    ...(dignity === "exaltation" ? [{ key: "exaltation" as const, label: "↑" }] : []),
+    ...(dignity === "debilitation" ? [{ key: "debilitation" as const, label: "↓" }] : []),
+  ];
+
+  if (!badges.length) return <span className="graha-status-muted">-</span>;
+
+  return (
+    <span className="graha-status-list" aria-label="Статусы точки в варге">
+      {badges.map((badge) => (
+        <StatusGlossaryBadge termKey={badge.key} label={badge.label} className={badge.key} key={badge.key} />
+      ))}
+    </span>
+  );
+}
+
+function VargaTable({ chart, placements, code, termLanguage }: { chart: BirthChart | null; placements: VargaPlacement[]; code: string; termLanguage: TermLanguage }) {
   if (placements.length === 0) {
     return (
       <div className="readiness-panel">
@@ -2126,13 +2147,20 @@ function VargaTable({ placements, code, termLanguage }: { placements: VargaPlace
       <div className="table-row table-head">
         <span>Точка</span>
         <span>Раши {code}</span>
+        <span>D1</span>
+        <span><GlossaryTerm termKey="dignity">Статус</GlossaryTerm></span>
       </div>
-      {placements.map((placement) => (
-        <div className="table-row" key={placement.body}>
-          <strong>{grahaTermLabel(placement.body, termLanguage)}</strong>
-          <span>{rashiTermFromName(placement.rashi, termLanguage)}</span>
-        </div>
-      ))}
+      {placements.map((placement) => {
+        const natal = chart?.grahas.find((graha) => canonicalBody(graha.body) === canonicalBody(placement.body));
+        return (
+          <div className="table-row" key={placement.body}>
+            <strong>{grahaTermLabel(placement.body, termLanguage)}</strong>
+            <span>{rashiTermFromName(placement.rashi, termLanguage)}</span>
+            <span>{rashiTermFromName(natal?.rashi, termLanguage)}</span>
+            <VargaPlacementStatusBadges placement={placement} natal={natal} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -2170,7 +2198,7 @@ function ActiveCalculationTable({
       {isD1 ? (
         <GrahaTable grahas={chart?.grahas ?? []} termLanguage={termLanguage} />
       ) : (
-        <VargaTable placements={selectedVargaPlacements} code={chartMode} termLanguage={termLanguage} />
+        <VargaTable chart={chart} placements={selectedVargaPlacements} code={chartMode} termLanguage={termLanguage} />
       )}
     </div>
   );
