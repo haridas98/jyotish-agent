@@ -104,6 +104,18 @@ const analysisTabs = [
 
 type AnalysisTab = (typeof analysisTabs)[number]["key"];
 
+const primaryAnalysisTabKeys = new Set<AnalysisTab>([
+  "overview",
+  "calculations",
+  "yogas",
+  "timeline",
+  "transits",
+  "guidance",
+  "sources",
+]);
+const primaryAnalysisTabs = analysisTabs.filter((tab) => primaryAnalysisTabKeys.has(tab.key));
+const secondaryAnalysisTabs = analysisTabs.filter((tab) => !primaryAnalysisTabKeys.has(tab.key));
+
 const stateLabels: Record<string, string> = {
   draft: "в работе",
   ready: "готово",
@@ -5882,13 +5894,6 @@ export default function Home() {
               <div className="block-heading">
                 <h3>Сохранённые карты</h3>
                 <div className="profile-heading-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => setActiveAnalysisTab("compatibility")}
-                  >
-                    Совместимость
-                  </button>
                   <button type="button" className="secondary-button" onClick={refreshProfiles}>Обновить</button>
                 </div>
               </div>
@@ -6004,20 +6009,60 @@ export default function Home() {
             </section>
 
             <section className="analysis-workspace" id="reports">
-              <div className="analysis-tabs" role="tablist" aria-label="Разделы анализа">
-                {analysisTabs.map((tab) => (
-                  <button
-                    type="button"
-                    key={tab.key}
-                    className={activeAnalysisTab === tab.key ? "active" : ""}
-                    onClick={() => setActiveAnalysisTab(tab.key)}
-                    role="tab"
-                    aria-selected={activeAnalysisTab === tab.key}
+              <div className="workflow-shortcuts" aria-label="Основные рабочие режимы">
+                <button type="button" className={activeAnalysisTab === "guidance" ? "active" : ""} onClick={() => setActiveAnalysisTab("guidance")}>
+                  <strong>Личный обзор</strong>
+                  <span>AI и диалог</span>
+                </button>
+                <button type="button" className={activeAnalysisTab === "compatibility" ? "active" : ""} onClick={() => setActiveAnalysisTab("compatibility")}>
+                  <strong>Совместимость</strong>
+                  <span>D1/D7/D9/D12</span>
+                </button>
+                <button type="button" onClick={() => document.getElementById("varga-charts")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                  <strong>D-карты</strong>
+                  <span>D1-D60</span>
+                </button>
+                <button type="button" className={activeAnalysisTab === "transits" ? "active" : ""} onClick={() => setActiveAnalysisTab("transits")}>
+                  <strong>Сегодня</strong>
+                  <span>транзиты</span>
+                </button>
+                <a href="/reports">
+                  <strong>История</strong>
+                  <span>обзоры</span>
+                </a>
+              </div>
+              <div className="analysis-tab-shell">
+                <div className="analysis-tabs" role="tablist" aria-label="Разделы анализа">
+                  {primaryAnalysisTabs.map((tab) => (
+                    <button
+                      type="button"
+                      key={tab.key}
+                      className={activeAnalysisTab === tab.key ? "active" : ""}
+                      onClick={() => setActiveAnalysisTab(tab.key)}
+                      role="tab"
+                      aria-selected={activeAnalysisTab === tab.key}
+                    >
+                      <strong>{tab.label}</strong>
+                      <span>{tab.hint}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="analysis-more-tabs">
+                  <span>Ещё</span>
+                  <select
+                    value={secondaryAnalysisTabs.some((tab) => tab.key === activeAnalysisTab) ? activeAnalysisTab : ""}
+                    onChange={(event) => {
+                      if (event.target.value) setActiveAnalysisTab(event.target.value as AnalysisTab);
+                    }}
                   >
-                    <strong>{tab.label}</strong>
-                    <span>{tab.hint}</span>
-                  </button>
-                ))}
+                    <option value="">Режим</option>
+                    {secondaryAnalysisTabs.map((tab) => (
+                      <option value={tab.key} key={tab.key}>
+                        {tab.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
               <div className="analysis-panel-slot">
                 {activeAnalysisTab === "overview" ? <PersonSummaryPanel summary={personSummary} /> : null}
