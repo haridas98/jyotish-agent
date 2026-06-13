@@ -9084,6 +9084,14 @@ export default function Home() {
     );
   }
 
+  function selectRelationshipBaseProfile(profileId: string) {
+    setRelationshipBaseProfileId(profileId);
+    const baseId = Number(profileId);
+    if (Number.isFinite(baseId)) {
+      setRelatedProfileIds((current) => current.filter((id) => id !== baseId));
+    }
+  }
+
   function profileRelationshipFor(baseProfileId: string, relatedProfileId: number) {
     return profileRelationships.find(
       (relationship) =>
@@ -10524,7 +10532,7 @@ export default function Home() {
               {profiles.length >= 2 ? (
                 <label className="relationship-base-select">
                   Базовая карта для взаимодействий
-                  <select value={relationshipBaseProfileId} onChange={(event) => setRelationshipBaseProfileId(event.target.value)}>
+                  <select value={relationshipBaseProfileId} onChange={(event) => selectRelationshipBaseProfile(event.target.value)}>
                     {profiles.map((profile) => (
                       <option key={`relation-base-${profile.id}`} value={String(profile.id)}>
                         {profile.display_name}
@@ -10643,9 +10651,10 @@ export default function Home() {
                           <input
                             type="checkbox"
                             checked={relatedProfileIds.includes(profile.id)}
+                            disabled={isBaseProfile}
                             onChange={() => toggleRelatedProfile(profile.id)}
                           />
-                          <GlossaryTerm termKey="ai_context">Контекст AI</GlossaryTerm>
+                          <GlossaryTerm termKey="ai_context">{isBaseProfile ? "Базовая карта" : "Контекст AI"}</GlossaryTerm>
                         </label>
                         <button
                           type="button"
