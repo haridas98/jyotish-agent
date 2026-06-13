@@ -1281,8 +1281,6 @@ export type CodexAnalysisChatResponse = {
   }[];
 };
 
-export type AnalysisChatProvider = "codex";
-
 export type AnalysisHistoryItem = {
   id: number;
   slug: string;
@@ -2127,14 +2125,13 @@ export async function generateCurrentDayOverview(payload: TransitRequest): Promi
 
 export async function askAnalysis(
   analysisId: number,
-  provider: AnalysisChatProvider,
   question: string,
   history: CodexAnalysisChatMessage[],
 ): Promise<CodexAnalysisChatResponse> {
   const response = await apiFetch("/api/reports/analysis/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ analysis_id: analysisId, provider, question, history }),
+    body: JSON.stringify({ analysis_id: analysisId, question, history }),
   });
 
   const data = await response.json();

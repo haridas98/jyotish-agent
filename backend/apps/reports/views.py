@@ -156,14 +156,13 @@ class AnalysisUniversalChatView(APIView):
     def post(self, request):
         try:
             analysis_id = int(request.data.get("analysis_id") or 0)
-            provider = str(request.data.get("provider") or "codex").strip().lower()
             return _codex_chat_response(
                 "analysis_chat",
                 _request_user(request),
                 analysis_id,
                 lambda: ask_saved_analysis(
                     analysis_id=analysis_id,
-                    provider=provider,
+                    provider="codex",
                     question=str(request.data.get("question") or ""),
                     history=request.data.get("history") if isinstance(request.data.get("history"), list) else [],
                     user=_request_user(request),

@@ -449,7 +449,7 @@ def test_universal_analysis_chat_uses_codex_answer(monkeypatch):
     client.force_authenticate(user=user)
     response = client.post(
         "/api/reports/analysis/chat",
-        {"analysis_id": report.id, "provider": "codex", "question": "What now?", "history": []},
+        {"analysis_id": report.id, "question": "What now?", "history": []},
         format="json",
     )
 

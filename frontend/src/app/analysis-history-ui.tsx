@@ -6,7 +6,6 @@ import { HouseTerms, VargaTerms } from "@/app/relationship-help";
 import {
   askAnalysis,
   isAnalysisInProgressError,
-  type AnalysisChatProvider,
   type AnalysisHistoryDetail,
   type AnalysisHistoryItem,
   type CodexAnalysisChatMessage,
@@ -828,7 +827,6 @@ function AnalysisChatBox({
 }) {
   const [messages, setMessages] = useState<CodexAnalysisChatMessage[]>(initialMessages);
   const [question, setQuestion] = useState("");
-  const [provider, setProvider] = useState<AnalysisChatProvider>("codex");
   const [status, setStatus] = useState(
     mode === "disabled" ? "Диалог пока доступен только для Codex-обзоров." : "Можно задать вопрос по сохранённому обзору.",
   );
@@ -844,7 +842,7 @@ function AnalysisChatBox({
     setBusy(true);
     setStatus("Готовлю ответ по сохранённому обзору...");
     try {
-      const result = await askAnalysis(analysisId, provider, cleanQuestion, nextMessages);
+      const result = await askAnalysis(analysisId, cleanQuestion, nextMessages);
       setMessages([...nextMessages, { role: "assistant", content: result.answer }]);
       setStatus("Ответ сохранён в истории диалога.");
     } catch (error) {
@@ -863,9 +861,7 @@ function AnalysisChatBox({
       <div className="analysis-chat-head">
         <h2>Диалог</h2>
         <div className="analysis-chat-tools">
-          <select value={provider} onChange={(event) => setProvider(event.target.value as AnalysisChatProvider)} disabled={mode === "disabled" || busy}>
-            <option value="codex">Codex CLI</option>
-          </select>
+          <strong>Codex CLI</strong>
           <span>{status}</span>
         </div>
       </div>
