@@ -9674,6 +9674,20 @@ export default function Home() {
               {birthDate} · {birthTime} · {selectedPlace?.label ?? chart?.place.label ?? placeName}
             </span>
           </div>
+          <div className="topbar-account" aria-label="Аккаунт">
+            {currentUser ? (
+              <>
+                <span>{currentUser.username}</span>
+                <button type="button" className="secondary-button" onClick={handleLogout}>
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <a className="secondary-button" href="#account">
+                Войти
+              </a>
+            )}
+          </div>
         </header>
 
         {privateAccessLocked ? (
@@ -9977,7 +9991,7 @@ export default function Home() {
               <button className="primary-button desktop-calculate-button" type="button" onClick={handleCalculateClick}>Рассчитать карту</button>
               <p className="status-line">{status}</p>
             </form>
-            <div className="account-block">
+            <div className="account-block" id="account">
               <div className="block-heading">
                 <h3>Аккаунт и сохранение</h3>
                 <span>{authStatus}</span>
