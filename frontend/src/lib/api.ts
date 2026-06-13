@@ -1320,6 +1320,26 @@ export type AnalysisHistoryQuery = {
   limit?: number;
 };
 
+export type AnalysisGenerationJob = {
+  id: number;
+  kind: string;
+  status: "queued" | "running" | "complete" | "failed";
+  input_summary: Record<string, unknown>;
+  analysis_id: number | null;
+  analysis_slug: string;
+  error: string;
+  created_at: string;
+  updated_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+};
+
+export type AnalysisGenerationJobQuery = {
+  kind?: string;
+  status?: AnalysisGenerationJob["status"];
+  limit?: number;
+};
+
 export type TransitRow = {
   body: string;
   longitude: number;
@@ -2235,6 +2255,37 @@ export async function fetchAnalysisChatHistory(analysisId: number): Promise<Code
   }
 
   return data.messages ?? [];
+}
+
+export async function fetchAnalysisGenerationJobs(query: AnalysisGenerationJobQuery = {}): Promise<AnalysisGenerationJob[]> {
+  const params = new URLSearchParams();
+  if (query.kind) params.set("kind", query.kind);
+  if (query.status) params.set("status", query.status);
+  if (query.limit) params.set("limit", String(query.limit));
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const response = await apiFetch(`/api/reports/generation-jobs${suffix}`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw apiErrorFromResponse(response.status, data, `API returned ${response.status}`);
+  }
+
+  return data.jobs ?? [];
+}
+
+export async function fetchAnalysisGenerationJob(jobId: number): Promise<AnalysisGenerationJob> {
+  const response = await apiFetch(`/api/reports/generation-jobs/${encodeURIComponent(jobId)}`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw apiErrorFromResponse(response.status, data, `API returned ${response.status}`);
+  }
+
+  return data.job;
 }
 
 export async function calculateTransits(payload: TransitRequest): Promise<TransitReport> {
