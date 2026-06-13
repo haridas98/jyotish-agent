@@ -440,6 +440,41 @@ def test_current_day_overview_is_saved(monkeypatch):
 
 
 @pytest.mark.django_db
+def test_current_day_overview_reuses_cached_transit_report(monkeypatch):
+    cache.clear()
+    user = get_user_model().objects.create_user(username="today-cache-owner", password="strong-pass-108")
+    calls = {"count": 0}
+
+    def fake_transit_report(data):
+        calls["count"] += 1
+        return {
+            "as_of": {"date": data["as_of_date"], "time": data["as_of_time"], "timezone": "Asia/Kolkata"},
+            "transits": [{"body": "Chandra", "rashi": "Mesha", "house_from_lagna": 1, "house_from_moon": 5}],
+        }
+
+    monkeypatch.setattr("apps.reports.views.build_transit_report", fake_transit_report)
+    client = APIClient()
+    client.force_authenticate(user=user)
+    payload = {
+        "birth_date": "2000-01-01",
+        "birth_time": "15:30",
+        "place_name": "Vrindavan",
+        "as_of_date": "2026-06-09",
+        "as_of_time": "12:00",
+    }
+
+    first = client.post("/api/reports/birth-chart/current-day", payload, format="json")
+    second = client.post("/api/reports/birth-chart/current-day", payload, format="json")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first["X-Jyotish-Transit-Cache"] == "miss"
+    assert second["X-Jyotish-Transit-Cache"] == "hit"
+    assert calls["count"] == 1
+    assert GeneratedAnalysisDraft.objects.filter(kind="current_day_transit_overview", user=user).count() == 2
+
+
+@pytest.mark.django_db
 def test_current_day_overview_requires_authentication():
     response = APIClient().post(
         "/api/reports/birth-chart/current-day",

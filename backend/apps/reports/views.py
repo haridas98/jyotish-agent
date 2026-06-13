@@ -52,12 +52,19 @@ ALL_HISTORY_KINDS = MAIN_ANALYSIS_KINDS | CHAT_ANALYSIS_KINDS
 CHAT_HISTORY_RECORD_LIMIT = 20
 
 
-def _birth_report_cache_key(data: object) -> str:
+def _cache_digest(data: object) -> str:
     if hasattr(data, "dict"):
         data = data.dict()
     payload = json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
-    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-    return f"birth-report:v3:{digest}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _birth_report_cache_key(data: object) -> str:
+    return f"birth-report:v3:{_cache_digest(data)}"
+
+
+def _current_day_report_cache_key(data: object) -> str:
+    return f"current-day-report:v1:{_cache_digest(data)}"
 
 
 class BirthReportView(APIView):
@@ -276,7 +283,13 @@ class BirthCurrentDayOverviewView(APIView):
             now = timezone.localtime()
             data.setdefault("as_of_date", now.date().isoformat())
             data.setdefault("as_of_time", now.time().isoformat(timespec="minutes"))
-            transit_report = build_transit_report(data)
+            cache_key = _current_day_report_cache_key(data)
+            transit_report = cache.get(cache_key)
+            cache_status = "hit"
+            if transit_report is None:
+                transit_report = build_transit_report(data)
+                cache.set(cache_key, transit_report, timeout=getattr(settings, "CURRENT_DAY_REPORT_CACHE_SECONDS", 1800))
+                cache_status = "miss"
             output = _current_day_overview_output(data, transit_report)
             record = GeneratedAnalysisDraft.objects.create(
                 kind="current_day_transit_overview",
@@ -291,7 +304,9 @@ class BirthCurrentDayOverviewView(APIView):
                 user=_request_user(request),
             )
             output["id"] = record.id
-            return Response(output)
+            response = Response(output)
+            response["X-Jyotish-Transit-Cache"] = cache_status
+            return response
         except (ChartInputError, ValueError) as exc:
             return Response({"error": str(exc)}, status=400)
         except EphemerisUnavailable as exc:
