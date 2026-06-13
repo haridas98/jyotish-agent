@@ -1,6 +1,7 @@
 import pytest
 from datetime import date, time
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
@@ -307,6 +308,37 @@ def test_universal_analysis_chat_uses_codex_answer(monkeypatch):
     assert response.status_code == 200
     assert response.data["kind"] == "birth_chart_codex_cli_chat"
     assert response.data["answer"] == "Codex answer"
+
+
+@pytest.mark.django_db
+def test_universal_analysis_chat_rejects_duplicate_running_answer(monkeypatch):
+    user = get_user_model().objects.create_user(username="chat-lock-owner", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_partial",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        input_snapshot={"birth_date": "2000-01-01"},
+        output_json={"sections": [{"title": "Chart", "body": "Saved body."}]},
+    )
+    cache.clear()
+    monkeypatch.setattr("apps.reports.views.cache.add", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        "apps.reports.views.ask_birth_chart_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("universal chat must not run while lock is active"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/reports/analysis/chat",
+        {"analysis_id": report.id, "provider": "codex", "question": "What now?", "history": []},
+        format="json",
+    )
+
+    assert response.status_code == 409
+    assert response.data["error"] == "analysis_chat_in_progress"
 
 
 @pytest.mark.django_db

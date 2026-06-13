@@ -153,8 +153,11 @@ class AnalysisUniversalChatView(APIView):
         try:
             analysis_id = int(request.data.get("analysis_id") or 0)
             provider = str(request.data.get("provider") or "codex").strip().lower()
-            return Response(
-                ask_saved_analysis(
+            return _codex_chat_response(
+                "analysis_chat",
+                _request_user(request),
+                analysis_id,
+                lambda: ask_saved_analysis(
                     analysis_id=analysis_id,
                     provider=provider,
                     question=str(request.data.get("question") or ""),
@@ -251,8 +254,11 @@ class BirthCodexAnalysisChatView(APIView):
         try:
             analysis_id = int(request.data.get("analysis_id") or 0)
             get_object_or_404(_owned_analysis_records(request), id=analysis_id, kind="birth_chart_codex_cli")
-            return Response(
-                ask_birth_chart_codex_cli_analysis(
+            return _codex_chat_response(
+                "birth_chart_codex_cli_chat",
+                _request_user(request),
+                analysis_id,
+                lambda: ask_birth_chart_codex_cli_analysis(
                     analysis_id=analysis_id,
                     question=str(request.data.get("question") or ""),
                     history=request.data.get("history") if isinstance(request.data.get("history"), list) else [],
@@ -348,8 +354,11 @@ class CompatibilityCodexAnalysisChatView(APIView):
         try:
             analysis_id = int(request.data.get("analysis_id") or 0)
             get_object_or_404(_owned_analysis_records(request), id=analysis_id, kind="compatibility_codex_cli")
-            return Response(
-                ask_compatibility_codex_cli_analysis(
+            return _codex_chat_response(
+                "compatibility_codex_cli_chat",
+                _request_user(request),
+                analysis_id,
+                lambda: ask_compatibility_codex_cli_analysis(
                     analysis_id=analysis_id,
                     question=str(request.data.get("question") or ""),
                     history=request.data.get("history") if isinstance(request.data.get("history"), list) else [],
@@ -495,6 +504,32 @@ def _codex_generation_lock_key(kind: str, user, data: dict[str, object]) -> str:
     raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"reports:codex-generation-lock:{kind}:{owner}:{digest}"
+
+
+def _codex_chat_response(kind: str, user, analysis_id: int, ask):
+    lock_key = _codex_chat_lock_key(kind, user, analysis_id)
+    lock_seconds = getattr(settings, "CODEX_CHAT_LOCK_SECONDS", 300)
+    if not cache.add(lock_key, "running", timeout=lock_seconds):
+        return Response(
+            {
+                "error": "analysis_chat_in_progress",
+                "message": (
+                    "Codex уже отвечает по этому отчёту. "
+                    "Дождитесь ответа, чтобы не запускать второй тяжёлый процесс."
+                ),
+                "retry_after_seconds": min(lock_seconds, 60),
+            },
+            status=409,
+        )
+    try:
+        return Response(ask())
+    finally:
+        cache.delete(lock_key)
+
+
+def _codex_chat_lock_key(kind: str, user, analysis_id: int) -> str:
+    owner = getattr(user, "id", "anonymous") or "anonymous"
+    return f"reports:codex-chat-lock:{kind}:{owner}:{analysis_id}"
 
 
 def _birth_codex_access_response(request, chart_data: dict[str, object], *, force_regenerate: bool) -> Response | None:

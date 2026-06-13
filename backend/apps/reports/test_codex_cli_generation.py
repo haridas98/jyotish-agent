@@ -755,6 +755,35 @@ def test_compatibility_codex_analysis_chat_api_returns_answer(monkeypatch):
 
 
 @pytest.mark.django_db
+def test_compatibility_codex_analysis_chat_api_rejects_duplicate_running_answer(monkeypatch):
+    user = get_user_model().objects.create_user(username="compat-chat-lock-owner", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="compatibility_codex_cli",
+        review_status="private_final",
+        input_snapshot={"person_a": {}, "person_b": {}},
+        output_json={"sections": [{"title": "Compatibility", "body": "Saved body."}]},
+    )
+    cache.clear()
+    monkeypatch.setattr("apps.reports.views.cache.add", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        "apps.reports.views.ask_compatibility_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("compatibility chat must not run while lock is active"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/reports/compatibility/codex-analysis/chat",
+        {"analysis_id": report.id, "question": "What about marriage?"},
+        format="json",
+    )
+
+    assert response.status_code == 409
+    assert response.data["error"] == "analysis_chat_in_progress"
+
+
+@pytest.mark.django_db
 def test_compatibility_codex_analysis_chat_rejects_other_users_report(monkeypatch):
     owner = get_user_model().objects.create_user(username="compat-direct-owner", password="strong-pass-108")
     viewer = get_user_model().objects.create_user(username="compat-direct-viewer", password="strong-pass-108")
@@ -1036,6 +1065,35 @@ def test_birth_codex_analysis_chat_api_returns_answer(monkeypatch):
     assert response.data["answer"] == "Ответ по карте."
     assert response.data["analysis_id"] == report.id
     assert response.data["history_used"] == 1
+
+
+@pytest.mark.django_db
+def test_birth_codex_analysis_chat_api_rejects_duplicate_running_answer(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-chat-lock-owner", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        input_snapshot={"birth_date": "2000-01-01"},
+        output_json={"sections": [{"title": "Chart", "body": "Saved body."}]},
+    )
+    cache.clear()
+    monkeypatch.setattr("apps.reports.views.cache.add", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        "apps.reports.views.ask_birth_chart_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("chat generator must not run while lock is active"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/reports/birth-chart/codex-analysis/chat",
+        {"analysis_id": report.id, "question": "What about marriage?"},
+        format="json",
+    )
+
+    assert response.status_code == 409
+    assert response.data["error"] == "analysis_chat_in_progress"
 
 
 @pytest.mark.django_db
