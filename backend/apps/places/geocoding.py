@@ -41,12 +41,16 @@ def geocode_places(
 
 
 def geonamescache_places(query: str, limit: int = 5) -> list[PlaceCandidate]:
-    normalized_query = _normalize(query)
-    if len(normalized_query) < 3:
-        return []
+    return list(_geonamescache_places_cached(_normalize(query), query.strip(), limit))
 
-    name_variants = _query_name_variants(query)
-    country_filters = _query_country_filters(query)
+
+@lru_cache(maxsize=1024)
+def _geonamescache_places_cached(normalized_query: str, raw_query: str, limit: int) -> tuple[PlaceCandidate, ...]:
+    if len(normalized_query) < 3:
+        return ()
+
+    name_variants = _query_name_variants(raw_query)
+    country_filters = _query_country_filters(raw_query)
     countries = _geonames_countries()
     scored: list[tuple[int, int, PlaceCandidate]] = []
     for city in _geonames_cities().values():
@@ -81,7 +85,7 @@ def geonamescache_places(query: str, limit: int = 5) -> list[PlaceCandidate]:
         )
 
     scored.sort(key=lambda item: (item[0], item[1], item[2].name))
-    return [candidate for _, _, candidate in scored[:limit]]
+    return tuple(candidate for _, _, candidate in scored[:limit])
 
 
 def _query_name_variants(query: str) -> list[str]:

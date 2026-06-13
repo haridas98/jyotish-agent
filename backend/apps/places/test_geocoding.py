@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -59,6 +60,7 @@ def test_geocode_places_maps_nominatim_result_to_timezone_candidate():
 
 
 def test_places_search_api_uses_geocoder_when_catalog_misses(monkeypatch):
+    cache.clear()
     monkeypatch.setattr(
         "apps.places.views.geocode_places",
         lambda query, limit=10: [
@@ -79,3 +81,36 @@ def test_places_search_api_uses_geocoder_when_catalog_misses(monkeypatch):
     assert response.status_code == 200
     assert response.data["items"][0]["label"] == "London, England, GB"
     assert response.data["items"][0]["timezone"] == "Europe/London"
+    assert response["X-Jyotish-Cache"] == "miss"
+
+
+def test_places_search_api_caches_geocoder_results(monkeypatch):
+    cache.clear()
+    calls = {"count": 0}
+
+    def fake_geocode(query, limit=10):
+        calls["count"] += 1
+        return [
+            PlaceCandidate(
+                id="osm:relation:65606",
+                name="London",
+                admin_name="England",
+                country_code="GB",
+                latitude=51.5074456,
+                longitude=-0.1277653,
+                timezone="Europe/London",
+            )
+        ]
+
+    monkeypatch.setattr("apps.places.views.geocode_places", fake_geocode)
+
+    client = APIClient()
+    first = client.get(reverse("places-search"), {"q": "London"})
+    second = client.get(reverse("places-search"), {"q": " London "})
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first["X-Jyotish-Cache"] == "miss"
+    assert second["X-Jyotish-Cache"] == "hit"
+    assert calls["count"] == 1
+    assert second.data["items"][0]["timezone"] == "Europe/London"

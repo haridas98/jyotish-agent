@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 
 class PlaceNotFound(ValueError):
@@ -133,9 +134,13 @@ PLACES = (
 
 
 def search_places(query: str, limit: int = 10) -> list[PlaceCandidate]:
-    normalized_query = _normalize(query)
+    return list(_search_places_cached(_normalize(query), limit))
+
+
+@lru_cache(maxsize=512)
+def _search_places_cached(normalized_query: str, limit: int) -> tuple[PlaceCandidate, ...]:
     if not normalized_query:
-        return []
+        return ()
 
     scored: list[tuple[int, PlaceCandidate]] = []
     for place in PLACES:
@@ -154,7 +159,7 @@ def search_places(query: str, limit: int = 10) -> list[PlaceCandidate]:
             scored.append((2, place))
 
     scored.sort(key=lambda item: (item[0], item[1].name))
-    return [place for _, place in scored[:limit]]
+    return tuple(place for _, place in scored[:limit])
 
 
 def resolve_place(query: str) -> PlaceCandidate:
