@@ -74,9 +74,7 @@ function AppNavLink({
       href={home ? item.homeHref : item.href}
       onClick={() => onSelect?.(item.key)}
     >
-      <span className="app-nav-icon" aria-hidden="true">
-        {item.shortLabel}
-      </span>
+      <span aria-hidden="true" className="app-nav-icon" data-short-label={item.shortLabel} />
       <span className="app-nav-label">{item.label}</span>
     </a>
   );

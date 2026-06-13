@@ -1452,6 +1452,18 @@ function ChartHouseExplanation({
         </div>
       </dl>
       <em>Ракурс домов: {referenceLabel}. Чтение: сфера дома, знак, хозяин, грахи внутри, D9 и даша.</em>
+      <button
+        type="button"
+        className="help-ai-action chart-cell-ai-action"
+        onClick={() =>
+          requestAiExplanation({
+            title: `${item.label} в карте`,
+            text: `Ракурс: ${referenceLabel}. Знак: ${rashiLabel}. Хозяин: ${lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}. Грахи: ${placementText}.`,
+          })
+        }
+      >
+        Спросить AI об этом доме
+      </button>
       <small>Нажмите другой дом на карте, чтобы сменить пояснение.</small>
     </div>
   );
@@ -7808,6 +7820,48 @@ export default function Home() {
     [activeCompatibilityRelationshipId, profileRelationships],
   );
 
+  const contextualizeAiQuestion = useCallback(
+    (question: string, detail?: HelpAiQuestionDetail) => {
+      const cleanQuestion = question.trim();
+      if (!cleanQuestion) return "";
+
+      const activeTabLabel = analysisTabs.find((tab) => tab.key === activeAnalysisTab)?.label ?? activeAnalysisTab;
+      const sourcePolicy = draftAnalysis?.source_policy ?? birthReport?.source_policy ?? "calculation_first";
+      const lines = [cleanQuestion, "", "Контекст текущего экрана:"];
+
+      lines.push(`- Раздел: ${activeTabLabel}; активная карта: ${chartMode}; стиль: ${chartStyle === "north" ? "северный" : "южный"}.`);
+      lines.push(`- Данные рождения: ${birthDate} ${birthTime || "время не указано"}; место: ${selectedPlace?.label ?? chart?.place?.label ?? placeName}.`);
+      lines.push(`- Source policy: ${sourcePolicy}; отвечай по текущей карте, без фатализма и без выдуманных цитат.`);
+
+      if (detail?.title || detail?.text) {
+        lines.push(`- Выбранный объект: ${detail.title || "область интерфейса"}. ${detail.text || ""}`.trim());
+      }
+
+      if (chart) {
+        const moon = chart.grahas.find((graha) => graha.body === "Chandra");
+        const sun = chart.grahas.find((graha) => graha.body === "Surya");
+        const lagna = chart.ascendant;
+        lines.push(`- Лагна: ${lagna?.rashi ?? "-"} ${typeof lagna?.longitude === "number" ? formatDegrees(lagna.longitude) : ""}`.trim());
+        if (moon) lines.push(`- Луна: ${moon.rashi} ${formatDegrees(moon.longitude)}; накшатра ${moon.nakshatra || "-"}, пада ${moon.pada || "-"}.`);
+        if (sun) lines.push(`- Солнце: ${sun.rashi} ${formatDegrees(sun.longitude)}; накшатра ${sun.nakshatra || "-"}, пада ${sun.pada || "-"}.`);
+
+        const activeGrahas = chart.grahas
+          .slice(0, 9)
+          .map((graha) => `${grahaTermLabel(graha.body, termLanguage, "short")}:${rashiTermFromName(graha.rashi, termLanguage, true)}`)
+          .join(", ");
+        if (activeGrahas) lines.push(`- Грахи D1: ${activeGrahas}.`);
+
+        const firstDasha = chart.dashas?.vimshottari?.mahadashas?.[0];
+        if (firstDasha) lines.push(`- Vimshottari: первый период в списке ${firstDasha.lord} (${formatDate(firstDasha.starts_at)} - ${formatDate(firstDasha.ends_at)}).`);
+      } else {
+        lines.push("- Карта ещё не рассчитана; сначала объясни смысл объекта, затем укажи, какие расчётные данные нужны для точного ответа.");
+      }
+
+      return lines.join("\n");
+    },
+    [activeAnalysisTab, birthDate, birthReport?.source_policy, birthTime, chart, chartMode, chartStyle, draftAnalysis?.source_policy, placeName, selectedPlace?.label, termLanguage],
+  );
+
   function scrollToChartAfterCalculation() {
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(max-width: 960px)").matches) return;
@@ -8138,7 +8192,7 @@ export default function Home() {
       const detail = (event as CustomEvent<HelpAiQuestionDetail>).detail;
       if (!detail?.question) return;
       event.preventDefault();
-      setSuggestedCodexQuestion(detail.question);
+      setSuggestedCodexQuestion(contextualizeAiQuestion(detail.question, detail));
       setActiveAnalysisTab("guidance");
       setCodexChatStatus(
         draftAnalysis
@@ -8155,7 +8209,7 @@ export default function Home() {
       const pendingQuestion = window.sessionStorage.getItem("jyotish-pending-ai-question");
       if (pendingQuestion) {
         window.sessionStorage.removeItem("jyotish-pending-ai-question");
-        setSuggestedCodexQuestion(pendingQuestion);
+        setSuggestedCodexQuestion(contextualizeAiQuestion(pendingQuestion));
         setActiveAnalysisTab("guidance");
         setCodexChatStatus(
           draftAnalysis
@@ -8167,7 +8221,7 @@ export default function Home() {
       // Ignore blocked sessionStorage.
     }
     return () => window.removeEventListener("jyotish:ask-ai-context", handleAiContextRequest);
-  }, [draftAnalysis]);
+  }, [contextualizeAiQuestion, draftAnalysis]);
 
   useEffect(() => {
     if (!compatibilityCodexAnalysis) {

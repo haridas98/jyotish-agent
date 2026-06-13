@@ -17191,6 +17191,10 @@ body {
   min-width: 24px;
 }
 
+.app-nav-icon::before {
+  content: attr(data-short-label);
+}
+
 .app-nav-label {
   min-width: 0;
   overflow: hidden;
