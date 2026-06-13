@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation
@@ -740,5 +741,21 @@ def test_profile_relationship_block_prevents_repeated_request(user):
 @pytest.mark.django_db
 def test_birth_profiles_require_authentication():
     response = APIClient().get("/api/charts/profiles")
+
+    assert response.status_code in {401, 403}
+
+
+@pytest.mark.django_db
+@override_settings(PRIVATE_APP_REQUIRE_AUTH=True)
+def test_birth_profiles_private_gate_rejects_inactive_user():
+    inactive = get_user_model().objects.create_user(
+        username="inactive-chart-user",
+        password="strong-pass-108",
+        is_active=False,
+    )
+    client = APIClient()
+    client.force_authenticate(user=inactive)
+
+    response = client.get("/api/charts/profiles")
 
     assert response.status_code in {401, 403}

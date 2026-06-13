@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import PrivateAppAccess
+
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation
 from .services import (
     ChartProfileInputError,
@@ -22,7 +24,7 @@ from .services import (
 
 
 class BirthProfileListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
 
     def get(self, request):
         profiles = (
@@ -39,7 +41,7 @@ class BirthProfileListView(APIView):
 
 
 class BirthProfileDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
 
     def get(self, request, profile_id: int):
         profile = get_object_or_404(
@@ -60,7 +62,7 @@ class BirthProfileDetailView(APIView):
 
 
 class BirthProfileCalculateView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
 
     def post(self, request, profile_id: int):
         profile = get_object_or_404(
@@ -74,7 +76,7 @@ class BirthProfileCalculateView(APIView):
 
 
 class BirthProfileRelationshipListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
 
     def get(self, request):
         relationships = list_profile_relationships(request.user)
@@ -91,7 +93,7 @@ class BirthProfileRelationshipListView(APIView):
 
 
 class BirthProfileRelationshipInboxView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
 
     def get(self, request):
         requests = list_incoming_profile_relationship_requests(request.user)
@@ -99,7 +101,7 @@ class BirthProfileRelationshipInboxView(APIView):
 
 
 class BirthProfileRelationshipDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
 
     def get(self, request, relationship_id: int):
         relationship = get_object_or_404(
@@ -123,7 +125,7 @@ class BirthProfileRelationshipDetailView(APIView):
 
 
 class BirthProfileRelationshipActionView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
 
     def post(self, request, relationship_id: int):
         try:
