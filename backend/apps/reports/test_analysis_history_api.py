@@ -428,6 +428,60 @@ def test_compatibility_history_and_chat_are_scoped_to_owner():
 
 
 @pytest.mark.django_db
+def test_compatibility_history_detail_keeps_both_saved_charts_visible():
+    user = get_user_model().objects.create_user(username="compat-chart-owner", password="strong-pass-108")
+    packet_snapshot = {
+        "schema_version": "jyotish-compatibility-analysis-packet-v1",
+        "context": {
+            "person_a": {
+                "input": {"birth_date": "1998-04-30", "birth_time": "13:45", "place_name": "Sterlitamak"},
+                "chart": {
+                    "ascendant": {"body": "Lagna", "rashi": "Karka", "longitude": 115.4},
+                    "grahas": [{"body": "Chandra", "rashi": "Mithuna", "longitude": 68.3}],
+                    "houses": [{"house": 7, "rashi": "Makara", "lord": "Shani", "grahas": []}],
+                    "vargas": {"D9": {"placements": [{"body": "Lagna", "rashi": "Dhanu"}]}},
+                },
+            },
+            "person_b": {
+                "input": {"birth_date": "2002-06-10", "birth_time": "18:00", "place_name": "Rostov-na-Donu"},
+                "chart": {
+                    "ascendant": {"body": "Lagna", "rashi": "Tula", "longitude": 185.0},
+                    "grahas": [{"body": "Shukra", "rashi": "Vrishabha", "longitude": 42.2}],
+                    "houses": [{"house": 7, "rashi": "Mesha", "lord": "Mangala", "grahas": ["Shukra"]}],
+                    "vargas": {"D9": {"placements": [{"body": "Lagna", "rashi": "Mithuna"}]}},
+                },
+            },
+            "relationship_context": {"role": "partner", "focus_houses": [7, 12], "focus_vargas": ["D1", "D9"]},
+            "compatibility": {"analysis": {"chart_summaries": {"person_a": {}, "person_b": {}}}},
+        },
+    }
+    report = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="compatibility_codex_cli",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        input_snapshot={
+            "person_a": {"birth_date": "1998-04-30", "birth_time": "13:45", "place_name": "Sterlitamak"},
+            "person_b": {"birth_date": "2002-06-10", "birth_time": "18:00", "place_name": "Rostov-na-Donu"},
+        },
+        packet_snapshot=packet_snapshot,
+        output_json={"sections": [{"title": "Pair", "body": "Both charts must stay available to the reader."}]},
+    )
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.get(f"/api/reports/history/{report.id}")
+
+    assert response.status_code == 200
+    context = response.data["analysis"]["packet_snapshot"]["context"]
+    assert context["person_a"]["chart"]["ascendant"]["rashi"] == "Karka"
+    assert context["person_b"]["chart"]["ascendant"]["rashi"] == "Tula"
+    assert context["person_a"]["chart"]["vargas"]["D9"]["placements"][0]["rashi"] == "Dhanu"
+    assert context["person_b"]["chart"]["houses"][0]["house"] == 7
+
+
+@pytest.mark.django_db
 def test_universal_analysis_chat_uses_codex_answer(monkeypatch):
     user = get_user_model().objects.create_user(username="chat-owner", password="strong-pass-108")
     report = GeneratedAnalysisDraft.objects.create(
