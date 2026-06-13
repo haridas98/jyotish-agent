@@ -1479,6 +1479,34 @@ function ChartHouseExplanation({
   );
 }
 
+function readerExplanationForHouse({
+  chart,
+  varga,
+  chartReference,
+  house,
+  termLanguage,
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  chartReference: ChartReference;
+  house: number;
+  termLanguage: TermLanguage;
+}): ReaderExplanationDetail {
+  const item = jyotishGlossary[houseGlossaryKey(house)];
+  const houseItem = northIndianHouseItems(chart, varga, chartReference).find((row) => row.house === house);
+  const rashiIndex = houseItem?.rashiIndex ?? null;
+  const rashiLabel = rashiIndex === null ? "-" : rashiTermFromName(houseItem?.rashi ?? rashiNames[rashiIndex], termLanguage);
+  const lordBody = rashiIndex === null ? null : rashiLordBodies[rashiIndex];
+  const placements = houseItem?.placements ?? [];
+  const placementText = placements.length ? placements.map((placement) => chartPlacementLabel(placement, termLanguage)).join(", ") : "нет грах";
+  const referenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
+  return {
+    title: item.label,
+    context: `Карта: отсчёт ${referenceLabel}`,
+    text: `${item.text} Знак: ${rashiLabel}. Хозяин: ${lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}. Грахи в доме: ${placementText}.`,
+  };
+}
+
 function ChartHouseHintPopover({
   chart,
   varga,
@@ -2021,7 +2049,10 @@ function NorthIndianChartPreview({
           varga={varga}
           chartReference={chartReference}
           termLanguage={termLanguage}
-          onHouseSelect={houseHintsEnabled ? (house) => setPinnedHouse((current) => (current === house ? null : house)) : undefined}
+          onHouseSelect={houseHintsEnabled ? (house) => {
+            publishReaderExplanation(readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage }));
+            setPinnedHouse((current) => (current === house ? null : house));
+          } : undefined}
           onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
           onHouseLeave={houseHintsEnabled ? () => setHoveredHouse(null) : undefined}
           selectedHouse={activeHouse}
@@ -2195,7 +2226,10 @@ function SouthIndianChartPreview({
           varga={varga}
           chartReference={chartReference}
           termLanguage={termLanguage}
-          onHouseSelect={houseHintsEnabled ? (house) => setPinnedHouse((current) => (current === house ? null : house)) : undefined}
+          onHouseSelect={houseHintsEnabled ? (house) => {
+            publishReaderExplanation(readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage }));
+            setPinnedHouse((current) => (current === house ? null : house));
+          } : undefined}
           onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
           onHouseLeave={houseHintsEnabled ? () => setHoveredHouse(null) : undefined}
           selectedHouse={activeHouse}
@@ -3389,6 +3423,19 @@ function supportsHoverTooltips() {
   return typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 }
 
+const READER_EXPLANATION_EVENT = "jyotish:reader-explanation";
+
+type ReaderExplanationDetail = {
+  title: string;
+  text: string;
+  context?: string;
+};
+
+function publishReaderExplanation(detail: ReaderExplanationDetail) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<ReaderExplanationDetail>(READER_EXPLANATION_EVENT, { detail }));
+}
+
 function GlossaryTerm({ termKey, children }: { termKey: GlossaryKey; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -3443,6 +3490,7 @@ function GlossaryTerm({ termKey, children }: { termKey: GlossaryKey; children: R
         }}
         onClick={(event) => {
           event.stopPropagation();
+          publishReaderExplanation({ title: item.label, text: item.text, context: "Справочник терминов" });
           const nextOpen = !open || !pinned;
           setPinned(nextOpen);
           setOpen(nextOpen);
@@ -3544,6 +3592,7 @@ function CalculationValueHelp({
         }}
         onClick={(event) => {
           event.stopPropagation();
+          publishReaderExplanation({ title, text, context: "Расчёт карты" });
           const nextOpen = !open || !pinned;
           setPinned(nextOpen);
           setOpen(nextOpen);
@@ -4387,7 +4436,44 @@ function GrahaTable({ chart, termLanguage }: { chart: BirthChart | null; termLan
   );
 }
 
-function ChartSideCalculationTable({ chart, termLanguage }: { chart: BirthChart | null; termLanguage: TermLanguage }) {
+function SelectedReaderExplanationPanel({
+  explanation,
+  onClear,
+}: {
+  explanation: ReaderExplanationDetail | null;
+  onClear: () => void;
+}) {
+  if (!explanation) return null;
+  return (
+    <section className="selected-reader-explanation" aria-live="polite">
+      <div>
+        <span>{explanation.context ?? "Объяснение"}</span>
+        <strong>{explanation.title}</strong>
+      </div>
+      <p>{explanation.text}</p>
+      <div className="selected-reader-actions">
+        <button type="button" className="help-ai-action" onClick={() => requestAiExplanation(explanation)}>
+          Спросить AI
+        </button>
+        <button type="button" className="secondary-button compact" onClick={onClear} aria-label="Скрыть объяснение">
+          Скрыть
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ChartSideCalculationTable({
+  chart,
+  termLanguage,
+  selectedExplanation,
+  onClearExplanation,
+}: {
+  chart: BirthChart | null;
+  termLanguage: TermLanguage;
+  selectedExplanation: ReaderExplanationDetail | null;
+  onClearExplanation: () => void;
+}) {
   const grahas = chart?.grahas ?? [];
   const sun = grahas.find((graha) => graha.body === "Surya");
   const lagnaIndex = normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
@@ -4398,6 +4484,7 @@ function ChartSideCalculationTable({ chart, termLanguage }: { chart: BirthChart 
           <strong>Расчёты D1</strong>
           <span>появятся после расчёта карты</span>
         </div>
+        <SelectedReaderExplanationPanel explanation={selectedExplanation} onClear={onClearExplanation} />
       </section>
     );
   }
@@ -4408,6 +4495,7 @@ function ChartSideCalculationTable({ chart, termLanguage }: { chart: BirthChart 
         <strong>Расчёты D1</strong>
         <span>граха, градус, раши, накшатра, дом, статус</span>
       </div>
+      <SelectedReaderExplanationPanel explanation={selectedExplanation} onClear={onClearExplanation} />
       <div className="chart-side-table-grid">
         <div className="chart-side-table-row chart-side-table-header">
           <span>Граха</span>
@@ -7931,6 +8019,7 @@ export default function Home() {
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [termLanguage, setTermLanguage] = useState<TermLanguage>("sanskrit");
   const [houseHintsEnabled, setHouseHintsEnabled] = useState(true);
+  const [selectedReaderExplanation, setSelectedReaderExplanation] = useState<ReaderExplanationDetail | null>(null);
   const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>("pro");
   const [chartWorkspaceTab, setChartWorkspaceTab] = useState<ChartWorkspaceTab>("essentials");
   const [vargaCoverageOpen, setVargaCoverageOpen] = useState(false);
@@ -8475,6 +8564,17 @@ export default function Home() {
     }
     return () => window.removeEventListener("jyotish:ask-ai-context", handleAiContextRequest);
   }, [contextualizeAiQuestion, draftAnalysis]);
+
+  useEffect(() => {
+    function handleReaderExplanation(event: Event) {
+      const detail = (event as CustomEvent<ReaderExplanationDetail>).detail;
+      if (!detail?.title || !detail?.text) return;
+      setSelectedReaderExplanation(detail);
+    }
+
+    window.addEventListener(READER_EXPLANATION_EVENT, handleReaderExplanation);
+    return () => window.removeEventListener(READER_EXPLANATION_EVENT, handleReaderExplanation);
+  }, []);
 
   useEffect(() => {
     if (!compatibilityCodexAnalysis) {
@@ -10592,7 +10692,12 @@ export default function Home() {
                 </div>
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} termLanguage={termLanguage} />
-                  <ChartSideCalculationTable chart={chart} termLanguage={termLanguage} />
+                  <ChartSideCalculationTable
+                    chart={chart}
+                    termLanguage={termLanguage}
+                    selectedExplanation={selectedReaderExplanation}
+                    onClearExplanation={() => setSelectedReaderExplanation(null)}
+                  />
                   <AiAccessPolicyPanel />
                   <AiRelatedContextPanel relationships={profileRelationships} />
                   <MvpReadinessPanel />

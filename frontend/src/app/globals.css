@@ -5076,6 +5076,54 @@ select {
   white-space: nowrap;
 }
 
+.selected-reader-explanation {
+  background: #f7fbf8;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 7px;
+  padding: 9px 10px;
+}
+
+.selected-reader-explanation > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.selected-reader-explanation span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.selected-reader-explanation strong {
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.selected-reader-explanation p {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.selected-reader-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.secondary-button.compact {
+  min-height: 28px;
+  padding: 5px 9px;
+}
+
 .chart-side-table-grid {
   overflow-x: auto;
   overflow-y: visible;
