@@ -1468,7 +1468,11 @@ function ChartHouseHintPopover({
   return (
     <div
       className="chart-house-popover"
-      style={{ left: `${position.x}%`, top: `${position.y}%` }}
+      style={{
+        left: `${position.x}%`,
+        top: `${position.y}%`,
+        transform: `translate(${position.x < 28 ? "0" : position.x > 72 ? "-100%" : "-50%"}, ${position.y < 24 ? "0" : position.y > 76 ? "-100%" : "-50%"})`,
+      }}
       role="tooltip"
       onPointerDown={(event) => event.stopPropagation()}
     >
@@ -1970,7 +1974,6 @@ function NorthIndianChartPreview({
   const activeCell = activeHouse ? northIndianHouseCells[activeHouse] : null;
   function selectHouse(house: number) {
     setPinnedHouse((current) => (current === house ? null : house));
-    publishReaderExplanation(readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage }));
   }
   return (
     <>
@@ -2162,7 +2165,6 @@ function SouthIndianChartPreview({
   const activePosition = activeHouse ? southIndianHouseTooltipPosition(chart, varga, chartReference, activeHouse) : null;
   function selectHouse(house: number) {
     setPinnedHouse((current) => (current === house ? null : house));
-    publishReaderExplanation(readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage }));
   }
   return (
     <>
@@ -8094,6 +8096,7 @@ export default function Home() {
   const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>("pro");
   const [chartWorkspaceTab, setChartWorkspaceTab] = useState<ChartWorkspaceTab>("essentials");
   const [vargaCoverageOpen, setVargaCoverageOpen] = useState(false);
+  const [clientMounted, setClientMounted] = useState(false);
   const [chartStyleHydrated, setChartStyleHydrated] = useState(false);
   const [chartViewHydrated, setChartViewHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
@@ -10045,7 +10048,11 @@ export default function Home() {
     }
   }
 
-  const initialUiReady = !browserStorageAvailable() || (formDraftHydrated && chartStyleHydrated && chartViewHydrated);
+  useEffect(() => {
+    setClientMounted(true);
+  }, []);
+
+  const initialUiReady = clientMounted && (!browserStorageAvailable() || (formDraftHydrated && chartStyleHydrated && chartViewHydrated));
 
   if (!initialUiReady) {
     return (
