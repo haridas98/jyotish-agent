@@ -88,6 +88,7 @@ import { relationshipRoleDefinitions } from "@/lib/relationshipRoles";
 const PRIVATE_APP_REQUIRE_AUTH = process.env.NEXT_PUBLIC_PRIVATE_APP_REQUIRE_AUTH === "true";
 const CHART_STYLE_STORAGE_KEY = "jyotish-chart-style";
 const TERM_LANGUAGE_STORAGE_KEY = "jyotish-term-language";
+const CHART_HOUSE_HINTS_STORAGE_KEY = "jyotish-chart-house-hints";
 const FORM_DRAFT_STORAGE_KEY = "jyotish-main-form-draft-v1";
 const CHART_VIEW_STORAGE_KEY = "jyotish-chart-view-v1";
 
@@ -1395,17 +1396,19 @@ function ChartPreview({
   chartStyle,
   chartReference = "lagna",
   termLanguage = "sanskrit",
+  houseHintsEnabled = true,
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartStyle: "north" | "south";
   chartReference?: ChartReference;
   termLanguage?: TermLanguage;
+  houseHintsEnabled?: boolean;
 }) {
   return chartStyle === "south" ? (
-    <SouthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
+    <SouthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} houseHintsEnabled={houseHintsEnabled} />
   ) : (
-    <NorthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
+    <NorthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} houseHintsEnabled={houseHintsEnabled} />
   );
 }
 
@@ -1472,6 +1475,65 @@ function ChartHouseExplanation({
         Спросить AI об этом доме
       </button>
       <small>Нажмите другой дом на карте, чтобы сменить пояснение.</small>
+    </div>
+  );
+}
+
+function ChartHouseHintPopover({
+  chart,
+  varga,
+  chartReference,
+  house,
+  termLanguage,
+  position,
+  onClose,
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  chartReference: ChartReference;
+  house: number;
+  termLanguage: TermLanguage;
+  position: { x: number; y: number };
+  onClose: () => void;
+}) {
+  const item = jyotishGlossary[houseGlossaryKey(house)];
+  const houseItem = northIndianHouseItems(chart, varga, chartReference).find((row) => row.house === house);
+  const rashiIndex = houseItem?.rashiIndex ?? null;
+  const rashiLabel = rashiIndex === null ? "-" : rashiTermFromName(houseItem?.rashi ?? rashiNames[rashiIndex], termLanguage);
+  const lordBody = rashiIndex === null ? null : rashiLordBodies[rashiIndex];
+  const placements = houseItem?.placements ?? [];
+  const placementText = placements.length ? placements.map((placement) => chartPlacementLabel(placement, termLanguage)).join(", ") : "нет грах";
+  const referenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
+  return (
+    <div
+      className="chart-house-popover"
+      style={{ left: `${position.x}%`, top: `${position.y}%` }}
+      role="tooltip"
+      onPointerDown={(event) => event.stopPropagation()}
+    >
+      <div className="chart-house-popover-head">
+        <strong>{item.label}</strong>
+        <button type="button" onClick={onClose} aria-label="Закрыть подсказку">×</button>
+      </div>
+      <span>{item.text}</span>
+      <dl>
+        <div><dt>Знак</dt><dd>{rashiLabel}</dd></div>
+        <div><dt>Хозяин</dt><dd>{lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}</dd></div>
+        <div><dt>Грахи</dt><dd>{placementText}</dd></div>
+      </dl>
+      <em>{referenceLabel}: дом, знак, хозяин и грахи внутри.</em>
+      <button
+        type="button"
+        className="help-ai-action chart-house-popover-ai"
+        onClick={() =>
+          requestAiExplanation({
+            title: `${item.label} в карте`,
+            text: `Ракурс: ${referenceLabel}. Знак: ${rashiLabel}. Хозяин: ${lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}. Грахи: ${placementText}.`,
+          })
+        }
+      >
+        Спросить AI
+      </button>
     </div>
   );
 }
@@ -1898,13 +1960,18 @@ function NorthIndianChartPreview({
   varga,
   chartReference = "lagna",
   termLanguage = "sanskrit",
+  houseHintsEnabled = true,
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartReference?: ChartReference;
   termLanguage?: TermLanguage;
+  houseHintsEnabled?: boolean;
 }) {
-  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
+  const [hoveredHouse, setHoveredHouse] = useState<number | null>(null);
+  const [pinnedHouse, setPinnedHouse] = useState<number | null>(null);
+  const activeHouse = houseHintsEnabled ? pinnedHouse ?? hoveredHouse : null;
+  const activeCell = activeHouse ? northIndianHouseCells[activeHouse] : null;
   return (
     <>
       <div className="chart-box" aria-label="Предпросмотр североиндийской карты">
@@ -1913,19 +1980,26 @@ function NorthIndianChartPreview({
           varga={varga}
           chartReference={chartReference}
           termLanguage={termLanguage}
-          onHouseSelect={setSelectedHouse}
-          selectedHouse={selectedHouse}
+          onHouseSelect={houseHintsEnabled ? (house) => setPinnedHouse((current) => (current === house ? null : house)) : undefined}
+          onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
+          onHouseLeave={houseHintsEnabled ? () => setHoveredHouse(null) : undefined}
+          selectedHouse={activeHouse}
         />
+        {houseHintsEnabled && activeHouse && activeCell ? (
+          <ChartHouseHintPopover
+            chart={chart}
+            varga={varga}
+            chartReference={chartReference}
+            house={activeHouse}
+            termLanguage={termLanguage}
+            position={{ x: (activeCell.centerX / 400) * 100, y: (activeCell.centerY / 400) * 100 }}
+            onClose={() => {
+              setPinnedHouse(null);
+              setHoveredHouse(null);
+            }}
+          />
+        ) : null}
       </div>
-      {selectedHouse ? (
-        <ChartHouseExplanation
-          chart={chart}
-          varga={varga}
-          chartReference={chartReference}
-          house={selectedHouse}
-          termLanguage={termLanguage}
-        />
-      ) : null}
     </>
   );
 }
@@ -1937,6 +2011,8 @@ function NorthIndianChartSvg({
   compact = false,
   termLanguage = "sanskrit",
   onHouseSelect,
+  onHouseHover,
+  onHouseLeave,
   selectedHouse,
 }: {
   chart: BirthChart | null;
@@ -1945,6 +2021,8 @@ function NorthIndianChartSvg({
   compact?: boolean;
   termLanguage?: TermLanguage;
   onHouseSelect?: (house: number) => void;
+  onHouseHover?: (house: number) => void;
+  onHouseLeave?: () => void;
   selectedHouse?: number | null;
 }) {
   const houses = northIndianHouseItems(chart, varga, chartReference);
@@ -1970,6 +2048,9 @@ function NorthIndianChartSvg({
               aria-label={onHouseSelect ? `${house.house} дом` : undefined}
               tabIndex={onHouseSelect ? 0 : undefined}
               onClick={onHouseSelect ? () => onHouseSelect(house.house) : undefined}
+              onMouseEnter={onHouseHover ? () => onHouseHover(house.house) : undefined}
+              onMouseLeave={onHouseLeave}
+              onFocus={onHouseHover ? () => onHouseHover(house.house) : undefined}
               onKeyDown={
                 onHouseSelect
                   ? (event) => {
@@ -2033,18 +2114,38 @@ const southIndianSignCells: Record<number, { row: number; col: number }> = {
   5: { row: 3, col: 3 },
 };
 
+function southIndianHouseTooltipPosition(
+  chart: BirthChart | null,
+  varga: ActiveVargaChart | null,
+  chartReference: ChartReference,
+  house: number,
+) {
+  const placements = activeChartPlacements(chart, varga);
+  const lagnaIndex = chartReferenceRashiIndex(chart, placements, chartReference);
+  if (lagnaIndex === null) return null;
+  const rashiIndex = (lagnaIndex + house - 1) % 12;
+  const cell = southIndianSignCells[rashiIndex];
+  if (!cell) return null;
+  return { x: ((cell.col + 0.5) / 4) * 100, y: ((cell.row + 0.5) / 4) * 100 };
+}
+
 function SouthIndianChartPreview({
   chart,
   varga,
   chartReference = "lagna",
   termLanguage = "sanskrit",
+  houseHintsEnabled = true,
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartReference?: ChartReference;
   termLanguage?: TermLanguage;
+  houseHintsEnabled?: boolean;
 }) {
-  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
+  const [hoveredHouse, setHoveredHouse] = useState<number | null>(null);
+  const [pinnedHouse, setPinnedHouse] = useState<number | null>(null);
+  const activeHouse = houseHintsEnabled ? pinnedHouse ?? hoveredHouse : null;
+  const activePosition = activeHouse ? southIndianHouseTooltipPosition(chart, varga, chartReference, activeHouse) : null;
   return (
     <>
       <div className="chart-box south-chart-box" aria-label="Предпросмотр южноиндийской карты">
@@ -2053,19 +2154,26 @@ function SouthIndianChartPreview({
           varga={varga}
           chartReference={chartReference}
           termLanguage={termLanguage}
-          onHouseSelect={setSelectedHouse}
-          selectedHouse={selectedHouse}
+          onHouseSelect={houseHintsEnabled ? (house) => setPinnedHouse((current) => (current === house ? null : house)) : undefined}
+          onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
+          onHouseLeave={houseHintsEnabled ? () => setHoveredHouse(null) : undefined}
+          selectedHouse={activeHouse}
         />
+        {houseHintsEnabled && activeHouse && activePosition ? (
+          <ChartHouseHintPopover
+            chart={chart}
+            varga={varga}
+            chartReference={chartReference}
+            house={activeHouse}
+            termLanguage={termLanguage}
+            position={activePosition}
+            onClose={() => {
+              setPinnedHouse(null);
+              setHoveredHouse(null);
+            }}
+          />
+        ) : null}
       </div>
-      {selectedHouse ? (
-        <ChartHouseExplanation
-          chart={chart}
-          varga={varga}
-          chartReference={chartReference}
-          house={selectedHouse}
-          termLanguage={termLanguage}
-        />
-      ) : null}
     </>
   );
 }
@@ -2077,6 +2185,8 @@ function SouthIndianChartGrid({
   compact = false,
   termLanguage = "sanskrit",
   onHouseSelect,
+  onHouseHover,
+  onHouseLeave,
   selectedHouse,
 }: {
   chart: BirthChart | null;
@@ -2085,6 +2195,8 @@ function SouthIndianChartGrid({
   compact?: boolean;
   termLanguage?: TermLanguage;
   onHouseSelect?: (house: number) => void;
+  onHouseHover?: (house: number) => void;
+  onHouseLeave?: () => void;
   selectedHouse?: number | null;
 }) {
   const placements = activeChartPlacements(chart, varga);
@@ -2111,6 +2223,9 @@ function SouthIndianChartGrid({
             tabIndex={interactive ? 0 : undefined}
             title={house ? `${house} дом` : undefined}
             onClick={interactive && house ? () => onHouseSelect?.(house) : undefined}
+            onMouseEnter={interactive && house ? () => onHouseHover?.(house) : undefined}
+            onMouseLeave={onHouseLeave}
+            onFocus={interactive && house ? () => onHouseHover?.(house) : undefined}
             onKeyDown={
               interactive && house
                 ? (event) => {
@@ -4247,6 +4362,83 @@ function GrahaTable({ chart, termLanguage }: { chart: BirthChart | null; termLan
         );
       })}
     </div>
+  );
+}
+
+function ChartSideCalculationTable({ chart, termLanguage }: { chart: BirthChart | null; termLanguage: TermLanguage }) {
+  const grahas = chart?.grahas ?? [];
+  const sun = grahas.find((graha) => graha.body === "Surya");
+  const lagnaIndex = normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
+  if (!chart || grahas.length === 0) {
+    return (
+      <section className="chart-side-table empty">
+        <div className="chart-side-table-head">
+          <strong>Расчёты D1</strong>
+          <span>появятся после расчёта карты</span>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="chart-side-table" aria-label="Краткая таблица расчётов рядом с картой">
+      <div className="chart-side-table-head">
+        <strong>Расчёты D1</strong>
+        <span>граха, градус, раши, накшатра, дом, статус</span>
+      </div>
+      <div className="chart-side-table-grid">
+        <div className="chart-side-table-row chart-side-table-header">
+          <span>Граха</span>
+          <span>Градус</span>
+          <span>Раши</span>
+          <span>Накшатра</span>
+          <span>Дом</span>
+          <span>Статус</span>
+          <span>D9</span>
+        </div>
+        {chart.ascendant ? (
+          <div className="chart-side-table-row lagna-row">
+            <strong><GlossaryTerm termKey="lagna">{grahaTermLabel("Lagna", termLanguage)}</GlossaryTerm></strong>
+            <span><LongitudeValue label={grahaTermLabel("Lagna", termLanguage)} longitude={chart.ascendant.longitude} /></span>
+            <span><RashiValue name={chart.ascendant.rashi} index={chart.ascendant.rashi_index} termLanguage={termLanguage} compact /></span>
+            <span><NakshatraValue name={chart.ascendant.nakshatra} pada={chart.ascendant.pada} subject={grahaTermLabel("Lagna", termLanguage)} /></span>
+            <span><GlossaryTerm termKey="house_1">1</GlossaryTerm></span>
+            <span>-</span>
+            <span><RashiValue name={chart.ascendant.navamsa} termLanguage={termLanguage} compact /></span>
+          </div>
+        ) : null}
+        {grahas.map((graha) => {
+          const rashiIndex = normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi);
+          const house = houseFromRashiIndex(rashiIndex, lagnaIndex);
+          const combustion = combustionStatus(graha, sun);
+          const grahaLabel = grahaTermLabel(graha.body, termLanguage);
+          return (
+            <div className="chart-side-table-row" key={`side-${graha.body}`}>
+              <strong><GlossaryTerm termKey="graha">{grahaLabel}</GlossaryTerm></strong>
+              <span><LongitudeValue label={grahaLabel} longitude={graha.longitude} /></span>
+              <span><RashiValue name={graha.rashi} index={graha.rashi_index} termLanguage={termLanguage} compact /></span>
+              <span><NakshatraValue name={graha.nakshatra} pada={graha.pada} subject={grahaLabel} /></span>
+              <span>{house ? <GlossaryTerm termKey={houseGlossaryKey(house)}>{house}</GlossaryTerm> : "-"}</span>
+              <span className="chart-side-status">
+                <GrahaStatusValue graha={graha} />
+                {combustion.combust ? (
+                  <>
+                    {" · "}
+                    <CalculationValueHelp
+                      title={`Аста: ${grahaLabel}`}
+                      text={combustion.distance === null ? `${grahaLabel}: нет данных для проверки сожжения.` : `${grahaLabel}: расстояние от Солнца ${combustion.distance.toFixed(1)}°. Порог: ${combustion.threshold ?? "-"}°.`}
+                    >
+                      {combustion.label}
+                    </CalculationValueHelp>
+                  </>
+                ) : null}
+              </span>
+              <span><RashiValue name={graha.navamsa} index={graha.navamsa_index} termLanguage={termLanguage} compact /></span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -7716,6 +7908,7 @@ export default function Home() {
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [termLanguage, setTermLanguage] = useState<TermLanguage>("sanskrit");
+  const [houseHintsEnabled, setHouseHintsEnabled] = useState(true);
   const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>("pro");
   const [chartWorkspaceTab, setChartWorkspaceTab] = useState<ChartWorkspaceTab>("essentials");
   const [vargaCoverageOpen, setVargaCoverageOpen] = useState(false);
@@ -8005,6 +8198,10 @@ export default function Home() {
       if (savedTermLanguage === "sanskrit" || savedTermLanguage === "ru" || savedTermLanguage === "en") {
         setTermLanguage(savedTermLanguage);
       }
+      const savedHouseHints = window.localStorage.getItem(CHART_HOUSE_HINTS_STORAGE_KEY);
+      if (savedHouseHints === "true" || savedHouseHints === "false") {
+        setHouseHintsEnabled(savedHouseHints === "true");
+      }
       const savedInterfaceMode = window.localStorage.getItem(INTERFACE_MODE_STORAGE_KEY);
       if (savedInterfaceMode === "pro" || savedInterfaceMode === "beginner") {
         setInterfaceMode(savedInterfaceMode);
@@ -8021,11 +8218,12 @@ export default function Home() {
     try {
       window.localStorage.setItem(CHART_STYLE_STORAGE_KEY, chartStyle);
       window.localStorage.setItem(TERM_LANGUAGE_STORAGE_KEY, termLanguage);
+      window.localStorage.setItem(CHART_HOUSE_HINTS_STORAGE_KEY, String(houseHintsEnabled));
       window.localStorage.setItem(INTERFACE_MODE_STORAGE_KEY, interfaceMode);
     } catch {
       // localStorage can be unavailable in restricted browser modes.
     }
-  }, [chartStyle, chartStyleHydrated, interfaceMode, termLanguage]);
+  }, [chartStyle, chartStyleHydrated, houseHintsEnabled, interfaceMode, termLanguage]);
 
   useEffect(() => {
     try {
@@ -10336,6 +10534,14 @@ export default function Home() {
               <div className="chart-reference-row">
                 <strong>Отсчёт домов</strong>
                 <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
+                <label className="chart-house-hints-toggle">
+                  <input
+                    type="checkbox"
+                    checked={houseHintsEnabled}
+                    onChange={(event) => setHouseHintsEnabled(event.target.checked)}
+                  />
+                  <span>Подсказки в карте</span>
+                </label>
               </div>
               {interfaceMode === "beginner" ? (
                 <div className="beginner-guide-strip">
@@ -10345,10 +10551,9 @@ export default function Home() {
               ) : null}
               <div className="chart-layout">
                 <div className="chart-visual-stack">
-                  <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
+                  <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} houseHintsEnabled={houseHintsEnabled} />
                   {!chart ? <StartChartNotice /> : null}
                   <ChartNotationLegend termLanguage={termLanguage} />
-                  <HouseExplanationGrid />
                   <FirstReadCalculationPanel
                     chart={chart}
                     termLanguage={termLanguage}
@@ -10357,6 +10562,7 @@ export default function Home() {
                 </div>
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} termLanguage={termLanguage} />
+                  <ChartSideCalculationTable chart={chart} termLanguage={termLanguage} />
                   <AiAccessPolicyPanel />
                   <AiRelatedContextPanel relationships={profileRelationships} />
                   <MvpReadinessPanel />
@@ -10365,13 +10571,6 @@ export default function Home() {
                   {interfaceMode === "beginner" ? <BeginnerNextSteps /> : null}
                   {interfaceMode === "beginner" ? <BeginnerLearningPanel /> : null}
                   {interfaceMode === "beginner" ? <BeginnerCalculationGuide /> : null}
-                  <ActiveCalculationTable
-                    chart={chart}
-                    chartMode={chartMode}
-                    selectedVarga={selectedVarga}
-                    selectedVargaPlacements={selectedVargaPlacements}
-                    termLanguage={termLanguage}
-                  />
                   <KeyVargaComparisonPanel
                     chart={chart}
                     activeCode={chartMode}

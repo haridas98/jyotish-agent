@@ -2931,6 +2931,27 @@ select {
   width: min(100%, 520px);
 }
 
+.chart-house-hints-toggle {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--green);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 7px;
+  justify-self: start;
+  line-height: 1;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.chart-house-hints-toggle input {
+  accent-color: var(--green);
+  margin: 0;
+}
+
 .chart-box svg {
   display: block;
   height: 100%;
@@ -3326,6 +3347,102 @@ select {
 .chart-house-group.interactive:focus-visible .chart-rashi-label,
 .chart-house-group.selected .chart-rashi-label {
   fill: var(--green);
+}
+
+.chart-house-popover {
+  background: #ffffff;
+  border: 1px solid #d9b36d;
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(14, 40, 48, 0.2);
+  color: var(--ink);
+  display: grid;
+  gap: 6px;
+  left: 50%;
+  line-height: 1.28;
+  max-width: min(280px, calc(100% - 20px));
+  min-width: 220px;
+  padding: 10px;
+  pointer-events: auto;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 12;
+}
+
+.chart-house-popover-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.chart-house-popover strong {
+  color: var(--green);
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.chart-house-popover-head button {
+  align-items: center;
+  appearance: none;
+  background: #f7fbf8;
+  border: 1px solid #cfe8df;
+  border-radius: 999px;
+  color: var(--green);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 16px;
+  font-weight: 900;
+  height: 24px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 24px;
+}
+
+.chart-house-popover span,
+.chart-house-popover em,
+.chart-house-popover dt,
+.chart-house-popover dd {
+  font-size: 11px;
+}
+
+.chart-house-popover span {
+  color: var(--ink);
+}
+
+.chart-house-popover dl {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.chart-house-popover dl > div {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 48px minmax(0, 1fr);
+}
+
+.chart-house-popover dt,
+.chart-house-popover dd {
+  margin: 0;
+}
+
+.chart-house-popover dt,
+.chart-house-popover em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.chart-house-popover dd {
+  color: var(--ink);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.chart-house-popover-ai {
+  justify-self: start;
 }
 
 .chart-cell-explanation {
@@ -4899,6 +5016,104 @@ select {
   min-width: 0;
   overflow-x: auto;
   overflow-y: visible;
+}
+
+.chart-side-table {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  min-width: 0;
+  overflow: visible;
+}
+
+.chart-side-table.empty {
+  padding: 10px;
+}
+
+.chart-side-table-head {
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 8px 9px;
+}
+
+.chart-side-table-head strong {
+  color: var(--green);
+  font-size: 13px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.chart-side-table-head span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-side-table-grid {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.chart-side-table-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  font-size: 11px;
+  gap: 5px;
+  grid-template-columns: 72px 64px 64px minmax(84px, 1fr) 38px minmax(72px, 0.85fr) 58px;
+  min-height: 29px;
+  min-width: 590px;
+  padding: 5px 7px;
+}
+
+.chart-side-table-row:first-child {
+  border-top: 0;
+}
+
+.chart-side-table-header {
+  background: #faf8f1;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.chart-side-table-row.lagna-row {
+  background: #f5fbfa;
+}
+
+.chart-side-table-row strong {
+  color: var(--green);
+  min-width: 0;
+}
+
+.chart-side-table-row span {
+  min-width: 0;
+}
+
+.chart-side-table .glossary-trigger,
+.chart-side-table .calculation-value-help .glossary-trigger {
+  font-size: 11px;
+}
+
+.chart-side-status {
+  color: var(--muted);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table-row {
