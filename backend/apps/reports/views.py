@@ -315,18 +315,46 @@ class BirthCurrentDayOverviewView(APIView):
                 cache.set(cache_key, transit_report, timeout=getattr(settings, "CURRENT_DAY_REPORT_CACHE_SECONDS", 1800))
                 cache_status = "miss"
             output = _current_day_overview_output(data, transit_report)
-            record = GeneratedAnalysisDraft.objects.create(
-                kind="current_day_transit_overview",
-                review_status="calculation_draft",
-                source_policy="calculation_first",
-                provider="internal_transit",
-                model="workflow-v1",
-                input_snapshot=data,
-                packet_snapshot={"transit_report": transit_report},
-                output_json=output,
-                prompt_markdown="",
-                user=_request_user(request),
-            )
+            record = _current_day_overview_record_for_request(_request_user(request), data)
+            if record is None:
+                record = GeneratedAnalysisDraft.objects.create(
+                    kind="current_day_transit_overview",
+                    review_status="calculation_draft",
+                    source_policy="calculation_first",
+                    provider="internal_transit",
+                    model="workflow-v1",
+                    input_snapshot=data,
+                    packet_snapshot={"transit_report": transit_report},
+                    output_json=output,
+                    prompt_markdown="",
+                    user=_request_user(request),
+                )
+            else:
+                record.review_status = "calculation_draft"
+                record.source_policy = "calculation_first"
+                record.provider = "internal_transit"
+                record.model = "workflow-v1"
+                record.input_snapshot = data
+                record.packet_snapshot = {"transit_report": transit_report}
+                record.output_json = output
+                record.prompt_markdown = ""
+                record.save(
+                    update_fields=[
+                        "review_status",
+                        "source_policy",
+                        "provider",
+                        "model",
+                        "input_snapshot",
+                        "input_summary",
+                        "packet_snapshot",
+                        "output_json",
+                        "engine_label",
+                        "first_section_title",
+                        "excerpt",
+                        "section_count",
+                        "prompt_markdown",
+                    ]
+                )
             output["id"] = record.id
             response = Response(output)
             response["X-Jyotish-Transit-Cache"] = cache_status
@@ -887,6 +915,35 @@ def _current_day_overview_output(data: dict[str, object], transit_report: dict[s
             },
         ],
     }
+
+
+def _current_day_overview_record_for_request(user, data: dict[str, object]) -> GeneratedAnalysisDraft | None:
+    if user is None:
+        return None
+    target_key = _current_day_history_key(data)
+    if not target_key:
+        return None
+    candidates = (
+        GeneratedAnalysisDraft.objects.filter(
+            user=user,
+            kind="current_day_transit_overview",
+            input_summary__as_of_date=target_key.get("as_of_date"),
+        )
+        .only("id", "input_summary")
+        .order_by("-created_at", "-id")[:20]
+    )
+    for record in candidates:
+        if _current_day_history_key(record.input_summary) == target_key:
+            return record
+    return None
+
+
+def _current_day_history_key(data: object) -> dict[str, object]:
+    summary = input_summary_from_snapshot(data, "current_day_transit_overview") if isinstance(data, dict) else {}
+    if not summary.get("as_of_date"):
+        return {}
+    summary.pop("as_of_time", None)
+    return summary
 
 
 def _compact_chart(chart: object) -> dict[str, object]:

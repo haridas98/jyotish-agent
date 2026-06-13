@@ -582,8 +582,9 @@ def test_current_day_overview_reuses_cached_transit_report(monkeypatch):
     assert second.status_code == 200
     assert first["X-Jyotish-Transit-Cache"] == "miss"
     assert second["X-Jyotish-Transit-Cache"] == "hit"
+    assert second.data["id"] == first.data["id"]
     assert calls["count"] == 1
-    assert GeneratedAnalysisDraft.objects.filter(kind="current_day_transit_overview", user=user).count() == 2
+    assert GeneratedAnalysisDraft.objects.filter(kind="current_day_transit_overview", user=user).count() == 1
 
 
 @pytest.mark.django_db
