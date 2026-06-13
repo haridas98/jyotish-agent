@@ -1412,73 +1412,6 @@ function ChartPreview({
   );
 }
 
-function ChartHouseExplanation({
-  chart,
-  varga,
-  chartReference,
-  house,
-  termLanguage,
-}: {
-  chart: BirthChart | null;
-  varga: ActiveVargaChart | null;
-  chartReference: ChartReference;
-  house: number;
-  termLanguage: TermLanguage;
-}) {
-  const item = jyotishGlossary[houseGlossaryKey(house)];
-  const houseItem = northIndianHouseItems(chart, varga, chartReference).find((row) => row.house === house);
-  const rashiIndex = houseItem?.rashiIndex ?? null;
-  const rashiLabel = rashiIndex === null
-    ? "-"
-    : rashiTermFromName(houseItem?.rashi ?? rashiNames[rashiIndex], termLanguage);
-  const lordBody = rashiIndex === null ? null : rashiLordBodies[rashiIndex];
-  const placements = houseItem?.placements ?? [];
-  const placementText = placements.length
-    ? placements.map((placement) => chartPlacementLabel(placement, termLanguage)).join(", ")
-    : "нет грах";
-  const referenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
-  return (
-    <div className="chart-cell-explanation" aria-live="polite">
-      <strong>{item.label}</strong>
-      <span>{item.text}</span>
-      <dl>
-        <div>
-          <dt>
-            <GlossaryTerm termKey="rashi">Знак</GlossaryTerm>
-          </dt>
-          <dd>{rashiLabel}</dd>
-        </div>
-        <div>
-          <dt>
-            <GlossaryTerm termKey="ruled_houses">Хозяин</GlossaryTerm>
-          </dt>
-          <dd>{lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}</dd>
-        </div>
-        <div>
-          <dt>
-            <GlossaryTerm termKey="graha">Грахи</GlossaryTerm>
-          </dt>
-          <dd>{placementText}</dd>
-        </div>
-      </dl>
-      <em>Ракурс домов: {referenceLabel}. Чтение: сфера дома, знак, хозяин, грахи внутри, D9 и даша.</em>
-      <button
-        type="button"
-        className="help-ai-action chart-cell-ai-action"
-        onClick={() =>
-          requestAiExplanation({
-            title: `${item.label} в карте`,
-            text: `Ракурс: ${referenceLabel}. Знак: ${rashiLabel}. Хозяин: ${lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}. Грахи: ${placementText}.`,
-          })
-        }
-      >
-        Спросить AI об этом доме
-      </button>
-      <small>Нажмите другой дом на карте, чтобы сменить пояснение.</small>
-    </div>
-  );
-}
-
 function readerExplanationForHouse({
   chart,
   varga,
@@ -4299,6 +4232,74 @@ function GrahaStatusValue({ graha }: { graha: GrahaPosition }) {
   );
 }
 
+function placementExplanationText({
+  graha,
+  chart,
+  house,
+  termLanguage,
+}: {
+  graha: GrahaPosition;
+  chart: BirthChart;
+  house: number | null;
+  termLanguage: TermLanguage;
+}) {
+  const label = grahaTermLabel(graha.body, termLanguage);
+  const rashiIndex = normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi);
+  const rashiLabel = rashiTermFromName(graha.rashi, termLanguage);
+  const houseText = house ? `${house} дом` : "дом не определён";
+  const lagnaIndex = normalizeRashiIndex(chart.ascendant?.rashi_index) ?? rashiIndexFromName(chart.ascendant?.rashi);
+  const ruledHouses = HouseGlossaryListText(ruledHousesForGraha(graha.body, lagnaIndex));
+  const nakshatra = graha.nakshatra ? `${graha.nakshatra}${graha.pada ? `, пада ${graha.pada}` : ""}` : "накшатра не определена";
+  const dignity = dignityText(grahaDignity(graha));
+  const status = [isRetrogradeGraha(graha) ? "ретроградная" : "", dignity].filter(Boolean).join(", ") || "без особого статуса";
+  const shadbala = shadbalaValueForGraha(chart, graha.body);
+  const rashiLord = rashiIndex === null ? null : rashiLordBodies[rashiIndex];
+  return `${label} находится в ${rashiLabel}, ${houseText}. Управляет домами: ${ruledHouses || "-"}. Накшатра: ${nakshatra}. Статус: ${status}. Шадбала: ${shadbala}. Хозяин знака: ${rashiLord ? grahaTermLabel(rashiLord, termLanguage) : "-"}.`;
+}
+
+function HouseGlossaryListText(houses: number[]) {
+  return houses.length ? houses.join(", ") : "";
+}
+
+function PlacementNameHelp({
+  graha,
+  chart,
+  house,
+  termLanguage,
+}: {
+  graha: GrahaPosition;
+  chart: BirthChart;
+  house: number | null;
+  termLanguage: TermLanguage;
+}) {
+  const label = grahaTermLabel(graha.body, termLanguage);
+  const rashiLabel = rashiTermFromName(graha.rashi, termLanguage);
+  const title = `${label}: ${rashiLabel}${house ? `, ${house} дом` : ""}`;
+  return (
+    <CalculationValueHelp title={title} text={placementExplanationText({ graha, chart, house, termLanguage })}>
+      {label}
+    </CalculationValueHelp>
+  );
+}
+
+function HouseValueHelp({
+  chart,
+  house,
+  termLanguage,
+}: {
+  chart: BirthChart | null;
+  house: number | null;
+  termLanguage: TermLanguage;
+}) {
+  if (!house) return <>-</>;
+  const explanation = readerExplanationForHouse({ chart, varga: null, chartReference: "lagna", house, termLanguage });
+  return (
+    <CalculationValueHelp title={explanation.title} text={explanation.text}>
+      {house}
+    </CalculationValueHelp>
+  );
+}
+
 function shadbalaRowForGraha(chart: BirthChart, body: string) {
   return chart.classical?.shadbala?.items?.find((item) => canonicalBody(item.body) === canonicalBody(body));
 }
@@ -4508,11 +4509,18 @@ function ChartSideCalculationTable({
         </div>
         {chart.ascendant ? (
           <div className="chart-side-table-row lagna-row">
-            <strong><GlossaryTerm termKey="lagna">{grahaTermLabel("Lagna", termLanguage)}</GlossaryTerm></strong>
+            <strong>
+              <CalculationValueHelp
+                title={`${grahaTermLabel("Lagna", termLanguage)}: ${rashiTermFromName(chart.ascendant.rashi, termLanguage)}`}
+                text={readerExplanationForHouse({ chart, varga: null, chartReference: "lagna", house: 1, termLanguage }).text}
+              >
+                {grahaTermLabel("Lagna", termLanguage)}
+              </CalculationValueHelp>
+            </strong>
             <span><LongitudeValue label={grahaTermLabel("Lagna", termLanguage)} longitude={chart.ascendant.longitude} /></span>
             <span><RashiValue name={chart.ascendant.rashi} index={chart.ascendant.rashi_index} termLanguage={termLanguage} compact /></span>
             <span><NakshatraValue name={chart.ascendant.nakshatra} pada={chart.ascendant.pada} subject={grahaTermLabel("Lagna", termLanguage)} /></span>
-            <span><GlossaryTerm termKey="house_1">1</GlossaryTerm></span>
+            <span><HouseValueHelp chart={chart} house={1} termLanguage={termLanguage} /></span>
             <span>-</span>
             <span><RashiValue name={chart.ascendant.navamsa} termLanguage={termLanguage} compact /></span>
           </div>
@@ -4524,11 +4532,11 @@ function ChartSideCalculationTable({
           const grahaLabel = grahaTermLabel(graha.body, termLanguage);
           return (
             <div className="chart-side-table-row" key={`side-${graha.body}`}>
-              <strong><GlossaryTerm termKey="graha">{grahaLabel}</GlossaryTerm></strong>
+              <strong><PlacementNameHelp graha={graha} chart={chart} house={house} termLanguage={termLanguage} /></strong>
               <span><LongitudeValue label={grahaLabel} longitude={graha.longitude} /></span>
               <span><RashiValue name={graha.rashi} index={graha.rashi_index} termLanguage={termLanguage} compact /></span>
               <span><NakshatraValue name={graha.nakshatra} pada={graha.pada} subject={grahaLabel} /></span>
-              <span>{house ? <GlossaryTerm termKey={houseGlossaryKey(house)}>{house}</GlossaryTerm> : "-"}</span>
+              <span><HouseValueHelp chart={chart} house={house} termLanguage={termLanguage} /></span>
               <span className="chart-side-status">
                 <GrahaStatusValue graha={graha} />
                 {combustion.combust ? (
@@ -10676,11 +10684,6 @@ export default function Home() {
                   <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} houseHintsEnabled={houseHintsEnabled} />
                   {!chart ? <StartChartNotice /> : null}
                   <ChartNotationLegend termLanguage={termLanguage} />
-                  <FirstReadCalculationPanel
-                    chart={chart}
-                    termLanguage={termLanguage}
-                    onOpenCalculations={() => setActiveAnalysisTab("calculations")}
-                  />
                 </div>
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} termLanguage={termLanguage} />
