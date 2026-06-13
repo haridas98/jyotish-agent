@@ -254,6 +254,7 @@ def ask_birth_chart_codex_cli_analysis(
     }
     record = GeneratedAnalysisDraft.objects.create(
         user=report.user,
+        parent_analysis=report,
         kind="birth_chart_codex_cli_chat",
         review_status="private_final",
         source_policy=result["source_policy"],
@@ -299,6 +300,7 @@ def ask_current_day_codex_cli_analysis(
     }
     record = GeneratedAnalysisDraft.objects.create(
         user=report.user,
+        parent_analysis=report,
         kind="current_day_transit_overview_chat",
         review_status="private_final",
         source_policy=result["source_policy"],
@@ -344,6 +346,7 @@ def ask_compatibility_codex_cli_analysis(
     }
     record = GeneratedAnalysisDraft.objects.create(
         user=report.user,
+        parent_analysis=report,
         kind="compatibility_codex_cli_chat",
         review_status="private_final",
         source_policy=result["source_policy"],

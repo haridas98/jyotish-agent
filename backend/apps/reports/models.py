@@ -12,6 +12,13 @@ class GeneratedAnalysisDraft(models.Model):
         blank=True,
         related_name="generated_analysis_drafts",
     )
+    parent_analysis = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="chat_records",
+    )
     kind = models.CharField(max_length=64)
     review_status = models.CharField(max_length=32, default="draft")
     source_policy = models.CharField(max_length=64, default="citation_first")
@@ -30,6 +37,7 @@ class GeneratedAnalysisDraft(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["user", "kind", "created_at"], name="reports_gen_user_kind_idx"),
+            models.Index(fields=["parent_analysis", "user", "created_at"], name="reports_gen_parent_chat_idx"),
             models.Index(fields=["kind", "review_status"], name="reports_gen_kind_89d737_idx"),
             models.Index(fields=["created_at"], name="reports_gen_created_8d2ced_idx"),
         ]

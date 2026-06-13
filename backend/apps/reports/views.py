@@ -875,16 +875,32 @@ def _chat_counts_for_records(records: list[GeneratedAnalysisDraft], request) -> 
         GeneratedAnalysisDraft.objects.filter(
             kind__in=CHAT_ANALYSIS_KINDS,
             user=user,
-            input_snapshot__analysis_id__in=ids,
+            parent_analysis_id__in=ids,
         )
-        .values("input_snapshot__analysis_id")
+        .values("parent_analysis_id")
         .annotate(count=Count("id"))
     )
     counts: dict[int, int] = {}
     for row in rows:
-        analysis_id = _optional_int(row.get("input_snapshot__analysis_id"))
+        analysis_id = _optional_int(row.get("parent_analysis_id"))
         if analysis_id is not None:
             counts[analysis_id] = int(row.get("count") or 0)
+    missing_ids = [analysis_id for analysis_id in ids if analysis_id not in counts]
+    if missing_ids:
+        legacy_rows = (
+            GeneratedAnalysisDraft.objects.filter(
+                kind__in=CHAT_ANALYSIS_KINDS,
+                user=user,
+                parent_analysis__isnull=True,
+                input_snapshot__analysis_id__in=missing_ids,
+            )
+            .values("input_snapshot__analysis_id")
+            .annotate(count=Count("id"))
+        )
+        for row in legacy_rows:
+            analysis_id = _optional_int(row.get("input_snapshot__analysis_id"))
+            if analysis_id is not None:
+                counts[analysis_id] = int(row.get("count") or 0)
     return counts
 
 
@@ -980,13 +996,19 @@ def _history_kind_label(kind: str) -> str:
 
 
 def _chat_record_count(record: GeneratedAnalysisDraft) -> int:
-    return (
-        GeneratedAnalysisDraft.objects.filter(
-            kind__in=CHAT_ANALYSIS_KINDS,
-            input_snapshot__analysis_id=record.id,
-            user_id=record.user_id,
-        ).count()
-    )
+    count = GeneratedAnalysisDraft.objects.filter(
+        kind__in=CHAT_ANALYSIS_KINDS,
+        parent_analysis=record,
+        user_id=record.user_id,
+    ).count()
+    if count:
+        return count
+    return GeneratedAnalysisDraft.objects.filter(
+        kind__in=CHAT_ANALYSIS_KINDS,
+        parent_analysis__isnull=True,
+        input_snapshot__analysis_id=record.id,
+        user_id=record.user_id,
+    ).count()
 
 
 def _chat_history_payload(record: GeneratedAnalysisDraft, *, messages_key: str = "chat_messages") -> dict[str, object]:
@@ -1002,10 +1024,18 @@ def _chat_history_payload(record: GeneratedAnalysisDraft, *, messages_key: str =
 def _chat_messages_for_analysis(record: GeneratedAnalysisDraft, *, limit: int = CHAT_HISTORY_RECORD_LIMIT) -> list[dict[str, object]]:
     records_qs = GeneratedAnalysisDraft.objects.filter(
         kind__in=CHAT_ANALYSIS_KINDS,
-        input_snapshot__analysis_id=record.id,
+        parent_analysis=record,
         user_id=record.user_id,
     ).only("id", "input_snapshot", "output_json", "created_at").order_by("-created_at", "-id")
     records = list(records_qs[:limit])
+    if not records:
+        records_qs = GeneratedAnalysisDraft.objects.filter(
+            kind__in=CHAT_ANALYSIS_KINDS,
+            parent_analysis__isnull=True,
+            input_snapshot__analysis_id=record.id,
+            user_id=record.user_id,
+        ).only("id", "input_snapshot", "output_json", "created_at").order_by("-created_at", "-id")
+        records = list(records_qs[:limit])
     records.reverse()
     messages: list[dict[str, object]] = []
     for record in records:

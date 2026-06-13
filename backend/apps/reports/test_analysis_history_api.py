@@ -135,6 +135,52 @@ def test_analysis_history_detail_resolves_slug_and_returns_chat_messages():
 
 
 @pytest.mark.django_db
+def test_analysis_history_chat_uses_parent_analysis_relation():
+    user = get_user_model().objects.create_user(username="history-parent-chat-owner", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        input_snapshot={"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+        output_json={"sections": [{"title": "Chart", "body": "Body."}]},
+    )
+    chat = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        parent_analysis=report,
+        kind="birth_chart_codex_cli_chat",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        input_snapshot={"question": "Question stored without JSON analysis id"},
+        output_json={"answer": "Answer from indexed parent relation."},
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    list_response = client.get("/api/reports/history", {"kind": "birth_chart_codex_cli"})
+    detail_response = client.get(f"/api/reports/history/{report.id}")
+
+    assert list_response.status_code == 200
+    assert list_response.data["items"][0]["chat_count"] == 1
+    assert detail_response.status_code == 200
+    assert detail_response.data["chat_messages"] == [
+        {
+            "role": "user",
+            "content": "Question stored without JSON analysis id",
+            "analysis_message_id": chat.id,
+            "created_at": chat.created_at.isoformat(),
+        },
+        {
+            "role": "assistant",
+            "content": "Answer from indexed parent relation.",
+            "analysis_message_id": chat.id,
+            "created_at": chat.created_at.isoformat(),
+        },
+    ]
+
+
+@pytest.mark.django_db
 def test_analysis_history_detail_limits_long_chat_history():
     user = get_user_model().objects.create_user(username="history-long-chat-owner", password="strong-pass-108")
     report = GeneratedAnalysisDraft.objects.create(
