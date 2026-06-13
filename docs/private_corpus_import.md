@@ -56,41 +56,17 @@ cd C:\Projects\jyotish-agent\backend
   --output ..\.tmp\codex-analysis-haridev.json
 ```
 
-Review OCR quality with Qwen and FreeDeepseek without modifying source passages:
-
-```powershell
-cd C:\Projects\jyotish-agent\backend
-.\.venv\Scripts\python manage.py review_private_corpus_ocr_with_ai `
-  --work-slug vedic-astrology-integrated-approach-pvr-private `
-  --providers qwen,free_deepseek `
-  --limit 1 `
-  --output ..\.tmp\ocr-review\pvr-textbook-chunk-0001-qwen-deepseek.json
-```
-
-The command writes provider-normalized variants and OCR issue lists to `.tmp\ocr-review`. It does not overwrite the imported private corpus; human review decides which correction becomes a trusted passage.
+OCR cleanup is an external/offline process now. Keep raw OCR, normalized text, reviewer notes and witness usage outside git in `.tmp/ocr-review` or `.private_corpus/`; do not depend on Qwen/DeepSeek management commands in this app runtime.
 
 For BPHS, OCR review can include internet witness text. Keep the OCR source primary, but when a Sanskrit shloka clearly matches SanskritDocuments or another downloaded witness, the AI reviewer may prefer the witness reading and must note that in `witness_usage`.
 
-```powershell
-cd C:\Projects\jyotish-agent\backend
-.\.venv\Scripts\python manage.py review_private_corpus_ocr_with_ai `
-  --work-slug bphs-santhanam-private `
-  --providers qwen `
-  --limit 3 `
-  --offset 23 `
-  --max-chars 9000 `
-  --witness-root ..\.private_corpus\internet_witnesses `
-  --max-witness-chars 5000 `
-  --output ..\.tmp\ocr-review\bphs\qwen-batch-0024-0026-witness.json
-```
-
-Assemble the completed Qwen-normalized BPHS with SanskritDocuments Sanskrit inserted before each chapter in both Devanagari and ITRANS:
+Assemble the completed normalized BPHS with SanskritDocuments Sanskrit inserted before each chapter in both Devanagari and ITRANS:
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend
 .\.venv\Scripts\python manage.py assemble_bphs_sanskrit_merged
 .\.venv\Scripts\python manage.py import_private_corpus ..\.private_corpus\bphs-santhanam-manifest.json
-.\.venv\Scripts\python manage.py segment_private_corpus bphs-santhanam-qwen-normalized-with-sanskrit-private --max-chars 1800
+.\.venv\Scripts\python manage.py segment_private_corpus bphs-santhanam-normalized-with-sanskrit-private --max-chars 1800
 ```
 
 Inventory PDF pages that likely contain charts, tables or drawn schemes before recreating them as structured HTML/SVG:

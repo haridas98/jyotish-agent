@@ -9,12 +9,12 @@ from apps.sources.bphs_sanskrit_merge import assemble_bphs_with_sanskrit
 
 
 class Command(BaseCommand):
-    help = "Assemble Qwen-normalized BPHS with SanskritDocuments Sanskrit by chapter."
+    help = "Assemble normalized BPHS with SanskritDocuments Sanskrit by chapter."
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--english",
-            default="../.private_corpus/bphs-santhanam-qwen-normalized.txt",
+            default="../.private_corpus/bphs-santhanam-normalized.txt",
         )
         parser.add_argument(
             "--sanskrit-root",
@@ -22,11 +22,11 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--output",
-            default="../.private_corpus/bphs-santhanam-qwen-normalized-with-sanskrit.txt",
+            default="../.private_corpus/bphs-santhanam-normalized-with-sanskrit.txt",
         )
         parser.add_argument(
             "--manifest-output",
-            default="../.private_corpus/bphs-santhanam-qwen-normalized-with-sanskrit-manifest.json",
+            default="../.private_corpus/bphs-santhanam-normalized-with-sanskrit-manifest.json",
         )
 
     def handle(self, *args, **options):

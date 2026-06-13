@@ -518,8 +518,8 @@ Done:
 - Документы MVP/policy есть: `docs/product_scope.md`, `docs/vaishnava_interpretation_policy.md`, `docs/jhora_parity_policy.md`, `docs/jhora_feature_matrix.md`.
 - Расчетный MVP есть: birth chart, D1/D9, shodasha vargas, panchanga, Vimshottari, базовый отчет, workflow panels и source-backed report generation.
 - VL read-only интеграция есть через `apps.vl_integration` и поиск цитат в reports.
-- Qwen и FreeDeepseek подключены в backend/frontend, задокументированы, smoke-tested локально и установлены на private server.
-- Сервер `31.76.79.2` держит активные backend, frontend, FreeQwenApi и FreeDeepseekAPI; `smoke_ai_helpers --continue-on-error` возвращает `qwen ok` и `free_deepseek ok`.
+- Исторически проверялись внешние helper-провайдеры, но этот статус устарел: текущий runtime оставлен Codex CLI only; helper-прокси и smoke-команды удалены из продукта.
+- Старый сервер `31.76.79.2` больше не считается актуальным production target.
 
 Открыто:
 

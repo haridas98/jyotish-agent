@@ -3,9 +3,9 @@
 Technical generation is split into two reviewed steps.
 
 1. Import or seed approved source anchors and interpretation rules.
-2. Build an analysis packet for Codex CLI or another generator.
+2. Build an analysis packet for Codex CLI.
 
-The packet is citation-first. A generator may use only citations listed in the packet and must keep the output as `draft` until human review.
+The packet is citation-first. Codex CLI may use only citations listed in the packet and must keep the output as `draft` until human review.
 
 For marriage compatibility, use the API packet instead of treating ashtakuta as the whole verdict:
 
@@ -15,46 +15,23 @@ POST /api/reports/compatibility/analysis-packet
 
 The compatibility packet includes both birth charts, ashtakuta, Lagna/Moon/7th-house/Shukra-Mangala/Guru-Shukra/dasha perspectives, citation requests for each perspective, and a Codex-ready prompt.
 
-For direct LLM generation, configure:
+For the current private build, AI report generation is Codex CLI only:
 
 ```env
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-5.2
+CODEX_ANALYSIS_PROVIDER=codex_cli
 ```
 
 Then call:
 
 ```http
-POST /api/reports/birth-chart/draft-analysis
+POST /api/reports/birth-chart/codex-analysis
+POST /api/reports/compatibility/codex-analysis
+POST /api/reports/current-day/overview
 ```
 
-The generated text is saved as `GeneratedAnalysisDraft` with `review_status=draft`.
+Generated records are saved in `GeneratedAnalysisDraft` and always belong to the authenticated user. Qwen, DeepSeek and Nemotron helper paths were removed from the product runtime; do not configure their proxy services for this app.
 
-Alternative local/private providers:
-
-```http
-POST /api/reports/birth-chart/qwen-analysis
-POST /api/reports/birth-chart/deepseek-analysis
-POST /api/reports/birth-chart/nemotron-analysis
-```
-
-- Qwen uses local FreeQwenApi at `QWEN_API_BASE_URL`; the default local endpoint is `http://127.0.0.1:3264/api`.
-- DeepSeek uses local FreeDeepseekAPI at `FREE_DEEPSEEK_API_BASE_URL` and stores `provider=free_deepseek`.
-- DeepSeek is intentionally a compact overview, not the full Codex/Qwen report path.
-- Nemotron uses OpenRouter directly at `OPENROUTER_API_BASE_URL` with `OPENROUTER_API_KEY` and stores `provider=nemotron`.
-- Nemotron is also a compact overview path; use it for a second independent read of the same analysis packet.
-- The Nemotron API/UI path is disabled unless `NEMOTRON_ANALYSIS_ENABLED=true` and `NEXT_PUBLIC_ENABLE_NEMOTRON=true`; Qwen and DeepSeek stay the default local helpers.
-
-Local/server AI helper smoke:
-
-```powershell
-cd C:\Projects\jyotish-agent\backend
-.\.venv\Scripts\python manage.py smoke_free_deepseek
-.\.venv\Scripts\python manage.py smoke_ai_helpers --continue-on-error
-.\.venv\Scripts\python manage.py smoke_ai_helpers --providers qwen,free_deepseek --continue-on-error
-```
-
-Failed smoke rows include `setup_hint`, so missing proxy/env setup is visible without reading server logs.
+OpenAI API can be reintroduced later behind the same provider boundary, but it is not the active private-build path.
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend
