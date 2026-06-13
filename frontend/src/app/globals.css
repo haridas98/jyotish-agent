@@ -18361,3 +18361,114 @@ body {
     padding: 7px 10px !important;
   }
 }
+
+/* Product shell account bar: keep auth out of the navigation rail. */
+.product-workspace {
+  display: flex !important;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  width: 100%;
+}
+
+.product-shell-topbar {
+  align-items: center;
+  background: rgba(248, 252, 253, 0.94);
+  border-bottom: 1px solid rgba(198, 214, 222, 0.82);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 10px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 38;
+}
+
+.product-shell-context {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.product-shell-context strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.product-shell-context span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-shell-topbar .product-account-dock,
+.product-account-dock {
+  align-items: center;
+  display: flex !important;
+  gap: 8px;
+  justify-content: flex-end;
+  position: static !important;
+  right: auto !important;
+  top: auto !important;
+  z-index: auto !important;
+}
+
+.product-shell-topbar .product-account-name {
+  max-width: min(220px, 24vw);
+}
+
+.product-workspace .product-main {
+  flex: 1 1 auto;
+  min-width: 0 !important;
+  padding-top: 12px !important;
+}
+
+@media (max-width: 900px) {
+  .product-workspace {
+    min-height: auto;
+  }
+
+  .product-shell-topbar {
+    border-top: 1px solid rgba(198, 214, 222, 0.72);
+    min-height: 52px;
+    padding: 8px 10px;
+    position: static;
+    z-index: 34;
+  }
+
+  .product-shell-context strong {
+    display: none;
+  }
+
+  .product-shell-context span {
+    max-width: 54vw;
+  }
+
+  .product-shell-topbar .product-account-name {
+    display: none;
+  }
+
+  .product-workspace .product-main,
+  .product-main,
+  .workspace {
+    padding-top: 10px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .product-shell-topbar {
+    gap: 8px;
+  }
+
+  .product-shell-context span {
+    font-size: 11px;
+    max-width: 48vw;
+  }
+}

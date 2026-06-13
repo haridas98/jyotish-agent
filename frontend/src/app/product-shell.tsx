@@ -129,20 +129,30 @@ export function ProductShell({ active, children }: ProductShellProps) {
         </div>
       </aside>
 
-      <div className="product-account-dock" aria-label="Аккаунт">
-        {user ? (
-          <>
-            <span className="product-account-name">{user.username}</span>
-            <button type="button" className="product-account-button secondary" onClick={handleLogout}>
-              Выйти
-            </button>
-          </>
-        ) : (
-          <button type="button" className="product-account-button" onClick={() => setAuthOpen(true)}>
-            Войти
-          </button>
-        )}
-      </div>
+      <section className="product-workspace">
+        <header className="product-shell-topbar" aria-label="Панель аккаунта">
+          <div className="product-shell-context">
+            <strong>Jyotish Agent</strong>
+            <span>{user ? `Личное пространство: ${user.username}` : "Войдите, чтобы видеть только свои отчёты"}</span>
+          </div>
+          <div className="product-account-dock" aria-label="Аккаунт">
+            {user ? (
+              <>
+                <span className="product-account-name">{user.username}</span>
+                <button type="button" className="product-account-button secondary" onClick={handleLogout}>
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <button type="button" className="product-account-button" onClick={() => setAuthOpen(true)}>
+                Войти
+              </button>
+            )}
+          </div>
+        </header>
+
+        <section className="product-main">{children}</section>
+      </section>
 
       {authOpen && !user ? (
         <div className="product-auth-popover-backdrop" role="presentation" onMouseDown={() => setAuthOpen(false)}>
@@ -184,8 +194,6 @@ export function ProductShell({ active, children }: ProductShellProps) {
           </section>
         </div>
       ) : null}
-
-      <section className="product-main">{children}</section>
     </main>
   );
 }
