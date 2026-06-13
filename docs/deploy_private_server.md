@@ -38,7 +38,8 @@ Current host `31.76.79.2` is an archive-based systemd deploy, not a git checkout
 - App path: `/srv/jyotish-agent/app`.
 - Frontend: `jyotish-agent-frontend.service`, Next on `0.0.0.0:13130`.
 - Backend: `jyotish-agent-backend.service`, gunicorn on `0.0.0.0:18100`.
-- Current SQLite systemd host must keep gunicorn at `--workers 1`; heavy Codex analysis must run through `CODEX_GENERATION_QUEUE_ENABLED=true` and `jyotish-agent-codex-worker.service`.
+- Current systemd host uses local PostgreSQL (`DATABASE_URL=postgres://...@127.0.0.1:5432/jyotish_agent`). SQLite is only an emergency rollback source and must not be used with `DJANGO_DEBUG=false` unless `ALLOW_PRODUCTION_SQLITE=true` is set deliberately.
+- Gunicorn stays at `--workers 1` on the small server; heavy Codex analysis must run through `CODEX_GENERATION_QUEUE_ENABLED=true` and `jyotish-agent-codex-worker.service`.
 - Runtime files to preserve: `.env`, `.tmp/`, `.private_corpus/`, `ephe/`, `backend/.venv/`, `frontend/node_modules/`.
 - Deploy marker: `/srv/jyotish-agent/app/.deploy-commit`.
 - Verification: `GET http://31.76.79.2:18100/api/health` must return the deployed `deploy_commit`.
@@ -91,6 +92,7 @@ For backend-only changes, skip the frontend build and restart only `jyotish-agen
 ## Required production env decisions
 
 - `DJANGO_SECRET_KEY`, `POSTGRES_PASSWORD` must be real secrets.
+- Production must use PostgreSQL. `DATABASE_URL=sqlite://...` is rejected when `DJANGO_DEBUG=false`; `ALLOW_PRODUCTION_SQLITE=true` exists only for emergency rollback.
 - `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `NEXT_PUBLIC_API_BASE_URL` must match the actual domain.
 - `VL_DATABASE_URL` must point to the Prabhupada/VL database if source search must work on the server.
 - Swiss/JPL ephemeris files must be placed in `./ephe` if JPL mode is needed.

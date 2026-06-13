@@ -113,6 +113,11 @@ def database_from_url(url: str | None) -> dict[str, object]:
 
     parsed = urlparse(url)
     if parsed.scheme == "sqlite":
+        if not DEBUG and not env_bool("ALLOW_PRODUCTION_SQLITE", False):
+            raise ImproperlyConfigured(
+                "SQLite is disabled when DJANGO_DEBUG=false. Use PostgreSQL DATABASE_URL, "
+                "or set ALLOW_PRODUCTION_SQLITE=true only for emergency rollback."
+            )
         sqlite_path = parsed.path
         if sqlite_path.startswith("//"):
             sqlite_path = sqlite_path[1:]

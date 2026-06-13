@@ -1,3 +1,5 @@
+import pytest
+from django.core.exceptions import ImproperlyConfigured
 from django.http import JsonResponse
 from django.middleware.gzip import GZipMiddleware
 from django.test import RequestFactory
@@ -49,8 +51,26 @@ def test_database_from_url_accepts_postgres_env_fallback(monkeypatch):
     assert config["PORT"] == "5433"
 
 
-def test_database_from_url_accepts_sqlite_url():
+def test_database_from_url_accepts_sqlite_url_in_development(monkeypatch):
+    monkeypatch.setattr(project_settings, "DEBUG", True)
     config = database_from_url("sqlite:////srv/jyotish-agent/app/backend/db.sqlite3")
 
     assert config["ENGINE"] == "django.db.backends.sqlite3"
     assert config["NAME"] == "/srv/jyotish-agent/app/backend/db.sqlite3"
+
+
+def test_database_from_url_rejects_sqlite_url_in_production(monkeypatch):
+    monkeypatch.setattr(project_settings, "DEBUG", False)
+    monkeypatch.delenv("ALLOW_PRODUCTION_SQLITE", raising=False)
+
+    with pytest.raises(ImproperlyConfigured, match="SQLite is disabled"):
+        database_from_url("sqlite:////srv/jyotish-agent/app/backend/db.sqlite3")
+
+
+def test_database_from_url_allows_sqlite_production_emergency_flag(monkeypatch):
+    monkeypatch.setattr(project_settings, "DEBUG", False)
+    monkeypatch.setenv("ALLOW_PRODUCTION_SQLITE", "true")
+
+    config = database_from_url("sqlite:////srv/jyotish-agent/app/backend/db.sqlite3")
+
+    assert config["ENGINE"] == "django.db.backends.sqlite3"
