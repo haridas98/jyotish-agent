@@ -7787,6 +7787,7 @@ export default function Home() {
   const [shastraEvidence, setShastraEvidence] = useState<ShastraEvidencePayload | null>(null);
   const [shastraEvidenceStatus, setShastraEvidenceStatus] = useState("Evidence ещё не загружен");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
   const [authUsername, setAuthUsername] = useState("haridas");
   const [authPassword, setAuthPassword] = useState("");
   const [authStatus, setAuthStatus] = useState("Войдите, чтобы сохранять карты");
@@ -8969,6 +8970,7 @@ export default function Home() {
         return;
       }
       setCurrentUser(user);
+      setAuthOpen(false);
       if (mode === "register" && authResult.profile) {
         setProfiles([authResult.profile]);
         setRelationshipBaseProfileId(String(authResult.profile.id));
@@ -8996,6 +8998,7 @@ export default function Home() {
   async function handleLogout() {
     await logoutUser();
     setCurrentUser(null);
+    setAuthOpen(false);
     setProfiles([]);
     setProfileRelationships([]);
     setIncomingProfileRelationshipRequests([]);
@@ -9713,12 +9716,53 @@ export default function Home() {
                 </button>
               </>
             ) : (
-              <a className="secondary-button" href="#account">
+              <button type="button" className="secondary-button" onClick={() => setAuthOpen(true)}>
                 Войти
-              </a>
+              </button>
             )}
           </div>
         </header>
+
+        {authOpen && !currentUser ? (
+          <div className="product-auth-popover-backdrop" role="presentation" onMouseDown={() => setAuthOpen(false)}>
+            <section className="product-auth-popover" aria-label="Вход и регистрация" onMouseDown={(event) => event.stopPropagation()}>
+              <div className="product-auth-popover-head">
+                <div>
+                  <strong>Вход</strong>
+                  <span>Регистрация может сразу создать вашу карту. Время рождения необязательно.</span>
+                </div>
+                <button type="button" onClick={() => setAuthOpen(false)} aria-label="Закрыть">
+                  ×
+                </button>
+              </div>
+              <div className="product-auth-popover-grid">
+                <input placeholder="Логин" value={authUsername} onChange={(event) => setAuthUsername(event.target.value)} />
+                <input placeholder="Пароль" type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} />
+                <label>
+                  Дата рождения
+                  <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
+                </label>
+                <label>
+                  Время
+                  <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
+                </label>
+                <label>
+                  Город рождения
+                  <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
+                </label>
+              </div>
+              <div className="product-auth-popover-actions">
+                <button type="button" className="primary-button" onClick={() => handleAuth("login")}>
+                  Войти
+                </button>
+                <button type="button" className="secondary-button" onClick={() => handleAuth("register")}>
+                  Регистрация
+                </button>
+              </div>
+              <span className="product-auth-popover-status">{authStatus}</span>
+            </section>
+          </div>
+        ) : null}
 
         {privateAccessLocked ? (
           <section className="panel private-gate" aria-live="polite">
@@ -10032,38 +10076,9 @@ export default function Home() {
                   <button type="button" className="secondary-button" onClick={handleLogout}>Выйти</button>
                 </div>
               ) : (
-                <div className="auth-grid">
-                  <label>
-                    Логин
-                    <input value={authUsername} onChange={(event) => setAuthUsername(event.target.value)} />
-                  </label>
-                  <label>
-                    Пароль
-                    <input
-                      type="password"
-                      value={authPassword}
-                      onChange={(event) => setAuthPassword(event.target.value)}
-                    />
-                  </label>
-                  <div className="registration-birth-fields">
-                    <span>Для регистрации: дата и город рождения. Время необязательно; первый AI-разбор будет доступен для вашей карты.</span>
-                    <label>
-                      Дата рождения
-                      <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
-                    </label>
-                    <label>
-                      Время рождения (необязательно)
-                      <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
-                    </label>
-                    <label>
-                      Город рождения
-                      <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
-                    </label>
-                  </div>
-                  <div className="auth-actions">
-                    <button type="button" className="secondary-button" onClick={() => handleAuth("login")}>Войти</button>
-                    <button type="button" className="secondary-button" onClick={() => handleAuth("register")}>Регистрация</button>
-                  </div>
+                <div className="account-row account-row-guest">
+                  <strong>Гость</strong>
+                  <button type="button" className="secondary-button" onClick={() => setAuthOpen(true)}>Войти</button>
                 </div>
               )}
               <label>
