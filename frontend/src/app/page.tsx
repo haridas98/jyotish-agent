@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react";
+import { FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState, type Dispatch, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject, type SetStateAction } from "react";
 import {
   askBirthCodexAnalysis,
   askCompatibilityCodexAnalysis,
@@ -4508,6 +4508,16 @@ function ChartSideCalculationTable({
   const grahas = chart?.grahas ?? [];
   const sun = grahas.find((graha) => graha.body === "Surya");
   const lagnaIndex = normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
+  function openRowExplanation(detail: ReaderExplanationDetail) {
+    publishReaderExplanation(detail);
+  }
+
+  function handleRowKeyDown(event: ReactKeyboardEvent<HTMLDivElement>, detail: ReaderExplanationDetail) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openRowExplanation(detail);
+  }
+
   if (!chart || grahas.length === 0) {
     return (
       <section className="chart-side-table empty">
@@ -4519,6 +4529,14 @@ function ChartSideCalculationTable({
       </section>
     );
   }
+
+  const lagnaExplanation: ReaderExplanationDetail | null = chart.ascendant
+    ? {
+        title: `${grahaTermLabel("Lagna", termLanguage)}: ${rashiTermFromName(chart.ascendant.rashi, termLanguage)}`,
+        context: "Таблица D1",
+        text: readerExplanationForHouse({ chart, varga: null, chartReference: "lagna", house: 1, termLanguage }).text,
+      }
+    : null;
 
   return (
     <section className="chart-side-table" aria-label="Краткая таблица расчётов рядом с картой">
@@ -4538,7 +4556,13 @@ function ChartSideCalculationTable({
           <span>D9</span>
         </div>
         {chart.ascendant ? (
-          <div className="chart-side-table-row lagna-row">
+          <div
+            className="chart-side-table-row lagna-row clickable-reader-row"
+            role="button"
+            tabIndex={0}
+            onClick={() => lagnaExplanation ? openRowExplanation(lagnaExplanation) : undefined}
+            onKeyDown={(event) => lagnaExplanation ? handleRowKeyDown(event, lagnaExplanation) : undefined}
+          >
             <strong>
               <CalculationValueHelp
                 title={`${grahaTermLabel("Lagna", termLanguage)}: ${rashiTermFromName(chart.ascendant.rashi, termLanguage)}`}
@@ -4560,8 +4584,20 @@ function ChartSideCalculationTable({
           const house = houseFromRashiIndex(rashiIndex, lagnaIndex);
           const combustion = combustionStatus(graha, sun);
           const grahaLabel = grahaTermLabel(graha.body, termLanguage);
+          const rowExplanation: ReaderExplanationDetail = {
+            title: `${grahaLabel}: ${rashiTermFromName(graha.rashi, termLanguage)}${house ? `, ${house} дом` : ""}`,
+            context: "Таблица D1",
+            text: placementExplanationText({ graha, chart, house, termLanguage }),
+          };
           return (
-            <div className="chart-side-table-row" key={`side-${graha.body}`}>
+            <div
+              className="chart-side-table-row clickable-reader-row"
+              key={`side-${graha.body}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => openRowExplanation(rowExplanation)}
+              onKeyDown={(event) => handleRowKeyDown(event, rowExplanation)}
+            >
               <strong><PlacementNameHelp graha={graha} chart={chart} house={house} termLanguage={termLanguage} /></strong>
               <span><LongitudeValue label={grahaLabel} longitude={graha.longitude} /></span>
               <span><RashiValue name={graha.rashi} index={graha.rashi_index} termLanguage={termLanguage} compact /></span>

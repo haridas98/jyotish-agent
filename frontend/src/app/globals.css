@@ -5097,6 +5097,22 @@ select {
   min-width: 0;
 }
 
+.chart-side-table-row.clickable-reader-row {
+  cursor: pointer;
+  outline: none;
+}
+
+.chart-side-table-row.clickable-reader-row:hover,
+.chart-side-table-row.clickable-reader-row:focus-visible {
+  background: #f7fbf8;
+  box-shadow: inset 3px 0 0 var(--green);
+}
+
+.chart-side-table-row.clickable-reader-row:focus-visible {
+  position: relative;
+  z-index: 3;
+}
+
 .chart-side-table .glossary-trigger,
 .chart-side-table .calculation-value-help .glossary-trigger {
   font-size: 11px;
