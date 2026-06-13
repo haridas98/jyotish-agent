@@ -388,7 +388,9 @@ class CompatibilityCodexAnalysisView(APIView):
 
     def post(self, request):
         try:
-            data = _request_data_dict(request)
+            data, error_response = _compatibility_analysis_data_for_request(request)
+            if error_response is not None:
+                return error_response
             user = _request_user(request)
             return _codex_generation_response(
                 "compatibility_codex_cli",
@@ -809,6 +811,87 @@ def _birth_analysis_data_for_request(request) -> dict[str, object]:
     if related_contexts:
         data["related_profile_context"] = related_contexts
     return data
+
+
+def _compatibility_analysis_data_for_request(request) -> tuple[dict[str, object], Response | None]:
+    data = _request_data_dict(request)
+    user = _request_user(request)
+    if user is None:
+        return data, None
+
+    profile_ids: list[int] = []
+    for key in ("person_a", "person_b"):
+        person = data.get(key)
+        if not isinstance(person, dict):
+            continue
+        profile_id = _optional_int(person.get("profile_id"))
+        if profile_id is None:
+            continue
+        if not BirthProfile.objects.filter(id=profile_id, user=user).exists():
+            return data, Response({"error": "profile not found"}, status=404)
+        profile_ids.append(profile_id)
+
+    relationship_context, error_response = _trusted_compatibility_relationship_context(
+        user,
+        data.get("relationship_context"),
+        profile_ids,
+    )
+    if error_response is not None:
+        return data, error_response
+    if relationship_context:
+        data["relationship_context"] = relationship_context
+    return data, None
+
+
+def _trusted_compatibility_relationship_context(user, raw_context: object, profile_ids: list[int]) -> tuple[dict[str, object], Response | None]:
+    context = dict(raw_context) if isinstance(raw_context, dict) else {}
+    requested_role = str(context.get("role") or BirthProfileRelationship.Role.PARTNER).strip()
+    if requested_role not in BirthProfileRelationship.Role.values:
+        requested_role = BirthProfileRelationship.Role.OTHER
+
+    relationship = None
+    relationship_id = _optional_int(context.get("relationship_id"))
+    if relationship_id is not None:
+        relationship = (
+            BirthProfileRelationship.objects.select_related("requested_user")
+            .filter(id=relationship_id, user=user)
+            .first()
+        )
+        if relationship is None:
+            return {}, Response({"error": "relationship not found"}, status=404)
+    elif len(profile_ids) == 2:
+        left, right = profile_ids
+        relationship = (
+            BirthProfileRelationship.objects.select_related("requested_user")
+            .filter(user=user)
+            .filter(
+                Q(profile_id=left, related_profile_id=right)
+                | Q(profile_id=right, related_profile_id=left)
+            )
+            .order_by("-updated_at")
+            .first()
+        )
+
+    if relationship is None:
+        return {
+            "role": requested_role,
+            "link_status": BirthProfileRelationship.LinkStatus.PRIVATE,
+            "consent_policy": "private_manual_pair_no_registered_link",
+        }, None
+
+    return {
+        "role": relationship.role,
+        "relationship_id": relationship.id,
+        "profile_id": relationship.profile_id,
+        "related_profile_id": relationship.related_profile_id,
+        "link_status": relationship.link_status,
+        "requested_user": relationship.requested_user.username if relationship.requested_user_id else None,
+        "consent_policy": (
+            "registered_user_link_accepted"
+            if relationship.link_status == BirthProfileRelationship.LinkStatus.ACCEPTED
+            else "private_saved_relation_until_user_link_accepted"
+        ),
+    }, None
 
 
 def _accepted_profile_relationships(user, profile: BirthProfile) -> list[BirthProfileRelationship]:
