@@ -253,6 +253,46 @@ def test_generate_birth_chart_codex_cli_analysis_reuses_cached_full_private_repo
     assert len(result["sections"]) == codex_cli_generation.MIN_FULL_REPORT_SECTIONS
 
 
+@pytest.mark.django_db
+def test_generate_birth_chart_codex_cli_analysis_skips_incomplete_cached_report(monkeypatch):
+    from apps.reports import codex_cli_generation
+
+    data = {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"}
+    full_sections = [
+        {"title": f"section {index}", "body": "body", "source_traces": []}
+        for index in range(codex_cli_generation.MIN_FULL_REPORT_SECTIONS)
+    ]
+    full_record = GeneratedAnalysisDraft.objects.create(
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        model="codex_exec",
+        input_snapshot=data,
+        output_json={"review_status": "private_final", "sections": full_sections},
+    )
+    GeneratedAnalysisDraft.objects.create(
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        model="codex_exec",
+        input_snapshot=data,
+        output_json={"review_status": "private_final", "sections": [{"title": "short", "body": "body"}]},
+    )
+
+    def fail_runner(prompt: str) -> str:
+        raise AssertionError("Codex CLI should not run when an older full cached report exists")
+
+    monkeypatch.setattr(codex_cli_generation, "codex_exec_runner", fail_runner)
+
+    result = codex_cli_generation.generate_birth_chart_codex_cli_analysis(data, refresh_evidence=False)
+
+    assert result["id"] == full_record.id
+    assert result["coverage_status"] == "full_generation"
+    assert len(result["sections"]) == codex_cli_generation.MIN_FULL_REPORT_SECTIONS
+
+
 def test_codex_exec_runner_uses_utf8_for_unicode_prompt(monkeypatch, tmp_path):
     from apps.reports.codex_cli_generation import codex_exec_runner
 

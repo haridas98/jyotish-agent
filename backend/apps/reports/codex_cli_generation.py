@@ -14,7 +14,7 @@ from apps.interpretations.evidence_matcher import build_shastra_evidence
 from .analysis_packet import build_analysis_packet, build_compatibility_analysis_packet
 from .birth_report import CitationSearch, InterpretationProvider
 from .draft_generation import DraftGenerationUnavailable, _normalize_llm_output
-from .models import GeneratedAnalysisDraft
+from .models import GeneratedAnalysisDraft, input_summary_from_snapshot
 
 CodexRunner = Callable[[str], dict[str, Any] | str]
 
@@ -184,17 +184,22 @@ def _cached_full_codex_analysis(data: dict[str, Any], *, user: Any | None = None
     )
     owner = _analysis_user(user)
     records = records.filter(user=owner) if owner is not None else records.filter(user__isnull=True)
-    for record in records.order_by("-id")[:10]:
+    input_summary = input_summary_from_snapshot(data, "birth_chart_codex_cli")
+    if input_summary:
+        records = records.filter(input_summary=input_summary)
+    candidates = records.only("id", "kind", "source_policy", "input_snapshot").order_by("-id")[:10]
+    for record in candidates:
         if not _input_snapshot_matches(record.input_snapshot, data):
             continue
-        output = dict(record.output_json or {})
+        output_record = records.only("id", "kind", "source_policy", "output_json").get(id=record.id)
+        output = dict(output_record.output_json or {})
         if not _has_full_report_coverage(output):
             continue
         output["coverage_status"] = _coverage_status(output, True)
         output["review_status"] = _review_status(True, output)
-        output["source_policy"] = output.get("source_policy") or record.source_policy
-        output["kind"] = output.get("kind") or record.kind
-        output["id"] = record.id
+        output["source_policy"] = output.get("source_policy") or output_record.source_policy
+        output["kind"] = output.get("kind") or output_record.kind
+        output["id"] = output_record.id
         return output
     return None
 
