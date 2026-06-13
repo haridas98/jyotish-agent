@@ -16,6 +16,7 @@ from .services import (
     list_incoming_profile_relationship_requests,
     list_profile_relationships,
     profile_payload,
+    profiles_payload,
     profile_relationship_payload,
     update_birth_profile_flags,
     update_incoming_profile_relationship_request,
@@ -30,7 +31,7 @@ class BirthProfileListView(APIView):
         profiles = (
             BirthProfile.objects.filter(user=request.user).select_related("place").order_by("-created_at")
         )
-        return Response({"profiles": [profile_payload(profile) for profile in profiles]})
+        return Response({"profiles": profiles_payload(list(profiles))})
 
     def post(self, request):
         try:

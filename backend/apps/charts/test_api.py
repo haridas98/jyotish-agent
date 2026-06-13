@@ -1,6 +1,8 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.db import connection
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from apps.calculations.chart import CALCULATION_VERSION
@@ -276,6 +278,37 @@ def test_birth_profile_list_includes_latest_calculation_summary(user):
     assert response.status_code == 200
     assert response.data["profiles"][0]["latest_calculation"]["status"] == "complete"
     assert response.data["profiles"][0]["latest_calculation"]["graha_count"] == 1
+
+
+@pytest.mark.django_db
+def test_birth_profile_list_batches_latest_calculation_queries(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    for index in range(3):
+        create_response = client.post(
+            "/api/charts/profiles",
+            {
+                "display_name": f"Calculated chart {index}",
+                "birth_date": "1990-08-15",
+                "birth_time": "10:24",
+                "place_name": "Vrindavan",
+            },
+            format="json",
+        )
+        ChartCalculation.objects.create(
+            profile_id=create_response.data["profile"]["id"],
+            calculation_version="mvp-test",
+            status=ChartCalculation.Status.COMPLETE,
+            result={"grahas": [{"body": "Surya"}]},
+        )
+
+    with CaptureQueriesContext(connection) as captured:
+        response = client.get("/api/charts/profiles")
+
+    assert response.status_code == 200
+    assert len(response.data["profiles"]) == 3
+    assert all(item["latest_calculation"]["graha_count"] == 1 for item in response.data["profiles"])
+    assert len(captured.captured_queries) <= 5
 
 
 @pytest.mark.django_db

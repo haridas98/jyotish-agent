@@ -6,6 +6,7 @@ from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth import get_user_model
+from django.db.models import OuterRef, Subquery
 from django.utils.dateparse import parse_datetime
 
 from apps.calculations.chart import CALCULATION_VERSION, ChartInputError, build_birth_chart
@@ -41,6 +42,8 @@ CALCULATION_SETTING_KEYS = (
     "timezone_source",
     "shadbala_profile",
 )
+
+_LATEST_CALCULATION_SENTINEL = object()
 
 
 def create_birth_profile(user: AbstractBaseUser, data: dict[str, Any]) -> BirthProfile:
@@ -160,8 +163,32 @@ def calculate_profile_chart(
     return calculation
 
 
-def profile_payload(profile: BirthProfile) -> dict[str, Any]:
-    latest_calculation = profile.calculations.order_by("-created_at").first()
+def profiles_payload(profiles: list[BirthProfile]) -> list[dict[str, Any]]:
+    if not profiles:
+        return []
+    latest_id_subquery = (
+        ChartCalculation.objects.filter(profile_id=OuterRef("pk"))
+        .order_by("-created_at", "-id")
+        .values("id")[:1]
+    )
+    latest_ids = [
+        calculation_id
+        for calculation_id in BirthProfile.objects.filter(id__in=[profile.id for profile in profiles])
+        .annotate(latest_calculation_id=Subquery(latest_id_subquery))
+        .values_list("latest_calculation_id", flat=True)
+        if calculation_id is not None
+    ]
+    calculations = ChartCalculation.objects.filter(id__in=latest_ids)
+    by_profile_id = {calculation.profile_id: calculation for calculation in calculations}
+    return [
+        profile_payload(profile, latest_calculation=by_profile_id.get(profile.id))
+        for profile in profiles
+    ]
+
+
+def profile_payload(profile: BirthProfile, *, latest_calculation: ChartCalculation | object = _LATEST_CALCULATION_SENTINEL) -> dict[str, Any]:
+    if latest_calculation is _LATEST_CALCULATION_SENTINEL:
+        latest_calculation = profile.calculations.order_by("-created_at", "-id").first()
     return {
         "id": profile.id,
         "display_name": profile.display_name,
@@ -173,7 +200,7 @@ def profile_payload(profile: BirthProfile) -> dict[str, Any]:
         "calculation_settings": _profile_calculation_settings(profile),
         "place": place_payload(profile.place),
         "latest_calculation": latest_calculation_summary(latest_calculation)
-        if latest_calculation
+        if isinstance(latest_calculation, ChartCalculation)
         else None,
         "created_at": profile.created_at.isoformat(),
         "updated_at": profile.updated_at.isoformat(),
