@@ -27,6 +27,12 @@ Fast start after dependencies are installed:
 .\start-dev.ps1
 ```
 
+If an old local server is stuck on the same ports:
+
+```powershell
+.\start-dev.ps1 -Restart
+```
+
 First local setup or reinstall:
 
 ```powershell

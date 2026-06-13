@@ -3,7 +3,8 @@ param(
     [int]$BackendPort = 8100,
     [int]$FrontendPort = 3130,
     [switch]$Install,
-    [switch]$CheckOnly
+    [switch]$CheckOnly,
+    [switch]$Restart
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,6 +14,21 @@ $BackendDir = Join-Path $Root "backend"
 $FrontendDir = Join-Path $Root "frontend"
 $TmpDir = Join-Path $Root ".tmp"
 $Python = Join-Path $BackendDir ".venv\Scripts\python.exe"
+
+function Repair-PathEnvironment {
+    $processEnvironment = [Environment]::GetEnvironmentVariables("Process")
+    $pathValue = $processEnvironment["Path"]
+    if (-not $pathValue) {
+        $pathValue = $processEnvironment["PATH"]
+    }
+    if ($pathValue) {
+        [Environment]::SetEnvironmentVariable("Path", $pathValue, "Process")
+        [Environment]::SetEnvironmentVariable("PATH", $null, "Process")
+    }
+}
+
+Repair-PathEnvironment
+
 $NpmCommand = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
 if (-not $NpmCommand) {
     $NpmCommand = Get-Command "npm" -ErrorAction SilentlyContinue
@@ -51,6 +67,30 @@ function Test-LocalPortOpen([int]$Port) {
     finally {
         $client.Close()
     }
+}
+
+function Get-LocalPortProcessIds([int]$Port) {
+    $pattern = "^\s*TCP\s+\S+:$Port\s+\S+\s+LISTENING\s+(\d+)\s*$"
+    netstat -ano |
+        ForEach-Object {
+            if ($_ -match $pattern) {
+                [int]$Matches[1]
+            }
+        } |
+        Sort-Object -Unique
+}
+
+function Stop-LocalPortProcesses([int]$Port, [string]$Name) {
+    $processIds = @(Get-LocalPortProcessIds $Port)
+    if (-not $processIds.Count) {
+        return
+    }
+
+    Write-Step "Stopping existing $Name processes on 127.0.0.1:$Port"
+    foreach ($processId in $processIds) {
+        Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Seconds 1
 }
 
 New-Item -ItemType Directory -Force -Path $TmpDir | Out-Null
@@ -96,12 +136,17 @@ if ($CheckOnly) {
     exit 0
 }
 
+if ($Restart) {
+    Stop-LocalPortProcesses $BackendPort "backend"
+    Stop-LocalPortProcesses $FrontendPort "frontend"
+}
+
 if (Test-LocalPortOpen $BackendPort) {
     throw "Port $BackendPort is already in use"
 }
 
 if (Test-LocalPortOpen $FrontendPort) {
-    throw "Port $FrontendPort is already in use"
+    throw "Port $FrontendPort is already in use. Run with -Restart to stop the old local dev process."
 }
 
 $BackendOut = Join-Path $TmpDir "backend-dev.out.log"
