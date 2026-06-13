@@ -214,6 +214,41 @@ def test_analysis_history_chat_uses_parent_analysis_relation():
 
 
 @pytest.mark.django_db
+def test_analysis_history_chat_parent_from_snapshot_requires_same_owner():
+    owner = get_user_model().objects.create_user(username="history-parent-owner", password="strong-pass-108")
+    other = get_user_model().objects.create_user(username="history-parent-other", password="strong-pass-108")
+    owner_report = GeneratedAnalysisDraft.objects.create(
+        user=owner,
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        input_snapshot={"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+        output_json={"sections": [{"title": "Chart", "body": "Body."}]},
+    )
+
+    other_chat = GeneratedAnalysisDraft.objects.create(
+        user=other,
+        kind="birth_chart_codex_cli_chat",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        input_snapshot={"analysis_id": owner_report.id, "question": "Can I attach to another user?"},
+        output_json={"answer": "No."},
+    )
+    owner_chat = GeneratedAnalysisDraft.objects.create(
+        user=owner,
+        kind="birth_chart_codex_cli_chat",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        input_snapshot={"analysis_id": owner_report.id, "question": "Can I attach to my report?"},
+        output_json={"answer": "Yes."},
+    )
+
+    assert other_chat.parent_analysis_id is None
+    assert owner_chat.parent_analysis_id == owner_report.id
+
+
+@pytest.mark.django_db
 def test_analysis_history_detail_limits_long_chat_history():
     user = get_user_model().objects.create_user(username="history-long-chat-owner", password="strong-pass-108")
     report = GeneratedAnalysisDraft.objects.create(

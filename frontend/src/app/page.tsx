@@ -4484,14 +4484,6 @@ function SelectedReaderExplanationPanel({
   );
 }
 
-function ChartSideTableHint({ selected }: { selected: boolean }) {
-  return (
-    <div className="chart-side-table-hint" aria-hidden={selected ? "true" : "false"}>
-      {selected ? "Пояснение открыто поверх таблицы" : "Нажмите на строку, дом, знак или граху"}
-    </div>
-  );
-}
-
 function ChartSideCalculationTable({
   chart,
   termLanguage,
@@ -4542,7 +4534,6 @@ function ChartSideCalculationTable({
         <strong>Расчёты D1</strong>
         <span>граха, градус, раши, накшатра, дом, статус</span>
       </div>
-      <ChartSideTableHint selected={Boolean(selectedExplanation)} />
       <SelectedReaderExplanationPanel explanation={selectedExplanation} onClear={onClearExplanation} />
       <div className="chart-side-table-grid">
         <div className="chart-side-table-row chart-side-table-header">

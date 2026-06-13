@@ -4990,7 +4990,7 @@ select {
   padding: 9px 10px;
   position: absolute;
   right: 10px;
-  top: 76px;
+  top: 46px;
   z-index: 12;
 }
 
@@ -5027,21 +5027,6 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-}
-
-.chart-side-table-hint {
-  align-items: center;
-  background: #fbfaf5;
-  border-bottom: 1px solid var(--line);
-  color: var(--muted);
-  display: flex;
-  font-size: 10px;
-  font-weight: 800;
-  justify-content: flex-end;
-  line-height: 1.2;
-  min-height: 28px;
-  padding: 5px 9px;
-  text-align: right;
 }
 
 .secondary-button.compact {
@@ -5112,6 +5097,10 @@ select {
 .chart-side-table .glossary-trigger,
 .chart-side-table .calculation-value-help .glossary-trigger {
   font-size: 11px;
+}
+
+.house-explanation-grid {
+  display: none !important;
 }
 
 .chart-side-status {

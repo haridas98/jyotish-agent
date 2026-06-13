@@ -62,7 +62,16 @@ class GeneratedAnalysisDraft(models.Model):
             parent_id = int(str(snapshot.get("analysis_id") or ""))
         except (TypeError, ValueError):
             return
-        if parent_id > 0 and GeneratedAnalysisDraft.objects.filter(id=parent_id).exists():
+        if parent_id <= 0:
+            return
+
+        parent_queryset = GeneratedAnalysisDraft.objects.filter(id=parent_id)
+        if self.user_id is None:
+            parent_queryset = parent_queryset.filter(user__isnull=True)
+        else:
+            parent_queryset = parent_queryset.filter(user_id=self.user_id)
+
+        if parent_queryset.exists():
             self.parent_analysis_id = parent_id
 
     def refresh_preview_fields(self) -> None:
