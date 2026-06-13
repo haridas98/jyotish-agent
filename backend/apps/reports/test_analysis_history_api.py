@@ -1,6 +1,8 @@
 import pytest
 from datetime import date, time
 from django.contrib.auth import get_user_model
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from apps.charts.models import BirthProfile, BirthProfileRelationship, ChartCalculation, Place
@@ -45,6 +47,41 @@ def test_analysis_history_lists_reports_with_data_slug_and_chat_count():
     assert response.data["items"][0]["id"] == report.id
     assert response.data["items"][0]["slug"] == f"birth-1998-04-30-1345-sterlitamak-codex-cli-{report.id}"
     assert response.data["items"][0]["chat_count"] == 1
+
+
+@pytest.mark.django_db
+def test_analysis_history_list_uses_compact_preview_fields():
+    user = get_user_model().objects.create_user(username="history-preview-owner", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        model="codex_exec",
+        input_snapshot={"birth_date": "1998-04-30", "birth_time": "13:45", "place_name": "Sterlitamak"},
+        packet_snapshot={"large": "packet" * 2000},
+        output_json={
+            "engine_label": "Codex CLI personal overview",
+            "sections": [{"title": "Main", "body": "Readable preview." + ("x" * 2000)}],
+        },
+        prompt_markdown="prompt" * 2000,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    with CaptureQueriesContext(connection) as captured:
+        response = client.get("/api/reports/history", {"kind": "birth_chart_codex_cli"})
+
+    assert response.status_code == 200
+    assert response.data["items"][0]["id"] == report.id
+    assert response.data["items"][0]["engine_label"] == "Codex CLI personal overview"
+    assert response.data["items"][0]["first_section_title"] == "Main"
+    assert response.data["items"][0]["excerpt"].startswith("Readable preview.")
+    history_sql = "\n".join(query["sql"].lower() for query in captured.captured_queries)
+    assert "output_json" not in history_sql
+    assert "packet_snapshot" not in history_sql
+    assert "prompt_markdown" not in history_sql
 
 
 @pytest.mark.django_db

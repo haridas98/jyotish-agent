@@ -95,7 +95,7 @@ class AnalysisHistoryView(APIView):
         records = list(
             _owned_analysis_records(request)
             .filter(kind__in=kinds)
-            .defer("packet_snapshot", "prompt_markdown")
+            .defer("packet_snapshot", "output_json", "prompt_markdown")
             .order_by("-created_at")[:200]
         )
         chat_counts = _chat_counts_for_records(records, request)
@@ -797,8 +797,7 @@ def _chat_counts_for_records(records: list[GeneratedAnalysisDraft], request) -> 
 
 
 def _analysis_history_payload(record: GeneratedAnalysisDraft, *, include_output: bool = False, chat_count: int | None = None) -> dict[str, object]:
-    output = record.output_json if isinstance(record.output_json, dict) else {}
-    sections = output.get("sections") if isinstance(output.get("sections"), list) else []
+    output = record.output_json if include_output and isinstance(record.output_json, dict) else {}
     payload: dict[str, object] = {
         "id": record.id,
         "slug": _analysis_slug(record),
@@ -807,17 +806,16 @@ def _analysis_history_payload(record: GeneratedAnalysisDraft, *, include_output:
         "model": record.model,
         "review_status": record.review_status,
         "source_policy": record.source_policy,
-        "engine_label": output.get("engine_label") or _history_kind_label(record.kind),
-        "section_count": len(sections),
+        "engine_label": record.engine_label or (output.get("engine_label") if output else "") or _history_kind_label(record.kind),
+        "section_count": record.section_count,
         "created_at": record.created_at.isoformat(),
         "input_snapshot": record.input_snapshot if isinstance(record.input_snapshot, dict) else {},
         "chat_count": (chat_count if chat_count is not None else _chat_record_count(record)) if record.kind in MAIN_ANALYSIS_KINDS else 0,
     }
-    if sections and isinstance(sections[0], dict):
-        payload["first_section_title"] = sections[0].get("title") or ""
-        payload["excerpt"] = str(sections[0].get("body") or "")[:360]
-    elif record.kind in CHAT_ANALYSIS_KINDS:
-        payload["excerpt"] = str(output.get("answer") or "")[:360]
+    if record.first_section_title:
+        payload["first_section_title"] = record.first_section_title
+    if record.excerpt:
+        payload["excerpt"] = record.excerpt[:360]
     if include_output:
         payload["output_json"] = output
         payload["packet_snapshot"] = record.packet_snapshot if isinstance(record.packet_snapshot, dict) else {}
