@@ -520,15 +520,19 @@ def _codex_generation_response(kind: str, user, data: dict[str, object], generat
         cache.delete(lock_key)
         return concurrency_response
     if getattr(settings, "CODEX_GENERATION_QUEUE_ENABLED", False):
-        job = _create_queued_generation_job(kind, user, data)
-        return Response(
-            {
-                "queued": True,
-                "job": _analysis_generation_job_payload(job),
-                "message": "Codex-разбор поставлен в очередь. Он появится в истории после обработки воркером.",
-            },
-            status=202,
-        )
+        try:
+            existing_job = _active_generation_job_for_input(kind, user, data)
+            job = existing_job or _create_queued_generation_job(kind, user, data)
+            return Response(
+                {
+                    "queued": True,
+                    "job": _analysis_generation_job_payload(job),
+                    "message": "Codex-разбор уже в очереди." if existing_job else "Codex-разбор поставлен в очередь. Он появится в истории после обработки воркером.",
+                },
+                status=202,
+            )
+        finally:
+            cache.delete(lock_key)
     job = _create_running_generation_job(kind, user, data)
     try:
         output = generate()
@@ -608,6 +612,21 @@ def _create_queued_generation_job(kind: str, user, data: dict[str, object]) -> G
         status=GeneratedAnalysisJob.Status.QUEUED,
         input_summary=input_summary_from_snapshot(data, kind),
         request_snapshot=data,
+    )
+
+
+def _active_generation_job_for_input(kind: str, user, data: dict[str, object]) -> GeneratedAnalysisJob | None:
+    if user is None:
+        return None
+    return (
+        GeneratedAnalysisJob.objects.filter(
+            user=user,
+            kind=kind,
+            status__in=[GeneratedAnalysisJob.Status.QUEUED, GeneratedAnalysisJob.Status.RUNNING],
+            input_summary=input_summary_from_snapshot(data, kind),
+        )
+        .order_by("created_at", "id")
+        .first()
     )
 
 

@@ -982,6 +982,21 @@ def test_birth_codex_analysis_api_queues_generation_when_queue_enabled(monkeypat
     assert job.status == GeneratedAnalysisJob.Status.QUEUED
     assert job.started_at is None
 
+    second_response = client.post(
+        "/api/reports/birth-chart/codex-analysis",
+        {
+            "profile_id": profile.id,
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert second_response.status_code == 202
+    assert second_response.data["job"]["id"] == job.id
+    assert GeneratedAnalysisJob.objects.filter(user=user, kind="birth_chart_codex_cli").count() == 1
+
 
 @pytest.mark.django_db
 def test_process_generation_jobs_completes_queued_birth_job(monkeypatch):

@@ -116,6 +116,7 @@ class GeneratedAnalysisJob(models.Model):
         indexes = [
             models.Index(fields=["user", "status", "created_at"], name="reports_job_user_status_idx"),
             models.Index(fields=["user", "kind", "created_at"], name="reports_job_user_kind_idx"),
+            models.Index(fields=["status", "created_at", "id"], name="reports_job_status_queue_idx"),
         ]
 
     def __str__(self) -> str:
