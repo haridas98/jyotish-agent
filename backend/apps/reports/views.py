@@ -223,15 +223,19 @@ class BirthCodexAnalysisView(APIView):
             access_response = _birth_codex_access_response(request, chart_data, force_regenerate=force_regenerate)
             if access_response is not None:
                 return access_response
-            return Response(
-                generate_birth_chart_codex_cli_analysis(
+            user = _request_user(request)
+            return _codex_generation_response(
+                "birth_chart_codex_cli",
+                user,
+                chart_data,
+                lambda: generate_birth_chart_codex_cli_analysis(
                     chart_data,
                     citation_search=vl_citation_search,
                     research_search=local_research_corpus_search,
                     interpretation_provider=public_interpretation_sections_for_chart,
                     refresh_evidence=False,
                     force_regenerate=force_regenerate,
-                    user=_request_user(request),
+                    user=user,
                 )
             )
         except ChartInputError as exc:
@@ -317,13 +321,18 @@ class CompatibilityCodexAnalysisView(APIView):
 
     def post(self, request):
         try:
-            return Response(
-                generate_compatibility_codex_cli_analysis(
-                    request.data,
+            data = _request_data_dict(request)
+            user = _request_user(request)
+            return _codex_generation_response(
+                "compatibility_codex_cli",
+                user,
+                data,
+                lambda: generate_compatibility_codex_cli_analysis(
+                    data,
                     citation_search=vl_citation_search,
                     research_search=local_research_corpus_search,
                     refresh_evidence=False,
-                    user=_request_user(request),
+                    user=user,
                 )
             )
         except (ChartInputError, ValueError) as exc:
@@ -447,6 +456,45 @@ def _owned_analysis_queryset(user):
     if user is None:
         return records.none()
     return records.filter(user=user)
+
+
+def _codex_generation_response(kind: str, user, data: dict[str, object], generate):
+    lock_key = _codex_generation_lock_key(kind, user, data)
+    lock_seconds = getattr(settings, "CODEX_ANALYSIS_LOCK_SECONDS", 900)
+    if not cache.add(lock_key, "running", timeout=lock_seconds):
+        return Response(
+            {
+                "error": "analysis_generation_in_progress",
+                "message": (
+                    "Codex-разбор уже выполняется для этих данных. "
+                    "Дождитесь результата, чтобы не запускать второй тяжёлый процесс."
+                ),
+                "retry_after_seconds": min(lock_seconds, 60),
+            },
+            status=409,
+        )
+    try:
+        return Response(generate())
+    finally:
+        cache.delete(lock_key)
+
+
+def _codex_generation_lock_key(kind: str, user, data: dict[str, object]) -> str:
+    payload = {
+        key: value
+        for key, value in data.items()
+        if key
+        not in {
+            "billing_context",
+            "force_regenerate",
+            "related_profile_context",
+            "selected_profile_context",
+        }
+    }
+    owner = getattr(user, "id", "anonymous") or "anonymous"
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    return f"reports:codex-generation-lock:{kind}:{owner}:{digest}"
 
 
 def _birth_codex_access_response(request, chart_data: dict[str, object], *, force_regenerate: bool) -> Response | None:

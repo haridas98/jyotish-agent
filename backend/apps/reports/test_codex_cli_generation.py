@@ -3,6 +3,7 @@ from datetime import date, time
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.management import call_command
 from django.test import override_settings
 from rest_framework.test import APIClient
@@ -613,8 +614,16 @@ def test_compatibility_codex_analysis_api_returns_saved_draft(monkeypatch):
     response = client.post(
         "/api/reports/compatibility/codex-analysis",
         {
-            "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
-            "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur"},
+            "person_a": {
+                "birth_date": "2000-01-01",
+                "birth_time": "15:30",
+                "place_name": "Vrindavan",
+            },
+            "person_b": {
+                "birth_date": "2001-02-03",
+                "birth_time": "09:10",
+                "place_name": "Mayapur",
+            },
         },
         format="json",
     )
@@ -876,6 +885,62 @@ def test_birth_codex_analysis_api_can_force_regenerate(monkeypatch):
     assert response.data["id"] == 22
     assert captured["force_regenerate"] is True
     assert "force_regenerate" not in captured["data"]
+
+
+@pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="")
+def test_birth_codex_analysis_api_rejects_duplicate_running_generation(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-lock-owner", password="strong-pass-108")
+    profile = _codex_api_self_profile(user)
+    cache.clear()
+
+    monkeypatch.setattr("apps.reports.views.cache.add", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        "apps.reports.views.generate_birth_chart_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("generator must not run while lock is active"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/reports/birth-chart/codex-analysis",
+        {
+            "profile_id": profile.id,
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 409
+    assert response.data["error"] == "analysis_generation_in_progress"
+
+
+@pytest.mark.django_db
+def test_compatibility_codex_analysis_api_rejects_duplicate_running_generation(monkeypatch):
+    user = get_user_model().objects.create_user(username="compat-lock-owner", password="strong-pass-108")
+    cache.clear()
+
+    monkeypatch.setattr("apps.reports.views.cache.add", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        "apps.reports.views.generate_compatibility_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("compatibility generator must not run while lock is active"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/reports/compatibility/codex-analysis",
+        {
+            "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+            "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur"},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 409
+    assert response.data["error"] == "analysis_generation_in_progress"
 
 
 @pytest.mark.django_db
