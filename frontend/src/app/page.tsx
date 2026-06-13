@@ -1865,6 +1865,47 @@ function ChartReferenceToggle({
   );
 }
 
+function ChartDisplayControls({
+  chart,
+  chartMode,
+  chartStyle,
+  vargaOptions,
+  onChartModeChange,
+  onChartStyleChange,
+}: {
+  chart: BirthChart | null;
+  chartMode: string;
+  chartStyle: "north" | "south";
+  vargaOptions: string[];
+  onChartModeChange: (value: string) => void;
+  onChartStyleChange: (value: "north" | "south") => void;
+}) {
+  const options = vargaOptions.length ? vargaOptions : ["D1"];
+
+  return (
+    <div className="chart-display-controls" aria-label="Быстрые настройки отображения карты">
+      <label>
+        <span>Карта</span>
+        <select value={chartMode} disabled={!chart} onChange={(event) => onChartModeChange(event.target.value)}>
+          {options.map((code) => (
+            <option value={code} key={`chart-display-${code}`}>
+              {code}{vargaPurposeLabels[code] ? ` · ${vargaPurposeLabels[code]}` : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="chart-style-inline-toggle" role="group" aria-label="Стиль карты">
+        <button type="button" className={chartStyle === "north" ? "active" : ""} onClick={() => onChartStyleChange("north")}>
+          Северный
+        </button>
+        <button type="button" className={chartStyle === "south" ? "active" : ""} onClick={() => onChartStyleChange("south")}>
+          Южный
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ReferenceChartBoard({
   chart,
   chartStyle,
@@ -3845,25 +3886,6 @@ function BeginnerAskAiPanel() {
           <button type="button" key={question.key} onClick={() => requestAiExplanation(question)}>
             {question.title}
           </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function HouseExplanationGrid() {
-  const houses = Array.from({ length: 12 }, (_, index) => index + 1);
-  return (
-    <section className="house-explanation-grid" aria-label="Быстрые объяснения домов">
-      <div className="house-explanation-head">
-        <strong><GlossaryTerm termKey="house">Дома карты</GlossaryTerm></strong>
-        <span>Нажмите номер дома: подсказка работает на телефоне и компьютере.</span>
-      </div>
-      <div className="house-explanation-list">
-        {houses.map((house) => (
-          <GlossaryTerm termKey={houseGlossaryKey(house)} key={`quick-house-${house}`}>
-            {house}
-          </GlossaryTerm>
         ))}
       </div>
     </section>
@@ -10534,6 +10556,14 @@ export default function Home() {
               <div className="chart-reference-row">
                 <strong>Отсчёт домов</strong>
                 <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
+                <ChartDisplayControls
+                  chart={chart}
+                  chartMode={chartMode}
+                  chartStyle={chartStyle}
+                  vargaOptions={vargaOptions}
+                  onChartModeChange={selectVargaCode}
+                  onChartStyleChange={handleChartStyleChange}
+                />
                 <label className="chart-house-hints-toggle">
                   <input
                     type="checkbox"

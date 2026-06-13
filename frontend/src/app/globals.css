@@ -1266,7 +1266,7 @@ select {
   border-radius: 8px;
   display: grid;
   gap: 8px;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(260px, 1.2fr) minmax(260px, 0.9fr) auto;
   margin-bottom: 10px;
   padding: 6px 8px;
 }
@@ -1276,6 +1276,74 @@ select {
   font-size: 12px;
   line-height: 1;
   white-space: nowrap;
+}
+
+.chart-display-controls {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(126px, 1fr) auto;
+  min-width: 0;
+}
+
+.chart-display-controls label {
+  align-items: center;
+  background: #f8fbfb;
+  border: 1px solid #d5e3e3;
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 34px;
+  min-width: 0;
+  padding: 4px 6px;
+}
+
+.chart-display-controls label span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.chart-display-controls select {
+  background: transparent;
+  border: 0;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+  min-width: 0;
+  outline: 0;
+}
+
+.chart-style-inline-toggle {
+  background: #f8fbfb;
+  border: 1px solid #d5e3e3;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(74px, 1fr));
+  min-height: 34px;
+  overflow: hidden;
+}
+
+.chart-style-inline-toggle button {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 6px 8px;
+}
+
+.chart-style-inline-toggle button + button {
+  border-left: 1px solid #d5e3e3;
+}
+
+.chart-style-inline-toggle button.active {
+  background: var(--green);
+  color: #ffffff;
 }
 
 .chart-workspace-body {
@@ -4336,57 +4404,6 @@ select {
   font-size: 10px;
   font-weight: 800;
   line-height: 1.15;
-}
-
-.house-explanation-grid {
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 8px;
-  padding: 9px 10px;
-  width: 100%;
-}
-
-.house-explanation-head {
-  align-items: baseline;
-  display: flex;
-  gap: 10px;
-  justify-content: space-between;
-  min-width: 0;
-}
-
-.house-explanation-head strong {
-  color: var(--green);
-  font-size: 13px;
-  line-height: 1.15;
-}
-
-.house-explanation-head span {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.25;
-  text-align: right;
-}
-
-.house-explanation-list {
-  align-items: center;
-  display: grid;
-  gap: 5px;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-}
-
-.house-explanation-list .glossary-wrap {
-  display: grid;
-}
-
-.house-explanation-list .glossary-trigger {
-  border-radius: 7px;
-  justify-content: center;
-  min-height: 30px;
-  padding: 5px 0;
-  width: 100%;
 }
 
 .ai-access-policy-panel {
@@ -17207,18 +17224,12 @@ body {
     min-width: 500px;
   }
 
-  .house-explanation-head {
-    align-items: start;
-    display: grid;
-    gap: 3px;
+  .chart-display-controls {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .house-explanation-head span {
-    text-align: left;
-  }
-
-  .house-explanation-list {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+  .chart-style-inline-toggle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ai-access-policy-grid {
