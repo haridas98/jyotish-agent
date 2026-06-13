@@ -104,7 +104,14 @@ def test_analysis_history_list_uses_compact_preview_fields():
     assert response.data["items"][0]["engine_label"] == "Codex CLI personal overview"
     assert response.data["items"][0]["first_section_title"] == "Main"
     assert response.data["items"][0]["excerpt"].startswith("Readable preview.")
+    assert response.data["items"][0]["input_summary"] == {
+        "birth_date": "1998-04-30",
+        "birth_time": "13:45",
+        "place_name": "Sterlitamak",
+    }
+    assert response.data["items"][0]["input_snapshot"] == response.data["items"][0]["input_summary"]
     history_sql = "\n".join(query["sql"].lower() for query in captured.captured_queries)
+    assert "input_snapshot" not in history_sql
     assert "output_json" not in history_sql
     assert "packet_snapshot" not in history_sql
     assert "prompt_markdown" not in history_sql

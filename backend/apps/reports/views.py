@@ -105,7 +105,7 @@ class AnalysisHistoryView(APIView):
             queryset = queryset.filter(profile_links__profile_id=profile_id).distinct()
         records = list(
             queryset
-            .defer("packet_snapshot", "output_json", "prompt_markdown")
+            .defer("input_snapshot", "packet_snapshot", "output_json", "prompt_markdown")
             .order_by("-created_at")[:limit]
         )
         chat_counts = _chat_counts_for_records(records, request)
@@ -881,30 +881,19 @@ def _chat_counts_for_records(records: list[GeneratedAnalysisDraft], request) -> 
         analysis_id = _optional_int(row.get("parent_analysis_id"))
         if analysis_id is not None:
             counts[analysis_id] = int(row.get("count") or 0)
-    missing_ids = [analysis_id for analysis_id in ids if analysis_id not in counts]
-    if missing_ids:
-        legacy_rows = (
-            GeneratedAnalysisDraft.objects.filter(
-                kind__in=CHAT_ANALYSIS_KINDS,
-                user=user,
-                parent_analysis__isnull=True,
-                input_snapshot__analysis_id__in=missing_ids,
-            )
-            .values("input_snapshot__analysis_id")
-            .annotate(count=Count("id"))
-        )
-        for row in legacy_rows:
-            analysis_id = _optional_int(row.get("input_snapshot__analysis_id"))
-            if analysis_id is not None:
-                counts[analysis_id] = int(row.get("count") or 0)
     return counts
 
 
 def _analysis_history_payload(record: GeneratedAnalysisDraft, *, include_output: bool = False, chat_count: int | None = None) -> dict[str, object]:
     output = record.output_json if include_output and isinstance(record.output_json, dict) else {}
+    input_data = (
+        record.input_snapshot
+        if include_output and isinstance(record.input_snapshot, dict)
+        else record.input_summary if isinstance(record.input_summary, dict) else {}
+    )
     payload: dict[str, object] = {
         "id": record.id,
-        "slug": _analysis_slug(record),
+        "slug": _analysis_slug(record, snapshot=input_data),
         "kind": record.kind,
         "provider": record.provider,
         "model": record.model,
@@ -913,7 +902,8 @@ def _analysis_history_payload(record: GeneratedAnalysisDraft, *, include_output:
         "engine_label": record.engine_label or (output.get("engine_label") if output else "") or _history_kind_label(record.kind),
         "section_count": record.section_count,
         "created_at": record.created_at.isoformat(),
-        "input_snapshot": record.input_snapshot if isinstance(record.input_snapshot, dict) else {},
+        "input_summary": input_data,
+        "input_snapshot": input_data,
         "chat_count": (chat_count if chat_count is not None else _chat_record_count(record)) if record.kind in MAIN_ANALYSIS_KINDS else 0,
     }
     if record.first_section_title:
@@ -927,8 +917,8 @@ def _analysis_history_payload(record: GeneratedAnalysisDraft, *, include_output:
     return payload
 
 
-def _analysis_slug(record: GeneratedAnalysisDraft) -> str:
-    snapshot = record.input_snapshot if isinstance(record.input_snapshot, dict) else {}
+def _analysis_slug(record: GeneratedAnalysisDraft, *, snapshot: dict[str, object] | None = None) -> str:
+    snapshot = snapshot if isinstance(snapshot, dict) else record.input_snapshot if isinstance(record.input_snapshot, dict) else {}
     prefix = "compatibility" if record.kind.startswith("compatibility") else "today" if record.kind.startswith("current_day") else "birth"
     provider = _slug_part(record.provider or record.kind.replace("_", "-"))
     if record.kind in CHAT_ANALYSIS_KINDS:

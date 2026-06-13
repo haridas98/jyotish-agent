@@ -28,6 +28,7 @@ class GeneratedAnalysisDraft(models.Model):
     provider = models.CharField(max_length=64, blank=True)
     model = models.CharField(max_length=128, blank=True)
     input_snapshot = models.JSONField(default=dict, blank=True)
+    input_summary = models.JSONField(default=dict, blank=True)
     packet_snapshot = models.JSONField(default=dict, blank=True)
     output_json = models.JSONField(default=dict, blank=True)
     engine_label = models.CharField(max_length=160, blank=True)
@@ -49,10 +50,23 @@ class GeneratedAnalysisDraft(models.Model):
         return f"{self.kind} {self.review_status} #{self.pk}"
 
     def save(self, *args, **kwargs):
+        self.attach_parent_analysis_from_snapshot()
         self.refresh_preview_fields()
         super().save(*args, **kwargs)
 
+    def attach_parent_analysis_from_snapshot(self) -> None:
+        if self.parent_analysis_id or not self.kind.endswith("_chat"):
+            return
+        snapshot = self.input_snapshot if isinstance(self.input_snapshot, dict) else {}
+        try:
+            parent_id = int(str(snapshot.get("analysis_id") or ""))
+        except (TypeError, ValueError):
+            return
+        if parent_id > 0 and GeneratedAnalysisDraft.objects.filter(id=parent_id).exists():
+            self.parent_analysis_id = parent_id
+
     def refresh_preview_fields(self) -> None:
+        self.input_summary = input_summary_from_snapshot(self.input_snapshot, self.kind)
         output = self.output_json if isinstance(self.output_json, dict) else {}
         sections = output.get("sections") if isinstance(output.get("sections"), list) else []
         first_section = sections[0] if sections and isinstance(sections[0], dict) else {}
@@ -67,6 +81,46 @@ class GeneratedAnalysisDraft(models.Model):
             self.excerpt = str(output.get("answer") or "")[:720]
         else:
             self.excerpt = ""
+
+
+def input_summary_from_snapshot(snapshot: object, kind: str = "") -> dict[str, object]:
+    if not isinstance(snapshot, dict):
+        return {}
+
+    def birth_summary(source: object) -> dict[str, object]:
+        if not isinstance(source, dict):
+            return {}
+        return {
+            key: source.get(key)
+            for key in ("birth_date", "birth_time", "place_name", "place_id", "profile_id")
+            if source.get(key) not in {None, ""}
+        }
+
+    if kind.startswith("compatibility"):
+        summary: dict[str, object] = {}
+        person_a = birth_summary(snapshot.get("person_a"))
+        person_b = birth_summary(snapshot.get("person_b"))
+        if person_a:
+            summary["person_a"] = person_a
+        if person_b:
+            summary["person_b"] = person_b
+        relationship = snapshot.get("relationship_context")
+        if isinstance(relationship, dict):
+            summary["relationship_context"] = {
+                key: relationship.get(key)
+                for key in ("role", "label", "relationship_id", "link_status", "profile_id", "related_profile_id")
+                if relationship.get(key) not in {None, ""}
+            }
+        return summary
+
+    summary = birth_summary(snapshot)
+    for key in ("as_of_date", "as_of_time"):
+        if snapshot.get(key) not in {None, ""}:
+            summary[key] = snapshot.get(key)
+    related_ids = snapshot.get("related_profile_ids")
+    if isinstance(related_ids, list):
+        summary["related_profile_ids"] = related_ids[:12]
+    return summary
 
 
 class GeneratedAnalysisProfileLink(models.Model):

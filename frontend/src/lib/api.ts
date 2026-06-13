@@ -1294,6 +1294,7 @@ export type AnalysisHistoryItem = {
   engine_label: string;
   section_count: number;
   created_at: string;
+  input_summary?: Record<string, unknown>;
   input_snapshot: Record<string, unknown>;
   chat_count: number;
   first_section_title?: string;
