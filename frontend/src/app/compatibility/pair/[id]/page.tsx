@@ -83,6 +83,26 @@ function statusAiPolicyText(status: string): string {
   return "AI может использовать эту пару как вашу частную заметку, но не как подтверждённую связь двух аккаунтов.";
 }
 
+function friendlyPairError(error: unknown): { message: string; needsAuth: boolean } {
+  const message = error instanceof Error ? error.message : String(error || "");
+  if (/401|403|auth|credential|forbidden|permission/i.test(message)) {
+    return {
+      message: "Войдите в аккаунт, чтобы открыть свой паспорт пары.",
+      needsAuth: true,
+    };
+  }
+  if (/404|not found/i.test(message)) {
+    return {
+      message: "Пара не найдена или у этого аккаунта нет доступа к ней.",
+      needsAuth: false,
+    };
+  }
+  return {
+    message: message || "Не удалось загрузить паспорт пары.",
+    needsAuth: false,
+  };
+}
+
 function statusHelp(status: string): HelpItem {
   return {
     title: statusLabel(status),
@@ -378,6 +398,7 @@ export default function CompatibilityPairPage() {
   const [calculations, setCalculations] = useState<Record<number, ChartCalculationRecord>>({});
   const [status, setStatus] = useState("Загружаю пару...");
   const [loadingCharts, setLoadingCharts] = useState(false);
+  const [needsAuth, setNeedsAuth] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -393,7 +414,9 @@ export default function CompatibilityPairPage() {
       })
       .catch((error) => {
         if (!mounted) return;
-        setStatus(error instanceof Error ? error.message : "Ошибка загрузки пары");
+        const friendly = friendlyPairError(error);
+        setNeedsAuth(friendly.needsAuth);
+        setStatus(friendly.message);
       });
     return () => {
       mounted = false;
@@ -436,6 +459,12 @@ export default function CompatibilityPairPage() {
         <a className="secondary-button" href="/compatibility">Назад</a>
       </header>
       {status ? <div className="product-status">{status}</div> : null}
+      {needsAuth ? (
+        <section className="history-empty private-history-gate">
+          <strong>Паспорт пары личный</strong>
+          <span>Связи, карты двух людей, роль и будущий AI-разбор доступны только владельцу аккаунта. Нажмите «Войти» в верхней панели.</span>
+        </section>
+      ) : null}
       {relationship ? (
         <section className="compatibility-detail-context">
           <div className="compatibility-context-head">
