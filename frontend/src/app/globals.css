@@ -19229,3 +19229,9 @@ body {
     max-width: 58px !important;
   }
 }
+
+/* Navbar cleanup: auth is only in the topbar/popover, never inside the navigation rail. */
+.sidebar > .sidebar-auth-card,
+.product-sidebar > .sidebar-auth-card {
+  display: none !important;
+}

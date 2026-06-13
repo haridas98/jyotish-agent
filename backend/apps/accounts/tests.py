@@ -30,6 +30,51 @@ def test_register_creates_active_user_and_logs_in():
 
 
 @pytest.mark.django_db
+def test_register_normalizes_username_and_login_is_case_insensitive():
+    client = APIClient()
+
+    response = client.post(
+        reverse("auth-register"),
+        {
+            "username": "HariDas",
+            "email": "HariDas@Example.Test",
+            "password": "strong-pass-108",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["user"]["username"] == "haridas"
+    user = get_user_model().objects.get(username="haridas")
+    assert user.email == "haridas@example.test"
+
+    client.post(reverse("auth-logout"), format="json")
+    login_response = client.post(
+        reverse("auth-login"),
+        {"username": "HARIDAS", "password": "strong-pass-108"},
+        format="json",
+    )
+
+    assert login_response.status_code == 200
+    assert login_response.data["user"]["username"] == "haridas"
+
+
+@pytest.mark.django_db
+def test_register_rejects_username_duplicate_with_different_case():
+    get_user_model().objects.create_user(username="haridas", password="strong-pass-108")
+    client = APIClient()
+
+    response = client.post(
+        reverse("auth-register"),
+        {"username": "HariDas", "password": "strong-pass-108"},
+        format="json",
+    )
+
+    assert response.status_code == 409
+    assert response.data["error"] == "username already exists"
+
+
+@pytest.mark.django_db
 def test_register_can_create_self_profile_without_birth_time():
     client = APIClient()
 

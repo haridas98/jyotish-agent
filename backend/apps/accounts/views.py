@@ -12,6 +12,10 @@ from rest_framework.views import APIView
 from apps.charts.services import ChartProfileInputError, create_birth_profile, profile_payload
 
 
+def _normalize_username(value: object) -> str:
+    return str(value or "").strip().casefold()
+
+
 def user_payload(user) -> dict[str, object]:
     return {
         "id": user.id,
@@ -27,14 +31,16 @@ class RegisterView(APIView):
     permission_classes: list = []
 
     def post(self, request):
-        username = str(request.data.get("username", "")).strip()
-        email = str(request.data.get("email", "")).strip()
-        password = str(request.data.get("password", ""))
+        username = _normalize_username(request.data.get("username", ""))
+        email = str(request.data.get("email") or "").strip().casefold()
+        password = str(request.data.get("password") or "")
 
         if not username or not password:
             return Response({"error": "username and password are required"}, status=400)
         if len(password) < 10:
             return Response({"error": "password must be at least 10 characters"}, status=400)
+        if get_user_model().objects.filter(username__iexact=username).exists():
+            return Response({"error": "username already exists"}, status=409)
 
         try:
             with transaction.atomic():
@@ -63,11 +69,12 @@ class LoginView(APIView):
     permission_classes: list = []
 
     def post(self, request):
-        username = str(request.data.get("username", "")).strip()
-        password = str(request.data.get("password", ""))
-        user = authenticate(request, username=username, password=password)
+        username = _normalize_username(request.data.get("username", ""))
+        password = str(request.data.get("password") or "")
+        canonical_username = _canonical_username_for_login(username)
+        user = authenticate(request, username=canonical_username, password=password)
         if user is None:
-            inactive = get_user_model().objects.filter(username=username, is_active=False).exists()
+            inactive = get_user_model().objects.filter(username__iexact=username, is_active=False).exists()
             if inactive:
                 return Response({"error": "account pending approval"}, status=403)
             return Response({"error": "invalid credentials"}, status=401)
@@ -75,6 +82,11 @@ class LoginView(APIView):
         login(request, user)
         request.session.set_expiry(settings.SESSION_COOKIE_AGE)
         return Response({"user": user_payload(user)})
+
+
+def _canonical_username_for_login(username: str) -> str:
+    existing = get_user_model().objects.filter(username__iexact=username).only("username").first()
+    return existing.username if existing is not None else username
 
 
 def _create_registration_self_profile(user, data) -> object | None:
