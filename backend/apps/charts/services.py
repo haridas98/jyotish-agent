@@ -117,12 +117,31 @@ def sync_catalog_place(candidate: PlaceCandidate) -> Place:
 def calculate_profile_chart(
     profile: BirthProfile,
     provider: EphemerisProvider | None = None,
+    *,
+    reuse_existing: bool = False,
 ) -> ChartCalculation:
+    input_snapshot = _profile_input(profile)
+    if reuse_existing:
+        existing = (
+            ChartCalculation.objects.filter(
+                profile=profile,
+                calculation_version=CALCULATION_VERSION,
+                status=ChartCalculation.Status.COMPLETE,
+                input_snapshot=input_snapshot,
+            )
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        if existing is not None:
+            setattr(existing, "_jyotish_reused", True)
+            return existing
+
     calculation = ChartCalculation.objects.create(
         profile=profile,
         calculation_version=CALCULATION_VERSION,
-        input_snapshot=_profile_input(profile),
+        input_snapshot=input_snapshot,
     )
+    setattr(calculation, "_jyotish_reused", False)
 
     try:
         result = build_birth_chart(calculation.input_snapshot, provider=provider)
@@ -347,6 +366,7 @@ def calculation_payload(calculation: ChartCalculation) -> dict[str, Any]:
         "ayanamsa": calculation.ayanamsa,
         "house_system": calculation.house_system,
         "status": calculation.status,
+        "reused": bool(getattr(calculation, "_jyotish_reused", False)),
         "error": calculation.error,
         "result": calculation.result,
         "created_at": calculation.created_at.isoformat(),

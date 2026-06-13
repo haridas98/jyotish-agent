@@ -70,8 +70,11 @@ class BirthProfileCalculateView(APIView):
             id=profile_id,
             user=request.user,
         )
-        calculation = calculate_profile_chart(profile)
-        status_code = 201 if calculation.status == ChartCalculation.Status.COMPLETE else 503
+        calculation = calculate_profile_chart(profile, reuse_existing=True)
+        if getattr(calculation, "_jyotish_reused", False):
+            status_code = 200
+        else:
+            status_code = 201 if calculation.status == ChartCalculation.Status.COMPLETE else 503
         return Response({"calculation": calculation_payload(calculation)}, status=status_code)
 
 

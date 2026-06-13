@@ -3,7 +3,10 @@ from django.contrib.auth import get_user_model
 from django.test import override_settings
 from rest_framework.test import APIClient
 
+from apps.calculations.chart import CALCULATION_VERSION
+
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation
+from .services import _profile_input
 
 
 @pytest.fixture
@@ -273,6 +276,37 @@ def test_birth_profile_list_includes_latest_calculation_summary(user):
     assert response.status_code == 200
     assert response.data["profiles"][0]["latest_calculation"]["status"] == "complete"
     assert response.data["profiles"][0]["latest_calculation"]["graha_count"] == 1
+
+
+@pytest.mark.django_db
+def test_birth_profile_calculate_reuses_current_complete_calculation(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Reusable chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    existing = ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result={"grahas": [{"body": "Surya"}]},
+    )
+
+    response = client.post(f"/api/charts/profiles/{profile.id}/calculate")
+
+    assert response.status_code == 200
+    assert response.data["calculation"]["id"] == existing.id
+    assert response.data["calculation"]["reused"] is True
+    assert ChartCalculation.objects.filter(profile=profile).count() == 1
 
 
 @pytest.mark.django_db
