@@ -5,7 +5,7 @@ import { GenerationJobsPanel } from "@/app/generation-jobs-ui";
 import { HistoryList } from "@/app/analysis-history-ui";
 import { ProductShell } from "@/app/product-shell";
 import { HelpTerm, HouseTerms, VargaTerms } from "@/app/relationship-help";
-import { fetchAnalysisHistory, type AnalysisHistoryItem } from "@/lib/api";
+import { fetchAnalysisHistory, fetchCurrentUser, type AnalysisHistoryItem } from "@/lib/api";
 
 const PERSONAL_HISTORY_KINDS = "birth_chart_codex_cli,current_day_transit_overview";
 
@@ -42,26 +42,44 @@ function friendlyHistoryError(error: unknown): string {
 export default function ReportsPage() {
   const [items, setItems] = useState<AnalysisHistoryItem[]>([]);
   const [status, setStatus] = useState("Загружаю историю личных обзоров...");
+  const [authChecked, setAuthChecked] = useState(false);
+  const [canLoadPrivateData, setCanLoadPrivateData] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     const reloadOnAuthChanged = () => window.location.reload();
     window.addEventListener("jyotish-auth-changed", reloadOnAuthChanged);
-    fetchAnalysisHistory({ kind: PERSONAL_HISTORY_KINDS, limit: 60 })
-      .then((result) => {
+
+    async function loadPrivateReports() {
+      try {
+        const user = await fetchCurrentUser();
+        if (!mounted) return;
+        setAuthChecked(true);
+        setCanLoadPrivateData(Boolean(user));
+        if (!user) {
+          setItems([]);
+          setStatus("Войдите в аккаунт, чтобы увидеть свои личные обзоры.");
+          return;
+        }
+        const result = await fetchAnalysisHistory({ kind: PERSONAL_HISTORY_KINDS, limit: 60 });
         if (!mounted) return;
         setItems(result);
         setStatus(result.length ? `${result.length} сохранённых обзоров` : "История пока пустая");
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!mounted) return;
+        setAuthChecked(true);
         setStatus(friendlyHistoryError(error));
-      });
+      }
+    }
+
+    void loadPrivateReports();
     return () => {
       mounted = false;
       window.removeEventListener("jyotish-auth-changed", reloadOnAuthChanged);
     };
   }, []);
+
+  const needsAuth = authChecked && !canLoadPrivateData;
 
   return (
     <ProductShell active="reports">
@@ -73,7 +91,14 @@ export default function ReportsPage() {
         <a className="primary-link-button" href="/">Создать обзор</a>
       </header>
       <div className="product-status">{status}</div>
-      <GenerationJobsPanel basePath="/reports" kind="birth_chart_codex_cli" title="AI-задачи личных обзоров" />
+      {needsAuth ? (
+        <section className="history-empty private-history-gate">
+          <strong>История личная</strong>
+          <span>Отчёты, AI-задачи и диалоги показываются только владельцу аккаунта. Нажмите “Войти” в верхней панели.</span>
+        </section>
+      ) : (
+        <GenerationJobsPanel basePath="/reports" kind="birth_chart_codex_cli" title="AI-задачи личных обзоров" />
+      )}
       <section className="compatibility-saved-role-context" aria-label="Минимум личного обзора">
         <div className="compatibility-saved-role-head">
           <div>
@@ -106,7 +131,7 @@ export default function ReportsPage() {
           </div>
         </div>
       </section>
-      <HistoryList items={items} basePath="/reports" emptyText="Личных обзоров ещё нет." />
+      {!needsAuth ? <HistoryList items={items} basePath="/reports" emptyText="Личных обзоров ещё нет." /> : null}
     </ProductShell>
   );
 }

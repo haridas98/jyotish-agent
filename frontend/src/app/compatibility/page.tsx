@@ -7,6 +7,7 @@ import { ProductShell } from "@/app/product-shell";
 import { HelpTerm, HouseTerms, VargaTerms, type HelpItem } from "@/app/relationship-help";
 import {
   fetchAnalysisHistory,
+  fetchCurrentUser,
   listChartProfileRelationships,
   type AnalysisHistoryItem,
   type ChartProfileRelationship,
@@ -122,16 +123,30 @@ export default function CompatibilityPage() {
   const [items, setItems] = useState<AnalysisHistoryItem[]>([]);
   const [relationships, setRelationships] = useState<ChartProfileRelationship[]>([]);
   const [status, setStatus] = useState("Загружаю историю совместимости...");
+  const [authChecked, setAuthChecked] = useState(false);
+  const [canLoadPrivateData, setCanLoadPrivateData] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     const reloadOnAuthChanged = () => window.location.reload();
     window.addEventListener("jyotish-auth-changed", reloadOnAuthChanged);
-    Promise.allSettled([
-      withTimeout(fetchAnalysisHistory({ kind: "compatibility_codex_cli", limit: 60 }), 7000, "История"),
-      withTimeout(listChartProfileRelationships(), 7000, "Связи"),
-    ])
-      .then(([historyResult, relationshipResult]) => {
+
+    async function loadPrivateCompatibility() {
+      try {
+        const user = await fetchCurrentUser();
+        if (!mounted) return;
+        setAuthChecked(true);
+        setCanLoadPrivateData(Boolean(user));
+        if (!user) {
+          setItems([]);
+          setRelationships([]);
+          setStatus("Войдите в аккаунт, чтобы увидеть свои обзоры совместимости и сохранённые связи.");
+          return;
+        }
+        const [historyResult, relationshipResult] = await Promise.allSettled([
+          withTimeout(fetchAnalysisHistory({ kind: "compatibility_codex_cli", limit: 60 }), 7000, "История"),
+          withTimeout(listChartProfileRelationships(), 7000, "Связи"),
+        ]);
         if (!mounted) return;
         const historyItems = historyResult.status === "fulfilled" ? historyResult.value : [];
         const relationshipItems = relationshipResult.status === "fulfilled" ? relationshipResult.value : [];
@@ -146,16 +161,21 @@ export default function CompatibilityPage() {
             ? `${historyItems.length} сохранённых обзоров, ${relationshipItems.length} связей`
             : "История пока пустая",
         );
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!mounted) return;
+        setAuthChecked(true);
         setStatus(friendlyHistoryError(error));
-      });
+      }
+    }
+
+    void loadPrivateCompatibility();
     return () => {
       mounted = false;
       window.removeEventListener("jyotish-auth-changed", reloadOnAuthChanged);
     };
   }, []);
+
+  const needsAuth = authChecked && !canLoadPrivateData;
 
   return (
     <ProductShell active="compatibility">
@@ -167,7 +187,14 @@ export default function CompatibilityPage() {
         <a className="primary-link-button" href="/?analysis=compatibility#reports">Создать обзор</a>
       </header>
       <div className="product-status">{status}</div>
-      <GenerationJobsPanel basePath="/compatibility" kind="compatibility_codex_cli" title="AI-задачи совместимости" />
+      {needsAuth ? (
+        <section className="history-empty private-history-gate">
+          <strong>История совместимости личная</strong>
+          <span>Парные обзоры, связи и диалоги видит только владелец аккаунта. Нажмите “Войти” в верхней панели.</span>
+        </section>
+      ) : (
+        <GenerationJobsPanel basePath="/compatibility" kind="compatibility_codex_cli" title="AI-задачи совместимости" />
+      )}
 
       <section className="beginner-context-panel" aria-label="Как новичку читать совместимость">
         <div>
@@ -212,7 +239,7 @@ export default function CompatibilityPage() {
         </div>
       </section>
 
-      {relationships.length ? (
+      {!needsAuth && relationships.length ? (
         <section className="compatibility-pair-launcher" aria-label="Сохранённые пары и роли">
           <div className="compatibility-pair-launcher-head">
             <div>
@@ -273,7 +300,7 @@ export default function CompatibilityPage() {
         </section>
       ) : null}
 
-      <HistoryList items={items} basePath="/compatibility" emptyText="Обзоров совместимости ещё нет." />
+      {!needsAuth ? <HistoryList items={items} basePath="/compatibility" emptyText="Обзоров совместимости ещё нет." /> : null}
     </ProductShell>
   );
 }
