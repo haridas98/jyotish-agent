@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { GenerationJobsPanel } from "@/app/generation-jobs-ui";
 import { HistoryList } from "@/app/analysis-history-ui";
 import { ProductShell } from "@/app/product-shell";
 import { HelpTerm, HouseTerms, VargaTerms, type HelpItem } from "@/app/relationship-help";
@@ -166,6 +167,7 @@ export default function CompatibilityPage() {
         <a className="primary-link-button" href="/?analysis=compatibility#reports">Создать обзор</a>
       </header>
       <div className="product-status">{status}</div>
+      <GenerationJobsPanel basePath="/compatibility" kind="compatibility_codex_cli" title="AI-задачи совместимости" />
 
       <section className="beginner-context-panel" aria-label="Как новичку читать совместимость">
         <div>

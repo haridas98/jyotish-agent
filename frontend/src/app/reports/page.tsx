@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { GenerationJobsPanel } from "@/app/generation-jobs-ui";
 import { HistoryList } from "@/app/analysis-history-ui";
 import { ProductShell } from "@/app/product-shell";
 import { HelpTerm, HouseTerms, VargaTerms } from "@/app/relationship-help";
@@ -72,6 +73,7 @@ export default function ReportsPage() {
         <a className="primary-link-button" href="/">Создать обзор</a>
       </header>
       <div className="product-status">{status}</div>
+      <GenerationJobsPanel basePath="/reports" kind="birth_chart_codex_cli" title="AI-задачи личных обзоров" />
       <section className="compatibility-saved-role-context" aria-label="Минимум личного обзора">
         <div className="compatibility-saved-role-head">
           <div>
