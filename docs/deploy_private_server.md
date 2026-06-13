@@ -41,6 +41,7 @@ Current host `31.76.79.2` is an archive-based systemd deploy, not a git checkout
 - Current systemd host uses local PostgreSQL (`DATABASE_URL=postgres://...@127.0.0.1:5432/jyotish_agent`). SQLite is only an emergency rollback source and must not be used with `DJANGO_DEBUG=false` unless `ALLOW_PRODUCTION_SQLITE=true` is set deliberately.
 - Gunicorn stays at `--workers 1` on the small server; heavy Codex analysis must run through `CODEX_GENERATION_QUEUE_ENABLED=true` and `jyotish-agent-codex-worker.service`.
 - Runtime files to preserve: `.env`, `.tmp/`, `.private_corpus/`, `ephe/`, `backend/.venv/`, `frontend/node_modules/`.
+- PostgreSQL backups: `/srv/jyotish-agent/backups/postgres/latest.dump`; script: `deploy/backup-postgres.sh`.
 - Deploy marker: `/srv/jyotish-agent/app/.deploy-commit`.
 - Verification: `GET http://31.76.79.2:18100/api/health` must return the deployed `deploy_commit`.
 
@@ -88,6 +89,56 @@ curl -I --max-time 15 http://127.0.0.1:13130/
 ```
 
 For backend-only changes, skip the frontend build and restart only `jyotish-agent-backend.service`.
+
+## PostgreSQL backups
+
+Manual backup on the systemd host:
+
+```bash
+cd /srv/jyotish-agent/app
+bash deploy/backup-postgres.sh
+pg_restore --list /srv/jyotish-agent/backups/postgres/latest.dump | head
+```
+
+Install a daily timer:
+
+```bash
+cat >/etc/systemd/system/jyotish-agent-postgres-backup.service <<'EOF'
+[Unit]
+Description=Jyotish Agent PostgreSQL backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/jyotish-agent/app
+ExecStart=/usr/bin/bash /srv/jyotish-agent/app/deploy/backup-postgres.sh
+EOF
+
+cat >/etc/systemd/system/jyotish-agent-postgres-backup.timer <<'EOF'
+[Unit]
+Description=Run Jyotish Agent PostgreSQL backup daily
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+RandomizedDelaySec=20m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now jyotish-agent-postgres-backup.timer
+systemctl start jyotish-agent-postgres-backup.service
+systemctl status jyotish-agent-postgres-backup.service --no-pager
+```
+
+Restore drill target should be a fresh database, never the live database:
+
+```bash
+createdb -O jyotish_agent jyotish_agent_restore_check
+pg_restore --dbname=jyotish_agent_restore_check --no-owner --no-acl /srv/jyotish-agent/backups/postgres/latest.dump
+dropdb jyotish_agent_restore_check
+```
 
 ## Required production env decisions
 
