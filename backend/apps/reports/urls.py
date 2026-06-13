@@ -2,6 +2,8 @@ from django.urls import path
 
 from .views import (
     AnalysisChatHistoryView,
+    AnalysisGenerationJobDetailView,
+    AnalysisGenerationJobListView,
     AnalysisHistoryDetailView,
     AnalysisHistorySlugDetailView,
     AnalysisHistoryView,
@@ -32,6 +34,12 @@ urlpatterns = [
         "reports/history/<int:analysis_id>/chat",
         AnalysisChatHistoryView.as_view(),
         name="analysis-chat-history",
+    ),
+    path("reports/generation-jobs", AnalysisGenerationJobListView.as_view(), name="analysis-generation-jobs"),
+    path(
+        "reports/generation-jobs/<int:job_id>",
+        AnalysisGenerationJobDetailView.as_view(),
+        name="analysis-generation-job-detail",
     ),
     path("reports/analysis/chat", AnalysisUniversalChatView.as_view(), name="analysis-universal-chat"),
     path("reports/birth-chart", BirthReportView.as_view(), name="birth-report"),

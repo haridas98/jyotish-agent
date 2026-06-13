@@ -35,7 +35,7 @@ from .codex_cli_generation import (
     generate_compatibility_codex_cli_analysis,
 )
 from .draft_generation import DraftGenerationUnavailable
-from .models import GeneratedAnalysisDraft
+from .models import GeneratedAnalysisDraft, GeneratedAnalysisJob, input_summary_from_snapshot
 
 
 MAIN_ANALYSIS_KINDS = {
@@ -174,6 +174,34 @@ class AnalysisUniversalChatView(APIView):
             return Response({"error": "analysis not found"}, status=404)
         except DraftGenerationUnavailable as exc:
             return Response({"error": str(exc)}, status=503)
+
+
+class AnalysisGenerationJobListView(APIView):
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
+
+    def get(self, request):
+        kind = str(request.query_params.get("kind") or "").strip()
+        status = str(request.query_params.get("status") or "").strip()
+        limit = min(max(_optional_int(request.query_params.get("limit")) or 20, 1), 100)
+        jobs = GeneratedAnalysisJob.objects.filter(user=_request_user(request))
+        if kind:
+            jobs = jobs.filter(kind=kind)
+        if status:
+            jobs = jobs.filter(status=status)
+        jobs = jobs.select_related("analysis").order_by("-created_at")[:limit]
+        return Response({"jobs": [_analysis_generation_job_payload(job) for job in jobs]})
+
+
+class AnalysisGenerationJobDetailView(APIView):
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
+
+    def get(self, request, job_id: int):
+        job = get_object_or_404(
+            GeneratedAnalysisJob.objects.select_related("analysis"),
+            id=job_id,
+            user=_request_user(request),
+        )
+        return Response({"job": _analysis_generation_job_payload(job)})
 
 
 class BirthAnalysisPacketView(APIView):
@@ -486,8 +514,14 @@ def _codex_generation_response(kind: str, user, data: dict[str, object], generat
             },
             status=409,
         )
+    job = _create_running_generation_job(kind, user, data)
     try:
-        return Response(generate())
+        output = generate()
+        _finish_generation_job(job, output)
+        return Response(output)
+    except Exception as exc:
+        _fail_generation_job(job, exc)
+        raise
     finally:
         cache.delete(lock_key)
 
@@ -508,6 +542,39 @@ def _codex_generation_lock_key(kind: str, user, data: dict[str, object]) -> str:
     raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"reports:codex-generation-lock:{kind}:{owner}:{digest}"
+
+
+def _create_running_generation_job(kind: str, user, data: dict[str, object]) -> GeneratedAnalysisJob | None:
+    if user is None:
+        return None
+    return GeneratedAnalysisJob.objects.create(
+        user=user,
+        kind=kind,
+        status=GeneratedAnalysisJob.Status.RUNNING,
+        input_summary=input_summary_from_snapshot(data, kind),
+        request_snapshot=data,
+        started_at=timezone.now(),
+    )
+
+
+def _finish_generation_job(job: GeneratedAnalysisJob | None, output: object) -> None:
+    if job is None:
+        return
+    analysis_id = _optional_int(output.get("id") if isinstance(output, dict) else None)
+    job.status = GeneratedAnalysisJob.Status.COMPLETE
+    job.completed_at = timezone.now()
+    if analysis_id is not None and GeneratedAnalysisDraft.objects.filter(id=analysis_id).exists():
+        job.analysis_id = analysis_id
+    job.save(update_fields=["status", "completed_at", "analysis", "updated_at"])
+
+
+def _fail_generation_job(job: GeneratedAnalysisJob | None, exc: Exception) -> None:
+    if job is None:
+        return
+    job.status = GeneratedAnalysisJob.Status.FAILED
+    job.error = str(exc)[:4000]
+    job.completed_at = timezone.now()
+    job.save(update_fields=["status", "error", "completed_at", "updated_at"])
 
 
 def _codex_chat_response(kind: str, user, analysis_id: int, ask):
@@ -921,6 +988,23 @@ def _analysis_history_payload(record: GeneratedAnalysisDraft, *, include_output:
         payload["packet_snapshot"] = record.packet_snapshot if isinstance(record.packet_snapshot, dict) else {}
         payload["prompt_markdown"] = record.prompt_markdown
     return payload
+
+
+def _analysis_generation_job_payload(job: GeneratedAnalysisJob) -> dict[str, object]:
+    analysis = job.analysis
+    return {
+        "id": job.id,
+        "kind": job.kind,
+        "status": job.status,
+        "input_summary": job.input_summary if isinstance(job.input_summary, dict) else {},
+        "analysis_id": analysis.id if analysis is not None else None,
+        "analysis_slug": _analysis_slug(analysis, snapshot=analysis.input_summary) if analysis is not None else "",
+        "error": job.error,
+        "created_at": job.created_at.isoformat(),
+        "updated_at": job.updated_at.isoformat(),
+        "started_at": job.started_at.isoformat() if job.started_at else None,
+        "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+    }
 
 
 def _analysis_slug(record: GeneratedAnalysisDraft, *, snapshot: dict[str, object] | None = None) -> str:

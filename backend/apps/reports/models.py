@@ -83,6 +83,45 @@ class GeneratedAnalysisDraft(models.Model):
             self.excerpt = ""
 
 
+class GeneratedAnalysisJob(models.Model):
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        COMPLETE = "complete", "Complete"
+        FAILED = "failed", "Failed"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="generated_analysis_jobs",
+    )
+    analysis = models.ForeignKey(
+        GeneratedAnalysisDraft,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="generation_jobs",
+    )
+    kind = models.CharField(max_length=64)
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.QUEUED)
+    input_summary = models.JSONField(default=dict, blank=True)
+    request_snapshot = models.JSONField(default=dict, blank=True)
+    error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "status", "created_at"], name="reports_job_user_status_idx"),
+            models.Index(fields=["user", "kind", "created_at"], name="reports_job_user_kind_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.kind} {self.status} #{self.pk}"
+
+
 def input_summary_from_snapshot(snapshot: object, kind: str = "") -> dict[str, object]:
     if not isinstance(snapshot, dict):
         return {}

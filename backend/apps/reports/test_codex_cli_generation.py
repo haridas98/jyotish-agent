@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from apps.calculations.ephemeris import BodyPosition
 from apps.calculations.primitives import zodiac_placement
 from apps.charts.models import BirthProfile, Place
-from apps.reports.models import GeneratedAnalysisDraft
+from apps.reports.models import GeneratedAnalysisDraft, GeneratedAnalysisJob
 
 
 class CliProvider:
@@ -906,6 +906,47 @@ def test_birth_codex_analysis_api_returns_saved_draft(monkeypatch):
     assert response.data["kind"] == "birth_chart_codex_cli"
     assert captured["refresh_evidence"] is False
     assert captured["force_regenerate"] is False
+    job = GeneratedAnalysisJob.objects.get(user=user, kind="birth_chart_codex_cli")
+    assert job.status == GeneratedAnalysisJob.Status.COMPLETE
+    assert job.input_summary == {
+        "birth_date": "2000-01-01",
+        "birth_time": "15:30",
+        "place_name": "Vrindavan",
+        "profile_id": profile.id,
+    }
+
+
+@pytest.mark.django_db
+def test_generation_job_api_is_scoped_to_authenticated_user():
+    owner = get_user_model().objects.create_user(username="job-owner", password="strong-pass-108")
+    other = get_user_model().objects.create_user(username="job-other", password="strong-pass-108")
+    own_job = GeneratedAnalysisJob.objects.create(
+        user=owner,
+        kind="birth_chart_codex_cli",
+        status=GeneratedAnalysisJob.Status.RUNNING,
+        input_summary={"birth_date": "2000-01-01"},
+        request_snapshot={"birth_date": "2000-01-01", "large": "hidden"},
+    )
+    other_job = GeneratedAnalysisJob.objects.create(
+        user=other,
+        kind="birth_chart_codex_cli",
+        status=GeneratedAnalysisJob.Status.COMPLETE,
+        input_summary={"birth_date": "2001-01-01"},
+        request_snapshot={"birth_date": "2001-01-01"},
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=owner)
+    list_response = client.get("/api/reports/generation-jobs", {"kind": "birth_chart_codex_cli"})
+    detail_response = client.get(f"/api/reports/generation-jobs/{own_job.id}")
+    other_detail_response = client.get(f"/api/reports/generation-jobs/{other_job.id}")
+
+    assert list_response.status_code == 200
+    assert [item["id"] for item in list_response.data["jobs"]] == [own_job.id]
+    assert "request_snapshot" not in list_response.data["jobs"][0]
+    assert detail_response.status_code == 200
+    assert detail_response.data["job"]["status"] == "running"
+    assert other_detail_response.status_code == 404
 
 
 @pytest.mark.django_db
