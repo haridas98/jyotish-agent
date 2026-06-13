@@ -49,6 +49,7 @@ CHAT_ANALYSIS_KINDS = {
     "current_day_transit_overview_chat",
 }
 ALL_HISTORY_KINDS = MAIN_ANALYSIS_KINDS | CHAT_ANALYSIS_KINDS
+CHAT_HISTORY_RECORD_LIMIT = 20
 
 
 def _birth_report_cache_key(data: object) -> str:
@@ -117,7 +118,7 @@ class AnalysisHistoryDetailView(APIView):
         return Response(
             {
                 "analysis": _analysis_history_payload(record, include_output=True),
-                "chat_messages": _chat_messages_for_analysis(record),
+                **_chat_history_payload(record),
             }
         )
 
@@ -133,7 +134,7 @@ class AnalysisHistorySlugDetailView(APIView):
         return Response(
             {
                 "analysis": _analysis_history_payload(record, include_output=True),
-                "chat_messages": _chat_messages_for_analysis(record),
+                **_chat_history_payload(record),
             }
         )
 
@@ -143,7 +144,7 @@ class AnalysisChatHistoryView(APIView):
 
     def get(self, request, analysis_id: int):
         record = get_object_or_404(_owned_analysis_records(request), id=analysis_id, kind__in=MAIN_ANALYSIS_KINDS)
-        return Response({"analysis_id": analysis_id, "messages": _chat_messages_for_analysis(record)})
+        return Response({"analysis_id": analysis_id, **_chat_history_payload(record, messages_key="messages")})
 
 
 class AnalysisUniversalChatView(APIView):
@@ -980,12 +981,24 @@ def _chat_record_count(record: GeneratedAnalysisDraft) -> int:
     )
 
 
-def _chat_messages_for_analysis(record: GeneratedAnalysisDraft) -> list[dict[str, object]]:
-    records = GeneratedAnalysisDraft.objects.filter(
+def _chat_history_payload(record: GeneratedAnalysisDraft, *, messages_key: str = "chat_messages") -> dict[str, object]:
+    total = _chat_record_count(record)
+    return {
+        messages_key: _chat_messages_for_analysis(record, limit=CHAT_HISTORY_RECORD_LIMIT),
+        "chat_record_total": total,
+        "chat_record_limit": CHAT_HISTORY_RECORD_LIMIT,
+        "chat_truncated": total > CHAT_HISTORY_RECORD_LIMIT,
+    }
+
+
+def _chat_messages_for_analysis(record: GeneratedAnalysisDraft, *, limit: int = CHAT_HISTORY_RECORD_LIMIT) -> list[dict[str, object]]:
+    records_qs = GeneratedAnalysisDraft.objects.filter(
         kind__in=CHAT_ANALYSIS_KINDS,
         input_snapshot__analysis_id=record.id,
         user_id=record.user_id,
-    ).order_by("created_at", "id")
+    ).only("id", "input_snapshot", "output_json", "created_at").order_by("-created_at", "-id")
+    records = list(records_qs[:limit])
+    records.reverse()
     messages: list[dict[str, object]] = []
     for record in records:
         snapshot = record.input_snapshot if isinstance(record.input_snapshot, dict) else {}

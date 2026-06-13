@@ -252,7 +252,10 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
 
       <AnalysisChatBox
         analysisId={detail.analysis.id}
+        initialLimit={detail.chat_record_limit}
         initialMessages={detail.chat_messages}
+        initialTotal={detail.chat_record_total}
+        initialTruncated={detail.chat_truncated}
         mode={chatMode}
       />
     </div>
@@ -810,11 +813,17 @@ function MiniRashiGrid({ placements, highlightRashi }: { placements: MiniChartPl
 
 function AnalysisChatBox({
   analysisId,
+  initialLimit,
   initialMessages,
+  initialTotal,
+  initialTruncated,
   mode,
 }: {
   analysisId: number;
+  initialLimit?: number;
   initialMessages: CodexAnalysisChatMessage[];
+  initialTotal?: number;
+  initialTruncated?: boolean;
   mode: "birth" | "compatibility" | "current-day" | "disabled";
 }) {
   const [messages, setMessages] = useState<CodexAnalysisChatMessage[]>(initialMessages);
@@ -861,6 +870,11 @@ function AnalysisChatBox({
         </div>
       </div>
       <div className="analysis-chat-thread">
+        {initialTruncated ? (
+          <div className="history-empty">
+            Показаны последние {initialLimit ?? Math.ceil(initialMessages.length / 2)} диалогов из {initialTotal ?? "всей истории"}.
+          </div>
+        ) : null}
         {messages.length ? (
           messages.map((message, index) => (
             <div className={`chat-message ${message.role}`} key={`${message.role}-${index}`}>

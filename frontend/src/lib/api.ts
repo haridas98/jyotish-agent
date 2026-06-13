@@ -1306,10 +1306,13 @@ export type AnalysisHistoryDetail = {
     packet_snapshot?: Record<string, unknown>;
     prompt_markdown?: string;
   };
+  chat_record_limit?: number;
+  chat_record_total?: number;
   chat_messages: (CodexAnalysisChatMessage & {
     analysis_message_id?: number;
     created_at?: string;
   })[];
+  chat_truncated?: boolean;
 };
 
 export type AnalysisHistoryQuery = {

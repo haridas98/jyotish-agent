@@ -131,6 +131,42 @@ def test_analysis_history_detail_resolves_slug_and_returns_chat_messages():
             "created_at": chat.created_at.isoformat(),
         },
     ]
+    assert response.data["chat_truncated"] is False
+
+
+@pytest.mark.django_db
+def test_analysis_history_detail_limits_long_chat_history():
+    user = get_user_model().objects.create_user(username="history-long-chat-owner", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        input_snapshot={"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+        output_json={"sections": [{"title": "Chart", "body": "Body."}]},
+    )
+    for index in range(25):
+        GeneratedAnalysisDraft.objects.create(
+            user=user,
+            kind="birth_chart_codex_cli_chat",
+            review_status="private_final",
+            source_policy="private_shastra_research_first",
+            input_snapshot={"analysis_id": report.id, "question": f"Question {index}"},
+            output_json={"answer": f"Answer {index}"},
+        )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.get(f"/api/reports/history/{report.id}")
+
+    assert response.status_code == 200
+    assert response.data["chat_record_total"] == 25
+    assert response.data["chat_record_limit"] == 20
+    assert response.data["chat_truncated"] is True
+    assert len(response.data["chat_messages"]) == 40
+    assert response.data["chat_messages"][0]["content"] == "Question 5"
+    assert response.data["chat_messages"][-1]["content"] == "Answer 24"
 
 
 @pytest.mark.django_db
