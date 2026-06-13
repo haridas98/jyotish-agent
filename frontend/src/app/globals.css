@@ -1266,7 +1266,7 @@ select {
   border-radius: 8px;
   display: grid;
   gap: 8px;
-  grid-template-columns: auto minmax(260px, 1.2fr) minmax(260px, 0.9fr) auto;
+  grid-template-columns: auto minmax(260px, 1fr) minmax(180px, 0.55fr) auto;
   margin-bottom: 10px;
   padding: 6px 8px;
 }
@@ -1282,7 +1282,7 @@ select {
   align-items: center;
   display: grid;
   gap: 6px;
-  grid-template-columns: minmax(126px, 1fr) auto;
+  grid-template-columns: minmax(126px, 1fr);
   min-width: 0;
 }
 
@@ -1315,35 +1315,6 @@ select {
   font-weight: 900;
   min-width: 0;
   outline: 0;
-}
-
-.chart-style-inline-toggle {
-  background: #f8fbfb;
-  border: 1px solid #d5e3e3;
-  border-radius: 8px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(74px, 1fr));
-  min-height: 34px;
-  overflow: hidden;
-}
-
-.chart-style-inline-toggle button {
-  background: transparent;
-  border: 0;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 900;
-  padding: 6px 8px;
-}
-
-.chart-style-inline-toggle button + button {
-  border-left: 1px solid #d5e3e3;
-}
-
-.chart-style-inline-toggle button.active {
-  background: var(--green);
-  color: #ffffff;
 }
 
 .chart-workspace-body {
@@ -17219,10 +17190,6 @@ body {
 
   .chart-display-controls {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .chart-style-inline-toggle {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ai-access-policy-grid {

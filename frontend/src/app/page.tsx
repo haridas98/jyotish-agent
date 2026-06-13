@@ -1829,17 +1829,13 @@ function ChartReferenceToggle({
 function ChartDisplayControls({
   chart,
   chartMode,
-  chartStyle,
   vargaOptions,
   onChartModeChange,
-  onChartStyleChange,
 }: {
   chart: BirthChart | null;
   chartMode: string;
-  chartStyle: "north" | "south";
   vargaOptions: string[];
   onChartModeChange: (value: string) => void;
-  onChartStyleChange: (value: "north" | "south") => void;
 }) {
   const options = vargaOptions.length ? vargaOptions : ["D1"];
 
@@ -1855,14 +1851,6 @@ function ChartDisplayControls({
           ))}
         </select>
       </label>
-      <div className="chart-style-inline-toggle" role="group" aria-label="Стиль карты">
-        <button type="button" className={chartStyle === "north" ? "active" : ""} onClick={() => onChartStyleChange("north")}>
-          Северный
-        </button>
-        <button type="button" className={chartStyle === "south" ? "active" : ""} onClick={() => onChartStyleChange("south")}>
-          Южный
-        </button>
-      </div>
     </div>
   );
 }
@@ -10725,10 +10713,8 @@ export default function Home() {
                 <ChartDisplayControls
                   chart={chart}
                   chartMode={chartMode}
-                  chartStyle={chartStyle}
                   vargaOptions={vargaOptions}
                   onChartModeChange={selectVargaCode}
-                  onChartStyleChange={handleChartStyleChange}
                 />
                 <label className="chart-house-hints-toggle">
                   <input
