@@ -38,6 +38,7 @@ Current host `31.76.79.2` is an archive-based systemd deploy, not a git checkout
 - App path: `/srv/jyotish-agent/app`.
 - Frontend: `jyotish-agent-frontend.service`, Next on `0.0.0.0:13130`.
 - Backend: `jyotish-agent-backend.service`, gunicorn on `0.0.0.0:18100`.
+- Current SQLite systemd host must keep gunicorn at `--workers 1`; heavy Codex analysis must run through `CODEX_GENERATION_QUEUE_ENABLED=true` and `jyotish-agent-codex-worker.service`.
 - Runtime files to preserve: `.env`, `.tmp/`, `.private_corpus/`, `ephe/`, `backend/.venv/`, `frontend/node_modules/`.
 - Deploy marker: `/srv/jyotish-agent/app/.deploy-commit`.
 - Verification: `GET http://31.76.79.2:18100/api/health` must return the deployed `deploy_commit`.
@@ -94,6 +95,7 @@ For backend-only changes, skip the frontend build and restart only `jyotish-agen
 - `VL_DATABASE_URL` must point to the Prabhupada/VL database if source search must work on the server.
 - Swiss/JPL ephemeris files must be placed in `./ephe` if JPL mode is needed.
 - `CODEX_ANALYSIS_PROVIDER=codex_cli` is the active private-build AI path. Qwen, DeepSeek and Nemotron helper services are not part of the runtime anymore.
+- `CODEX_GENERATION_QUEUE_ENABLED=true` should stay enabled so web requests enqueue AI work instead of running Codex CLI inline.
 - The backend host/container must be able to run `codex exec` under the same user as gunicorn if AI reports are enabled.
 
 ## Codex CLI analysis

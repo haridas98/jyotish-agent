@@ -10,6 +10,10 @@ def test_private_app_auth_can_stay_relaxed_by_default_in_development():
     assert private_app_auth_default(debug=True) is False
 
 
+def test_codex_generation_queue_is_enabled_by_default():
+    assert project_settings.CODEX_GENERATION_QUEUE_ENABLED is True
+
+
 def test_database_from_url_accepts_postgres_env_fallback(monkeypatch):
     monkeypatch.setattr(project_settings, "DEBUG", False)
     monkeypatch.setenv("POSTGRES_DB", "jyotish_agent")

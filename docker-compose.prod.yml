@@ -36,6 +36,8 @@ services:
       PRIVATE_APP_REQUIRE_AUTH: "true"
       DATABASE_URL: postgres://${POSTGRES_USER:-jyotish}:${POSTGRES_PASSWORD:-change-this-postgres-password}@postgres:5432/${POSTGRES_DB:-jyotish_agent}
       REDIS_URL: redis://redis:6379/0
+      CODEX_GENERATION_QUEUE_ENABLED: "true"
+      CODEX_MAX_RUNNING_GENERATIONS_PER_USER: "1"
       JHORA_ACCURACY_REPORT_PATH: /app/.tmp/jhora/sterlitamak-1998/accuracy-report.json
       SWISSEPH_EPHE_PATH: /app/ephe
     volumes:
@@ -52,6 +54,36 @@ services:
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8100 --workers ${GUNICORN_WORKERS:-1} --timeout ${GUNICORN_TIMEOUT:-600}"
+    restart: unless-stopped
+
+  codex-worker:
+    build:
+      context: ./backend
+    container_name: jyotish-agent-prod-codex-worker
+    env_file:
+      - .env
+    environment:
+      DJANGO_DEBUG: "false"
+      PRIVATE_APP_REQUIRE_AUTH: "true"
+      DATABASE_URL: postgres://${POSTGRES_USER:-jyotish}:${POSTGRES_PASSWORD:-change-this-postgres-password}@postgres:5432/${POSTGRES_DB:-jyotish_agent}
+      REDIS_URL: redis://redis:6379/0
+      CODEX_GENERATION_QUEUE_ENABLED: "true"
+      CODEX_MAX_RUNNING_GENERATIONS_PER_USER: "1"
+      JHORA_ACCURACY_REPORT_PATH: /app/.tmp/jhora/sterlitamak-1998/accuracy-report.json
+      SWISSEPH_EPHE_PATH: /app/ephe
+    volumes:
+      - ./.tmp:/app/.tmp
+      - ./ephe:/app/ephe:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "while true; do
+               python manage.py process_generation_jobs --limit 1 --skip-evidence-refresh || true;
+               sleep ${CODEX_WORKER_POLL_SECONDS:-15};
+             done"
     restart: unless-stopped
 
   frontend:
