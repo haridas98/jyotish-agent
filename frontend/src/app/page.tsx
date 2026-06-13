@@ -117,7 +117,12 @@ type BirthFormDraft = {
   partnerBirthTime?: string;
   partnerPlaceName?: string;
   selectedPartnerPlace?: PlaceCandidate | null;
+  compatibilityPersonAProfileId?: string;
+  compatibilityPersonBProfileId?: string;
   compatibilityRelationshipRoleKey?: CompatibilityRelationshipRoleKey;
+  activeCompatibilityRelationshipId?: string;
+  relationshipBaseProfileId?: string;
+  relatedProfileIds?: number[];
 };
 
 function readBirthFormDraft(): BirthFormDraft | null {
@@ -8113,8 +8118,23 @@ export default function Home() {
       if (draft.partnerBirthTime) setPartnerBirthTime(draft.partnerBirthTime);
       if (draft.partnerPlaceName) setPartnerPlaceName(draft.partnerPlaceName);
       if (draft.selectedPartnerPlace) setSelectedPartnerPlace(draft.selectedPartnerPlace);
+      if (typeof draft.compatibilityPersonAProfileId === "string") {
+        setCompatibilityPersonAProfileId(draft.compatibilityPersonAProfileId);
+      }
+      if (typeof draft.compatibilityPersonBProfileId === "string") {
+        setCompatibilityPersonBProfileId(draft.compatibilityPersonBProfileId);
+      }
       if (draft.compatibilityRelationshipRoleKey && compatibilityRelationshipRoles.some((role) => role.key === draft.compatibilityRelationshipRoleKey)) {
         setCompatibilityRelationshipRoleKey(draft.compatibilityRelationshipRoleKey);
+      }
+      if (typeof draft.activeCompatibilityRelationshipId === "string") {
+        setActiveCompatibilityRelationshipId(draft.activeCompatibilityRelationshipId);
+      }
+      if (typeof draft.relationshipBaseProfileId === "string") {
+        setRelationshipBaseProfileId(draft.relationshipBaseProfileId);
+      }
+      if (Array.isArray(draft.relatedProfileIds)) {
+        setRelatedProfileIds(draft.relatedProfileIds.filter((id) => Number.isInteger(id) && id > 0));
       }
     }
     setFormDraftHydrated(true);
@@ -8149,14 +8169,22 @@ export default function Home() {
       partnerBirthTime,
       partnerPlaceName,
       selectedPartnerPlace,
+      compatibilityPersonAProfileId,
+      compatibilityPersonBProfileId,
       compatibilityRelationshipRoleKey,
+      activeCompatibilityRelationshipId,
+      relationshipBaseProfileId,
+      relatedProfileIds,
     });
   }, [
+    activeCompatibilityRelationshipId,
     ayanamsa,
     bhavaSystem,
     birthDate,
     birthTime,
     calculationModel,
+    compatibilityPersonAProfileId,
+    compatibilityPersonBProfileId,
     compatibilityRelationshipRoleKey,
     ephemeris,
     formDraftHydrated,
@@ -8173,6 +8201,8 @@ export default function Home() {
     placeName,
     profileIsSelf,
     profileName,
+    relatedProfileIds,
+    relationshipBaseProfileId,
     selectedPartnerPlace,
     selectedPlace,
     shadbalaProfile,
