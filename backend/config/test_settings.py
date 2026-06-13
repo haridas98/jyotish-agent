@@ -25,3 +25,10 @@ def test_database_from_url_accepts_postgres_env_fallback(monkeypatch):
     assert config["USER"] == "jyotish"
     assert config["HOST"] == "db"
     assert config["PORT"] == "5433"
+
+
+def test_database_from_url_accepts_sqlite_url():
+    config = database_from_url("sqlite:////srv/jyotish-agent/app/backend/db.sqlite3")
+
+    assert config["ENGINE"] == "django.db.backends.sqlite3"
+    assert config["NAME"] == "/srv/jyotish-agent/app/backend/db.sqlite3"

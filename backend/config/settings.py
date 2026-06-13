@@ -111,6 +111,15 @@ def database_from_url(url: str | None) -> dict[str, object]:
         }
 
     parsed = urlparse(url)
+    if parsed.scheme == "sqlite":
+        sqlite_path = parsed.path
+        if sqlite_path.startswith("//"):
+            sqlite_path = sqlite_path[1:]
+        return {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": sqlite_path,
+        }
+
     if parsed.scheme not in {"postgres", "postgresql"}:
         raise ValueError(f"Unsupported DATABASE_URL scheme: {parsed.scheme}")
 
