@@ -1972,6 +1972,12 @@ function NorthIndianChartPreview({
 }) {
   const [hoveredHouse, setHoveredHouse] = useState<number | null>(null);
   const [pinnedHouse, setPinnedHouse] = useState<number | null>(null);
+  useEffect(() => {
+    if (!houseHintsEnabled) {
+      setHoveredHouse(null);
+      setPinnedHouse(null);
+    }
+  }, [houseHintsEnabled]);
   const activeHouse = houseHintsEnabled ? pinnedHouse ?? hoveredHouse : null;
   const activeCell = activeHouse ? northIndianHouseCells[activeHouse] : null;
   return (
@@ -1983,7 +1989,6 @@ function NorthIndianChartPreview({
           chartReference={chartReference}
           termLanguage={termLanguage}
           onHouseSelect={houseHintsEnabled ? (house) => {
-            publishReaderExplanation(readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage }));
             setPinnedHouse((current) => (current === house ? null : house));
           } : undefined}
           onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
@@ -2149,6 +2154,12 @@ function SouthIndianChartPreview({
 }) {
   const [hoveredHouse, setHoveredHouse] = useState<number | null>(null);
   const [pinnedHouse, setPinnedHouse] = useState<number | null>(null);
+  useEffect(() => {
+    if (!houseHintsEnabled) {
+      setHoveredHouse(null);
+      setPinnedHouse(null);
+    }
+  }, [houseHintsEnabled]);
   const activeHouse = houseHintsEnabled ? pinnedHouse ?? hoveredHouse : null;
   const activePosition = activeHouse ? southIndianHouseTooltipPosition(chart, varga, chartReference, activeHouse) : null;
   return (
@@ -2160,7 +2171,6 @@ function SouthIndianChartPreview({
           chartReference={chartReference}
           termLanguage={termLanguage}
           onHouseSelect={houseHintsEnabled ? (house) => {
-            publishReaderExplanation(readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage }));
             setPinnedHouse((current) => (current === house ? null : house));
           } : undefined}
           onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
