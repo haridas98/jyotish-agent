@@ -26,10 +26,14 @@ def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
 
 
+def private_app_auth_default(debug: bool) -> bool:
+    return not debug
+
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = env_bool("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
-PRIVATE_APP_REQUIRE_AUTH = env_bool("PRIVATE_APP_REQUIRE_AUTH", False)
+PRIVATE_APP_REQUIRE_AUTH = env_bool("PRIVATE_APP_REQUIRE_AUTH", private_app_auth_default(DEBUG))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
