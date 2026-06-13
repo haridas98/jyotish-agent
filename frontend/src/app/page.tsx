@@ -10018,17 +10018,9 @@ export default function Home() {
           <p>Гаудия-сиддханта джйотиш</p>
         </div>
         <AppNavigation activeKey={activeMainNavKey} home onSelect={handleMainNavSelect} />
-        <InterfaceModeSwitch value={interfaceMode} onChange={handleInterfaceModeChange} />
-        <blockquote>
-          yatha shastram
-          <br />
-          yatha guru
-          <br />
-          tatha siddhantah
-        </blockquote>
-        <div className="operator">
-          <strong>Режим проверки</strong>
-          <span>Личный режим с research-источниками</span>
+        <div className="product-sidebar-footer">
+          <InterfaceModeSwitch value={interfaceMode} onChange={handleInterfaceModeChange} />
+          <span className="product-sidebar-note">Личное пространство: карты, обзоры, диалоги.</span>
         </div>
       </aside>
 
