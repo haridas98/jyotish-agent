@@ -1010,3 +1010,92 @@ def test_birth_analysis_related_registered_profile_reviews_are_viewer_scoped(mon
     assert response.status_code == 200
     reviews = captured["data"]["related_profile_context"][0]["latest_reviews"]
     assert [review["excerpt"] for review in reviews] == ["My saved context for this linked chart."]
+
+
+@pytest.mark.django_db
+def test_birth_analysis_related_profile_reviews_use_profile_links(monkeypatch):
+    user = get_user_model().objects.create_user(username="viewer-link-sql", password="strong-pass-108")
+    place = Place.objects.create(
+        external_id="test:privacy-links",
+        name="Mayapur",
+        country_code="IN",
+        latitude=23.4241,
+        longitude=88.3883,
+        timezone_name="Asia/Kolkata",
+        metadata={"label": "Mayapur, IN"},
+    )
+    base_profile = BirthProfile.objects.create(
+        user=user,
+        display_name="Me",
+        birth_date=date(1990, 1, 1),
+        birth_time=time(8, 0),
+        place=place,
+        timezone_name="Asia/Kolkata",
+        is_self_profile=True,
+    )
+    ChartCalculation.objects.create(
+        profile=base_profile,
+        calculation_version="test",
+        status=ChartCalculation.Status.COMPLETE,
+        result={"birth": {"date": "1990-01-01"}, "grahas": [{"body": "Surya", "rashi": "Mesha"}]},
+    )
+    related_profile = BirthProfile.objects.create(
+        user=user,
+        display_name="Mother",
+        birth_date=date(1960, 1, 1),
+        birth_time=time(6, 0),
+        place=place,
+        timezone_name="Asia/Kolkata",
+    )
+    ChartCalculation.objects.create(
+        profile=related_profile,
+        calculation_version="test",
+        status=ChartCalculation.Status.COMPLETE,
+        result={"birth": {"date": "1960-01-01"}, "grahas": [{"body": "Chandra", "rashi": "Karka"}]},
+    )
+    GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_partial",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        input_snapshot={"profile_id": related_profile.id},
+        output_json={"sections": [{"title": "Mother", "body": "Linked review."}]},
+    )
+    captured = {}
+
+    def fake_generate(data, **kwargs):
+        captured["data"] = data
+        return {
+            "id": 80,
+            "kind": "birth_chart_codex_cli",
+            "provider": "codex_cli",
+            "review_status": "private_partial",
+            "source_policy": "private_shastra_research_first",
+            "sections": [],
+        }
+
+    monkeypatch.setattr("apps.reports.views.generate_birth_chart_codex_cli_analysis", fake_generate)
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    with CaptureQueriesContext(connection) as captured_queries:
+        response = client.post(
+            "/api/reports/birth-chart/codex-analysis",
+            {
+                "birth_date": "1990-01-01",
+                "birth_time": "08:00",
+                "place_name": "Mayapur",
+                "profile_id": base_profile.id,
+                "related_profile_ids": [related_profile.id],
+            },
+            format="json",
+        )
+
+    assert response.status_code == 200
+    related_reviews = captured["data"]["related_profile_context"][0]["latest_reviews"]
+    assert related_reviews[0]["excerpt"] == "Linked review."
+    sql = "\n".join(query["sql"].lower() for query in captured_queries.captured_queries)
+    assert "generatedanalysisprofilelink" in sql
+    assert '"reports_generatedanalysisdraft"."input_snapshot"' not in sql
+    assert '"reports_generatedanalysisdraft"."output_json"' not in sql

@@ -590,8 +590,11 @@ def _latest_birth_codex_for_profile(user, profile_id: int) -> GeneratedAnalysisD
         GeneratedAnalysisDraft.objects.filter(
             user=user,
             kind="birth_chart_codex_cli",
-            input_snapshot__profile_id=profile_id,
+            profile_links__profile_id=profile_id,
+            profile_links__role="primary",
         )
+        .defer("input_snapshot", "packet_snapshot", "output_json", "prompt_markdown")
+        .distinct()
         .order_by("-created_at", "-id")
         .first()
     )
@@ -678,20 +681,24 @@ def _latest_profile_reviews(profile_id: int, *, viewer_user=None) -> list[dict[s
     user_id = profile.user_id if profile is not None else None
     records = GeneratedAnalysisDraft.objects.filter(
         kind__in=MAIN_ANALYSIS_KINDS,
-        input_snapshot__profile_id=profile_id,
+        profile_links__profile_id=profile_id,
     ).exclude(kind="current_day_transit_overview")
     if getattr(viewer_user, "is_authenticated", False):
         records = records.filter(Q(user=viewer_user) | Q(user__isnull=True))
     elif user_id is not None:
         records = records.filter(Q(user_id=user_id) | Q(user__isnull=True))
-    records = records.order_by("-created_at")[:3]
+    records = (
+        records.defer("input_snapshot", "packet_snapshot", "output_json", "prompt_markdown")
+        .distinct()
+        .order_by("-created_at")[:3]
+    )
     return [
         {
             "id": record.id,
             "kind": record.kind,
             "provider": record.provider,
             "created_at": record.created_at.isoformat(),
-            "excerpt": _record_excerpt(record),
+            "excerpt": _short_text(record.excerpt, 420),
         }
         for record in records
     ]
