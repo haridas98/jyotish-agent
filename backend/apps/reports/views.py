@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.cache import cache
@@ -514,6 +515,10 @@ def _codex_generation_response(kind: str, user, data: dict[str, object], generat
             },
             status=409,
         )
+    concurrency_response = _codex_generation_concurrency_response(user)
+    if concurrency_response is not None:
+        cache.delete(lock_key)
+        return concurrency_response
     job = _create_running_generation_job(kind, user, data)
     try:
         output = generate()
@@ -542,6 +547,33 @@ def _codex_generation_lock_key(kind: str, user, data: dict[str, object]) -> str:
     raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     return f"reports:codex-generation-lock:{kind}:{owner}:{digest}"
+
+
+def _codex_generation_concurrency_response(user) -> Response | None:
+    if user is None:
+        return None
+    limit = max(int(getattr(settings, "CODEX_MAX_RUNNING_GENERATIONS_PER_USER", 1)), 0)
+    if limit <= 0:
+        return None
+    stale_seconds = max(int(getattr(settings, "CODEX_RUNNING_GENERATION_STALE_SECONDS", 1800)), 60)
+    stale_before = timezone.now() - timedelta(seconds=stale_seconds)
+    running_count = GeneratedAnalysisJob.objects.filter(
+        user=user,
+        status=GeneratedAnalysisJob.Status.RUNNING,
+        started_at__gte=stale_before,
+    ).count()
+    if running_count < limit:
+        return None
+    return Response(
+        {
+            "error": "analysis_user_generation_limit",
+            "message": "У вас уже выполняется тяжёлый Codex-разбор. Дождитесь результата перед запуском следующего.",
+            "running_count": running_count,
+            "limit": limit,
+            "retry_after_seconds": 60,
+        },
+        status=429,
+    )
 
 
 def _create_running_generation_job(kind: str, user, data: dict[str, object]) -> GeneratedAnalysisJob | None:

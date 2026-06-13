@@ -1,11 +1,12 @@
 import json
-from datetime import date, time
+from datetime import date, time, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.management import call_command
 from django.test import override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.calculations.ephemeris import BodyPosition
@@ -1025,6 +1026,85 @@ def test_birth_codex_analysis_api_rejects_duplicate_running_generation(monkeypat
 
     assert response.status_code == 409
     assert response.data["error"] == "analysis_generation_in_progress"
+
+
+@pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="", CODEX_MAX_RUNNING_GENERATIONS_PER_USER=1)
+def test_birth_codex_analysis_api_rejects_second_running_user_generation(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-user-limit", password="strong-pass-108")
+    profile = _codex_api_self_profile(user)
+    GeneratedAnalysisJob.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        status=GeneratedAnalysisJob.Status.RUNNING,
+        started_at=timezone.now(),
+        input_summary={"birth_date": "1999-01-01"},
+    )
+    cache.clear()
+
+    monkeypatch.setattr(
+        "apps.reports.views.generate_birth_chart_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("generator must not run when user limit is reached"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/reports/birth-chart/codex-analysis",
+        {
+            "profile_id": profile.id,
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 429
+    assert response.data["error"] == "analysis_user_generation_limit"
+    assert response.data["running_count"] == 1
+
+
+@pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="", CODEX_MAX_RUNNING_GENERATIONS_PER_USER=1, CODEX_RUNNING_GENERATION_STALE_SECONDS=300)
+def test_birth_codex_analysis_api_ignores_stale_running_user_generation(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-stale-limit", password="strong-pass-108")
+    profile = _codex_api_self_profile(user)
+    GeneratedAnalysisJob.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        status=GeneratedAnalysisJob.Status.RUNNING,
+        started_at=timezone.now() - timedelta(minutes=10),
+        input_summary={"birth_date": "1999-01-01"},
+    )
+    cache.clear()
+
+    monkeypatch.setattr(
+        "apps.reports.views.generate_birth_chart_codex_cli_analysis",
+        lambda *args, **kwargs: {
+            "id": 333,
+            "kind": "birth_chart_codex_cli",
+            "review_status": "private_final",
+            "source_policy": "private_shastra_research_first",
+            "sections": [{"title": "Fresh", "body": "Allowed."}],
+        },
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/reports/birth-chart/codex-analysis",
+        {
+            "profile_id": profile.id,
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["id"] == 333
 
 
 @pytest.mark.django_db

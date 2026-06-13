@@ -1818,7 +1818,11 @@ function apiErrorFromResponse(status: number, data: ApiErrorPayload, fallbackMes
 }
 
 export function isAnalysisInProgressError(error: unknown): error is ApiError {
-  return error instanceof ApiError && error.status === 409 && ["analysis_generation_in_progress", "analysis_chat_in_progress"].includes(error.code);
+  return (
+    error instanceof ApiError &&
+    [409, 429].includes(error.status) &&
+    ["analysis_generation_in_progress", "analysis_chat_in_progress", "analysis_user_generation_limit"].includes(error.code)
+  );
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
