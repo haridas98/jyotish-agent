@@ -183,6 +183,14 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
                 "birth_time": "10:00",
                 "place_name": "Vrindavan",
             },
+            "relationship_context": {
+                "role": "father",
+                "label": "Отец",
+                "focus_houses": [1, 9, 10, 4],
+                "focus_vargas": ["D1", "D12"],
+                "prompt_hint": "читать как связь с отцом",
+                "link_status": "accepted",
+            },
         },
         provider=WorkflowProvider(),
     )
@@ -262,8 +270,15 @@ def test_build_compatibility_report_scores_moon_tara_and_rashi_distance():
     assert any("person_a seventh lord Shukra in house 8" in item for item in seventh["findings"])
     assert analysis["vaishnava_guard"] == "final_guidance_requires_sadhu_guru_shastra_review"
     assert result["interpretation_plan"]["kind"] == "compatibility"
+    assert result["relationship_context"]["role"] == "father"
+    assert result["relationship_context"]["focus_houses"] == [1, 9, 10, 4]
+    assert result["relationship_context"]["focus_vargas"] == ["D1", "D12"]
+    assert result["relationship_context"]["link_status"] == "accepted"
     assert "ashtakuta" in result["interpretation_plan"]["required_factors"]
     assert "seventh_house" in result["interpretation_plan"]["required_factors"]
+    assert "relationship_role:father" in result["interpretation_plan"]["required_factors"]
+    assert "house_9" in result["interpretation_plan"]["required_factors"]
+    assert "varga_d12" in result["interpretation_plan"]["required_factors"]
     assert result["interpretation_plan"]["client_text_sequence"][-1] == "gaudiya_guard"
 
 

@@ -47,6 +47,13 @@ Build a web jyotish service that calculates charts accurately and explains resul
 - Relationship analysis beyond marriage compatibility: father, mother, sibling, boss, subordinate, enemy, teacher, friend, and custom roles.
 - Relationship-aware context: interaction reports should open both charts and emphasize the houses, vargas, and factors relevant to the selected role.
 - Account linking with consent: if a saved chart belongs to another registered user, linking should require an explicit request/approval and privacy controls.
+- Full modern product redesign after the current functional pass: one stable information architecture across desktop web, mobile web, Telegram, and future native mobile apps.
+- Mobile UX reference study before redesign: Divya Chakshu, Ishtaphala, JyotishUp, JHora, Vedic-horo, plus non-jyotish modern productivity apps for navigation, bottom sheets, dense tables, guided onboarding, and explanation popovers.
+- Stable app shell: the same core navigation must stay available on charts, compatibility, interactions, reports, and history pages; switching pages must not make menu sections disappear.
+- No hydration flash: never show a wrong empty chart or default birth data while saved local/API state is still loading.
+- Contextual explanation layer like Vedic-horo: tap a graha, house number, rashi, nakshatra, dignity, combustion marker, shadbala label, or varga name to open a short explanation and an option to ask AI about that exact object.
+- Guided learning mode: AI-led walkthrough for beginners explaining houses, signs, nakshatras, vargas, graha aspects, dignity, combustion, shadbala, dashas, and how the values are calculated.
+- Area-question workflow: user can point at a chart/table area and ask "what is this?", "why is this important?", or "how is this calculated?", with the answer grounded in the current chart and available source policy.
 
 ## Out Of Scope For MVP
 

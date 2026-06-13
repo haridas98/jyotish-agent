@@ -27,6 +27,7 @@ def generate_birth_chart_draft_analysis(
     research_search: CitationSearch | None = None,
     interpretation_provider: InterpretationProvider | None = None,
     llm_client: LLMClient | None = None,
+    user: Any | None = None,
 ) -> dict[str, Any]:
     packet = build_analysis_packet(
         data,
@@ -42,6 +43,7 @@ def generate_birth_chart_draft_analysis(
         llm_client=llm_client or openai_responses_client(),
         provider="openai",
         model=settings.OPENAI_MODEL,
+        user=user,
     )
 
 
@@ -53,6 +55,7 @@ def generate_draft_analysis_for_packet(
     llm_client: LLMClient,
     provider: str,
     model: str,
+    user: Any | None = None,
 ) -> dict[str, Any]:
     prompt = str(packet.get("prompt_markdown") or "")
     if not prompt:
@@ -73,6 +76,7 @@ def generate_draft_analysis_for_packet(
         packet_snapshot=packet,
         output_json=output,
         prompt_markdown=prompt,
+        user=user if getattr(user, "is_authenticated", False) else None,
     )
     output["id"] = record.id
     return output

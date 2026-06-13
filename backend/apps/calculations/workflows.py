@@ -348,6 +348,7 @@ def build_compatibility_report(
 ) -> dict[str, Any]:
     person_a = build_birth_chart(_required_mapping(data, "person_a"), provider=provider)
     person_b = build_birth_chart(_required_mapping(data, "person_b"), provider=provider)
+    relationship_context = _compatibility_relationship_context(data)
     moon_a = _graha(person_a, "Chandra")
     moon_b = _graha(person_b, "Chandra")
     nak_a = _int_or_none(moon_a.get("nakshatra_index") if moon_a else None)
@@ -397,6 +398,7 @@ def build_compatibility_report(
         "kuta": kuta,
         "kuta_rows": kuta_rows,
         "analysis": analysis,
+        "relationship_context": relationship_context,
         "interpretation_plan": _workflow_interpretation_plan(
             "compatibility",
             source_anchors=[
@@ -413,6 +415,7 @@ def build_compatibility_report(
                 "shukra_mangala",
                 "guru_shukra",
                 "dasha_context",
+                *relationship_context["required_factors"],
             ],
             client_text_sequence=[
                 "two_chart_facts",
@@ -425,6 +428,42 @@ def build_compatibility_report(
         ),
         "assessment": _compatibility_assessment(total_score, max_score, kuta_rows, vaishnava_note),
         "vaishnava_note": vaishnava_note,
+    }
+
+
+def _compatibility_relationship_context(data: dict[str, Any]) -> dict[str, Any]:
+    raw = data.get("relationship_context")
+    if not isinstance(raw, dict):
+        raw = {}
+    role = str(raw.get("role") or "partner").strip() or "partner"
+    label = str(raw.get("label") or role).strip() or role
+    focus_houses = [
+        int(item)
+        for item in raw.get("focus_houses", [])
+        if isinstance(item, int) or (isinstance(item, str) and item.isdigit())
+    ]
+    focus_vargas = [
+        str(item).strip()
+        for item in raw.get("focus_vargas", [])
+        if str(item).strip()
+    ]
+    required_factors = [f"relationship_role:{role}"]
+    required_factors.extend(f"house_{house}" for house in focus_houses)
+    required_factors.extend(f"varga_{code.lower()}" for code in focus_vargas)
+    return {
+        "role": role,
+        "label": label,
+        "focus_houses": focus_houses,
+        "focus_vargas": focus_vargas,
+        "prompt_hint": str(raw.get("prompt_hint") or "").strip(),
+        "relationship_id": raw.get("relationship_id"),
+        "link_status": raw.get("link_status"),
+        "profile_id": raw.get("profile_id"),
+        "related_profile_id": raw.get("related_profile_id"),
+        "profile_label": raw.get("profile_label"),
+        "related_profile_label": raw.get("related_profile_label"),
+        "consent_policy": str(raw.get("consent_policy") or "").strip(),
+        "required_factors": required_factors,
     }
 
 

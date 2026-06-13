@@ -4,6 +4,8 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from apps.charts.models import BirthProfile
+
 
 @pytest.mark.django_db
 def test_register_creates_active_user_and_logs_in():
@@ -25,6 +27,50 @@ def test_register_creates_active_user_and_logs_in():
     user = get_user_model().objects.get(username="haridas")
     assert user.is_active is True
     assert "_auth_user_id" in client.session
+
+
+@pytest.mark.django_db
+def test_register_can_create_self_profile_without_birth_time():
+    client = APIClient()
+
+    response = client.post(
+        reverse("auth-register"),
+        {
+            "username": "new-person",
+            "email": "new-person@example.test",
+            "password": "strong-pass-108",
+            "birth_date": "2000-01-01",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["profile"]["is_self_profile"] is True
+    assert response.data["profile"]["birth_time"] is None
+    assert response.data["profile"]["birth_time_accuracy"] == "unknown"
+    profile = BirthProfile.objects.get(user__username="new-person")
+    assert profile.is_self_profile is True
+    assert profile.birth_time is None
+
+
+@pytest.mark.django_db
+def test_register_rejects_partial_birth_profile_and_rolls_back_user():
+    client = APIClient()
+
+    response = client.post(
+        reverse("auth-register"),
+        {
+            "username": "partial-birth",
+            "password": "strong-pass-108",
+            "birth_date": "2000-01-01",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "birth_date and place_name" in response.data["error"]
+    assert not get_user_model().objects.filter(username="partial-birth").exists()
 
 
 @pytest.mark.django_db

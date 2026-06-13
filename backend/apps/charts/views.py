@@ -5,13 +5,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import BirthProfile, ChartCalculation
+from .models import BirthProfile, BirthProfileRelationship, ChartCalculation
 from .services import (
     ChartProfileInputError,
     calculate_profile_chart,
     calculation_payload,
     create_birth_profile,
+    list_incoming_profile_relationship_requests,
+    list_profile_relationships,
     profile_payload,
+    profile_relationship_payload,
+    update_birth_profile_flags,
+    update_incoming_profile_relationship_request,
+    upsert_profile_relationship,
 )
 
 
@@ -43,6 +49,15 @@ class BirthProfileDetailView(APIView):
         )
         return Response({"profile": profile_payload(profile)})
 
+    def patch(self, request, profile_id: int):
+        profile = get_object_or_404(
+            BirthProfile.objects.select_related("place"),
+            id=profile_id,
+            user=request.user,
+        )
+        profile = update_birth_profile_flags(profile, request.data)
+        return Response({"profile": profile_payload(profile)})
+
 
 class BirthProfileCalculateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -56,3 +71,70 @@ class BirthProfileCalculateView(APIView):
         calculation = calculate_profile_chart(profile)
         status_code = 201 if calculation.status == ChartCalculation.Status.COMPLETE else 503
         return Response({"calculation": calculation_payload(calculation)}, status=status_code)
+
+
+class BirthProfileRelationshipListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        relationships = list_profile_relationships(request.user)
+        return Response({"relationships": [profile_relationship_payload(item) for item in relationships]})
+
+    def post(self, request):
+        try:
+            relationship = upsert_profile_relationship(request.user, request.data)
+        except BirthProfile.DoesNotExist:
+            return Response({"error": "profile not found"}, status=404)
+        except ChartProfileInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        return Response({"relationship": profile_relationship_payload(relationship)}, status=201)
+
+
+class BirthProfileRelationshipInboxView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        requests = list_incoming_profile_relationship_requests(request.user)
+        return Response({"relationships": [profile_relationship_payload(item) for item in requests]})
+
+
+class BirthProfileRelationshipDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, relationship_id: int):
+        relationship = get_object_or_404(
+            BirthProfileRelationship.objects.select_related(
+                "user",
+                "profile",
+                "related_profile",
+                "requested_user",
+                "profile__place",
+                "related_profile__place",
+            ),
+            id=relationship_id,
+            user=request.user,
+        )
+        return Response({"relationship": profile_relationship_payload(relationship)})
+
+    def delete(self, request, relationship_id: int):
+        relationship = get_object_or_404(BirthProfileRelationship, id=relationship_id, user=request.user)
+        relationship.delete()
+        return Response(status=204)
+
+
+class BirthProfileRelationshipActionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, relationship_id: int):
+        try:
+            relationship = update_incoming_profile_relationship_request(
+                request.user,
+                relationship_id,
+                str(request.data.get("action") or "").strip(),
+                request.data,
+            )
+        except BirthProfileRelationship.DoesNotExist:
+            return Response({"error": "relationship request not found"}, status=404)
+        except ChartProfileInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        return Response({"relationship": profile_relationship_payload(relationship)})

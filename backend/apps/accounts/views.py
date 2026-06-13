@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.conf import settings
+from django.db import transaction
 from django.db import IntegrityError
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.charts.services import ChartProfileInputError, create_birth_profile, profile_payload
 
 
 def user_payload(user) -> dict[str, object]:
@@ -34,18 +37,25 @@ class RegisterView(APIView):
             return Response({"error": "password must be at least 10 characters"}, status=400)
 
         try:
-            user = get_user_model().objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                is_active=True,
-            )
+            with transaction.atomic():
+                user = get_user_model().objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    is_active=True,
+                )
+                profile = _create_registration_self_profile(user, request.data)
         except IntegrityError:
             return Response({"error": "username already exists"}, status=409)
+        except ChartProfileInputError as exc:
+            return Response({"error": str(exc)}, status=400)
 
         login(request, user)
         request.session.set_expiry(settings.SESSION_COOKIE_AGE)
-        return Response({"user": user_payload(user), "status": "active"}, status=201)
+        payload = {"user": user_payload(user), "status": "active"}
+        if profile is not None:
+            payload["profile"] = profile_payload(profile)
+        return Response(payload, status=201)
 
 
 class LoginView(APIView):
@@ -65,6 +75,31 @@ class LoginView(APIView):
         login(request, user)
         request.session.set_expiry(settings.SESSION_COOKIE_AGE)
         return Response({"user": user_payload(user)})
+
+
+def _create_registration_self_profile(user, data) -> object | None:
+    birth_date = str(data.get("birth_date") or "").strip()
+    place_name = str(data.get("place_name") or "").strip()
+    if not birth_date and not place_name:
+        return None
+    if not birth_date or not place_name:
+        raise ChartProfileInputError("birth_date and place_name are required to create the first chart")
+
+    birth_time = str(data.get("birth_time") or "").strip()
+    return create_birth_profile(
+        user,
+        {
+            "display_name": str(data.get("display_name") or "Моя карта").strip() or "Моя карта",
+            "birth_date": birth_date,
+            "birth_time": birth_time,
+            "birth_time_accuracy": data.get("birth_time_accuracy") or ("exact" if birth_time else "unknown"),
+            "place_name": place_name,
+            "is_self_profile": True,
+            "timezone": data.get("timezone"),
+            "latitude": data.get("latitude"),
+            "longitude": data.get("longitude"),
+        },
+    )
 
 
 class LogoutView(APIView):

@@ -68,6 +68,7 @@ COMPATIBILITY_REPORT_SECTION_BLUEPRINT: tuple[dict[str, Any], ...] = (
 def generate_birth_chart_codex_cli_analysis(
     data: dict[str, Any],
     *,
+    user: Any | None = None,
     provider: EphemerisProvider | None = None,
     citation_search: CitationSearch | None = None,
     research_search: CitationSearch | None = None,
@@ -78,7 +79,7 @@ def generate_birth_chart_codex_cli_analysis(
     force_regenerate: bool = False,
 ) -> dict[str, Any]:
     if private_research_mode and provider is None and codex_runner is None and not force_regenerate:
-        cached_output = _cached_full_codex_analysis(data)
+        cached_output = _cached_full_codex_analysis(data, user=user)
         if cached_output is not None:
             return cached_output
     if refresh_evidence:
@@ -108,6 +109,7 @@ def generate_birth_chart_codex_cli_analysis(
     output["source_policy"] = _source_policy(private_research_mode)
     output["kind"] = "birth_chart_codex_cli"
     record = GeneratedAnalysisDraft.objects.create(
+        user=_analysis_user(user),
         kind="birth_chart_codex_cli",
         review_status=output["review_status"],
         source_policy=_source_policy(private_research_mode),
@@ -125,6 +127,7 @@ def generate_birth_chart_codex_cli_analysis(
 def generate_compatibility_codex_cli_analysis(
     data: dict[str, Any],
     *,
+    user: Any | None = None,
     provider: EphemerisProvider | None = None,
     citation_search: CitationSearch | None = None,
     research_search: CitationSearch | None = None,
@@ -159,6 +162,7 @@ def generate_compatibility_codex_cli_analysis(
     output["source_policy"] = _source_policy(private_research_mode)
     output["kind"] = "compatibility_codex_cli"
     record = GeneratedAnalysisDraft.objects.create(
+        user=_analysis_user(user),
         kind="compatibility_codex_cli",
         review_status=output["review_status"],
         source_policy=_source_policy(private_research_mode),
@@ -173,11 +177,14 @@ def generate_compatibility_codex_cli_analysis(
     return output
 
 
-def _cached_full_codex_analysis(data: dict[str, Any]) -> dict[str, Any] | None:
-    for record in GeneratedAnalysisDraft.objects.filter(
+def _cached_full_codex_analysis(data: dict[str, Any], *, user: Any | None = None) -> dict[str, Any] | None:
+    records = GeneratedAnalysisDraft.objects.filter(
         kind="birth_chart_codex_cli",
         review_status="private_final",
-    ).order_by("-id")[:10]:
+    )
+    owner = _analysis_user(user)
+    records = records.filter(user=owner) if owner is not None else records.filter(user__isnull=True)
+    for record in records.order_by("-id")[:10]:
         if not _input_snapshot_matches(record.input_snapshot, data):
             continue
         output = dict(record.output_json or {})
@@ -198,17 +205,34 @@ def _input_snapshot_matches(snapshot: object, data: dict[str, Any]) -> bool:
     return all(snapshot.get(key) == value for key, value in data.items())
 
 
+def _analysis_user(user: Any | None) -> Any | None:
+    if user is not None and getattr(user, "is_authenticated", False):
+        return user
+    return None
+
+
+def _get_owned_report(analysis_id: int, kind: str, *, user: Any | None = None) -> GeneratedAnalysisDraft:
+    report = GeneratedAnalysisDraft.objects.get(id=analysis_id, kind=kind)
+    owner = _analysis_user(user)
+    if owner is None and report.user_id is not None:
+        raise GeneratedAnalysisDraft.DoesNotExist
+    if owner is not None and report.user_id != owner.id:
+        raise GeneratedAnalysisDraft.DoesNotExist
+    return report
+
+
 def ask_birth_chart_codex_cli_analysis(
     *,
     analysis_id: int,
     question: str,
     history: list[dict[str, Any]] | None = None,
     codex_runner: CodexRunner | None = None,
+    user: Any | None = None,
 ) -> dict[str, Any]:
     clean_question = question.strip()
     if not clean_question:
         raise ValueError("question is required")
-    report = GeneratedAnalysisDraft.objects.get(id=analysis_id, kind="birth_chart_codex_cli")
+    report = _get_owned_report(analysis_id, "birth_chart_codex_cli", user=user)
     prompt = render_codex_cli_analysis_chat_prompt(report, clean_question, history=history or [])
     runner = codex_runner or configured_analysis_runner
     provider_name, model_name = _analysis_provider_metadata(codex_runner)
@@ -229,7 +253,53 @@ def ask_birth_chart_codex_cli_analysis(
         "history_used": len(_compact_chat_history(history or [])),
     }
     record = GeneratedAnalysisDraft.objects.create(
+        user=report.user,
         kind="birth_chart_codex_cli_chat",
+        review_status="private_final",
+        source_policy=result["source_policy"],
+        provider=provider_name,
+        model=model_name,
+        input_snapshot={"analysis_id": report.id, "question": clean_question, "history": _compact_chat_history(history or [])},
+        packet_snapshot={"analysis": _compact_report_for_chat(report)},
+        output_json=result,
+        prompt_markdown=prompt,
+    )
+    result["id"] = record.id
+    return result
+
+
+def ask_current_day_codex_cli_analysis(
+    *,
+    analysis_id: int,
+    question: str,
+    history: list[dict[str, Any]] | None = None,
+    codex_runner: CodexRunner | None = None,
+    user: Any | None = None,
+) -> dict[str, Any]:
+    clean_question = question.strip()
+    if not clean_question:
+        raise ValueError("question is required")
+    report = _get_owned_report(analysis_id, "current_day_transit_overview", user=user)
+    prompt = render_codex_cli_analysis_chat_prompt(report, clean_question, history=history or [])
+    runner = codex_runner or configured_analysis_runner
+    provider_name, model_name = _analysis_provider_metadata(codex_runner)
+    output = _normalize_llm_output(runner(prompt))
+    answer = str(output.get("answer") or "").strip() or _fallback_answer_from_sections(output)
+    result = {
+        "kind": "current_day_transit_overview_chat",
+        "analysis_id": report.id,
+        "question": clean_question,
+        "answer": answer,
+        "language": output.get("language", "ru"),
+        "review_status": "private_final",
+        "source_policy": report.source_policy or "calculation_first",
+        "evidence_references": output.get("evidence_references", []),
+        "source_traces": output.get("source_traces", []),
+        "history_used": len(_compact_chat_history(history or [])),
+    }
+    record = GeneratedAnalysisDraft.objects.create(
+        user=report.user,
+        kind="current_day_transit_overview_chat",
         review_status="private_final",
         source_policy=result["source_policy"],
         provider=provider_name,
@@ -249,11 +319,12 @@ def ask_compatibility_codex_cli_analysis(
     question: str,
     history: list[dict[str, Any]] | None = None,
     codex_runner: CodexRunner | None = None,
+    user: Any | None = None,
 ) -> dict[str, Any]:
     clean_question = question.strip()
     if not clean_question:
         raise ValueError("question is required")
-    report = GeneratedAnalysisDraft.objects.get(id=analysis_id, kind="compatibility_codex_cli")
+    report = _get_owned_report(analysis_id, "compatibility_codex_cli", user=user)
     prompt = render_codex_cli_compatibility_chat_prompt(report, clean_question, history=history or [])
     runner = codex_runner or configured_analysis_runner
     provider_name, model_name = _analysis_provider_metadata(codex_runner)
@@ -272,6 +343,7 @@ def ask_compatibility_codex_cli_analysis(
         "history_used": len(_compact_chat_history(history or [])),
     }
     record = GeneratedAnalysisDraft.objects.create(
+        user=report.user,
         kind="compatibility_codex_cli_chat",
         review_status="private_final",
         source_policy=result["source_policy"],
@@ -752,6 +824,7 @@ def _compact_compatibility_packet_for_codex_cli(packet: dict[str, Any]) -> dict[
             "input": person_b.get("input", {}),
             "chart": _compact_birth_chart_for_compatibility(person_b.get("chart")),
         },
+        "relationship_context": context.get("relationship_context", {}),
         "compatibility": {
             "status": compatibility.get("status"),
             "coverage": compatibility.get("coverage", {}),

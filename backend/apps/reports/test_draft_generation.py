@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth import get_user_model
 from django.test import override_settings
 from rest_framework.test import APIClient
 
@@ -81,9 +82,10 @@ def test_normalize_llm_output_extracts_json_markdown_fence():
 @pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_birth_draft_analysis_api_returns_saved_draft(monkeypatch):
+    user = get_user_model().objects.create_user(username="draft-api-owner", password="strong-pass-108")
     monkeypatch.setattr(
         "apps.reports.views.generate_birth_chart_draft_analysis",
-        lambda data, citation_search=None, research_search=None, interpretation_provider=None: {
+        lambda data, citation_search=None, research_search=None, interpretation_provider=None, user=None: {
             "id": 7,
             "kind": "birth_chart",
             "review_status": "draft",
@@ -92,7 +94,9 @@ def test_birth_draft_analysis_api_returns_saved_draft(monkeypatch):
         },
     )
 
-    response = APIClient().post(
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
         "/api/reports/birth-chart/draft-analysis",
         {
             "birth_date": "2000-01-01",
@@ -105,3 +109,18 @@ def test_birth_draft_analysis_api_returns_saved_draft(monkeypatch):
     assert response.status_code == 200
     assert response.data["review_status"] == "draft"
     assert response.data["id"] == 7
+
+
+@pytest.mark.django_db
+def test_birth_draft_analysis_api_requires_authentication():
+    response = APIClient().post(
+        "/api/reports/birth-chart/draft-analysis",
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert response.status_code in {401, 403}

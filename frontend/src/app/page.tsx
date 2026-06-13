@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react";
 import {
   askBirthCodexAnalysis,
   askCompatibilityCodexAnalysis,
@@ -22,24 +22,27 @@ import {
   fetchSourceWorks,
   fetchWitnessSummary,
   generateBirthCodexAnalysis,
-  generateBirthDeepseekAnalysis,
-  generateBirthNemotronAnalysis,
-  generateBirthQwenAnalysis,
   generateBirthReport,
   generateCompatibilityAnalysisPacket,
   generateCompatibilityCodexAnalysis,
   generateCurrentDayOverview,
+  listIncomingChartProfileRelationshipRequests,
   listChartProfiles,
+  listChartProfileRelationships,
   loginUser,
   logoutUser,
   registerUser,
   searchPlaces,
   searchResearchSources,
   searchVLSources,
+  updateChartProfile,
+  updateChartProfileRelationshipRequest,
+  upsertChartProfileRelationship,
   type BirthReport,
   type BirthChart,
   type BirthChartRequest,
   type ChartProfile,
+  type ChartProfileRelationship,
   type CodexAnalysisChatMessage,
   type CompatibilityReport,
   type DayPeriod,
@@ -72,13 +75,77 @@ import {
 import {
   firstSymbolLineY,
   northIndianHouseCells,
+  northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
+import { InterfaceModeSwitch, INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
+import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
+import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
+import { relationshipRoleDefinitions } from "@/lib/relationshipRoles";
 
 const PRIVATE_APP_REQUIRE_AUTH = process.env.NEXT_PUBLIC_PRIVATE_APP_REQUIRE_AUTH === "true";
-const ENABLE_NEMOTRON_ANALYSIS = process.env.NEXT_PUBLIC_ENABLE_NEMOTRON === "true";
 const CHART_STYLE_STORAGE_KEY = "jyotish-chart-style";
 const TERM_LANGUAGE_STORAGE_KEY = "jyotish-term-language";
+const FORM_DRAFT_STORAGE_KEY = "jyotish-main-form-draft-v1";
+const CHART_VIEW_STORAGE_KEY = "jyotish-chart-view-v1";
+
+type BirthFormDraft = {
+  birthDate?: string;
+  birthTime?: string;
+  gender?: "male" | "female" | "unknown";
+  placeName?: string;
+  profileName?: string;
+  profileIsSelf?: boolean;
+  selectedPlace?: PlaceCandidate | null;
+  manualTimezone?: string;
+  manualLatitude?: string;
+  manualLongitude?: string;
+  zodiac?: string;
+  calculationModel?: string;
+  ayanamsa?: string;
+  nodeType?: string;
+  ephemeris?: string;
+  houseSystem?: string;
+  bhavaSystem?: string;
+  vargaScheme?: string;
+  sunriseSource?: string;
+  timezoneSource?: string;
+  shadbalaProfile?: string;
+  partnerProfileName?: string;
+  partnerBirthDate?: string;
+  partnerBirthTime?: string;
+  partnerPlaceName?: string;
+  selectedPartnerPlace?: PlaceCandidate | null;
+  compatibilityRelationshipRoleKey?: CompatibilityRelationshipRoleKey;
+};
+
+function readBirthFormDraft(): BirthFormDraft | null {
+  try {
+    const raw = window.localStorage.getItem(FORM_DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw) as BirthFormDraft;
+    return draft && typeof draft === "object" ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeBirthFormDraft(draft: BirthFormDraft) {
+  try {
+    window.localStorage.setItem(FORM_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch {
+    // localStorage can be unavailable in restricted browser modes.
+  }
+}
+
+function browserStorageAvailable() {
+  if (typeof window === "undefined") return false;
+  try {
+    return typeof window.localStorage !== "undefined";
+  } catch {
+    return false;
+  }
+}
 
 const sourceRows = [
   ["Айанамша", "Lahiri", "Рабочий профиль; JHora diff подключён", "ready"],
@@ -92,6 +159,7 @@ const analysisTabs = [
   { key: "yogas", label: "Силы", hint: "бала, йоги" },
   { key: "timeline", label: "Даши", hint: "периоды" },
   { key: "transits", label: "Транзиты", hint: "гочара" },
+  { key: "compatibility", label: "Совместимость", hint: "две карты" },
   { key: "tithiPravesha", label: "Год", hint: "tithi pravesha" },
   { key: "tajaka", label: "Таджака", hint: "годовая карта" },
   { key: "prashna", label: "Прашна", hint: "вопрос" },
@@ -104,6 +172,14 @@ const analysisTabs = [
 
 type AnalysisTab = (typeof analysisTabs)[number]["key"];
 type ChartWorkspaceTab = "essentials" | "references" | "vargas";
+
+function analysisTabFromLocation(): AnalysisTab {
+  if (typeof window === "undefined") return "overview";
+  const requestedAnalysis = new URLSearchParams(window.location.search).get("analysis");
+  return requestedAnalysis && analysisTabs.some((tab) => tab.key === requestedAnalysis)
+    ? (requestedAnalysis as AnalysisTab)
+    : "overview";
+}
 
 const primaryAnalysisTabKeys = new Set<AnalysisTab>([
   "overview",
@@ -268,6 +344,38 @@ const compatibilityPerspectiveBasisRu: Record<string, string> = {
   guru_shukra: "Гуру и Шукра показывают дхарму, совет, привязанность и ценности семьи.",
   dasha_context: "Даши рассматриваются отдельно и не должны отменять общий анализ карт.",
 };
+
+type CompatibilityRelationshipRole = {
+  key: string;
+  label: string;
+  focus: string;
+  focusHouses: number[];
+  focusVargas: string[];
+  promptHint: string;
+};
+
+const compatibilityRelationshipRoles: CompatibilityRelationshipRole[] = relationshipRoleDefinitions.map((role) => ({
+  key: role.key,
+  label: role.key === "partner" ? "Партнёр / брак" : role.key === "opponent" ? "Оппонент / враг" : role.label,
+  focus: role.focus,
+  focusHouses: role.houses,
+  focusVargas: role.vargas,
+  promptHint: role.promptHint,
+}));
+
+type CompatibilityRelationshipRoleKey = string;
+
+function compatibilityRelationshipRole(key: string) {
+  return compatibilityRelationshipRoles.find((role) => role.key === key) ?? compatibilityRelationshipRoles[0];
+}
+
+function relationshipStatusLabel(status: string | null | undefined) {
+  if (status === "accepted") return "подтверждено";
+  if (status === "requested") return "ожидает подтверждения";
+  if (status === "declined") return "отклонено";
+  if (status === "blocked") return "заблокировано";
+  return "личная пометка";
+}
 
 const settingsLabelsRu: Record<string, string> = {
   zodiac: "Зодиак",
@@ -641,17 +749,149 @@ const jyotishGlossary = {
     label: "Chandra Lagna",
     text: "Карта от Луны. Полезна для психики, переживаний, даш и практического проявления событий.",
   },
+  dasha: {
+    label: "Dasha",
+    text: "Планетный период времени. Даша показывает, какая граха сейчас сильнее включает свои темы и результаты в жизни человека.",
+  },
+  panchanga: {
+    label: "Panchanga",
+    text: "Пять факторов дня: титхи, вара, накшатра, йога и карана. Нужны для мухурты и качества времени.",
+  },
+  tithi: {
+    label: "Tithi",
+    text: "Лунный день, основанный на расстоянии между Солнцем и Луной. Важен для настроения дня и выбора времени.",
+  },
+  vara: {
+    label: "Vara",
+    text: "День недели и его планетарный управитель. Это один из пяти факторов панчанги.",
+  },
+  panchanga_yoga: {
+    label: "Yoga",
+    text: "Панчанга-йога, рассчитанная по сумме долгот Солнца и Луны. Показывает качество времени.",
+  },
+  karana: {
+    label: "Karana",
+    text: "Половина титхи. Используется в мухурте для оценки практической пригодности действия.",
+  },
+  varga_method: {
+    label: "Метод варги",
+    text: "Правило построения выбранной дробной карты. Для точной проверки важно видеть не только D-карту, но и метод её расчёта.",
+  },
   surya_lagna: {
     label: "Surya Lagna",
     text: "Карта от Солнца. Помогает смотреть статус, волю, здоровье и внешнее проявление человека.",
+  },
+  transit: {
+    label: "Гочара / транзиты",
+    text: "Текущее движение грах по знакам. В личном обзоре дня транзиты читаются относительно натальной лагны и Луны.",
+  },
+  house: {
+    label: "Дом",
+    text: "Дом показывает сферу жизни. В северной карте положение областей фиксировано по домам, поэтому номер дома важен для чтения бхав.",
+  },
+  house_1: {
+    label: "1 дом",
+    text: "Лагна-бхава: тело, характер, здоровье, способ начинать жизнь и общий тон всей карты.",
+  },
+  house_2: {
+    label: "2 дом",
+    text: "Семья, речь, питание, накопления, ценности и то, чем человек поддерживает жизнь.",
+  },
+  house_3: {
+    label: "3 дом",
+    text: "Смелость, усилия, руки, навыки, коммуникация, младшие братья/сёстры и личная инициатива.",
+  },
+  house_4: {
+    label: "4 дом",
+    text: "Дом, мать, сердце, внутренний покой, недвижимость, транспорт и базовое чувство защищённости.",
+  },
+  house_5: {
+    label: "5 дом",
+    text: "Разум, дети, мантра, творчество, пурва-пунья, обучение и способность давать совет.",
+  },
+  house_6: {
+    label: "6 дом",
+    text: "Болезни, долги, служение, споры, конкуренты, дисциплина и способность решать трудности.",
   },
   house_7: {
     label: "7 дом",
     text: "Дом брака, партнерства, договоров и открытого взаимодействия с другими людьми.",
   },
+  house_8: {
+    label: "8 дом",
+    text: "Кризисы, тайны, трансформация, долголетие, наследство, скрытые страхи и глубокие перемены.",
+  },
+  house_9: {
+    label: "9 дом",
+    text: "Дхарма, отец, гуру, удача, паломничества, высшее знание и благословения.",
+  },
+  house_10: {
+    label: "10 дом",
+    text: "Карьера, действие в мире, статус, обязанности, публичная роль и видимая карма.",
+  },
+  house_11: {
+    label: "11 дом",
+    text: "Доходы, друзья, старшие братья/сёстры, исполнение желаний, сети и получаемые результаты.",
+  },
   house_12: {
     label: "12 дом",
     text: "Дом потерь, уединения, сна, расходов, мокши, дальних мест и скрытой стороны близости.",
+  },
+  graha: {
+    label: "Граха",
+    text: "Планетная точка в джйотише: Солнце, Луна, планеты, Раху, Кету и лагна как точка отсчёта.",
+  },
+  rashi: {
+    label: "Rashi",
+    text: "Знак зодиака. В южной карте клетки фиксированы по знакам, в северной знаки вписываются в дома.",
+  },
+  rashi_mesha: {
+    label: "Mesha / Овен",
+    text: "Огненный подвижный знак. Даёт импульс, начало, прямоту, действие и быстрое включение темы.",
+  },
+  rashi_vrishabha: {
+    label: "Vrishabha / Телец",
+    text: "Земной фиксированный знак. Даёт устойчивость, накопление, тело, речь, ценности и материальную опору.",
+  },
+  rashi_mithuna: {
+    label: "Mithuna / Близнецы",
+    text: "Воздушный двойственный знак. Даёт обмен, обучение, речь, связи, торговлю и гибкость мышления.",
+  },
+  rashi_karka: {
+    label: "Karka / Рак",
+    text: "Водный подвижный знак. Даёт заботу, дом, эмоции, защиту, память и внутреннюю безопасность.",
+  },
+  rashi_simha: {
+    label: "Simha / Лев",
+    text: "Огненный фиксированный знак. Даёт власть, достоинство, центр, лидерство, творчество и самовыражение.",
+  },
+  rashi_kanya: {
+    label: "Kanya / Дева",
+    text: "Земной двойственный знак. Даёт анализ, служение, ремесло, детали, здоровье и практический порядок.",
+  },
+  rashi_tula: {
+    label: "Tula / Весы",
+    text: "Воздушный подвижный знак. Даёт баланс, договор, партнёрство, обмен, эстетику и социальную меру.",
+  },
+  rashi_vrischika: {
+    label: "Vrischika / Скорпион",
+    text: "Водный фиксированный знак. Даёт глубину, тайну, кризис, трансформацию, контроль и скрытую силу.",
+  },
+  rashi_dhanu: {
+    label: "Dhanu / Стрелец",
+    text: "Огненный двойственный знак. Даёт дхарму, наставление, движение к смыслу, веру, знание и путь.",
+  },
+  rashi_makara: {
+    label: "Makara / Козерог",
+    text: "Земной подвижный знак. Даёт структуру, труд, ответственность, статус, ограничения и долгий результат.",
+  },
+  rashi_kumbha: {
+    label: "Kumbha / Водолей",
+    text: "Воздушный фиксированный знак. Даёт систему, общество, сеть, идею, дистанцию и нестандартное устройство.",
+  },
+  rashi_meena: {
+    label: "Meena / Рыбы",
+    text: "Водный двойственный знак. Даёт веру, растворение, сострадание, воображение, мокшу и тонкое восприятие.",
   },
   shadbala: {
     label: "Shadbala",
@@ -685,13 +925,89 @@ const jyotishGlossary = {
     label: "Nakshatra",
     text: "Лунная стоянка. В практическом разборе важна вместе с падой и управителем.",
   },
+  nakshatra_lord: {
+    label: "Управитель накшатры",
+    text: "Граха-управитель накшатры. Это важный быстрый слой: он связывает положение точки с дашами, мотивацией и более тонким проявлением результата.",
+  },
+  pada: {
+    label: "Pada",
+    text: "Четверть накшатры. Пада уточняет навамшу и делает положение грахи более точным.",
+  },
+  longitude: {
+    label: "Долгота",
+    text: "Точная позиция точки в зодиаке. По долготе определяются знак, накшатра, пада и варги.",
+  },
+  calculation_table: {
+    label: "Таблица расчётов",
+    text: "Рабочая таблица астролога: сначала смотрят граху, знак и дом, затем управляемые дома, накшатру, D9 и силу/состояние.",
+  },
+  graha_condition: {
+    label: "Состояние грахи",
+    text: "Краткая сводка ретроградности, достоинства, сожжения и силы. Это слой диагностики, а не отдельный окончательный вывод.",
+  },
+  shadbala_score: {
+    label: "Баллы шадбалы",
+    text: "Число в вирупах по шести группам силы. Сравнивайте планеты между собой и с контекстом домов, а не по одному числу.",
+  },
+  karaka: {
+    label: "Карака",
+    text: "Показатель или сигнификатор. Карака связывает граху с конкретной темой: душа, ум, отношения, дети и другие сферы.",
+  },
   navamsa: {
     label: "Navamsa / D9",
     text: "Девятая варга. Часто используется для дхармы, брака и тонкой силы положения грахи.",
   },
+  d1: {
+    label: "D1 / Rashi",
+    text: "Основная карта рождения. Все дробные карты читаются вместе с D1, а не вместо неё.",
+  },
+  d3: {
+    label: "D3 / Drekkana",
+    text: "Дробная карта братьев, сестёр, инициативы, усилий и практической смелости.",
+  },
+  d6: {
+    label: "D6",
+    text: "Рабочий слой для болезней, долгов, врагов, споров и конфликтного напряжения.",
+  },
+  d7: {
+    label: "D7 / Saptamsa",
+    text: "Дробная карта детей, потомства, продолжения рода и творческого плодоношения.",
+  },
+  d9: {
+    label: "D9 / Navamsa",
+    text: "Навамша: дхарма, зрелость положения, брак, внутренняя сила грахи и качество союза.",
+  },
+  d10: {
+    label: "D10 / Dashamsa",
+    text: "Дробная карта карьеры, статуса, начальников, подчинённых и профессиональной роли.",
+  },
+  d12: {
+    label: "D12 / Dvadashamsa",
+    text: "Дробная карта родителей, родовой линии, наследственности и связи с отцом/матерью.",
+  },
+  d30: {
+    label: "D30 / Trimshamsa",
+    text: "Дробная карта скрытых неприятностей, уязвимостей, конфликтных паттернов и рисков.",
+  },
+  d60: {
+    label: "D60 / Shashtyamsha",
+    text: "Глубокий кармический слой. Требует очень точного времени рождения и читается осторожно.",
+  },
   varga: {
     label: "Varga",
     text: "Дробная карта. Ее читают не отдельно, а вместе с D1 и подходящим жизненным вопросом.",
+  },
+  avastha: {
+    label: "Avastha",
+    text: "Состояние грахи. Помогает уточнять, как сила и качество грахи проявляются в конкретном положении.",
+  },
+  ashtakavarga: {
+    label: "Ashtakavarga",
+    text: "Система бинду по знакам. Используется для оценки поддержки домов, знаков и транзитов.",
+  },
+  argala: {
+    label: "Argala",
+    text: "Влияние или вмешательство домов друг на друга. Показывает, какие факторы помогают или препятствуют теме.",
   },
   vimshopaka: {
     label: "Vimshopaka Bala",
@@ -701,9 +1017,101 @@ const jyotishGlossary = {
     label: "Sarvashtakavarga",
     text: "Сводные бинду по знакам. Используется как быстрый слой оценки поддержки транзитов и домов.",
   },
+  ruled_houses: {
+    label: "Управляемые дома",
+    text: "Дома, которыми управляет граха через владение знаками. В BPHS это один из главных слоёв чтения: важно не только где стоит планета, но и какие дома она приносит в это место.",
+  },
+  self_profile: {
+    label: "Моя карта",
+    text: "Основная карта владельца аккаунта. Первый личный AI-разбор даётся именно для этой карты; чужие карты можно хранить отдельно.",
+  },
+  free_personal_ai: {
+    label: "Первый AI-разбор",
+    text: "Бесплатный личный разбор относится к вашей собственной карте. Если разбор уже создан, повторное открытие показывает сохранённую историю.",
+  },
+  relationship_role: {
+    label: "Роль человека",
+    text: "Ракурс чтения второй карты: партнёр, отец, мать, брат, руководитель, оппонент и т.д. От роли зависят дома и D-карты, которые AI должен учитывать.",
+  },
+  relationship_status: {
+    label: "Статус связи",
+    text: "Показывает приватность связи: личная пометка видна только вам, запрос ждёт согласия, подтверждённая связь видна обоим зарегистрированным пользователям.",
+  },
+  saved_other_chart: {
+    label: "Чужая сохранённая карта",
+    text: "Карту другого человека можно сохранить и просматривать. Ограничение относится к AI-разбору, а не к самому хранению карты.",
+  },
+  paid_other_ai: {
+    label: "AI-разбор чужой карты",
+    text: "После запуска оплаты AI-разбор чужой карты будет платным. Сейчас бесплатный личный разбор предназначен только для собственной карты аккаунта.",
+  },
+  mvp_readiness: {
+    label: "Готовность MVP",
+    text: "Показывает, какие функции уже можно проверять астрологам, а какие остаются следующим этапом разработки.",
+  },
+  ai_context: {
+    label: "Контекст AI",
+    text: "Отмеченные карты и их сохранённые обзоры можно передавать AI как дополнительный контекст при личном разборе.",
+  },
 } as const;
 
 type GlossaryKey = keyof typeof jyotishGlossary;
+
+function houseGlossaryKey(house: number | null | undefined): GlossaryKey {
+  if (house && house >= 1 && house <= 12) return `house_${house}` as GlossaryKey;
+  return "house";
+}
+
+function HouseGlossaryList({ houses }: { houses: readonly number[] }) {
+  if (!houses.length) return <>-</>;
+  return (
+    <span className="house-glossary-list">
+      {houses.map((house, index) => (
+        <GlossaryTerm termKey={houseGlossaryKey(house)} key={`house-glossary-${house}-${index}`}>
+          {house}
+        </GlossaryTerm>
+      ))}
+    </span>
+  );
+}
+
+function vargaGlossaryKey(code: string): GlossaryKey {
+  const key = code.toLowerCase();
+  if (key in jyotishGlossary) return key as GlossaryKey;
+  return "varga";
+}
+
+function rashiGlossaryKey(index: number | null | undefined, fallback?: string | null): GlossaryKey {
+  const normalized = index ?? rashiIndexFromName(fallback);
+  const keys: GlossaryKey[] = [
+    "rashi_mesha",
+    "rashi_vrishabha",
+    "rashi_mithuna",
+    "rashi_karka",
+    "rashi_simha",
+    "rashi_kanya",
+    "rashi_tula",
+    "rashi_vrischika",
+    "rashi_dhanu",
+    "rashi_makara",
+    "rashi_kumbha",
+    "rashi_meena",
+  ];
+  return normalized === null ? "rashi" : keys[normalized] ?? "rashi";
+}
+
+function VargaGlossaryList({ vargas }: { vargas: readonly string[] }) {
+  if (!vargas.length) return <>-</>;
+  return (
+    <span className="varga-glossary-list">
+      {vargas.map((varga, index) => (
+        <GlossaryTerm termKey={vargaGlossaryKey(varga)} key={`varga-glossary-${varga}-${index}`}>
+          {varga}
+        </GlossaryTerm>
+      ))}
+    </span>
+  );
+}
 
 const referenceGlossaryKeys: Partial<Record<ChartReference, GlossaryKey>> = {
   lagna: "lagna",
@@ -712,6 +1120,13 @@ const referenceGlossaryKeys: Partial<Record<ChartReference, GlossaryKey>> = {
   seventh: "house_7",
   twelfth: "house_12",
 };
+
+function chartReferenceForRelationshipRole(role: ReturnType<typeof compatibilityRelationshipRole>): ChartReference {
+  const houses = role.focusHouses as readonly number[];
+  if (houses.includes(7)) return "seventh";
+  if (houses.includes(12)) return "twelfth";
+  return "lagna";
+}
 
 type ChartPlacement = {
   body: string;
@@ -741,6 +1156,36 @@ function rashiIndexFromName(name: string | null | undefined) {
   const key = name?.trim();
   if (!key) return null;
   return rashiNameIndices[key] ?? null;
+}
+
+const rashiLordBodies: Record<number, string> = {
+  0: "Mangala",
+  1: "Shukra",
+  2: "Budha",
+  3: "Chandra",
+  4: "Surya",
+  5: "Budha",
+  6: "Shukra",
+  7: "Mangala",
+  8: "Guru",
+  9: "Shani",
+  10: "Shani",
+  11: "Guru",
+};
+
+function houseFromRashiIndex(rashiIndex: number | null | undefined, lagnaIndex: number | null | undefined) {
+  if (rashiIndex === null || rashiIndex === undefined || lagnaIndex === null || lagnaIndex === undefined) return null;
+  return ((rashiIndex - lagnaIndex + 12) % 12) + 1;
+}
+
+function ruledHousesForGraha(body: string, lagnaIndex: number | null | undefined) {
+  const canonical = canonicalBody(body);
+  if (lagnaIndex === null || lagnaIndex === undefined || canonical === "Rahu" || canonical === "Ketu") return [];
+  return Object.entries(rashiLordBodies)
+    .filter(([, lord]) => lord === canonical)
+    .map(([rashiIndex]) => houseFromRashiIndex(Number(rashiIndex), lagnaIndex))
+    .filter((house): house is number => typeof house === "number")
+    .sort((left, right) => left - right);
 }
 
 function isLagnaBody(body: string) {
@@ -907,7 +1352,14 @@ function northIndianHouseItems(
   varga: ActiveVargaChart | null,
   chartReference: ChartReference = "lagna",
 ): NorthIndianHouseItem[] {
-  if (!chart) return [];
+  if (!chart) {
+    return Array.from({ length: 12 }, (_, index) => ({
+      house: index + 1,
+      rashi: "",
+      rashiIndex: null,
+      placements: [],
+    }));
+  }
   const placements = activeChartPlacements(chart, varga);
   const bySign = placementsBySign(placements);
   const referenceIndex = chartReferenceRashiIndex(chart, placements, chartReference) ?? 0;
@@ -947,6 +1399,322 @@ function ChartPreview({
     <SouthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
   ) : (
     <NorthIndianChartPreview chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
+  );
+}
+
+function ChartHouseExplanation({
+  chart,
+  varga,
+  chartReference,
+  house,
+  termLanguage,
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  chartReference: ChartReference;
+  house: number;
+  termLanguage: TermLanguage;
+}) {
+  const item = jyotishGlossary[houseGlossaryKey(house)];
+  const houseItem = northIndianHouseItems(chart, varga, chartReference).find((row) => row.house === house);
+  const rashiIndex = houseItem?.rashiIndex ?? null;
+  const rashiLabel = rashiIndex === null
+    ? "-"
+    : rashiTermFromName(houseItem?.rashi ?? rashiNames[rashiIndex], termLanguage);
+  const lordBody = rashiIndex === null ? null : rashiLordBodies[rashiIndex];
+  const placements = houseItem?.placements ?? [];
+  const placementText = placements.length
+    ? placements.map((placement) => chartPlacementLabel(placement, termLanguage)).join(", ")
+    : "нет грах";
+  const referenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
+  return (
+    <div className="chart-cell-explanation" aria-live="polite">
+      <strong>{item.label}</strong>
+      <span>{item.text}</span>
+      <dl>
+        <div>
+          <dt>
+            <GlossaryTerm termKey="rashi">Знак</GlossaryTerm>
+          </dt>
+          <dd>{rashiLabel}</dd>
+        </div>
+        <div>
+          <dt>
+            <GlossaryTerm termKey="ruled_houses">Хозяин</GlossaryTerm>
+          </dt>
+          <dd>{lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}</dd>
+        </div>
+        <div>
+          <dt>
+            <GlossaryTerm termKey="graha">Грахи</GlossaryTerm>
+          </dt>
+          <dd>{placementText}</dd>
+        </div>
+      </dl>
+      <em>Ракурс домов: {referenceLabel}. Чтение: сфера дома, знак, хозяин, грахи внутри, D9 и даша.</em>
+      <small>Нажмите другой дом на карте, чтобы сменить пояснение.</small>
+    </div>
+  );
+}
+
+function StartChartNotice() {
+  return (
+    <div className="start-chart-notice" aria-label="Карта ещё не рассчитана">
+      <strong>Карта не запускается автоматически</strong>
+      <span>Это снижает нагрузку на сервер. Проверьте данные рождения и нажмите «Рассчитать карту».</span>
+      <a href="#birth-form">Перейти к данным рождения</a>
+    </div>
+  );
+}
+
+function CoreVargaMiniRail({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  termLanguage,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  termLanguage: TermLanguage;
+  onSelect: (code: string) => void;
+}) {
+  const comparisonCode = activeCode === "D1" || activeCode === "D9" ? "D10" : activeCode;
+  const items = Array.from(new Set(["D1", "D9", comparisonCode])).slice(0, 3).map((code) => {
+    const varga = code === "D1" ? null : chart?.vargas?.[code] ?? null;
+    return {
+      code,
+      available: code === "D1" ? Boolean(chart) : Boolean(varga),
+      title: code === "D1" ? "Раши" : priorityVargaContexts[code]?.scope ?? "Варга",
+      hint: priorityVargaContexts[code]?.detail ?? "ключевая карта",
+      varga,
+    };
+  });
+
+  return (
+    <div className="core-varga-mini-rail" aria-label="Быстрый визуальный контекст D1 D9 D10">
+      {items.map((item) => (
+        <button
+          type="button"
+          className={`${activeCode === item.code ? "active" : ""}${item.available ? " ready" : ""}`}
+          disabled={!item.available}
+          key={item.code}
+          onClick={() => onSelect(item.code)}
+        >
+          <div>
+            <strong>{item.code}</strong>
+            <span>{item.title}</span>
+          </div>
+          <div className="core-varga-mini-preview">
+            {item.available ? (
+              chartStyle === "south" ? (
+                <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact termLanguage={termLanguage} />
+              ) : (
+                <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact termLanguage={termLanguage} />
+              )
+            ) : (
+              <em>{item.hint}</em>
+            )}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PractitionerVargaRail({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  onSelect: (code: string) => void;
+}) {
+  const items = practitionerVargaCodes.map((code) => {
+    const varga = code === "D1" ? null : chart?.vargas?.[code] ?? null;
+    return {
+      code,
+      available: code === "D1" ? Boolean(chart) : Boolean(varga),
+      varga,
+      scope: priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга",
+      detail: priorityVargaContexts[code]?.detail ?? "ключевая D-карта",
+    };
+  });
+
+  return (
+    <div className="practitioner-varga-rail" aria-label="Ключевые D-карты для быстрого чтения">
+      <div className="practitioner-varga-rail-head">
+        <strong>D-карты рядом</strong>
+        <span>D1, D9, D10, D12, D30 и D60 видны без перехода в отдельное окно</span>
+      </div>
+      <div className="practitioner-varga-rail-list">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={activeCode === item.code ? "active" : ""}
+            disabled={!item.available}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <div>
+              <strong>{item.code}</strong>
+              <span>{item.scope}</span>
+              <small>{item.available ? item.detail : unavailableVargaLabel(item.code)}</small>
+            </div>
+            <div className="practitioner-varga-preview">
+              {item.available ? (
+                chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                )
+              ) : (
+                <em>{unavailableVargaLabel(item.code)}</em>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ShodashaMiniAtlas({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  onSelect: (code: string) => void;
+}) {
+  const readyCount = shodashaVargaCodes.filter((code) => code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])).length;
+  const items = shodashaVargaCodes.map((code) => {
+    const varga = code === "D1" ? null : chart?.vargas?.[code] ?? null;
+    return {
+      code,
+      varga,
+      available: code === "D1" ? Boolean(chart) : Boolean(varga),
+      scope: priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга",
+    };
+  });
+
+  return (
+    <div className="shodasha-mini-atlas" aria-label="Shodasha Varga: 16 основных D-карт">
+      <div className="shodasha-mini-head">
+        <div>
+          <strong>Shodasha Varga</strong>
+          <span>16 основных карт: D1-D60</span>
+        </div>
+        <em>{readyCount}/16 готово</em>
+      </div>
+      <div className="shodasha-mini-grid">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={`${activeCode === item.code ? "active" : ""}${item.available ? " ready" : ""}`}
+            disabled={!item.available}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <div>
+              <strong>{item.code}</strong>
+              <span>{item.scope}</span>
+            </div>
+            <div className="shodasha-mini-preview">
+              {item.available ? (
+                chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
+                )
+              ) : (
+                <em>нет расчёта</em>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KeyVargaComparisonPanel({
+  chart,
+  activeCode,
+  chartStyle,
+  chartReference,
+  termLanguage,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  termLanguage: TermLanguage;
+  onSelect: (code: string) => void;
+}) {
+  const fallbackCode = activeCode === "D1" || activeCode === "D9" ? "D10" : activeCode;
+  const codes = Array.from(new Set(["D1", "D9", fallbackCode])).slice(0, 3);
+  const items = codes.map((code) => {
+    const varga = code === "D1" ? null : chart?.vargas?.[code] ?? null;
+    const available = code === "D1" ? Boolean(chart) : Boolean(varga);
+    return {
+      code,
+      varga,
+      available,
+      scope: priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга",
+      detail: priorityVargaContexts[code]?.detail ?? "дополнительный слой чтения",
+    };
+  });
+
+  return (
+    <div className="key-varga-comparison" aria-label="Сравнение D1 D9 и рабочей варги">
+      <div className="key-varga-comparison-head">
+        <strong>Три опоры чтения</strong>
+        <span>D1 показывает основу, D9 силу грах, третья карта раскрывает выбранную сферу</span>
+      </div>
+      <div className="key-varga-comparison-grid">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={`${activeCode === item.code ? "active" : ""}${item.available ? " ready" : ""}`}
+            disabled={!item.available}
+            key={item.code}
+            onClick={() => onSelect(item.code)}
+          >
+            <div className="key-varga-copy">
+              <strong>{item.code}</strong>
+              <span>{item.scope}</span>
+              <small>{item.available ? item.detail : unavailableVargaLabel(item.code)}</small>
+            </div>
+            <div className="key-varga-preview">
+              {item.available ? (
+                chartStyle === "south" ? (
+                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact termLanguage={termLanguage} />
+                ) : (
+                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact termLanguage={termLanguage} />
+                )
+              ) : (
+                <em>нет расчёта</em>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1060,6 +1828,52 @@ function ReferenceChartBoard({
   );
 }
 
+function BhavaOverviewBoard({ chart, termLanguage }: { chart: BirthChart | null; termLanguage: TermLanguage }) {
+  const grahasByHouse = new Map<number, GrahaPosition[]>();
+  if (chart) {
+    for (const house of chart.houses) {
+      const rashiIndex = normalizeRashiIndex(house.rashi_index);
+      if (rashiIndex === null) continue;
+      grahasByHouse.set(
+        house.house,
+        chart.grahas.filter((graha) => normalizeRashiIndex(graha.rashi_index ?? rashiIndexFromName(graha.rashi)) === rashiIndex),
+      );
+    }
+  }
+  const cuspByHouse = new Map((chart?.house_cusps ?? []).map((cusp) => [cusp.house, cusp]));
+  const rows = Array.from({ length: 12 }, (_, index) => {
+    const house = chart?.houses.find((item) => item.house === index + 1);
+    const cusp = cuspByHouse.get(index + 1);
+    return {
+      house: index + 1,
+      rashi: house?.rashi ?? cusp?.rashi ?? "",
+      cusp,
+      grahas: grahasByHouse.get(index + 1) ?? [],
+    };
+  });
+
+  return (
+    <div className="bhava-overview-board" aria-label="Бхава и дома">
+      <div className="bhava-overview-head">
+        <div>
+          <strong>Бхава / дома</strong>
+          <span>{chart?.settings?.bhava_system === "whole_sign" ? "Whole Sign: дома совпадают со знаками" : chart?.settings?.bhava_system ?? "ожидает расчёт"}</span>
+        </div>
+        <em>{chart?.house_cusps?.length ? "куспиды доступны" : "без куспидов"}</em>
+      </div>
+      <div className="bhava-overview-grid">
+        {rows.map((row) => (
+          <div className={row.grahas.length ? "filled" : ""} key={row.house}>
+            <span>{row.house} дом</span>
+            <strong>{row.rashi ? rashiTermFromName(row.rashi, termLanguage) : "ожидает"}</strong>
+            <small>{row.cusp ? formatSignDegrees(row.cusp.longitude) : "куспид -"} · {row.grahas.length ? row.grahas.map((graha) => grahaTermLabel(graha.body, termLanguage, "short")).join(" ") : "пусто"}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NorthIndianChartPreview({
   chart,
   varga,
@@ -1071,10 +1885,29 @@ function NorthIndianChartPreview({
   chartReference?: ChartReference;
   termLanguage?: TermLanguage;
 }) {
+  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
   return (
-    <div className="chart-box" aria-label="Предпросмотр североиндийской карты">
-      <NorthIndianChartSvg chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
-    </div>
+    <>
+      <div className="chart-box" aria-label="Предпросмотр североиндийской карты">
+        <NorthIndianChartSvg
+          chart={chart}
+          varga={varga}
+          chartReference={chartReference}
+          termLanguage={termLanguage}
+          onHouseSelect={setSelectedHouse}
+          selectedHouse={selectedHouse}
+        />
+      </div>
+      {selectedHouse ? (
+        <ChartHouseExplanation
+          chart={chart}
+          varga={varga}
+          chartReference={chartReference}
+          house={selectedHouse}
+          termLanguage={termLanguage}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -1084,12 +1917,16 @@ function NorthIndianChartSvg({
   chartReference = "lagna",
   compact = false,
   termLanguage = "sanskrit",
+  onHouseSelect,
+  selectedHouse,
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartReference?: ChartReference;
   compact?: boolean;
   termLanguage?: TermLanguage;
+  onHouseSelect?: (house: number) => void;
+  selectedHouse?: number | null;
 }) {
   const houses = northIndianHouseItems(chart, varga, chartReference);
   return (
@@ -1099,14 +1936,40 @@ function NorthIndianChartSvg({
         <path d="M200 2 L398 200 L200 398 L2 200 Z" fill="none" stroke="#c99a43" strokeWidth="1" />
         {houses.map((house) => {
           const cell = northIndianHouseCells[house.house];
+          const hitPolygon = northIndianHousePolygons[house.house];
           const signLabel = rashiChartLabel(house.rashiIndex, house.rashi, termLanguage, compact);
           const textLines = northIndianCellLines(house, compact, termLanguage);
           const lineGap = compact ? (textLines.length > 4 ? 10 : 12) : (textLines.length > 5 ? 11 : 13);
           const centerY = safeSymbolCenterY(cell.centerY, textLines.length, lineGap);
           const firstLineY = firstSymbolLineY(centerY, textLines.length, lineGap);
           return (
-            <g className="chart-house-group" key={house.house}>
-              <title>{`Знак ${signLabel}: ${house.placements.map((placement) => fullPlacementTitle(placement, termLanguage)).join("; ") || "пусто"}`}</title>
+            <g
+              className={`chart-house-group${selectedHouse === house.house ? " selected" : ""}${onHouseSelect ? " interactive" : ""}`}
+              data-house={house.house}
+              key={house.house}
+              role={onHouseSelect ? "button" : undefined}
+              aria-label={onHouseSelect ? `${house.house} дом` : undefined}
+              tabIndex={onHouseSelect ? 0 : undefined}
+              onClick={onHouseSelect ? () => onHouseSelect(house.house) : undefined}
+              onKeyDown={
+                onHouseSelect
+                  ? (event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onHouseSelect(house.house);
+                      }
+                    }
+                  : undefined
+              }
+            >
+              <title>{`${house.house} дом. Знак ${signLabel}: ${house.placements.map((placement) => fullPlacementTitle(placement, termLanguage)).join("; ") || "пусто"}`}</title>
+              {onHouseSelect && hitPolygon ? (
+                <polygon
+                  className="chart-house-hit-zone"
+                  points={hitPolygon.map((point) => `${point.x},${point.y}`).join(" ")}
+                  onClick={() => onHouseSelect(house.house)}
+                />
+              ) : null}
               <text
                 className={`chart-cell-text${textLines.length > 5 ? " dense" : ""}`}
                 x={cell.centerX}
@@ -1162,10 +2025,29 @@ function SouthIndianChartPreview({
   chartReference?: ChartReference;
   termLanguage?: TermLanguage;
 }) {
+  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
   return (
-    <div className="chart-box south-chart-box" aria-label="Предпросмотр южноиндийской карты">
-      <SouthIndianChartGrid chart={chart} varga={varga} chartReference={chartReference} termLanguage={termLanguage} />
-    </div>
+    <>
+      <div className="chart-box south-chart-box" aria-label="Предпросмотр южноиндийской карты">
+        <SouthIndianChartGrid
+          chart={chart}
+          varga={varga}
+          chartReference={chartReference}
+          termLanguage={termLanguage}
+          onHouseSelect={setSelectedHouse}
+          selectedHouse={selectedHouse}
+        />
+      </div>
+      {selectedHouse ? (
+        <ChartHouseExplanation
+          chart={chart}
+          varga={varga}
+          chartReference={chartReference}
+          house={selectedHouse}
+          termLanguage={termLanguage}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -1175,12 +2057,16 @@ function SouthIndianChartGrid({
   chartReference = "lagna",
   compact = false,
   termLanguage = "sanskrit",
+  onHouseSelect,
+  selectedHouse,
 }: {
   chart: BirthChart | null;
   varga: ActiveVargaChart | null;
   chartReference?: ChartReference;
   compact?: boolean;
   termLanguage?: TermLanguage;
+  onHouseSelect?: (house: number) => void;
+  selectedHouse?: number | null;
 }) {
   const placements = activeChartPlacements(chart, varga);
   const bySign = placementsBySign(placements);
@@ -1191,12 +2077,32 @@ function SouthIndianChartGrid({
         const row = Math.floor(index / 4);
         const col = index % 4;
         const signIndex = Object.entries(southIndianSignCells).find(([, cell]) => cell.row === row && cell.col === col)?.[0];
-        if (signIndex === undefined) return <div className="south-chart-center" key={index} />;
+        if (signIndex === undefined) return <div className="south-chart-center" key={`center-${index}`} />;
         const rashiIndex = Number(signIndex);
         const house = lagnaIndex === null ? null : ((rashiIndex - lagnaIndex + 12) % 12) + 1;
         const cellPlacements = bySign.get(rashiIndex) ?? [];
+        const interactive = Boolean(onHouseSelect && house);
         return (
-          <div className="south-chart-cell" key={rashiIndex}>
+          <div
+            className={`south-chart-cell${selectedHouse === house ? " selected" : ""}${interactive ? " interactive" : ""}`}
+            data-house={house ?? undefined}
+            key={`rashi-${rashiIndex}`}
+            role={interactive ? "button" : undefined}
+            aria-label={interactive && house ? `${house} дом` : undefined}
+            tabIndex={interactive ? 0 : undefined}
+            title={house ? `${house} дом` : undefined}
+            onClick={interactive && house ? () => onHouseSelect?.(house) : undefined}
+            onKeyDown={
+              interactive && house
+                ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onHouseSelect?.(house);
+                    }
+                  }
+                : undefined
+            }
+          >
             <strong>{house ? `${house} ` : ""}{rashiChartLabel(rashiIndex, rashiNames[rashiIndex], termLanguage, compact)}</strong>
             {cellPlacements.slice(0, compact ? 4 : 7).map((placement) => (
               <span className={`${placement.dignity ? `dignity-${placement.dignity}` : ""}${placement.retrograde ? " retrograde" : ""}`} key={`${rashiIndex}-${placement.body}`}>
@@ -1464,6 +2370,8 @@ function unavailableVargaLabel(code: string) {
 
 const chartQuickSwitchCodes = vargaSnapshotCodes;
 const primaryVargaTabCodes = ["D1", "D9", "D10", "D12", "D30", "D60"] as const;
+const secondaryVargaQuickCodes = ["D2", "D3", "D4", "D7", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"] as const;
+const practitionerVargaCodes = ["D1", "D9", "D10", "D7", "D12", "D20", "D24", "D30", "D60"] as const;
 
 const priorityVargaContexts: Record<string, { scope: string; detail: string }> = {
   D1: { scope: "Основа", detail: "тело, характер, дома" },
@@ -1664,7 +2572,7 @@ function EssentialChartPairBoard({
         {items.map((item) => (
           <button
             type="button"
-            className={`essential-chart-card${activeCode === item.code ? " active" : ""}`}
+            className={`essential-chart-card${["D1", "D9", "D10"].includes(item.code) ? " primary" : ""}${activeCode === item.code ? " active" : ""}`}
             disabled={!item.available}
             key={item.code}
             onClick={() => onSelect(item.code)}
@@ -1697,30 +2605,26 @@ function PrimaryVargaTabs({
   activeGroupKey,
   workspaceTab,
   onSelect,
-  onSelectGroup,
+  onFocusGroupSelect,
   onWorkspaceTabChange,
+  onCoverageSelect,
 }: {
   chart: BirthChart | null;
   activeCode: string;
   activeGroupKey: string;
   workspaceTab: ChartWorkspaceTab;
   onSelect: (code: string) => void;
-  onSelectGroup: (groupKey: string, code: string) => void;
+  onFocusGroupSelect: (groupKey: string, code: string) => void;
   onWorkspaceTabChange: (tab: ChartWorkspaceTab) => void;
+  onCoverageSelect: () => void;
 }) {
   const coverage = vargaCoverage(chart);
-  const items = primaryVargaTabCodes.map((code) => ({
-    code,
-    available: code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]),
-    context: priorityVargaContexts[code],
-  }));
+  const focusGroups = vargaFocusGroups.filter((group) => ["core", "marriage", "career", "parents", "sadhana", "karma"].includes(group.key));
   const allItems = vargaSnapshotCodes.map((code) => ({
     code,
     available: code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]),
     label: `${code} · ${priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга"}`,
   }));
-  const quickGroups = vargaFocusGroups.filter((group) => group.key !== "jaimini");
-  const activeGroup = vargaFocusGroups.find((group) => group.key === activeGroupKey) ?? vargaFocusGroups[0];
   const activeAvailable = activeCode === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[activeCode]);
   const activeStatus = !chart
     ? "ожидает расчёт"
@@ -1728,23 +2632,10 @@ function PrimaryVargaTabs({
       ? "рассчитана"
       : unavailableVargaLabel(activeCode);
   const activeContext = priorityVargaContexts[activeCode] ?? { scope: vargaPurposeLabels[activeCode] ?? "Варга", detail: "дополнительный слой чтения" };
+  const activeFocusGroup = focusGroups.find((group) => group.key === activeGroupKey) ?? focusGroups.find((group) => group.codes.includes(activeCode)) ?? focusGroups[0];
 
   return (
     <div className="primary-varga-tabs" aria-label="Быстрый выбор главных D-карт">
-      <div className="primary-varga-tab-list">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={activeCode === item.code ? "active" : ""}
-            disabled={!item.available}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <strong>{item.code}</strong>
-            <span>{item.context.scope}</span>
-          </button>
-        ))}
-      </div>
       <label className="primary-varga-picker">
         <span>Все D-карты</span>
         <select value={activeCode} onChange={(event) => onSelect(event.target.value)} disabled={!chart}>
@@ -1755,10 +2646,15 @@ function PrimaryVargaTabs({
           ))}
         </select>
       </label>
-      <div className="primary-varga-coverage">
+      <button
+        type="button"
+        className="primary-varga-coverage"
+        onClick={onCoverageSelect}
+        aria-label="Открыть атлас всех D-карт"
+      >
         <span>{coverage.ready.length}/{coverage.total}</span>
         <strong>{coverage.pendingJaimini.length ? "Jaimini ждёт сверки" : "D-карты"}</strong>
-      </div>
+      </button>
       <div className={`primary-varga-status${activeAvailable ? " ready" : ""}`}>
         <span>{activeCode}</span>
         <strong>{activeStatus}</strong>
@@ -1767,18 +2663,18 @@ function PrimaryVargaTabs({
         <strong>{activeContext.scope}</strong>
         <span>{activeContext.detail}</span>
       </div>
-      <div className="primary-focus-tabs" aria-label="Сценарии чтения">
-        {quickGroups.map((group) => {
+      <div className="primary-focus-tabs" aria-label="Рабочий ракурс чтения карты">
+        {focusGroups.map((group) => {
           const selectedCode = availableCodeForVargaGroup(chart, group);
           return (
             <button
               type="button"
-              className={activeGroupKey === group.key ? "active" : ""}
+              className={activeFocusGroup.key === group.key ? "active" : ""}
               disabled={!selectedCode}
               key={group.key}
               onClick={() => {
                 if (!selectedCode) return;
-                onSelectGroup(group.key, selectedCode);
+                onFocusGroupSelect(group.key, selectedCode);
               }}
             >
               <strong>{group.label}</strong>
@@ -1788,9 +2684,9 @@ function PrimaryVargaTabs({
         })}
       </div>
       <div className="primary-focus-summary">
-        <strong>{activeGroup.title}</strong>
-        <span>{activeGroup.description}</span>
-        <em>{activeGroup.codes.join(" · ")}</em>
+        <strong>{activeFocusGroup.title}</strong>
+        <span>{activeFocusGroup.description}</span>
+        <em>{activeFocusGroup.codes.join(" · ")}</em>
       </div>
       <div className="primary-workspace-shortcuts" aria-label="Быстрый переход по рабочим блокам карты">
         {chartWorkspaceTabs.map((tab) => (
@@ -1809,6 +2705,101 @@ function PrimaryVargaTabs({
   );
 }
 
+function VargaCoverageSummary({
+  chart,
+  open,
+  onOpenChange,
+  onOpenAtlas,
+  detailsRef,
+}: {
+  chart: BirthChart | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpenAtlas: () => void;
+  detailsRef?: RefObject<HTMLDetailsElement | null>;
+}) {
+  const coverage = vargaCoverage(chart);
+  const readyText = coverage.ready.length ? coverage.ready.slice(0, 8).join(", ") : "после расчёта";
+  const pendingText = coverage.pendingJaimini.length
+    ? coverage.pendingJaimini.join(", ")
+    : coverage.missing.length
+      ? coverage.missing.slice(0, 5).join(", ")
+      : "нет";
+  const items = [
+    {
+      label: "Готово",
+      value: `${coverage.ready.length}/${coverage.total}`,
+      detail: readyText,
+    },
+    {
+      label: "Ключевые",
+      value: "D1 D9 D10",
+      detail: "основа, дхарма, карьера",
+    },
+    {
+      label: "Семья/род",
+      value: "D7 D12",
+      detail: "дети, родители, наследие",
+    },
+    {
+      label: coverage.pendingJaimini.length ? "Ждёт сверки" : "Ожидает",
+      value: pendingText,
+      detail: coverage.pendingJaimini.length ? "Джаимини и редкие варги" : "нет полной сетки",
+    },
+  ];
+
+  return (
+    <details
+      className="varga-coverage-summary"
+      ref={detailsRef}
+      open={open}
+      onToggle={(event) => onOpenChange(event.currentTarget.open)}
+      aria-label="Покрытие D-карт"
+    >
+      <summary className="varga-coverage-summary-head">
+        <strong>Покрытие варг</strong>
+        <span>{coverage.ready.length}/{coverage.total} готово · D1-D60</span>
+      </summary>
+      <div className="varga-coverage-summary-grid">
+        {items.map((item) => (
+          <div key={item.label}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+            <small>{item.detail}</small>
+          </div>
+        ))}
+      </div>
+      <button type="button" className="varga-coverage-atlas-button" onClick={onOpenAtlas}>Атлас D1-D60</button>
+    </details>
+  );
+}
+
+function JaiminiPendingStrip({ onOpenAtlas }: { onOpenAtlas: () => void }) {
+  const items = jaiminiVargaCodes.map((code) => ({
+    code,
+    scope: priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Jaimini",
+    detail: priorityVargaContexts[code]?.detail ?? "ждёт сверки правила",
+  }));
+
+  return (
+    <details className="jaimini-pending-strip" aria-label="D-карты Джаимини ждут сверки">
+      <summary>
+        <strong>Джаимини ждёт сверки</strong>
+        <span>D5, D6, D8 и D11 не выдаются как расчёт, пока правило не подтверждено.</span>
+      </summary>
+      <div className="jaimini-pending-list">
+        {items.map((item) => (
+          <button type="button" disabled key={item.code} title={item.detail}>
+            <strong>{item.code}</strong>
+            <span>{item.scope}</span>
+          </button>
+        ))}
+      </div>
+      <button type="button" onClick={onOpenAtlas}>Открыть атлас</button>
+    </details>
+  );
+}
+
 function PriorityVargaRibbon({
   chart,
   activeCode,
@@ -1822,7 +2813,7 @@ function PriorityVargaRibbon({
   chartReference: ChartReference;
   onSelect: (code: string) => void;
 }) {
-  const items = chartQuickSwitchCodes.map((code) => {
+  const items = practitionerVargaCodes.map((code) => {
     if (code === "D1") return { code, name: "Rashi", available: Boolean(chart), varga: null };
     const varga = chart?.vargas?.[code];
     return { code, name: varga?.name ?? "Varga", available: Boolean(varga), varga: varga ?? null };
@@ -1835,7 +2826,7 @@ function PriorityVargaRibbon({
       <div className="priority-varga-ribbon-head">
         <div>
           <strong>D-карты</strong>
-          <span>Атлас D-карт: D1-D60</span>
+          <span>Быстрый набор астролога: D1, D9, D10 и ключевые варги</span>
         </div>
         <div className="varga-coverage-pill">
           <span>{coverage.ready.length}/{coverage.total}</span>
@@ -1844,7 +2835,7 @@ function PriorityVargaRibbon({
             {coverage.pendingJaimini.length
               ? `Jaimini ждёт сверки: ${coverage.pendingJaimini.join(", ")}`
               : coverage.missing.length
-                ? `нет ${coverage.missing.slice(0, 4).join(", ")}`
+                ? `полный атлас: ${coverage.ready.length}/${coverage.total}`
                 : "все основные варги рассчитаны"}
           </small>
         </div>
@@ -2085,6 +3076,67 @@ function VargaAtlasBoard({
           </div>
         )}
       </div>
+      <VargaSummaryTable chart={chart} activeCode={activeCode} onSelect={onSelect} />
+    </div>
+  );
+}
+
+function VargaSummaryTable({
+  chart,
+  activeCode,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeCode: string;
+  onSelect: (code: string) => void;
+}) {
+  const rows = vargaSnapshotCodes.map((code) => {
+    const placements = code === "D1"
+      ? [
+          ...(chart?.ascendant ? [{ body: "Lagna", rashi: chart.ascendant.rashi }] : []),
+          ...(chart?.grahas ?? []).map((graha) => ({ body: graha.body, rashi: graha.rashi })),
+        ]
+      : chart?.vargas?.[code]?.placements ?? [];
+    const findRashi = (body: string) => placements.find((placement) => canonicalBody(placement.body) === canonicalBody(body))?.rashi ?? "";
+    const available = code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]);
+    return {
+      code,
+      available,
+      purpose: vargaPurposeLabels[code] ?? "Варга",
+      lagna: findRashi("Lagna"),
+      moon: findRashi("Chandra"),
+      sun: findRashi("Surya"),
+    };
+  });
+
+  return (
+    <div className="varga-summary-table" aria-label="Сводная таблица Shodashvarga">
+      <div className="varga-summary-head">
+        <strong>Shodashvarga таблица</strong>
+        <span>Lagna, Chandra и Surya по D-картам</span>
+      </div>
+      <div className="varga-summary-row table-head">
+        <span>D</span>
+        <span>Сфера</span>
+        <span>Lagna</span>
+        <span>Chandra</span>
+        <span>Surya</span>
+      </div>
+      {rows.map((row) => (
+        <button
+          type="button"
+          className={`varga-summary-row${activeCode === row.code ? " active" : ""}${row.available ? " ready" : ""}`}
+          disabled={!row.available}
+          key={row.code}
+          onClick={() => onSelect(row.code)}
+        >
+          <strong>{row.code}</strong>
+          <span>{row.purpose}</span>
+          <span>{row.lagna || "-"}</span>
+          <span>{row.moon || "-"}</span>
+          <span>{row.sun || "-"}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -2158,30 +3210,202 @@ function formatPeriodRange(period: DayPeriod) {
   return `${period.name} ${formatIsoTime(period.starts_at)}-${formatIsoTime(period.ends_at)}`;
 }
 
+function supportsHoverTooltips() {
+  return typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
 function GlossaryTerm({ termKey, children }: { termKey: GlossaryKey; children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement | null>(null);
+  const popoverId = useId();
   const item = jyotishGlossary[termKey];
 
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (wrapRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+      setPinned(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        setPinned(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
   return (
-    <span className="glossary-wrap">
+    <span
+      className="glossary-wrap"
+      data-open={open ? "true" : "false"}
+      ref={wrapRef}
+      onPointerEnter={() => {
+        if (supportsHoverTooltips() && !pinned) setOpen(true);
+      }}
+      onPointerLeave={() => {
+        if (supportsHoverTooltips() && !pinned) setOpen(false);
+      }}
+    >
       <button
         type="button"
         className="glossary-trigger"
+        aria-controls={popoverId}
         aria-expanded={open}
         title={item.text}
+        onFocus={() => {
+          if (!pinned) setOpen(true);
+        }}
         onClick={(event) => {
           event.stopPropagation();
-          setOpen((value) => !value);
+          const nextOpen = !open || !pinned;
+          setPinned(nextOpen);
+          setOpen(nextOpen);
         }}
       >
         {children}
       </button>
-      {open ? (
-        <span className="glossary-popover" role="note">
-          <strong>{item.label}</strong>
+      <span className="glossary-popover" id={popoverId} role="note">
+          <span className="glossary-popover-head">
+            <strong>{item.label}</strong>
+            <button
+              type="button"
+              className="glossary-close"
+              aria-label="Закрыть объяснение"
+              onClick={(event) => {
+                event.stopPropagation();
+                setOpen(false);
+                setPinned(false);
+              }}
+            >
+              ×
+            </button>
+          </span>
           <span>{item.text}</span>
+          <button
+            type="button"
+            className="help-ai-action"
+            onClick={(event) => {
+              event.stopPropagation();
+              requestAiExplanation({ title: item.label, text: item.text });
+              setOpen(false);
+              setPinned(false);
+            }}
+          >
+            Спросить AI
+          </button>
+      </span>
+    </span>
+  );
+}
+
+function CalculationValueHelp({
+  title,
+  text,
+  children,
+}: {
+  title: string;
+  text: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement | null>(null);
+  const popoverId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (wrapRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+      setPinned(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      setPinned(false);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <span
+      className="glossary-wrap calculation-value-help"
+      data-open={open ? "true" : "false"}
+      ref={wrapRef}
+      onPointerEnter={() => {
+        if (supportsHoverTooltips() && !pinned) setOpen(true);
+      }}
+      onPointerLeave={() => {
+        if (supportsHoverTooltips() && !pinned) setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        className="glossary-trigger"
+        aria-controls={popoverId}
+        aria-expanded={open}
+        title={text}
+        onFocus={() => {
+          if (!pinned) setOpen(true);
+        }}
+        onClick={(event) => {
+          event.stopPropagation();
+          const nextOpen = !open || !pinned;
+          setPinned(nextOpen);
+          setOpen(nextOpen);
+        }}
+      >
+        {children}
+      </button>
+      <span className="glossary-popover" id={popoverId} role="note">
+        <span className="glossary-popover-head">
+          <strong>{title}</strong>
+          <button
+            type="button"
+            className="glossary-close"
+            aria-label="Закрыть объяснение"
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen(false);
+              setPinned(false);
+            }}
+          >
+            ×
+          </button>
         </span>
-      ) : null}
+        <span>{text}</span>
+        <button
+          type="button"
+          className="help-ai-action"
+          onClick={(event) => {
+            event.stopPropagation();
+            requestAiExplanation({ title, text });
+            setOpen(false);
+            setPinned(false);
+          }}
+        >
+          Спросить AI
+        </button>
+      </span>
     </span>
   );
 }
@@ -2210,9 +3434,704 @@ function grahaStatusText(graha: GrahaPosition) {
   return parts.length ? parts.join(", ") : "-";
 }
 
+function topShadbalaRows(chart: BirthChart | null) {
+  const rows = [...(chart?.classical?.shadbala?.items ?? [])].sort((left, right) => right.known_total - left.known_total);
+  return {
+    strongest: rows[0] ?? null,
+    weakest: rows.at(-1) ?? null,
+  };
+}
+
+function combustGrahaLabels(chart: BirthChart | null) {
+  const sun = chart?.grahas.find((graha) => graha.body === "Surya");
+  return (
+    chart?.grahas
+      .map((graha) => ({ graha, status: combustionStatus(graha, sun) }))
+      .filter((item) => item.status.combust)
+      .map((item) => grahaTermLabel(item.graha.body, "sanskrit", "short")) ?? []
+  );
+}
+
+function currentDashaLabel(chart: BirthChart | null) {
+  const today = new Date().toISOString().slice(0, 10);
+  const period = chart?.dashas?.vimshottari?.mahadashas?.find((item) => item.starts_at <= today && item.ends_at >= today);
+  return period?.lord ? labelRu(period.lord) : "-";
+}
+
+function AstrologerPrioritySummary({ chart, termLanguage }: { chart: BirthChart | null; termLanguage: TermLanguage }) {
+  const moon = chart?.grahas.find((graha) => graha.body === "Chandra");
+  const sun = chart?.grahas.find((graha) => graha.body === "Surya");
+  const { strongest, weakest } = topShadbalaRows(chart);
+  const combust = combustGrahaLabels(chart);
+  const items = [
+    {
+      key: "lagna",
+      label: <GlossaryTerm termKey="lagna">Лагна</GlossaryTerm>,
+      value: chart?.ascendant ? `${rashiTermFromName(chart.ascendant.rashi, termLanguage)} ${formatSignDegrees(chart.ascendant.longitude)}` : "-",
+      note: chart?.ascendant ? `${chart.ascendant.nakshatra} ${chart.ascendant.pada}` : "после расчёта",
+    },
+    {
+      key: "moon",
+      label: <GlossaryTerm termKey="chandra_lagna">Луна</GlossaryTerm>,
+      value: moon ? `${rashiTermFromName(moon.rashi, termLanguage)} ${formatSignDegrees(moon.longitude)}` : "-",
+      note: moon ? `${moon.nakshatra} ${moon.pada}` : "ум, даши, тара",
+    },
+    {
+      key: "sun",
+      label: <GlossaryTerm termKey="surya_lagna">Солнце</GlossaryTerm>,
+      value: sun ? `${rashiTermFromName(sun.rashi, termLanguage)} ${formatSignDegrees(sun.longitude)}` : "-",
+      note: "атма, воля, отец, власть",
+    },
+    {
+      key: "d9-lagna",
+      label: <GlossaryTerm termKey="navamsa">D9 лагны</GlossaryTerm>,
+      value: chart?.ascendant?.navamsa ? rashiTermFromName(chart.ascendant.navamsa, termLanguage) : "-",
+      note: "тонкая сила положения",
+    },
+    {
+      key: "dasha",
+      label: <GlossaryTerm termKey="dasha">Текущая даша</GlossaryTerm>,
+      value: currentDashaLabel(chart),
+      note: "первый слой времени",
+    },
+    {
+      key: "combustion",
+      label: <GlossaryTerm termKey="combustion">Сожжение</GlossaryTerm>,
+      value: combust.length ? combust.join(", ") : "нет",
+      note: "аста по близости к Солнцу",
+    },
+    {
+      key: "shadbala-strong",
+      label: <GlossaryTerm termKey="shadbala">Шадбала max</GlossaryTerm>,
+      value: strongest ? `${grahaTermLabel(strongest.body, termLanguage, "short")} ${strongest.known_total.toFixed(1)}` : "-",
+      note: "вирупы",
+    },
+    {
+      key: "shadbala-weak",
+      label: <GlossaryTerm termKey="shadbala">Шадбала min</GlossaryTerm>,
+      value: weakest ? `${grahaTermLabel(weakest.body, termLanguage, "short")} ${weakest.known_total.toFixed(1)}` : "-",
+      note: "слабое место",
+    },
+  ];
+
+  return (
+    <div className="astrologer-priority-summary" aria-label="Приоритетная сводка для чтения карты">
+      {items.map((item) => (
+        <div key={item.key}>
+          <span>{item.label}</span>
+          <strong>{item.value}</strong>
+          <small>{item.note}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PanchangaDigest({ chart }: { chart: BirthChart | null }) {
+  const panchanga = chart?.panchanga;
+  const items = [
+    {
+      key: "tithi",
+      label: <GlossaryTerm termKey="tithi">Титхи</GlossaryTerm>,
+      value: panchanga?.tithi ? `${panchanga.tithi.paksha} ${panchanga.tithi.name}` : "-",
+    },
+    {
+      key: "vara",
+      label: <GlossaryTerm termKey="vara">Вара</GlossaryTerm>,
+      value: panchanga?.vara?.name ?? "-",
+    },
+    {
+      key: "nakshatra",
+      label: <GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm>,
+      value: panchanga?.nakshatra ? `${panchanga.nakshatra.name}${panchanga.nakshatra.pada ? ` ${panchanga.nakshatra.pada}` : ""}` : "-",
+    },
+    {
+      key: "yoga",
+      label: <GlossaryTerm termKey="panchanga_yoga">Йога</GlossaryTerm>,
+      value: panchanga?.yoga?.name ?? "-",
+    },
+    {
+      key: "karana",
+      label: <GlossaryTerm termKey="karana">Карана</GlossaryTerm>,
+      value: panchanga?.karana?.name ?? "-",
+    },
+  ];
+
+  return (
+    <div className="panchanga-digest" aria-label="Панчанга для D1">
+      <strong><GlossaryTerm termKey="panchanga">Панчанга</GlossaryTerm></strong>
+      <div>
+        {items.map((item) => (
+          <span key={item.key}>
+            <em>{item.label}</em>
+            <b>{item.value}</b>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BeginnerLearningPanel() {
+  const items: Array<{ key: string; title: ReactNode; text: string }> = [
+    {
+      key: "self",
+      title: <GlossaryTerm termKey="lagna">Лагна</GlossaryTerm>,
+      text: "старт карты: тело, характер, общий способ действовать",
+    },
+    {
+      key: "mind",
+      title: <GlossaryTerm termKey="chandra_lagna">Луна</GlossaryTerm>,
+      text: "ум, реакция, эмоциональный комфорт и даши",
+    },
+    {
+      key: "relationship",
+      title: <GlossaryTerm termKey="house_7">7 дом</GlossaryTerm>,
+      text: "партнёрство, договорённости и открытое взаимодействие",
+    },
+    {
+      key: "inner",
+      title: <GlossaryTerm termKey="house_12">12 дом</GlossaryTerm>,
+      text: "сон, расходы, уединение, близость и скрытая сторона связи",
+    },
+    {
+      key: "strength",
+      title: <GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm>,
+      text: "расчётная сила грахи; полезна как слой проверки, а не приговор",
+    },
+    {
+      key: "navamsa",
+      title: <GlossaryTerm termKey="d9">D9</GlossaryTerm>,
+      text: "зрелость положения, дхарма, брак и тонкая сила грах",
+    },
+  ];
+
+  return (
+    <div className="beginner-learning-panel" aria-label="Базовый порядок чтения карты">
+      <div>
+        <strong>Базовый порядок чтения</strong>
+        <span>D1 сначала даёт основу, D9 и силы уточняют картину.</span>
+      </div>
+      <div className="beginner-learning-grid">
+        {items.map((item) => (
+          <div key={item.key}>
+            <strong>{item.title}</strong>
+            <span>{item.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BeginnerGuidedCourse() {
+  const steps: Array<{ key: string; title: ReactNode; text: ReactNode; href: string }> = [
+    {
+      key: "map",
+      title: <>1. Найдите <GlossaryTerm termKey="lagna">лагну</GlossaryTerm></>,
+      text: <>Это старт карты: тело, характер и базовый способ действовать.</>,
+      href: "#varga-charts",
+    },
+    {
+      key: "houses",
+      title: <>2. Откройте <GlossaryTerm termKey="house">дома</GlossaryTerm></>,
+      text: <>Номера 1-12 под картой объясняют сферы жизни простым языком.</>,
+      href: "#varga-charts",
+    },
+    {
+      key: "moon",
+      title: <>3. Смотрите <GlossaryTerm termKey="chandra_lagna">Луну</GlossaryTerm></>,
+      text: <>Луна показывает ум, реакцию, комфорт и основу даш.</>,
+      href: "#varga-charts",
+    },
+    {
+      key: "table",
+      title: <>4. Проверьте <GlossaryTerm termKey="calculation_table">таблицу</GlossaryTerm></>,
+      text: <>Там видны градусы, раши, дома, накшатры, D9, сожжение и шадбала.</>,
+      href: "/?analysis=calculations#reports",
+    },
+    {
+      key: "ai",
+      title: <>5. Спросите <GlossaryTerm termKey="ai_context">AI</GlossaryTerm></>,
+      text: <>После расчёта можно задавать вопросы по карте и связанным людям.</>,
+      href: "/?analysis=guidance#reports",
+    },
+  ];
+
+  return (
+    <section className="beginner-guided-course" aria-label="Обучение основам карты">
+      <div className="beginner-guided-head">
+        <strong>Режим новичка</strong>
+        <span>Пять шагов, чтобы человек без подготовки не потерялся в карте.</span>
+      </div>
+      <div className="beginner-guided-steps">
+        {steps.map((step) => (
+          <a href={step.href} key={step.key}>
+            <strong>{step.title}</strong>
+            <span>{step.text}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BeginnerAskAiPanel() {
+  const questions = [
+    {
+      key: "rashi",
+      title: "Что такое раши?",
+      text: "Объясни простыми словами, что такое знак/раши в этой карте и почему он важен.",
+    },
+    {
+      key: "house12",
+      title: "Что значит 12 дом?",
+      text: "Объясни 12 дом в этой карте: расходы, сон, уединение, близость, скрытые темы и мокша.",
+    },
+    {
+      key: "combustion",
+      title: "Что такое сожжение?",
+      text: "Объясни, как сожжение планеты рядом с Солнцем влияет на проявление грахи в этой карте.",
+    },
+    {
+      key: "shadbala",
+      title: "Как читать шадбалу?",
+      text: "Объясни шадбалу простыми словами и покажи, как не делать вывод только по одному числу.",
+    },
+  ];
+
+  return (
+    <section className="beginner-ask-ai-panel" aria-label="Вопросы AI по базовым понятиям">
+      <div>
+        <strong><GlossaryTerm termKey="ai_context">Спросить AI по карте</GlossaryTerm></strong>
+        <span>Эти вопросы открывают разбор и передают формулировку как контекст.</span>
+      </div>
+      <div>
+        {questions.map((question) => (
+          <button type="button" key={question.key} onClick={() => requestAiExplanation(question)}>
+            {question.title}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HouseExplanationGrid() {
+  const houses = Array.from({ length: 12 }, (_, index) => index + 1);
+  return (
+    <section className="house-explanation-grid" aria-label="Быстрые объяснения домов">
+      <div className="house-explanation-head">
+        <strong><GlossaryTerm termKey="house">Дома карты</GlossaryTerm></strong>
+        <span>Нажмите номер дома: подсказка работает на телефоне и компьютере.</span>
+      </div>
+      <div className="house-explanation-list">
+        {houses.map((house) => (
+          <GlossaryTerm termKey={houseGlossaryKey(house)} key={`quick-house-${house}`}>
+            {house}
+          </GlossaryTerm>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BeginnerCalculationGuide() {
+  const items: Array<{ key: string; title: ReactNode; text: string }> = [
+    {
+      key: "graha",
+      title: <GlossaryTerm termKey="graha">Граха</GlossaryTerm>,
+      text: "какая планета или лагна сейчас читается в строке",
+    },
+    {
+      key: "rashi",
+      title: <GlossaryTerm termKey="rashi">Раши</GlossaryTerm>,
+      text: "в каком знаке стоит граха; это показывает стиль проявления",
+    },
+    {
+      key: "house",
+      title: <GlossaryTerm termKey="house">Дом</GlossaryTerm>,
+      text: "в какой сфере жизни проявится положение грахи",
+    },
+    {
+      key: "ruled",
+      title: <GlossaryTerm termKey="ruled_houses">Упр.</GlossaryTerm>,
+      text: "какие дома граха приносит с собой как хозяин знаков",
+    },
+    {
+      key: "nakshatra",
+      title: <GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm>,
+      text: "тонкая лунная стоянка; уточняет мотивацию и оттенок положения",
+    },
+    {
+      key: "d9",
+      title: <GlossaryTerm termKey="navamsa">D9</GlossaryTerm>,
+      text: "навамша показывает зрелость и внутреннюю силу положения",
+    },
+  ];
+
+  return (
+    <div className="beginner-calculation-guide" aria-label="Как читать таблицу расчётов">
+      <div>
+        <strong>Как читать таблицу расчётов</strong>
+        <span>Читайте строку слева направо: кто действует, где стоит, каким домом управляет и как это уточняется.</span>
+      </div>
+      <div>
+        {items.map((item) => (
+          <section key={item.key}>
+            <strong>{item.title}</strong>
+            <span>{item.text}</span>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BeginnerNextSteps() {
+  return (
+    <div className="beginner-next-steps" aria-label="Что делать новичку">
+      <div>
+        <strong>Что делать дальше</strong>
+        <span>Для первого знакомства достаточно трёх действий: рассчитать карту, открыть объяснения и задать вопрос.</span>
+      </div>
+      <div>
+        <a href="#birth-form">1. Данные рождения</a>
+        <a href="#varga-charts">2. Карта и дома</a>
+        <a href="#reports">3. AI-разбор</a>
+        <a href="/interactions">4. Люди рядом</a>
+      </div>
+    </div>
+  );
+}
+
+function AiAccessPolicyPanel() {
+  return (
+    <section className="ai-access-policy-panel" aria-label="Правила AI-разбора">
+      <div>
+        <strong><GlossaryTerm termKey="free_personal_ai">AI-разбор карты</GlossaryTerm></strong>
+        <span>Правило MVP: первый бесплатный разбор относится к вашей собственной карте.</span>
+      </div>
+      <div className="ai-access-policy-grid">
+        <section>
+          <strong><GlossaryTerm termKey="self_profile">Моя карта</GlossaryTerm></strong>
+          <span>можно сохранить как основную и открыть бесплатный личный AI-разбор</span>
+        </section>
+        <section>
+          <strong><GlossaryTerm termKey="saved_other_chart">Карта другого</GlossaryTerm></strong>
+          <span>можно сохранить, смотреть расчёты и использовать в совместимости/взаимодействиях</span>
+        </section>
+        <section>
+          <strong><GlossaryTerm termKey="paid_other_ai">AI по чужой карте</GlossaryTerm></strong>
+          <span>будет платным сценарием; без согласия это остаётся личной заметкой владельца аккаунта</span>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function AiRelatedContextPanel({ relationships }: { relationships: ChartProfileRelationship[] }) {
+  const visible = relationships.filter((relationship) => !["declined", "blocked"].includes(relationship.link_status)).slice(0, 4);
+  return (
+    <section className="ai-related-context-panel" aria-label="Связанные карты для AI-контекста">
+      <div className="ai-related-context-head">
+        <div>
+          <strong><GlossaryTerm termKey="ai_context">Контекст связанных карт</GlossaryTerm></strong>
+          <span>AI может учитывать выбранные карты родителей, партнёра, руководителя или другого человека вместе с ролью и сохранёнными обзорами.</span>
+        </div>
+        <a href="/interactions">Настроить</a>
+      </div>
+      {visible.length ? (
+        <div className="ai-related-context-list">
+          {visible.map((relationship) => {
+            const role = relationshipRoleDefinitions.find((item) => item.key === relationship.role);
+            return (
+              <section key={`ai-context-relationship-${relationship.id}`}>
+                <span>{role?.label ?? relationship.role}</span>
+                <strong>
+                  {relationship.profile?.display_name ?? "Карта A"} → {relationship.related_profile?.display_name ?? "Карта B"}
+                </strong>
+                <small>
+                  <GlossaryTerm termKey="relationship_status">{relationshipStatusLabel(relationship.link_status)}</GlossaryTerm>
+                  {" · "}
+                  <GlossaryTerm termKey="ai_context">карта + обзоры</GlossaryTerm>
+                </small>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        <p>
+          Связанные карты ещё не выбраны. Добавьте человека в разделе “Взаимодействия”, укажите роль и, если он зарегистрирован, отправьте запрос на подтверждение. В будущем AI будет подтягивать и сохранённые обзоры этих карт.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function MvpReadinessPanel() {
+  const items = [
+    { key: "ready-calc", state: "готово", title: "Расчёты и таблицы", text: "D1, первичная таблица астролога, варги, шадбала, аста, накшатры." },
+    { key: "ready-help", state: "готово", title: "Объяснения", text: "Дома, раши, термины, шадбала, сожжение и beginner-вопросы к AI." },
+    { key: "ready-links", state: "готово", title: "Люди и роли", text: "Личные связи, запрос зарегистрированному пользователю, согласие и статусы." },
+    { key: "next-pay", state: "дальше", title: "Оплата", text: "Платный AI-разбор чужих карт оставлен как следующий этап." },
+  ];
+  return (
+    <section className="mvp-readiness-panel" aria-label="Готовность MVP">
+      <div className="mvp-readiness-head">
+        <strong><GlossaryTerm termKey="mvp_readiness">Что можно проверять сейчас</GlossaryTerm></strong>
+        <span>Короткая карта готовности, чтобы не смешивать рабочий MVP и будущую коммерческую логику.</span>
+      </div>
+      <div className="mvp-readiness-grid">
+        {items.map((item) => (
+          <section className={item.state === "готово" ? "ready" : "next"} key={item.key}>
+            <span>{item.state}</span>
+            <strong>{item.title}</strong>
+            <small>{item.text}</small>
+          </section>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CalculationReadingOrder({ isD1, chartMode }: { isD1: boolean; chartMode: string }) {
+  const items: Array<{ key: string; title: ReactNode; text: ReactNode }> = isD1
+    ? [
+        {
+          key: "placement",
+          title: <GlossaryTerm termKey="graha">1. Граха</GlossaryTerm>,
+          text: (
+            <>
+              кто действует, в каком <GlossaryTerm termKey="rashi">раши</GlossaryTerm> и <GlossaryTerm termKey="house">доме</GlossaryTerm>
+            </>
+          ),
+        },
+        {
+          key: "ownership",
+          title: <GlossaryTerm termKey="ruled_houses">2. Управление</GlossaryTerm>,
+          text: <>какие дома граха приносит в место своего положения</>,
+        },
+        {
+          key: "subtle",
+          title: <GlossaryTerm termKey="nakshatra">3. Накшатра</GlossaryTerm>,
+          text: (
+            <>
+              уточнение через <GlossaryTerm termKey="pada">паду</GlossaryTerm> и <GlossaryTerm termKey="navamsa">D9</GlossaryTerm>
+            </>
+          ),
+        },
+        {
+          key: "condition",
+          title: <GlossaryTerm termKey="dignity">4. Состояние</GlossaryTerm>,
+          text: (
+            <>
+              достоинство, <GlossaryTerm termKey="combustion">аста</GlossaryTerm> и <GlossaryTerm termKey="shadbala">шадбала</GlossaryTerm>
+            </>
+          ),
+        },
+      ]
+    : [
+        {
+          key: "varga-point",
+          title: <GlossaryTerm termKey="varga">1. Варга {chartMode}</GlossaryTerm>,
+          text: <>сначала проверяется, в какой знак попала каждая точка</>,
+        },
+        {
+          key: "d1-anchor",
+          title: <GlossaryTerm termKey="d1">2. Сравнение с D1</GlossaryTerm>,
+          text: <>дробная карта читается вместе с основной картой, а не отдельно</>,
+        },
+        {
+          key: "condition",
+          title: <GlossaryTerm termKey="dignity">3. Состояние</GlossaryTerm>,
+          text: <>сила положения уточняется через достоинство и поддержку D1</>,
+        },
+      ];
+
+  return (
+    <div className="calculation-reading-order" aria-label="Порядок чтения таблицы расчётов">
+      <strong>Что смотреть первым</strong>
+      <div>
+        {items.map((item) => (
+          <section key={item.key}>
+            <span>{item.title}</span>
+            <small>{item.text}</small>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CalculationTableHelp({ isD1 }: { isD1: boolean }) {
+  if (!isD1) {
+    return (
+      <div className="calculation-table-help" aria-label="Подсказка к таблице варги">
+        <section>
+          <strong><GlossaryTerm termKey="varga">Варга</GlossaryTerm></strong>
+          <span>Сначала сравните знак точки в этой варге с её положением в D1.</span>
+        </section>
+        <section>
+          <strong><GlossaryTerm termKey="dignity">Статус</GlossaryTerm></strong>
+          <span>Достоинство в варге уточняет качество проявления темы, но не заменяет D1.</span>
+        </section>
+      </div>
+    );
+  }
+
+  const items: Array<{ key: string; title: ReactNode; text: ReactNode }> = [
+    {
+      key: "where",
+      title: <GlossaryTerm termKey="house">Дом</GlossaryTerm>,
+      text: <>сфера жизни, где граха проявляет себя</>,
+    },
+    {
+      key: "owner",
+      title: <GlossaryTerm termKey="ruled_houses">Упр.</GlossaryTerm>,
+      text: <>какие темы граха приносит в этот дом</>,
+    },
+    {
+      key: "condition",
+      title: <GlossaryTerm termKey="graha_condition">Статус</GlossaryTerm>,
+      text: <>ретроградность, достоинство, аста и сила</>,
+    },
+    {
+      key: "strength",
+      title: <GlossaryTerm termKey="shadbala_score">Шадбала</GlossaryTerm>,
+      text: <>вирупы: сравнивайте относительно других грах</>,
+    },
+  ];
+
+  return (
+    <div className="calculation-table-help" aria-label="Подсказка к таблице D1">
+      <strong><GlossaryTerm termKey="calculation_table">Ключ к таблице</GlossaryTerm></strong>
+      {items.map((item) => (
+        <section key={item.key}>
+          <strong>{item.title}</strong>
+          <span>{item.text}</span>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function RashiValue({
+  name,
+  index,
+  termLanguage,
+  compact = false,
+}: {
+  name: string | null | undefined;
+  index?: number | null;
+  termLanguage: TermLanguage;
+  compact?: boolean;
+}) {
+  return (
+    <GlossaryTerm termKey={rashiGlossaryKey(normalizeRashiIndex(index), name)}>
+      {rashiTermLabel(normalizeRashiIndex(index), name, termLanguage, compact)}
+    </GlossaryTerm>
+  );
+}
+
+function NakshatraValue({ name, pada, subject }: { name: string | null | undefined; pada?: number | null; subject?: string }) {
+  if (!name) return <>-</>;
+  const title = subject ? `${name} ${pada ? pada : ""}: ${subject}`.trim() : `${name}${pada ? ` ${pada}` : ""}`;
+  const text = subject
+    ? `${subject} находится в накшатре ${name}${pada ? `, пада ${pada}` : ""}. Накшатра уточняет психологический и событийный слой положения.`
+    : `Накшатра ${name}${pada ? `, пада ${pada}` : ""}. Пада уточняет навамшу и делает положение точнее.`;
+  return (
+    <CalculationValueHelp title={title} text={text}>
+      {name}
+      {pada ? ` ${pada}` : ""}
+    </CalculationValueHelp>
+  );
+}
+
+const vimshottariNakshatraLords = ["Ketu", "Shukra", "Surya", "Chandra", "Mangala", "Rahu", "Guru", "Shani", "Budha"] as const;
+
+function nakshatraLordByIndex(index: number | null | undefined) {
+  if (index === null || index === undefined || !Number.isFinite(index)) return null;
+  const normalized = Math.trunc(index);
+  if (normalized < 0 || normalized > 26) return null;
+  return vimshottariNakshatraLords[normalized % vimshottariNakshatraLords.length] ?? null;
+}
+
+function NakshatraLordValue({
+  index,
+  name,
+  subject,
+  termLanguage,
+}: {
+  index: number | null | undefined;
+  name: string | null | undefined;
+  subject: string;
+  termLanguage: TermLanguage;
+}) {
+  const lord = nakshatraLordByIndex(index);
+  if (!lord) return <>-</>;
+  const lordLabel = grahaTermLabel(lord, termLanguage);
+  return (
+    <CalculationValueHelp
+      title={`Управитель накшатры: ${subject}`}
+      text={`${subject}: накшатра ${name || "-"} управляется грахой ${lordLabel}. Этот управитель связывает положение с дашами и тонким способом проявления результата.`}
+    >
+      {lordLabel}
+    </CalculationValueHelp>
+  );
+}
+
+function GrahaStatusValue({ graha }: { graha: GrahaPosition }) {
+  const dignity = grahaDignity(graha);
+  const retrograde = isRetrogradeGraha(graha);
+  if (!retrograde && !dignity) return <>-</>;
+  return (
+    <>
+      {retrograde ? <GlossaryTerm termKey="retrograde">ретроградная</GlossaryTerm> : null}
+      {retrograde && dignity ? ", " : null}
+      {dignity ? <GlossaryTerm termKey={dignity}>{dignityText(dignity)}</GlossaryTerm> : null}
+    </>
+  );
+}
+
+function shadbalaRowForGraha(chart: BirthChart, body: string) {
+  return chart.classical?.shadbala?.items?.find((item) => canonicalBody(item.body) === canonicalBody(body));
+}
+
+function shadbalaValueForGraha(chart: BirthChart, body: string) {
+  const row = shadbalaRowForGraha(chart, body);
+  if (!row) return "-";
+  return `${row.known_total.toFixed(1)}`;
+}
+
+function LongitudeValue({ label, longitude }: { label: string; longitude: number }) {
+  return (
+    <CalculationValueHelp
+      title={`Долгота: ${label}`}
+      text={`${label}: ${formatDegrees(longitude)} абсолютной сидерической долготы. По этому числу считаются знак, накшатра, пада, D9 и остальные варги.`}
+    >
+      {formatDegrees(longitude)}
+    </CalculationValueHelp>
+  );
+}
+
+function ShadbalaValue({ chart, body, label }: { chart: BirthChart; body: string; label: string }) {
+  const row = shadbalaRowForGraha(chart, body);
+  const value = row ? `${row.known_total.toFixed(1)}` : "-";
+  const detail = row
+    ? `Шадбала ${label}: ${value} вируп. Компоненты: Sthana ${row.components.sthana ?? 0}, Dig ${row.components.dig}, Kala ${row.components.kala ?? 0}, Chesta ${row.components.chesta ?? 0}, Naisargika ${row.components.naisargika}, Drik ${row.components.drik ?? 0}.`
+    : `Для ${label} шадбала в текущем расчёте ещё не найдена.`;
+  return (
+    <CalculationValueHelp title={`Шадбала: ${label}`} text={detail}>
+      {value}
+    </CalculationValueHelp>
+  );
+}
+
 function GrahaTable({ chart, termLanguage }: { chart: BirthChart | null; termLanguage: TermLanguage }) {
   const grahas = chart?.grahas ?? [];
   const sun = grahas.find((graha) => graha.body === "Surya");
+  const lagnaIndex = normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
   if (!chart || grahas.length === 0) {
     return (
       <div className="readiness-panel">
@@ -2225,43 +4144,216 @@ function GrahaTable({ chart, termLanguage }: { chart: BirthChart | null; termLan
   return (
     <div className="planet-table graha-table">
       <div className="table-row table-head">
-        <span>Граха</span>
-        <span>Долгота</span>
-        <span>Раши</span>
-        <span><GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="graha">Граха</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="longitude">Долгота</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="rashi">Раши</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="house">Дом</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="ruled_houses">Упр.</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm> / <GlossaryTerm termKey="pada">пада</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="nakshatra_lord">Упр. накш.</GlossaryTerm></span>
         <span><GlossaryTerm termKey="dignity">Статус</GlossaryTerm></span>
         <span><GlossaryTerm termKey="combustion">Аста</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm></span>
         <span><GlossaryTerm termKey="navamsa">D9</GlossaryTerm></span>
       </div>
       {chart.ascendant ? (
         <div className="table-row lagna-row" key="ascendant">
-          <strong>{grahaTermLabel("Lagna", termLanguage)}</strong>
-          <span>{formatDegrees(chart.ascendant.longitude)}</span>
-          <span>{rashiTermFromName(chart.ascendant.rashi, termLanguage)}</span>
+          <strong><GlossaryTerm termKey="lagna">{grahaTermLabel("Lagna", termLanguage)}</GlossaryTerm></strong>
+          <span><LongitudeValue label={grahaTermLabel("Lagna", termLanguage)} longitude={chart.ascendant.longitude} /></span>
           <span>
-            {chart.ascendant.nakshatra} {chart.ascendant.pada}
+            <RashiValue name={chart.ascendant.rashi} index={chart.ascendant.rashi_index} termLanguage={termLanguage} />
+          </span>
+          <span><GlossaryTerm termKey="house_1">1</GlossaryTerm></span>
+          <span>-</span>
+          <span>
+            <NakshatraValue name={chart.ascendant.nakshatra} pada={chart.ascendant.pada} subject={grahaTermLabel("Lagna", termLanguage)} />
+          </span>
+          <span>
+            <NakshatraLordValue
+              index={chart.ascendant.nakshatra_index}
+              name={chart.ascendant.nakshatra}
+              subject={grahaTermLabel("Lagna", termLanguage)}
+              termLanguage={termLanguage}
+            />
           </span>
           <span className="graha-status-text">-</span>
           <span className="combustion-badge">-</span>
-          <span>{rashiTermFromName(chart.ascendant.navamsa, termLanguage)}</span>
+          <span className="shadbala-cell">-</span>
+          <span>
+            <RashiValue name={chart.ascendant.navamsa} termLanguage={termLanguage} />
+          </span>
         </div>
       ) : null}
-      {grahas.map((graha) => (
-        <div className="table-row" key={graha.body}>
-          <strong>{grahaTermLabel(graha.body, termLanguage)}</strong>
-          <span>{formatDegrees(graha.longitude)}</span>
-          <span>{rashiTermFromName(graha.rashi, termLanguage)}</span>
-          <span>
-            {graha.nakshatra} {graha.pada}
-          </span>
-          <span className="graha-status-text">{grahaStatusText(graha)}</span>
-          <span className={combustionStatus(graha, sun).combust ? "combustion-badge active" : "combustion-badge"}>
-            {combustionStatus(graha, sun).label}
-          </span>
-          <span>{rashiTermFromName(graha.navamsa, termLanguage)}</span>
-        </div>
-      ))}
+      {grahas.map((graha) => {
+        const rashiIndex = normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi);
+        const house = houseFromRashiIndex(rashiIndex, lagnaIndex);
+        const ruledHouses = ruledHousesForGraha(graha.body, lagnaIndex);
+        const combustion = combustionStatus(graha, sun);
+        const grahaLabel = grahaTermLabel(graha.body, termLanguage);
+        return (
+          <div className="table-row" key={graha.body}>
+            <strong><GlossaryTerm termKey="graha">{grahaLabel}</GlossaryTerm></strong>
+            <span><LongitudeValue label={grahaLabel} longitude={graha.longitude} /></span>
+            <span>
+              <RashiValue name={graha.rashi} index={graha.rashi_index} termLanguage={termLanguage} />
+            </span>
+            <span>{house ? <GlossaryTerm termKey={houseGlossaryKey(house)}>{house}</GlossaryTerm> : "-"}</span>
+            <span>{ruledHouses.length ? <HouseGlossaryList houses={ruledHouses} /> : "-"}</span>
+            <span>
+              <NakshatraValue name={graha.nakshatra} pada={graha.pada} subject={grahaLabel} />
+            </span>
+            <span>
+              <NakshatraLordValue index={graha.nakshatra_index} name={graha.nakshatra} subject={grahaLabel} termLanguage={termLanguage} />
+            </span>
+            <span className="graha-status-text"><GrahaStatusValue graha={graha} /></span>
+            <span className={combustion.combust ? "combustion-badge active" : "combustion-badge"}>
+              <CalculationValueHelp
+                title={`Аста: ${grahaLabel}`}
+                text={
+                  combustion.distance === null
+                    ? `${grahaLabel}: сожжение не применяется или нет данных для сравнения с Солнцем.`
+                    : `${grahaLabel}: расстояние от Солнца ${combustion.distance.toFixed(1)}°. Порог сожжения: ${combustion.threshold ?? "-"}°.`
+                }
+              >
+                {combustion.label}
+              </CalculationValueHelp>
+            </span>
+            <span className="shadbala-cell">
+              <ShadbalaValue chart={chart} body={graha.body} label={grahaLabel} />
+            </span>
+            <span>
+              <RashiValue name={graha.navamsa} index={graha.navamsa_index} termLanguage={termLanguage} />
+            </span>
+          </div>
+        );
+      })}
     </div>
+  );
+}
+
+function FirstReadCalculationPanel({
+  chart,
+  termLanguage,
+  onOpenCalculations,
+}: {
+  chart: BirthChart | null;
+  termLanguage: TermLanguage;
+  onOpenCalculations: () => void;
+}) {
+  const moon = chart?.grahas.find((graha) => graha.body === "Chandra");
+  const sun = chart?.grahas.find((graha) => graha.body === "Surya");
+  const lagnaIndex = normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
+  const shadbalaRows = [...(chart?.classical?.shadbala?.items ?? [])].sort((left, right) => right.known_total - left.known_total);
+  const combust = combustGrahaLabels(chart);
+  const keyRows = [
+    {
+      key: "lagna",
+      label: <GlossaryTerm termKey="lagna">Лагна</GlossaryTerm>,
+      rashi: chart?.ascendant ? <RashiValue name={chart.ascendant.rashi} index={chart.ascendant.rashi_index} termLanguage={termLanguage} compact /> : "-",
+      degree: chart?.ascendant ? formatSignDegrees(chart.ascendant.longitude) : "-",
+      nakshatra: chart?.ascendant ? <NakshatraValue name={chart.ascendant.nakshatra} pada={chart.ascendant.pada} subject="Лагна" /> : "-",
+      house: <GlossaryTerm termKey="house_1">1</GlossaryTerm>,
+      note: "старт чтения",
+    },
+    {
+      key: "moon",
+      label: <GlossaryTerm termKey="chandra_lagna">{grahaTermLabel("Chandra", termLanguage)}</GlossaryTerm>,
+      rashi: moon ? <RashiValue name={moon.rashi} index={moon.rashi_index} termLanguage={termLanguage} compact /> : "-",
+      degree: moon ? formatSignDegrees(moon.longitude) : "-",
+      nakshatra: moon ? <NakshatraValue name={moon.nakshatra} pada={moon.pada} subject={grahaTermLabel("Chandra", termLanguage)} /> : "-",
+      house: moon ? <GlossaryTerm termKey={houseGlossaryKey(houseFromRashiIndex(normalizeRashiIndex(moon.rashi_index) ?? rashiIndexFromName(moon.rashi), lagnaIndex))}>{houseFromRashiIndex(normalizeRashiIndex(moon.rashi_index) ?? rashiIndexFromName(moon.rashi), lagnaIndex) ?? "-"}</GlossaryTerm> : "-",
+      note: "ум и даши",
+    },
+    {
+      key: "sun",
+      label: <GlossaryTerm termKey="surya_lagna">{grahaTermLabel("Surya", termLanguage)}</GlossaryTerm>,
+      rashi: sun ? <RashiValue name={sun.rashi} index={sun.rashi_index} termLanguage={termLanguage} compact /> : "-",
+      degree: sun ? formatSignDegrees(sun.longitude) : "-",
+      nakshatra: sun ? <NakshatraValue name={sun.nakshatra} pada={sun.pada} subject={grahaTermLabel("Surya", termLanguage)} /> : "-",
+      house: sun ? <GlossaryTerm termKey={houseGlossaryKey(houseFromRashiIndex(normalizeRashiIndex(sun.rashi_index) ?? rashiIndexFromName(sun.rashi), lagnaIndex))}>{houseFromRashiIndex(normalizeRashiIndex(sun.rashi_index) ?? rashiIndexFromName(sun.rashi), lagnaIndex) ?? "-"}</GlossaryTerm> : "-",
+      note: "атма и власть",
+    },
+  ];
+  const summaryRows = [
+    {
+      key: "panchanga",
+      label: <GlossaryTerm termKey="panchanga">Панчанга</GlossaryTerm>,
+      value: chart?.panchanga.tithi ? `${chart.panchanga.tithi.paksha} ${chart.panchanga.tithi.name}` : "-",
+      detail: chart?.panchanga.nakshatra ? `${chart.panchanga.nakshatra.name}${chart.panchanga.nakshatra.pada ? ` ${chart.panchanga.nakshatra.pada}` : ""}` : "накшатра ожидает",
+    },
+    {
+      key: "dasha",
+      label: <GlossaryTerm termKey="dasha">Даша сейчас</GlossaryTerm>,
+      value: currentDashaLabel(chart),
+      detail: "первый слой времени",
+    },
+    {
+      key: "combustion",
+      label: <GlossaryTerm termKey="combustion">Сожжение</GlossaryTerm>,
+      value: combust.length ? combust.join(", ") : "нет",
+      detail: "проверка аста",
+    },
+    {
+      key: "shadbala",
+      label: <GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm>,
+      value: shadbalaRows[0] ? `${grahaTermLabel(shadbalaRows[0].body, termLanguage, "short")} ${shadbalaRows[0].known_total.toFixed(1)}` : "-",
+      detail: shadbalaRows.at(-1)
+        ? `min ${grahaTermLabel(shadbalaRows.at(-1)?.body ?? "", termLanguage, "short")} ${shadbalaRows.at(-1)?.known_total.toFixed(1)}`
+        : "ожидает силу",
+    },
+  ];
+
+  return (
+    <section className="first-read-calculation-panel" aria-label="Первичная таблица расчётов">
+      <div className="first-read-head">
+        <div>
+          <strong><GlossaryTerm termKey="calculation_table">Первый взгляд астролога</GlossaryTerm></strong>
+          <span>Лагна, Луна, Солнце, панчанга, сила и состояния до длинного текста.</span>
+        </div>
+        <a
+          href="/?analysis=calculations#reports"
+          onClick={(event) => {
+            event.preventDefault();
+            window.history.pushState(null, "", "/?analysis=calculations#reports");
+            onOpenCalculations();
+            document.getElementById("reports")?.scrollIntoView({ block: "start" });
+          }}
+        >
+          вся таблица
+        </a>
+      </div>
+      <div className="first-read-grid">
+        <div className="first-read-key-table">
+          <div className="first-read-row table-head">
+            <span>Точка</span>
+            <span><GlossaryTerm termKey="rashi">Раши</GlossaryTerm></span>
+            <span><GlossaryTerm termKey="longitude">Градус</GlossaryTerm></span>
+            <span><GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm></span>
+            <span><GlossaryTerm termKey="house">Дом</GlossaryTerm></span>
+            <span>Зачем</span>
+          </div>
+          {keyRows.map((row) => (
+            <div className="first-read-row" key={row.key}>
+              <strong>{row.label}</strong>
+              <span>{row.rashi}</span>
+              <span>{row.degree}</span>
+              <span>{row.nakshatra}</span>
+              <span>{row.house}</span>
+              <small>{row.note}</small>
+            </div>
+          ))}
+        </div>
+        <div className="first-read-summary">
+          {summaryRows.map((row) => (
+            <div key={row.key}>
+              <span>{row.label}</span>
+              <strong>{row.value}</strong>
+              <small>{row.detail}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -2344,6 +4436,167 @@ function PlanetStrengthDigest({ chart }: { chart: BirthChart | null }) {
   );
 }
 
+function AstrologerWorkflowPanel({
+  chart,
+  activeTab,
+  onSelect,
+}: {
+  chart: BirthChart | null;
+  activeTab: AnalysisTab;
+  onSelect: (tab: AnalysisTab) => void;
+}) {
+  const items: Array<{
+    tab: AnalysisTab;
+    label: string;
+    value: string;
+    hint: string;
+    ready: boolean;
+  }> = [
+    {
+      tab: "calculations",
+      label: "Планеты",
+      value: chart ? `${chart.grahas.length} грах` : "нет карты",
+      hint: "градусы, раши, накшатры, D9",
+      ready: Boolean(chart),
+    },
+    {
+      tab: "yogas",
+      label: "Силы",
+      value: chart?.classical?.shadbala?.items?.length ? "шадбала" : "ожидает",
+      hint: "шадбала, аштакаварга, йоги",
+      ready: Boolean(chart?.classical),
+    },
+    {
+      tab: "timeline",
+      label: "Даши",
+      value: chart?.dashas?.vimshottari?.mahadashas?.length ? "Vimshottari" : "ожидает",
+      hint: "периоды и подпериоды",
+      ready: Boolean(chart?.dashas?.vimshottari?.mahadashas?.length),
+    },
+    {
+      tab: "transits",
+      label: "Сейчас",
+      value: chart ? "гочара" : "нет карты",
+      hint: "транзиты текущих дней",
+      ready: Boolean(chart),
+    },
+    {
+      tab: "accuracy",
+      label: "Точность",
+      value: "JHora / PL",
+      hint: "сверка расчётов",
+      ready: Boolean(chart),
+    },
+    {
+      tab: "guidance",
+      label: "AI-разбор",
+      value: "Codex CLI",
+      hint: "история и вопросы",
+      ready: Boolean(chart),
+    },
+  ];
+
+  return (
+    <div className="astrologer-workflow-panel" aria-label="Рабочие разделы астролога">
+      <div className="astrologer-workflow-head">
+        <strong>Рабочий порядок</strong>
+        <span>как в Jyotish-сервисах: карта → силы → периоды → текущие дни → разбор</span>
+      </div>
+      <div className="astrologer-workflow-grid">
+        {items.map((item) => (
+          <button
+            type="button"
+            className={`${activeTab === item.tab ? "active" : ""}${item.ready ? " ready" : ""}`}
+            disabled={!item.ready}
+            key={item.tab}
+            onClick={() => onSelect(item.tab)}
+          >
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+            <small>{item.hint}</small>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReadingFlowStrip({
+  chart,
+  chartMode,
+  workspaceTab,
+  activeAnalysisTab,
+  onOpenEssentials,
+  onOpenVargas,
+  onOpenCalculations,
+  onOpenGuidance,
+}: {
+  chart: BirthChart | null;
+  chartMode: string;
+  workspaceTab: ChartWorkspaceTab;
+  activeAnalysisTab: AnalysisTab;
+  onOpenEssentials: () => void;
+  onOpenVargas: () => void;
+  onOpenCalculations: () => void;
+  onOpenGuidance: () => void;
+}) {
+  const items = [
+    {
+      label: "Карта",
+      value: chart ? `${chartMode} открыт` : "нужен расчёт",
+      hint: "основная схема",
+      active: workspaceTab === "essentials",
+      ready: Boolean(chart),
+      action: onOpenEssentials,
+    },
+    {
+      label: "D-карты",
+      value: chart ? `${vargaCoverage(chart).ready.length}/${vargaSnapshotCodes.length}` : "после расчёта",
+      hint: "D1-D60 и фокусы",
+      active: workspaceTab === "vargas",
+      ready: Boolean(chart),
+      action: onOpenVargas,
+    },
+    {
+      label: "Расчёты",
+      value: chart ? "таблицы готовы" : "ожидает",
+      hint: "грахи, дома, накшатры",
+      active: activeAnalysisTab === "calculations",
+      ready: Boolean(chart),
+      action: onOpenCalculations,
+    },
+    {
+      label: "AI",
+      value: chart ? "разбор и вопросы" : "после карты",
+      hint: "Codex CLI",
+      active: activeAnalysisTab === "guidance",
+      ready: Boolean(chart),
+      action: onOpenGuidance,
+    },
+  ];
+
+  return (
+    <div className="reading-flow-strip" aria-label="Порядок работы с картой">
+      {items.map((item, index) => (
+        <button
+          type="button"
+          className={`${item.active ? "active" : ""}${item.ready ? " ready" : ""}`}
+          disabled={!item.ready && index > 0}
+          key={item.label}
+          onClick={item.action}
+        >
+          <span>{index + 1}</span>
+          <div>
+            <strong>{item.label}</strong>
+            <em>{item.value}</em>
+            <small>{item.hint}</small>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const combustionThresholds: Record<string, number> = {
   Chandra: 12,
   Mangala: 17,
@@ -2355,14 +4608,16 @@ const combustionThresholds: Record<string, number> = {
 
 function combustionStatus(graha: GrahaPosition, sun: GrahaPosition | undefined) {
   if (!sun || graha.body === "Surya" || graha.body === "Rahu" || graha.body === "Ketu") {
-    return { combust: false, label: "—" };
+    return { combust: false, label: "—", distance: null, threshold: null };
   }
   const threshold = combustionThresholds[graha.body];
-  if (!threshold) return { combust: false, label: "—" };
+  if (!threshold) return { combust: false, label: "—", distance: null, threshold: null };
   const distance = angularDistance(graha.longitude, sun.longitude);
   return {
     combust: distance <= threshold,
     label: distance <= threshold ? `Аста ${distance.toFixed(1)}°` : `${distance.toFixed(1)}°`,
+    distance,
+    threshold,
   };
 }
 
@@ -2392,8 +4647,8 @@ function VargaTable({ chart, placements, code, termLanguage }: { chart: BirthCha
   return (
     <div className="planet-table compact-table">
       <div className="table-row table-head">
-        <span>Точка</span>
-        <span>Раши {code}</span>
+        <span><GlossaryTerm termKey="graha">Точка</GlossaryTerm></span>
+        <span><GlossaryTerm termKey="rashi">Раши</GlossaryTerm> {code}</span>
         <span>D1</span>
         <span><GlossaryTerm termKey="dignity">Статус</GlossaryTerm></span>
       </div>
@@ -2443,10 +4698,16 @@ function ActiveCalculationTable({
       </div>
       {!isD1 && selectedVarga?.method ? (
         <div className="active-varga-method">
-          <strong>Метод</strong>
+          <strong>
+            <GlossaryTerm termKey="varga_method">Метод</GlossaryTerm>
+          </strong>
           <span>{selectedVarga.method}</span>
         </div>
       ) : null}
+      <CalculationReadingOrder isD1={isD1} chartMode={chartMode} />
+      <CalculationTableHelp isD1={isD1} />
+      {isD1 ? <AstrologerPrioritySummary chart={chart} termLanguage={termLanguage} /> : null}
+      {isD1 ? <PanchangaDigest chart={chart} /> : null}
       {isD1 ? (
         <GrahaTable chart={chart} termLanguage={termLanguage} />
       ) : (
@@ -2610,6 +4871,7 @@ function DetailedCalculationsPanel({
   activeCode,
   chartStyle,
   chartReference,
+  termLanguage,
   onSelectVarga,
 }: {
   summary: PersonSummary | null;
@@ -2617,10 +4879,12 @@ function DetailedCalculationsPanel({
   activeCode: string;
   chartStyle: "north" | "south";
   chartReference: ChartReference;
+  termLanguage: TermLanguage;
   onSelectVarga: (code: string) => void;
 }) {
   const detailedPositions = summary?.detailed_positions ?? [];
   const houses = summary?.houses ?? [];
+  const isD1 = activeCode === "D1";
 
   return (
     <section className="panel calculation-detail-panel">
@@ -2637,6 +4901,26 @@ function DetailedCalculationsPanel({
           chartReference={chartReference}
           onSelect={onSelectVarga}
         />
+        {isD1 ? (
+          <div className="calculation-d1-ledger" aria-label="Главная таблица расчётов D1">
+            <div className="calculation-d1-ledger-head">
+              <div>
+                <h3>Главная таблица D1</h3>
+                <span>Первый взгляд астролога: лагна, Луна, даша, сожжение, шадбала и положения грах.</span>
+              </div>
+              <div className="active-calculation-tags">
+                <GlossaryTerm termKey="lagna">Лагна</GlossaryTerm>
+                <GlossaryTerm termKey="house">Дома</GlossaryTerm>
+                <GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm>
+              </div>
+            </div>
+            <AstrologerPrioritySummary chart={chart} termLanguage={termLanguage} />
+            <PanchangaDigest chart={chart} />
+            <CalculationReadingOrder isD1 chartMode="D1" />
+            <CalculationTableHelp isD1 />
+            <GrahaTable chart={chart} termLanguage={termLanguage} />
+          </div>
+        ) : null}
         {detailedPositions.length ? (
           <div className="detailed-positions">
             <div>
@@ -2645,22 +4929,19 @@ function DetailedCalculationsPanel({
             </div>
             <div className="detailed-table">
               <div className="detailed-row detailed-head">
-                <span>Граха</span>
-                <span>Карака</span>
-                <span>Градусы</span>
-                <span>Раши</span>
-                <span>D9</span>
-                <span>Накшатра</span>
-                <span>Дом</span>
-                <span>Упр.</span>
-                <span>Сила</span>
+                <span><GlossaryTerm termKey="graha">Граха</GlossaryTerm></span>
+                <span><GlossaryTerm termKey="karaka">Карака</GlossaryTerm></span>
+                <span><GlossaryTerm termKey="longitude">Градусы</GlossaryTerm></span>
+                <span><GlossaryTerm termKey="rashi">Раши</GlossaryTerm></span>
+                <span><GlossaryTerm termKey="navamsa">D9</GlossaryTerm></span>
+                <span><GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm> / <GlossaryTerm termKey="pada">пада</GlossaryTerm></span>
+                <span><GlossaryTerm termKey="house">Дом</GlossaryTerm></span>
+                <span><GlossaryTerm termKey="ruled_houses">Упр.</GlossaryTerm></span>
+                <span><GlossaryTerm termKey="dignity">Сила</GlossaryTerm></span>
               </div>
               {detailedPositions.map((row) => (
                 <div className="detailed-row" key={row.body}>
-                  <strong>
-                    {labelRu(row.body)}
-                    {row.retrograde ? " R" : ""}
-                  </strong>
+                  <strong>{labelRu(row.body)}</strong>
                   <span>{row.chara_karaka ?? "-"}</span>
                   <span>{row.sign_degrees_dms}</span>
                   <span>{row.rashi}</span>
@@ -2668,9 +4949,13 @@ function DetailedCalculationsPanel({
                   <span>
                     {row.nakshatra} {row.pada ?? ""}
                   </span>
-                  <span>{row.house ?? "-"}</span>
-                  <span>{row.ruled_houses.length ? row.ruled_houses.join(", ") : "-"}</span>
-                  <span>{row.dignity}</span>
+                  <span>
+                    {row.house ? <GlossaryTerm termKey={houseGlossaryKey(row.house)}>{row.house}</GlossaryTerm> : "-"}
+                  </span>
+                  <span>
+                    <HouseGlossaryList houses={row.ruled_houses} />
+                  </span>
+                  <span>{[row.dignity, row.retrograde ? "ретроградная" : ""].filter(Boolean).join(", ") || "-"}</span>
                 </div>
               ))}
             </div>
@@ -2685,7 +4970,7 @@ function DetailedCalculationsPanel({
             <div className="house-grid">
               {houses.map((house) => (
                 <div className="house-card" key={house.house}>
-                  <span>Дом {house.house}</span>
+                  <span><GlossaryTerm termKey={houseGlossaryKey(house.house)}>Дом {house.house}</GlossaryTerm></span>
                   <strong>{house.rashi}</strong>
                   <small>{house.grahas.length ? house.grahas.map(labelRu).join(", ") : "Пусто"}</small>
                 </div>
@@ -2854,52 +5139,36 @@ function GeneratedAnalysisDetails({
 function ReportPreviewPanel({
   birthReport,
   draftAnalysis,
-  qwenAnalysis,
-  deepseekAnalysis,
-  nemotronAnalysis,
   draftStatus,
-  qwenStatus,
-  deepseekStatus,
-  nemotronStatus,
+  aiBillingStatus,
   onGenerateDraft,
   onRegenerateDraft,
-  onGenerateQwen,
-  onGenerateDeepseek,
-  onGenerateNemotron,
   draftDisabled,
-  qwenDisabled,
-  deepseekDisabled,
-  nemotronDisabled,
   chatMessages,
   chatStatus,
+  suggestedQuestion,
   onAskDraftQuestion,
   chatDisabled,
 }: {
   birthReport: BirthReport["report"] | null;
   draftAnalysis: GeneratedDraftAnalysis | null;
-  qwenAnalysis: GeneratedDraftAnalysis | null;
-  deepseekAnalysis: GeneratedDraftAnalysis | null;
-  nemotronAnalysis: GeneratedDraftAnalysis | null;
   draftStatus: string;
-  qwenStatus: string;
-  deepseekStatus: string;
-  nemotronStatus: string;
+  aiBillingStatus: { label: string; text: string; tone: "free" | "paid" | "neutral" };
   onGenerateDraft: () => void;
   onRegenerateDraft: () => void;
-  onGenerateQwen: () => void;
-  onGenerateDeepseek: () => void;
-  onGenerateNemotron: () => void;
   draftDisabled: boolean;
-  qwenDisabled: boolean;
-  deepseekDisabled: boolean;
-  nemotronDisabled: boolean;
   chatMessages: CodexAnalysisChatMessage[];
   chatStatus: string;
+  suggestedQuestion: string;
   onAskDraftQuestion: (question: string) => void;
   chatDisabled: boolean;
 }) {
   const traceCount = draftAnalysis?.sections.reduce((total, section) => total + (section.source_traces?.length ?? 0), 0) ?? 0;
   const [chatQuestion, setChatQuestion] = useState("");
+
+  useEffect(() => {
+    if (suggestedQuestion) setChatQuestion(suggestedQuestion);
+  }, [suggestedQuestion]);
 
   function handleChatSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -2914,6 +5183,10 @@ function ReportPreviewPanel({
       <div className="panel-heading">
         <h2>Разбор карты</h2>
         <span>{draftAnalysis ? generatedStatusRu(draftAnalysis.review_status) : birthReport ? "готов к личному разбору" : "Отчёт ожидает расчёт"}</span>
+      </div>
+      <div className={`ai-billing-status report-ai-billing-status ${aiBillingStatus.tone}`}>
+        <strong>{aiBillingStatus.label}</strong>
+        <span>{aiBillingStatus.text}</span>
       </div>
       {birthReport ? (
         <div className="report-sections">
@@ -2930,42 +5203,11 @@ function ReportPreviewPanel({
                 Перегенерировать с новыми шастрами
               </button>
             </div>
+            <p className="ai-billing-note">
+              Первый AI-разбор доступен бесплатно для карты, отмеченной как «моя карта». Чужие сохранённые карты можно хранить и смотреть бесплатно; AI-разбор чужой карты будет отдельным платным действием.
+            </p>
+            {draftAnalysis?.billing_message ? <p className="ai-billing-note">{draftAnalysis.billing_message}</p> : null}
           </div>
-          <div className="draft-generation-strip qwen-generation-strip">
-            <div>
-              <strong>Альтернативный разбор QWEN</strong>
-              <span>{qwenStatus}</span>
-            </div>
-            <div className="draft-generation-actions">
-              <button type="button" className="secondary-button" onClick={onGenerateQwen} disabled={qwenDisabled}>
-                Сгенерировать с помощью QWEN
-              </button>
-            </div>
-          </div>
-          <div className="draft-generation-strip deepseek-generation-strip">
-            <div>
-              <strong>Альтернативный обзор DeepSeek</strong>
-              <span>{deepseekStatus}</span>
-            </div>
-            <div className="draft-generation-actions">
-              <button type="button" className="secondary-button" onClick={onGenerateDeepseek} disabled={deepseekDisabled}>
-                Сгенерировать с помощью DeepSeek
-              </button>
-            </div>
-          </div>
-          {ENABLE_NEMOTRON_ANALYSIS ? (
-            <div className="draft-generation-strip nemotron-generation-strip">
-              <div>
-                <strong>Альтернативный обзор Nemotron</strong>
-                <span>{nemotronStatus}</span>
-              </div>
-              <div className="draft-generation-actions">
-                <button type="button" className="secondary-button" onClick={onGenerateNemotron} disabled={nemotronDisabled}>
-                  Сгенерировать с помощью Nemotron
-                </button>
-              </div>
-            </div>
-          ) : null}
           {draftAnalysis ? (
             <div className="generated-draft">
               <div className="block-heading">
@@ -3069,15 +5311,6 @@ function ReportPreviewPanel({
               ))}
             </div>
           ) : null}
-          {qwenAnalysis ? (
-            <GeneratedAnalysisDetails analysis={qwenAnalysis} assistantLabel="QWEN" />
-          ) : null}
-          {deepseekAnalysis ? (
-            <GeneratedAnalysisDetails analysis={deepseekAnalysis} assistantLabel="DeepSeek" />
-          ) : null}
-          {ENABLE_NEMOTRON_ANALYSIS && nemotronAnalysis ? (
-            <GeneratedAnalysisDetails analysis={nemotronAnalysis} assistantLabel="Nemotron" />
-          ) : null}
           {birthReport.sections.map((section) => (
             <article className="report-section" key={section.key}>
               <div>
@@ -3117,7 +5350,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
     );
   }
 
-  const statusItems = [
+  const statusItems: Array<[string, string | null | undefined]> = [
     ["Авастхи", classical.avasthas?.status],
     ["Вимшопака", classical.vimshopaka_bala?.status],
     ["Аштакаварга", classical.ashtakavarga?.status],
@@ -3140,6 +5373,12 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
   const vimshopaka = classical.vimshopaka_bala?.items ?? [];
   const shadbala = classical.shadbala?.items ?? [];
   const ashtakavarga = classical.ashtakavarga;
+  const classicalStatusGlossary: Record<string, GlossaryKey> = {
+    "Авастхи": "avastha",
+    "Вимшопака": "vimshopaka",
+    "Аштакаварга": "ashtakavarga",
+    "Шадбала": "shadbala",
+  };
 
   return (
     <section className="panel classical-panel">
@@ -3151,14 +5390,14 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
         <div className="classical-status-grid">
           {statusItems.map(([label, status]) => (
             <div className="classical-status" key={label}>
-              <span>{label}</span>
+              <span>{classicalStatusGlossary[label] ? <GlossaryTerm termKey={classicalStatusGlossary[label]}>{label}</GlossaryTerm> : label}</span>
               <strong>{statusRu(status)}</strong>
             </div>
           ))}
         </div>
         <div className="classical-columns">
           <div className="classical-list">
-            <h3>Авастхи</h3>
+            <h3><GlossaryTerm termKey="avastha">Авастхи</GlossaryTerm></h3>
             {baladi.slice(0, 9).map((item) => (
               <div key={item.body}>
                 <span>{labelRu(item.body)}</span>
@@ -3205,7 +5444,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
             ) : null}
           </div>
           <div className="classical-list">
-            <h3>Аргала</h3>
+            <h3><GlossaryTerm termKey="argala">Аргала</GlossaryTerm></h3>
             <div>
               <span>Главная</span>
               <strong>{formatArgalaRows(classical.argala?.primary ?? [])}</strong>
@@ -3252,9 +5491,9 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
             ))}
           </div>
           <div className="classical-list">
-            <h3>Аштакаварга</h3>
+            <h3><GlossaryTerm termKey="ashtakavarga">Аштакаварга</GlossaryTerm></h3>
             <div>
-              <span>SAV total</span>
+              <span><GlossaryTerm termKey="sav">SAV total</GlossaryTerm></span>
               <strong>{ashtakavarga?.sarva.total ?? "-"}</strong>
               <small>{statusRu(ashtakavarga?.status)}</small>
             </div>
@@ -3267,7 +5506,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
             ))}
           </div>
           <div className="classical-list">
-            <h3>Вимшопака</h3>
+            <h3><GlossaryTerm termKey="vimshopaka">Вимшопака</GlossaryTerm></h3>
             {vimshopaka.slice(0, 7).map((row) => (
               <div key={row.body}>
                 <span>{labelRu(row.body)}</span>
@@ -3280,7 +5519,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
             ))}
           </div>
           <div className="classical-list">
-            <h3>Шадбала</h3>
+            <h3><GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm></h3>
             {shadbala.slice(0, 4).map((row) => (
               <div key={row.body}>
                 <span>{labelRu(row.body)}</span>
@@ -3475,12 +5714,16 @@ function TransitPanel({
   status,
   currentDayStatus,
   currentDayOverview,
+  currentDayBusy,
+  currentDayDisabled,
   onGenerateCurrentDay,
 }: {
   report: TransitReport | null;
   status: string;
   currentDayStatus: string;
   currentDayOverview: GeneratedDraftAnalysis | null;
+  currentDayBusy: boolean;
+  currentDayDisabled: boolean;
   onGenerateCurrentDay: () => void;
 }) {
   const rows = report?.transits.slice(0, 9) ?? [];
@@ -3489,25 +5732,32 @@ function TransitPanel({
   return (
     <section className="panel workflow-panel">
       <div className="panel-heading">
-        <h2>Транзиты</h2>
+        <h2><GlossaryTerm termKey="transit">Транзиты</GlossaryTerm></h2>
         <span>{status}</span>
       </div>
       <div className="current-day-strip">
         <div>
-          <strong>Обзор нынешнего дня</strong>
+          <strong><GlossaryTerm termKey="transit">Обзор нынешнего дня</GlossaryTerm></strong>
           <span>{currentDayStatus}</span>
-          {currentDayOverview ? <small>Сохранён в истории личных обзоров</small> : null}
+          {currentDayOverview ? <small>Сохранён в истории личных обзоров; можно открыть и продолжить диалог</small> : null}
         </div>
-        <button type="button" className="secondary-button" onClick={onGenerateCurrentDay}>
-          Сохранить сегодня
-        </button>
+        <div className="current-day-actions">
+          <button type="button" className="secondary-button" onClick={onGenerateCurrentDay} disabled={currentDayBusy || currentDayDisabled}>
+            {currentDayBusy ? "Сохраняю..." : "Сохранить сегодня"}
+          </button>
+          {currentDayOverview?.slug ? (
+            <a className="primary-link-button" href={`/reports/${currentDayOverview.slug}`}>
+              Открыть обзор
+            </a>
+          ) : null}
+        </div>
       </div>
       {rows.length ? (
         <div className="transit-visual-board">
           <TransitRashiBoard rows={rows} />
           <div className="transit-focus-panel">
             <div>
-              <strong>Медленные влияния</strong>
+              <strong><GlossaryTerm termKey="transit">Медленные влияния</GlossaryTerm></strong>
               <span>Guru, Shani, Rahu, Ketu</span>
             </div>
             <div className="transit-focus-grid">
@@ -3516,7 +5766,7 @@ function TransitPanel({
               ))}
             </div>
             <div>
-              <strong>Личный ритм дня</strong>
+              <strong><GlossaryTerm termKey="transit">Личный ритм дня</GlossaryTerm></strong>
               <span>Surya, Chandra и быстрые грахи</span>
             </div>
             <div className="transit-focus-grid compact">
@@ -3531,17 +5781,17 @@ function TransitPanel({
       {rows.length ? (
         <div className="workflow-table">
           <div className="workflow-row workflow-head">
-            <span>Граха</span>
-            <span>Раши</span>
-            <span>От лагны</span>
-            <span>От Луны</span>
+            <span><GlossaryTerm termKey="graha">Граха</GlossaryTerm></span>
+            <span><GlossaryTerm termKey="rashi">Раши</GlossaryTerm></span>
+            <span><GlossaryTerm termKey="lagna">От лагны</GlossaryTerm></span>
+            <span><GlossaryTerm termKey="chandra_lagna">От Луны</GlossaryTerm></span>
           </div>
           {rows.map((row) => (
             <div className="workflow-row" key={row.body}>
-              <strong>{labelRu(row.body)}</strong>
-              <span>{row.rashi}</span>
-              <span>{row.house_from_lagna ?? "-"}</span>
-              <span>{row.house_from_moon ?? "-"}</span>
+              <strong><GlossaryTerm termKey="graha">{labelRu(row.body)}</GlossaryTerm></strong>
+              <span><GlossaryTerm termKey={rashiGlossaryKey(rashiIndexFromName(row.rashi), row.rashi)}>{row.rashi}</GlossaryTerm></span>
+              <span>{row.house_from_lagna ? <GlossaryTerm termKey={houseGlossaryKey(row.house_from_lagna)}>{row.house_from_lagna}</GlossaryTerm> : "-"}</span>
+              <span>{row.house_from_moon ? <GlossaryTerm termKey={houseGlossaryKey(row.house_from_moon)}>{row.house_from_moon}</GlossaryTerm> : "-"}</span>
             </div>
           ))}
         </div>
@@ -3568,11 +5818,11 @@ function TransitRashiBoard({ rows }: { rows: TransitRow[] }) {
         const row = Math.floor(index / 4);
         const col = index % 4;
         const signIndex = Object.entries(southIndianSignCells).find(([, cell]) => cell.row === row && cell.col === col)?.[0];
-        if (signIndex === undefined) return <div className="transit-rashi-center" key={index} />;
+        if (signIndex === undefined) return <div className="transit-rashi-center" key={`transit-center-${index}`} />;
         const rashiIndex = Number(signIndex);
         const items = byRashi.get(rashiIndex) ?? [];
         return (
-          <div className="transit-rashi-cell" key={rashiIndex}>
+          <div className="transit-rashi-cell" key={`transit-rashi-${rashiIndex}`}>
             <span>{rashiChartLabels[rashiIndex]}</span>
             {items.slice(0, 4).map((item) => (
               <strong key={item.body}>{northGrahaLabels[item.body] ?? item.body.slice(0, 2)}</strong>
@@ -3588,9 +5838,14 @@ function TransitRashiBoard({ rows }: { rows: TransitRow[] }) {
 function TransitFocusCard({ row }: { row: TransitRow }) {
   return (
     <div className="transit-focus-card">
-      <strong>{labelRu(row.body)}</strong>
-      <span>{row.rashi}</span>
-      <small>Лагна {row.house_from_lagna ?? "-"} · Луна {row.house_from_moon ?? "-"}</small>
+      <strong><GlossaryTerm termKey="graha">{labelRu(row.body)}</GlossaryTerm></strong>
+      <span><GlossaryTerm termKey={rashiGlossaryKey(rashiIndexFromName(row.rashi), row.rashi)}>{row.rashi}</GlossaryTerm></span>
+      <small>
+        <GlossaryTerm termKey="lagna">Лагна</GlossaryTerm>{" "}
+        {row.house_from_lagna ? <GlossaryTerm termKey={houseGlossaryKey(row.house_from_lagna)}>{row.house_from_lagna}</GlossaryTerm> : "-"} ·{" "}
+        <GlossaryTerm termKey="chandra_lagna">Луна</GlossaryTerm>{" "}
+        {row.house_from_moon ? <GlossaryTerm termKey={houseGlossaryKey(row.house_from_moon)}>{row.house_from_moon}</GlossaryTerm> : "-"}
+      </small>
     </div>
   );
 }
@@ -3603,6 +5858,72 @@ function WorkflowMiniChart({ chart, title, hint }: { chart: BirthChart; title: s
         <span>{hint}</span>
       </div>
       <SouthIndianChartGrid chart={chart} varga={null} compact />
+    </div>
+  );
+}
+
+function CompatibilityProfileChartCard({
+  chart,
+  profile,
+  title,
+  chartStyle,
+  chartReference,
+  termLanguage,
+  focusVargas,
+}: {
+  chart: BirthChart | null;
+  profile: ChartProfile | undefined;
+  title: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  termLanguage: TermLanguage;
+  focusVargas: readonly string[];
+}) {
+  const miniVargas = chart
+    ? focusVargas.filter((code) => code !== "D1" && chart.vargas?.[code]).slice(0, 2)
+    : [];
+
+  return (
+    <div className="compatibility-profile-chart-card">
+      <div className="compatibility-profile-chart-head">
+        <div>
+          <strong>{title}</strong>
+          <span>{profile ? `${profile.display_name} · ${profile.birth_date}` : "сохранённая карта не выбрана"}</span>
+        </div>
+        <em>{chart ? "расчёт открыт" : "ожидает"}</em>
+      </div>
+      <div className="compatibility-profile-chart-preview">
+        {chart ? (
+          chartStyle === "south" ? (
+            <SouthIndianChartGrid chart={chart} varga={null} compact chartReference={chartReference} termLanguage={termLanguage} />
+          ) : (
+            <NorthIndianChartSvg chart={chart} varga={null} compact chartReference={chartReference} termLanguage={termLanguage} />
+          )
+        ) : (
+          <span>Выберите сохранённую карту</span>
+        )}
+      </div>
+      {chart && miniVargas.length ? (
+        <div className="compatibility-focus-varga-strip" aria-label={`${title}: D-карты по роли`}>
+          {miniVargas.map((code) => {
+            const varga = chart.vargas?.[code];
+            if (!varga) return null;
+            return (
+              <div className="compatibility-focus-varga-card" key={`${title}-${code}`}>
+                <strong><GlossaryTerm termKey={vargaGlossaryKey(code)}>{code}</GlossaryTerm></strong>
+                <span>{varga.name}</span>
+                <div>
+                  {chartStyle === "south" ? (
+                    <SouthIndianChartGrid chart={chart} varga={varga} compact chartReference={chartReference} termLanguage={termLanguage} />
+                  ) : (
+                    <NorthIndianChartSvg chart={chart} varga={varga} compact chartReference={chartReference} termLanguage={termLanguage} />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -3849,6 +6170,15 @@ type CompatibilityPanelProps = {
   profiles: ChartProfile[];
   selectedPersonAProfileId: string;
   selectedPersonBProfileId: string;
+  relationshipRole: CompatibilityRelationshipRoleKey;
+  selectedRelationship: ChartProfileRelationship | null;
+  personAChart: BirthChart | null;
+  personBChart: BirthChart | null;
+  chartStatus: string;
+  chartStyle: "north" | "south";
+  chartReference: ChartReference;
+  termLanguage: TermLanguage;
+  onRelationshipRoleChange: (role: CompatibilityRelationshipRoleKey) => void;
   partnerProfileName: string;
   partnerBirthDate: string;
   setPartnerBirthDate: Dispatch<SetStateAction<string>>;
@@ -3931,6 +6261,15 @@ function CompatibilityPanel({
   profiles,
   selectedPersonAProfileId,
   selectedPersonBProfileId,
+  relationshipRole,
+  selectedRelationship,
+  personAChart,
+  personBChart,
+  chartStatus,
+  chartStyle,
+  chartReference,
+  termLanguage,
+  onRelationshipRoleChange,
   partnerProfileName,
   partnerBirthDate,
   setPartnerBirthDate,
@@ -3962,9 +6301,16 @@ function CompatibilityPanel({
   const rows = report?.kuta_rows ?? [];
   const perspectives = report?.analysis?.perspectives ?? [];
   const summaries = report?.analysis?.chart_summaries;
+  const role = compatibilityRelationshipRole(relationshipRole);
   const scoreLabel = report ? `${report.score.total}/${report.score.max}` : "-";
   const percentLabel = report ? `${report.score.percent.toFixed(1)}%` : "-";
   const levelLabel = report ? compatibilityLevelLabelsRu[report.assessment.level] ?? report.assessment.level : "ожидает";
+  const personAProfile = profiles.find((profile) => String(profile.id) === selectedPersonAProfileId);
+  const personBProfile = profiles.find((profile) => String(profile.id) === selectedPersonBProfileId);
+  const resultContext = report?.relationship_context;
+  const roleChartReference = chartReferenceForRelationshipRole(role);
+  const roleChartReferenceLabel = chartReferenceOptions.find((option) => option.key === roleChartReference)?.label ?? "Лагна";
+  const roleChartReferenceGlossary = referenceGlossaryKeys[roleChartReference] ?? "lagna";
 
   return (
     <section className="panel workflow-panel compatibility-panel">
@@ -3996,6 +6342,78 @@ function CompatibilityPanel({
               ))}
             </select>
           </label>
+          <label>
+            <GlossaryTerm termKey="relationship_role">Ракурс взаимодействия</GlossaryTerm>
+            <select value={relationshipRole} onChange={(event) => onRelationshipRoleChange(event.target.value as CompatibilityRelationshipRoleKey)}>
+              {compatibilityRelationshipRoles.map((item) => (
+                <option key={item.key} value={item.key}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="compatibility-role-context">
+          <div>
+            <span>Дома</span>
+            <strong><HouseGlossaryList houses={role.focusHouses} /></strong>
+          </div>
+          <div>
+            <span>Варги</span>
+            <strong><VargaGlossaryList vargas={role.focusVargas} /></strong>
+          </div>
+          <div>
+            <span>Ракурс карты</span>
+            <strong>
+              <GlossaryTerm termKey={roleChartReferenceGlossary}>{roleChartReferenceLabel}</GlossaryTerm>
+            </strong>
+          </div>
+          <small>{role.promptHint}</small>
+        </div>
+        {selectedRelationship ? (
+          <div className="compatibility-selected-relationship">
+            <span>Выбранная связь</span>
+            <strong>
+              {selectedRelationship.profile?.display_name ?? `Карта ${selectedRelationship.profile_id}`} →{" "}
+              {selectedRelationship.related_profile?.display_name ?? `Карта ${selectedRelationship.related_profile_id}`}
+            </strong>
+            <small>
+              <GlossaryTerm termKey="relationship_role">
+                {compatibilityRelationshipRole(selectedRelationship.role).label}
+              </GlossaryTerm>{" "}
+              ·{" "}
+              <GlossaryTerm termKey="relationship_status">
+                {relationshipStatusLabel(selectedRelationship.link_status)}
+              </GlossaryTerm>
+            </small>
+            <a className="secondary-button compatibility-pair-passport-link" href={`/compatibility/pair/${selectedRelationship.id}`}>
+              Паспорт пары
+            </a>
+          </div>
+        ) : null}
+        <div className="compatibility-profile-chart-board" aria-label="Карты людей для разбора взаимодействия">
+          <div className="compatibility-profile-chart-status">
+            <strong>{role.label}</strong>
+            <span>{chartStatus}</span>
+          </div>
+          <CompatibilityProfileChartCard
+            chart={personAChart}
+            profile={personAProfile}
+            title="Карта A"
+            chartStyle={chartStyle}
+            chartReference={chartReference}
+            termLanguage={termLanguage}
+            focusVargas={role.focusVargas}
+          />
+          <CompatibilityProfileChartCard
+            chart={personBChart}
+            profile={personBProfile}
+            title="Карта B"
+            chartStyle={chartStyle}
+            chartReference={chartReference}
+            termLanguage={termLanguage}
+            focusVargas={role.focusVargas}
+          />
         </div>
         <button className="secondary-button compatibility-button primary-compare-button" type="submit" disabled={disabled}>
           Сравнить выбранные карты
@@ -4003,11 +6421,21 @@ function CompatibilityPanel({
         <div className="compatibility-form-grid">
           <label>
             Дата второго человека
-            <input type="date" value={partnerBirthDate} onChange={(event) => setPartnerBirthDate(event.target.value)} />
+            <input
+              type="date"
+              value={partnerBirthDate}
+              onInput={(event) => setPartnerBirthDate(event.currentTarget.value)}
+              onChange={(event) => setPartnerBirthDate(event.target.value)}
+            />
           </label>
           <label>
             Время второго человека
-            <input type="time" value={partnerBirthTime} onChange={(event) => setPartnerBirthTime(event.target.value)} />
+            <input
+              type="time"
+              value={partnerBirthTime}
+              onInput={(event) => setPartnerBirthTime(event.currentTarget.value)}
+              onChange={(event) => setPartnerBirthTime(event.target.value)}
+            />
           </label>
           <label className="compatibility-place-label">
             Место второго человека
@@ -4084,6 +6512,40 @@ function CompatibilityPanel({
 
       {report ? (
         <div className="compatibility-result">
+          {resultContext ? (
+            <div className="compatibility-result-context">
+              <div>
+                <span>Ракурс разбора</span>
+                <strong>{resultContext.label || resultContext.role}</strong>
+                <small>{resultContext.prompt_hint || "роль передана в расчёт и AI-пакет"}</small>
+              </div>
+              <div>
+                <span>Фокусные дома</span>
+                <strong>
+                  <HouseGlossaryList houses={resultContext.focus_houses} />
+                </strong>
+                <small>используются как ракурс чтения</small>
+              </div>
+              <div>
+                <span>D-карты</span>
+                <strong><VargaGlossaryList vargas={resultContext.focus_vargas} /></strong>
+                <small>{resultContext.required_factors?.slice(0, 4).join(" · ") || "добавлены в interpretation plan"}</small>
+              </div>
+              <div>
+                <span><GlossaryTerm termKey="relationship_status">Статус связи</GlossaryTerm></span>
+                <strong>
+                  <GlossaryTerm termKey="relationship_status">
+                    {resultContext.link_status ? relationshipStatusLabel(resultContext.link_status) : "личный ракурс"}
+                  </GlossaryTerm>
+                </strong>
+                <small>
+                  {resultContext.profile_label || resultContext.related_profile_label
+                    ? `${resultContext.profile_label ?? "Карта A"} → ${resultContext.related_profile_label ?? "Карта B"}`
+                    : "без привязки к подтверждённой связи"}
+                </small>
+              </div>
+            </div>
+          ) : null}
           <div className="compatibility-score-grid">
             <div>
               <span>Ашта-кута</span>
@@ -4229,7 +6691,7 @@ function DualCalculationPanel({
               <strong>{report.delta.summary.varga_mismatches}</strong>
             </div>
             <div>
-              <span>Шадбала</span>
+              <span><GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm></span>
               <strong>{report.delta.summary.shadbala_mismatches}</strong>
             </div>
             <div>
@@ -4320,7 +6782,7 @@ function DualCalculationPanel({
               )}
             </div>
             <div className="dual-list">
-              <h3>Шадбала</h3>
+              <h3><GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm></h3>
               {shadbalaDiffs.length ? (
                 shadbalaDiffs.map((row) => (
                   <div key={row.body}>
@@ -5209,6 +7671,7 @@ export default function Home() {
   const [gender, setGender] = useState<"male" | "female" | "unknown">("male");
   const [placeName, setPlaceName] = useState("Стерлитамак");
   const [profileName, setProfileName] = useState("Моя карта 30.04.1998");
+  const [profileIsSelf, setProfileIsSelf] = useState(true);
   const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
   const [manualTimezone, setManualTimezone] = useState("Asia/Yekaterinburg");
@@ -5234,24 +7697,24 @@ export default function Home() {
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
   const [termLanguage, setTermLanguage] = useState<TermLanguage>("sanskrit");
+  const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>("pro");
   const [chartWorkspaceTab, setChartWorkspaceTab] = useState<ChartWorkspaceTab>("essentials");
+  const [vargaCoverageOpen, setVargaCoverageOpen] = useState(false);
   const [chartStyleHydrated, setChartStyleHydrated] = useState(false);
+  const [chartViewHydrated, setChartViewHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
-  const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(true);
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>(() => analysisTabFromLocation());
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [draftAnalysis, setDraftAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
   const [draftAnalysisStatus, setDraftAnalysisStatus] = useState("Личный разбор ещё не генерировался");
-  const [qwenAnalysis, setQwenAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
-  const [qwenAnalysisStatus, setQwenAnalysisStatus] = useState("QWEN разбор ещё не генерировался");
-  const [deepseekAnalysis, setDeepseekAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
-  const [deepseekAnalysisStatus, setDeepseekAnalysisStatus] = useState("DeepSeek обзор ещё не генерировался");
   const [currentDayOverview, setCurrentDayOverview] = useState<GeneratedDraftAnalysis | null>(null);
   const [currentDayStatus, setCurrentDayStatus] = useState("Текущий день ещё не сохранялся");
-  const [nemotronAnalysis, setNemotronAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
-  const [nemotronAnalysisStatus, setNemotronAnalysisStatus] = useState("Nemotron обзор ещё не генерировался");
+  const [currentDayBusy, setCurrentDayBusy] = useState(false);
   const [codexChatMessages, setCodexChatMessages] = useState<CodexAnalysisChatMessage[]>([]);
   const [codexChatStatus, setCodexChatStatus] = useState("Сначала сгенерируйте личный разбор");
   const [codexChatBusy, setCodexChatBusy] = useState(false);
+  const [suggestedCodexQuestion, setSuggestedCodexQuestion] = useState("");
   const [transitReport, setTransitReport] = useState<TransitReport | null>(null);
   const [tithiPraveshaReport, setTithiPraveshaReport] = useState<TithiPraveshaReport | null>(null);
   const [tajakaReport, setTajakaReport] = useState<TajakaReport | null>(null);
@@ -5279,6 +7742,11 @@ export default function Home() {
   const [compatibilityChatBusy, setCompatibilityChatBusy] = useState(false);
   const [compatibilityPersonAProfileId, setCompatibilityPersonAProfileId] = useState("");
   const [compatibilityPersonBProfileId, setCompatibilityPersonBProfileId] = useState("");
+  const [compatibilityRelationshipRoleKey, setCompatibilityRelationshipRoleKey] = useState<CompatibilityRelationshipRoleKey>("partner");
+  const [activeCompatibilityRelationshipId, setActiveCompatibilityRelationshipId] = useState("");
+  const [compatibilityPersonAChart, setCompatibilityPersonAChart] = useState<BirthChart | null>(null);
+  const [compatibilityPersonBChart, setCompatibilityPersonBChart] = useState<BirthChart | null>(null);
+  const [compatibilityChartStatus, setCompatibilityChartStatus] = useState("Карты A/B ещё не открывались");
   const [partnerProfileName, setPartnerProfileName] = useState("Карта партнёра");
   const [partnerBirthDate, setPartnerBirthDate] = useState("1991-01-01");
   const [partnerBirthTime, setPartnerBirthTime] = useState("09:00");
@@ -5304,11 +7772,17 @@ export default function Home() {
   const [authUsername, setAuthUsername] = useState("haridas");
   const [authPassword, setAuthPassword] = useState("");
   const [authStatus, setAuthStatus] = useState("Войдите, чтобы сохранять карты");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
+  const [profileRelationships, setProfileRelationships] = useState<ChartProfileRelationship[]>([]);
+  const [incomingProfileRelationshipRequests, setIncomingProfileRelationshipRequests] = useState<ChartProfileRelationship[]>([]);
+  const [incomingRequestAcceptedProfileIds, setIncomingRequestAcceptedProfileIds] = useState<Record<number, string>>({});
+  const [relationshipBaseProfileId, setRelationshipBaseProfileId] = useState("");
   const [relatedProfileIds, setRelatedProfileIds] = useState<number[]>([]);
   const [profileStatus, setProfileStatus] = useState("Сохранённые карты не загружены");
-  const autoCalculationStartedRef = useRef(false);
+  const [formDraftHydrated, setFormDraftHydrated] = useState(false);
   const privateAccessLocked = PRIVATE_APP_REQUIRE_AUTH && !currentUser;
+  const aiAccessLocked = !currentUser;
 
   const calculatedLabel = useMemo(() => {
     if (!chart) return "Карта останется пустой до расчёта эфемеридных позиций.";
@@ -5327,6 +7801,28 @@ export default function Home() {
   const activeChartStyleLabel = chartStyle === "south" ? "Южный стиль" : "Северный стиль";
   const activeTermLanguageLabel = termLanguage === "sanskrit" ? "Санскрит" : termLanguage === "ru" ? "Русский" : "English";
   const personSummary = birthReport?.person_summary ?? null;
+  const chartPanelRef = useRef<HTMLElement | null>(null);
+  const vargaCoverageRef = useRef<HTMLDetailsElement | null>(null);
+  const selectedCompatibilityRelationship = useMemo(
+    () => profileRelationships.find((relationship) => String(relationship.id) === activeCompatibilityRelationshipId) ?? null,
+    [activeCompatibilityRelationshipId, profileRelationships],
+  );
+
+  function scrollToChartAfterCalculation() {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(max-width: 960px)").matches) return;
+    window.requestAnimationFrame(() => {
+      chartPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  function openVargaCoverageDetails() {
+    setVargaCoverageOpen(true);
+    setChartWorkspaceTab("vargas");
+    window.requestAnimationFrame(() => {
+      vargaCoverageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
 
   function selectVargaFocusGroup(groupKey: string, code: string) {
     setActiveVargaFocusKey(groupKey);
@@ -5348,6 +7844,37 @@ export default function Home() {
     setChartMode(code);
   }
 
+  function persistDisplaySetting(key: string, value: string) {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {
+      // localStorage can be unavailable in restricted browser modes.
+    }
+  }
+
+  function handleChartStyleChange(value: "north" | "south") {
+    setChartStyle(value);
+    persistDisplaySetting(CHART_STYLE_STORAGE_KEY, value);
+  }
+
+  function handleTermLanguageChange(value: TermLanguage) {
+    setTermLanguage(value);
+    persistDisplaySetting(TERM_LANGUAGE_STORAGE_KEY, value);
+  }
+
+  const handleInterfaceModeChange = useCallback((value: InterfaceMode) => {
+    setInterfaceMode(value);
+    persistDisplaySetting(INTERFACE_MODE_STORAGE_KEY, value);
+  }, []);
+
+  const toggleSidebarCollapsed = useCallback(() => {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      persistDisplaySetting("jyotish-sidebar-collapsed", next ? "1" : "0");
+      return next;
+    });
+  }, []);
+
   function resetCodexChat() {
     setCodexChatMessages([]);
     setCodexChatStatus("Сначала сгенерируйте личный разбор");
@@ -5361,25 +7888,285 @@ export default function Home() {
   }
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(CHART_STYLE_STORAGE_KEY);
-    if (saved === "north" || saved === "south") setChartStyle(saved);
-    const savedTermLanguage = window.localStorage.getItem(TERM_LANGUAGE_STORAGE_KEY);
-    if (savedTermLanguage === "sanskrit" || savedTermLanguage === "ru" || savedTermLanguage === "en") {
-      setTermLanguage(savedTermLanguage);
+    try {
+      setSidebarCollapsed(window.localStorage.getItem("jyotish-sidebar-collapsed") === "1");
+    } catch {
+      // localStorage can be unavailable in restricted browser modes.
     }
+  }, []);
+
+  useEffect(() => {
+    function applyRouteState() {
+      const params = new URLSearchParams(window.location.search);
+      const requestedAnalysis = params.get("analysis");
+      if (requestedAnalysis && analysisTabs.some((tab) => tab.key === requestedAnalysis)) {
+        setActiveAnalysisTab(requestedAnalysis as AnalysisTab);
+      }
+      const requestedRelationship = params.get("relationship");
+      if (requestedRelationship && /^\d+$/.test(requestedRelationship)) {
+        setActiveAnalysisTab("compatibility");
+        setActiveCompatibilityRelationshipId(requestedRelationship);
+        setCompatibilityStatus(`Загружаю связь #${requestedRelationship}...`);
+      }
+    }
+
+    applyRouteState();
+    window.addEventListener("popstate", applyRouteState);
+    window.addEventListener("hashchange", applyRouteState);
+    return () => {
+      window.removeEventListener("popstate", applyRouteState);
+      window.removeEventListener("hashchange", applyRouteState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeCompatibilityRelationshipId) return;
+    if (privateAccessLocked || !currentUser) {
+      setCompatibilityStatus("Войдите, чтобы открыть сохранённую связь для разбора");
+      return;
+    }
+    const relationship = profileRelationships.find((item) => String(item.id) === activeCompatibilityRelationshipId);
+    if (!relationship) {
+      if (profileRelationships.length || profiles.length || currentUser) {
+        setCompatibilityStatus(`Связь #${activeCompatibilityRelationshipId} не найдена в сохранённых картах`);
+      }
+      return;
+    }
+    applyCompatibilityRelationship(relationship);
+  }, [activeCompatibilityRelationshipId, currentUser, privateAccessLocked, profileRelationships, profiles.length]);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(CHART_STYLE_STORAGE_KEY);
+      if (saved === "north" || saved === "south") setChartStyle(saved);
+      const savedTermLanguage = window.localStorage.getItem(TERM_LANGUAGE_STORAGE_KEY);
+      if (savedTermLanguage === "sanskrit" || savedTermLanguage === "ru" || savedTermLanguage === "en") {
+        setTermLanguage(savedTermLanguage);
+      }
+      const savedInterfaceMode = window.localStorage.getItem(INTERFACE_MODE_STORAGE_KEY);
+      if (savedInterfaceMode === "pro" || savedInterfaceMode === "beginner") {
+        setInterfaceMode(savedInterfaceMode);
+      }
+    } catch {
+      // localStorage can be unavailable in restricted browser modes.
+    }
+    setShowAdvancedSettings(!window.matchMedia("(max-width: 760px)").matches);
     setChartStyleHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!chartStyleHydrated) return;
-    window.localStorage.setItem(CHART_STYLE_STORAGE_KEY, chartStyle);
-    window.localStorage.setItem(TERM_LANGUAGE_STORAGE_KEY, termLanguage);
-  }, [chartStyle, chartStyleHydrated, termLanguage]);
+    try {
+      window.localStorage.setItem(CHART_STYLE_STORAGE_KEY, chartStyle);
+      window.localStorage.setItem(TERM_LANGUAGE_STORAGE_KEY, termLanguage);
+      window.localStorage.setItem(INTERFACE_MODE_STORAGE_KEY, interfaceMode);
+    } catch {
+      // localStorage can be unavailable in restricted browser modes.
+    }
+  }, [chartStyle, chartStyleHydrated, interfaceMode, termLanguage]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CHART_VIEW_STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as {
+          chartMode?: string;
+          chartReference?: ChartReference;
+          chartWorkspaceTab?: ChartWorkspaceTab;
+          activeVargaFocusKey?: string;
+          activeVargaSchemeKey?: VargaSchemeKey;
+          vargaCoverageOpen?: boolean;
+        };
+        if (saved.chartMode && vargaSnapshotCodes.includes(saved.chartMode as (typeof vargaSnapshotCodes)[number])) {
+          setChartMode(saved.chartMode);
+        }
+        if (saved.chartReference && chartReferenceOptions.some((option) => option.key === saved.chartReference)) {
+          setChartReference(saved.chartReference);
+        }
+        if (saved.chartWorkspaceTab && chartWorkspaceTabs.some((tab) => tab.key === saved.chartWorkspaceTab)) {
+          setChartWorkspaceTab(saved.chartWorkspaceTab);
+        }
+        if (saved.activeVargaFocusKey && vargaFocusGroups.some((group) => group.key === saved.activeVargaFocusKey)) {
+          setActiveVargaFocusKey(saved.activeVargaFocusKey);
+        }
+        if (saved.activeVargaSchemeKey && vargaSchemeGroups.some((group) => group.key === saved.activeVargaSchemeKey)) {
+          setActiveVargaSchemeKey(saved.activeVargaSchemeKey);
+        }
+        if (typeof saved.vargaCoverageOpen === "boolean") {
+          setVargaCoverageOpen(saved.vargaCoverageOpen);
+        }
+      }
+    } catch {
+      // Ignore invalid view state from older builds.
+    }
+    setChartViewHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!chartViewHydrated) return;
+    try {
+      window.localStorage.setItem(
+        CHART_VIEW_STORAGE_KEY,
+        JSON.stringify({
+          chartMode,
+          chartReference,
+          chartWorkspaceTab,
+          activeVargaFocusKey,
+          activeVargaSchemeKey,
+          vargaCoverageOpen,
+        }),
+      );
+    } catch {
+      // localStorage can be unavailable in restricted browser modes.
+    }
+  }, [
+    activeVargaFocusKey,
+    activeVargaSchemeKey,
+    chartMode,
+    chartReference,
+    chartViewHydrated,
+    chartWorkspaceTab,
+    vargaCoverageOpen,
+  ]);
+
+  useEffect(() => {
+    const draft = readBirthFormDraft();
+    if (draft) {
+      if (draft.birthDate) setBirthDate(draft.birthDate);
+      if (draft.birthTime) setBirthTime(draft.birthTime);
+      if (draft.gender === "male" || draft.gender === "female" || draft.gender === "unknown") setGender(draft.gender);
+      if (draft.placeName) setPlaceName(draft.placeName);
+      if (draft.profileName) setProfileName(draft.profileName);
+      if (typeof draft.profileIsSelf === "boolean") setProfileIsSelf(draft.profileIsSelf);
+      if (draft.selectedPlace) setSelectedPlace(draft.selectedPlace);
+      if (draft.manualTimezone) setManualTimezone(draft.manualTimezone);
+      if (draft.manualLatitude) setManualLatitude(draft.manualLatitude);
+      if (draft.manualLongitude) setManualLongitude(draft.manualLongitude);
+      if (draft.zodiac) setZodiac(draft.zodiac);
+      if (draft.calculationModel) setCalculationModel(draft.calculationModel);
+      if (draft.ayanamsa) setAyanamsa(draft.ayanamsa);
+      if (draft.nodeType) setNodeType(draft.nodeType);
+      if (draft.ephemeris) setEphemeris(draft.ephemeris);
+      if (draft.houseSystem) setHouseSystem(draft.houseSystem);
+      if (draft.bhavaSystem) setBhavaSystem(draft.bhavaSystem);
+      if (draft.vargaScheme) setVargaScheme(draft.vargaScheme);
+      if (draft.sunriseSource) setSunriseSource(draft.sunriseSource);
+      if (draft.timezoneSource) setTimezoneSource(draft.timezoneSource);
+      if (draft.shadbalaProfile) setShadbalaProfile(draft.shadbalaProfile);
+      if (draft.partnerProfileName) setPartnerProfileName(draft.partnerProfileName);
+      if (draft.partnerBirthDate) setPartnerBirthDate(draft.partnerBirthDate);
+      if (draft.partnerBirthTime) setPartnerBirthTime(draft.partnerBirthTime);
+      if (draft.partnerPlaceName) setPartnerPlaceName(draft.partnerPlaceName);
+      if (draft.selectedPartnerPlace) setSelectedPartnerPlace(draft.selectedPartnerPlace);
+      if (draft.compatibilityRelationshipRoleKey && compatibilityRelationshipRoles.some((role) => role.key === draft.compatibilityRelationshipRoleKey)) {
+        setCompatibilityRelationshipRoleKey(draft.compatibilityRelationshipRoleKey);
+      }
+    }
+    setFormDraftHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!formDraftHydrated) return;
+    writeBirthFormDraft({
+      birthDate,
+      birthTime,
+      gender,
+      placeName,
+      profileName,
+      profileIsSelf,
+      selectedPlace,
+      manualTimezone,
+      manualLatitude,
+      manualLongitude,
+      zodiac,
+      calculationModel,
+      ayanamsa,
+      nodeType,
+      ephemeris,
+      houseSystem,
+      bhavaSystem,
+      vargaScheme,
+      sunriseSource,
+      timezoneSource,
+      shadbalaProfile,
+      partnerProfileName,
+      partnerBirthDate,
+      partnerBirthTime,
+      partnerPlaceName,
+      selectedPartnerPlace,
+      compatibilityRelationshipRoleKey,
+    });
+  }, [
+    ayanamsa,
+    bhavaSystem,
+    birthDate,
+    birthTime,
+    calculationModel,
+    compatibilityRelationshipRoleKey,
+    ephemeris,
+    formDraftHydrated,
+    gender,
+    houseSystem,
+    manualLatitude,
+    manualLongitude,
+    manualTimezone,
+    nodeType,
+    partnerBirthDate,
+    partnerBirthTime,
+    partnerPlaceName,
+    partnerProfileName,
+    placeName,
+    profileIsSelf,
+    profileName,
+    selectedPartnerPlace,
+    selectedPlace,
+    shadbalaProfile,
+    sunriseSource,
+    timezoneSource,
+    vargaScheme,
+    zodiac,
+  ]);
 
   useEffect(() => {
     if (!draftAnalysis) {
       resetCodexChat();
     }
+  }, [draftAnalysis]);
+
+  useEffect(() => {
+    function handleAiContextRequest(event: Event) {
+      const detail = (event as CustomEvent<HelpAiQuestionDetail>).detail;
+      if (!detail?.question) return;
+      event.preventDefault();
+      setSuggestedCodexQuestion(detail.question);
+      setActiveAnalysisTab("guidance");
+      setCodexChatStatus(
+        draftAnalysis
+          ? "Вопрос из подсказки подставлен в чат"
+          : "Вопрос из подсказки сохранён. Сначала сгенерируйте личный Codex-разбор.",
+      );
+      window.requestAnimationFrame(() => {
+        document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    window.addEventListener("jyotish:ask-ai-context", handleAiContextRequest);
+    try {
+      const pendingQuestion = window.sessionStorage.getItem("jyotish-pending-ai-question");
+      if (pendingQuestion) {
+        window.sessionStorage.removeItem("jyotish-pending-ai-question");
+        setSuggestedCodexQuestion(pendingQuestion);
+        setActiveAnalysisTab("guidance");
+        setCodexChatStatus(
+          draftAnalysis
+            ? "Вопрос из подсказки подставлен в чат"
+            : "Вопрос из подсказки сохранён. Сначала сгенерируйте личный Codex-разбор.",
+        );
+      }
+    } catch {
+      // Ignore blocked sessionStorage.
+    }
+    return () => window.removeEventListener("jyotish:ask-ai-context", handleAiContextRequest);
   }, [draftAnalysis]);
 
   useEffect(() => {
@@ -5412,6 +8199,12 @@ export default function Home() {
       setAccuracyStatus("Войдите после одобрения, чтобы загрузить JHora export report");
       setPlPacketStatus("Войдите после одобрения, чтобы загрузить Parashara Light packet");
       setWitnessSummaryStatus("Войдите после одобрения, чтобы загрузить witness summary");
+      return;
+    }
+    if (activeAnalysisTab !== "accuracy") {
+      setAccuracyStatus("JHora export report загрузится во вкладке точности");
+      setPlPacketStatus("Parashara Light packet загрузится во вкладке точности");
+      setWitnessSummaryStatus("Witness summary загрузится во вкладке точности");
       return;
     }
     let cancelled = false;
@@ -5460,7 +8253,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [privateAccessLocked]);
+  }, [activeAnalysisTab, privateAccessLocked]);
 
   useEffect(() => {
     let cancelled = false;
@@ -5504,16 +8297,6 @@ export default function Home() {
       window.clearTimeout(searchTimeout);
     };
   }, [placeName, privateAccessLocked, selectedPlace]);
-
-  useEffect(() => {
-    if (privateAccessLocked || autoCalculationStartedRef.current || chart || lastBirthPayload || !selectedPlace) {
-      return;
-    }
-    const payload = buildBirthPayload();
-    if (!payload) return;
-    autoCalculationStartedRef.current = true;
-    void runBirthCalculation(payload, "Формирую стартовую карту...");
-  }, [privateAccessLocked, selectedPlace, chart, lastBirthPayload]);
 
   useEffect(() => {
     let cancelled = false;
@@ -5659,6 +8442,52 @@ export default function Home() {
     };
   }, [activeAnalysisTab, privateAccessLocked]);
 
+  useEffect(() => {
+    if (privateAccessLocked) {
+      setCompatibilityPersonAChart(null);
+      setCompatibilityPersonBChart(null);
+      setCompatibilityChartStatus("Войдите, чтобы открыть карты взаимодействия");
+      return;
+    }
+    let cancelled = false;
+    const ids = [
+      compatibilityPersonAProfileId ? Number(compatibilityPersonAProfileId) : null,
+      compatibilityPersonBProfileId ? Number(compatibilityPersonBProfileId) : null,
+    ];
+    if (!ids[0] && !ids[1]) {
+      setCompatibilityPersonAChart(null);
+      setCompatibilityPersonBChart(null);
+      setCompatibilityChartStatus("Выберите сохранённые карты A/B, чтобы открыть обе карты");
+      return;
+    }
+    setCompatibilityChartStatus("Открываю карты A/B...");
+    Promise.allSettled(ids.map((id) => (id ? calculateSavedProfile(id) : Promise.resolve(null))))
+      .then(([personA, personB]) => {
+        if (cancelled) return;
+        const chartA = personA.status === "fulfilled" ? personA.value?.result ?? null : null;
+        const chartB = personB.status === "fulfilled" ? personB.value?.result ?? null : null;
+        setCompatibilityPersonAChart(chartA);
+        setCompatibilityPersonBChart(chartB);
+        const loaded = [chartA, chartB].filter(Boolean).length;
+        setCompatibilityChartStatus(
+          loaded === 2
+            ? "Обе карты открыты для выбранного ракурса"
+            : loaded === 1
+              ? "Открыта одна карта, вторую можно выбрать из сохранённых"
+              : "Не удалось открыть сохранённые карты",
+        );
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setCompatibilityPersonAChart(null);
+        setCompatibilityPersonBChart(null);
+        setCompatibilityChartStatus(error instanceof Error ? error.message : "Не удалось открыть карты A/B");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [compatibilityPersonAProfileId, compatibilityPersonBProfileId, privateAccessLocked]);
+
   function selectPlace(place: PlaceCandidate) {
     setSelectedPlace(place);
     setPlaceName(place.label);
@@ -5742,6 +8571,7 @@ export default function Home() {
     setManualLatitude(String(profile.place.latitude));
     setManualLongitude(String(profile.place.longitude));
     setProfileName(profile.display_name);
+    setProfileIsSelf(profile.is_self_profile);
     setZodiac(profile.calculation_settings.zodiac);
     setCalculationModel(profile.calculation_settings.calculation_model);
     setAyanamsa(profile.calculation_settings.ayanamsa);
@@ -5766,6 +8596,126 @@ export default function Home() {
         ? current.filter((id) => id !== profileId)
         : [...current, profileId],
     );
+  }
+
+  function profileRelationshipFor(baseProfileId: string, relatedProfileId: number) {
+    return profileRelationships.find(
+      (relationship) =>
+        String(relationship.profile_id) === baseProfileId &&
+        relationship.related_profile_id === relatedProfileId,
+    );
+  }
+
+  function resetCompatibilityResultState() {
+    setCompatibilityReport(null);
+    setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
+    setCompatibilityCodexAnalysis(null);
+    setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+    resetCompatibilityChat();
+  }
+
+  function applyCompatibilityRelationship(relationship: ChartProfileRelationship) {
+    const role = compatibilityRelationshipRole(relationship.role);
+    setCompatibilityPersonAProfileId(String(relationship.profile_id));
+    setCompatibilityPersonBProfileId(String(relationship.related_profile_id));
+    setCompatibilityRelationshipRoleKey(role.key);
+    setChartReference(chartReferenceForRelationshipRole(role));
+    setRelationshipBaseProfileId(String(relationship.profile_id));
+    resetCompatibilityResultState();
+    setCompatibilityChartStatus("Открываю обе карты для выбранной связи...");
+    setRelatedProfileIds((current) =>
+      current.includes(relationship.related_profile_id)
+        ? current
+        : [...current, relationship.related_profile_id],
+    );
+    setActiveAnalysisTab("compatibility");
+    setCompatibilityStatus(
+      `Выбрана связь: ${relationship.profile?.display_name ?? "карта A"} → ${relationship.related_profile?.display_name ?? "карта B"} (${role.label})`,
+    );
+    setCompatibilityPacketStatus(`Ракурс карты: ${chartReferenceOptions.find((option) => option.key === chartReferenceForRelationshipRole(role))?.label ?? "Лагна"}. Можно рассчитать совместимость или сформировать Codex-пакет.`);
+  }
+
+  async function handleProfileRelationshipRoleChange(relatedProfileId: number, role: string) {
+    const baseProfileId = Number(relationshipBaseProfileId);
+    if (!currentUser || !baseProfileId) {
+      setProfileStatus("Сначала выбери базовую карту");
+      return;
+    }
+    try {
+      const relationship = await upsertChartProfileRelationship({
+        profile_id: baseProfileId,
+        related_profile_id: relatedProfileId,
+        role,
+      });
+      setProfileRelationships((current) => [
+        relationship,
+        ...current.filter((item) => item.id !== relationship.id),
+      ]);
+      const related = profiles.find((profile) => profile.id === relatedProfileId);
+      const roleLabel = compatibilityRelationshipRole(role).label;
+      setProfileStatus(`${related?.display_name ?? "Карта"}: роль сохранена как ${roleLabel}`);
+    } catch (error) {
+      setProfileStatus(error instanceof Error ? error.message : "Не удалось сохранить роль связи");
+    }
+  }
+
+  async function handleIncomingProfileRelationshipAction(
+    relationshipId: number,
+    action: "accept" | "decline" | "block",
+  ) {
+    try {
+      const acceptedProfileId = Number(incomingRequestAcceptedProfileIds[relationshipId]);
+      if (action === "accept" && !acceptedProfileId) {
+        setProfileStatus("Выбери свою карту для подтверждения связи");
+        return;
+      }
+      const relationship = await updateChartProfileRelationshipRequest(
+        relationshipId,
+        action,
+        action === "accept" ? acceptedProfileId : undefined,
+      );
+      setIncomingProfileRelationshipRequests((current) => current.filter((item) => item.id !== relationshipId));
+      setIncomingRequestAcceptedProfileIds((current) => {
+        const next = { ...current };
+        delete next[relationshipId];
+        return next;
+      });
+      setProfileRelationships((current) => [
+        relationship,
+        ...current.filter((item) => item.id !== relationship.id),
+      ]);
+      const statusLabels = { accept: "принят", decline: "отклонён", block: "заблокирован" };
+      setProfileStatus(`Запрос ${statusLabels[action]}`);
+    } catch (error) {
+      setProfileStatus(error instanceof Error ? error.message : "Не удалось обработать запрос");
+    }
+  }
+
+  function loadSampleBirthData() {
+    setBirthDate("1998-04-30");
+    setBirthTime("13:45");
+    setGender("male");
+    setPlaceName("Стерлитамак");
+    setProfileName("Моя карта 30.04.1998");
+    setProfileIsSelf(true);
+    setSelectedPlace(null);
+    setPlaceMatches([]);
+    setShowPlaceSuggestions(false);
+    setPlaceSearchStatus("Пример: Стерлитамак, IANA Asia/Yekaterinburg, исторический UTC +06:00");
+    setManualTimezone("Asia/Yekaterinburg");
+    setManualLatitude("53.6304");
+    setManualLongitude("55.9308");
+    setChart(null);
+    setBirthReport(null);
+    setDraftAnalysis(null);
+    setCurrentDayOverview(null);
+    setLastBirthPayload(null);
+    setCompatibilityReport(null);
+    setCompatibilityCodexAnalysis(null);
+    setChartMode("D1");
+    setChartReference("lagna");
+    setActiveAnalysisTab("overview");
+    setStatus("Пример загружен. Нажмите «Рассчитать карту».");
   }
 
   function buildBirthPayload(): BirthChartRequest | null {
@@ -5802,6 +8752,19 @@ export default function Home() {
     };
   }
 
+  function payloadWithCurrentRelatedProfiles(payload: BirthChartRequest): BirthChartRequest {
+    const currentProfileId = typeof payload.profile_id === "number" ? payload.profile_id : null;
+    const relatedIds = relatedProfileIds.filter((id) => id !== currentProfileId);
+    if (!relatedIds.length) {
+      const { related_profile_ids: _relatedProfileIds, ...payloadWithoutRelatedProfiles } = payload;
+      return payloadWithoutRelatedProfiles;
+    }
+    return {
+      ...payload,
+      related_profile_ids: relatedIds,
+    };
+  }
+
   function buildManualPartnerPayload(): BirthChartRequest | null {
     if (!selectedPartnerPlace) {
       setCompatibilityStatus("Выбери город второго человека из подсказок");
@@ -5824,14 +8787,70 @@ export default function Home() {
     return selectedProfilePayload(compatibilityPersonBProfileId) ?? buildManualPartnerPayload();
   }
 
+  function buildCompatibilityRelationshipContext() {
+    const role = compatibilityRelationshipRole(compatibilityRelationshipRoleKey);
+    const relationship = selectedCompatibilityRelationship;
+    return {
+      role: role.key,
+      label: role.label,
+      focus_houses: [...role.focusHouses],
+      focus_vargas: [...role.focusVargas],
+      prompt_hint: role.promptHint,
+      consent_policy: "Если второй человек является зарегистрированным пользователем, полноценную взаимную связь нужно показывать только после подтверждения запроса.",
+      ...(relationship
+        ? {
+            relationship_id: relationship.id,
+            link_status: relationship.link_status,
+            profile_id: relationship.profile_id,
+            related_profile_id: relationship.related_profile_id,
+            profile_label: relationship.profile?.display_name ?? undefined,
+            related_profile_label: relationship.related_profile?.display_name ?? undefined,
+          }
+        : {}),
+    };
+  }
+
+  function buildCompatibilityPayload(personA: BirthChartRequest, personB: BirthChartRequest) {
+    return {
+      person_a: personA,
+      person_b: personB,
+      relationship_context: buildCompatibilityRelationshipContext(),
+    };
+  }
+
   async function refreshProfiles() {
     try {
-      const items = await listChartProfiles();
+      const [items, relationships, incomingRequests] = await Promise.all([
+        listChartProfiles(),
+        listChartProfileRelationships(),
+        listIncomingChartProfileRelationshipRequests(),
+      ]);
       setProfiles(items);
+      setProfileRelationships(relationships);
+      setIncomingProfileRelationshipRequests(incomingRequests);
+      setIncomingRequestAcceptedProfileIds((current) => {
+        const fallbackProfileId = items[0] ? String(items[0].id) : "";
+        return Object.fromEntries(
+          incomingRequests.map((request) => [
+            request.id,
+            current[request.id] && items.some((profile) => String(profile.id) === current[request.id])
+              ? current[request.id]
+              : fallbackProfileId,
+          ]),
+        );
+      });
       setRelatedProfileIds((current) => current.filter((id) => items.some((profile) => profile.id === id)));
+      setRelationshipBaseProfileId((current) => {
+        if (current && items.some((profile) => String(profile.id) === current)) return current;
+        return items[0] ? String(items[0].id) : "";
+      });
       setProfileStatus(items.length ? `${items.length} сохранённых карт` : "Сохранённых карт пока нет");
     } catch (error) {
       setProfiles([]);
+      setProfileRelationships([]);
+      setIncomingProfileRelationshipRequests([]);
+      setIncomingRequestAcceptedProfileIds({});
+      setRelationshipBaseProfileId("");
       setProfileStatus(error instanceof Error ? error.message : "Не удалось загрузить профили");
     }
   }
@@ -5839,23 +8858,52 @@ export default function Home() {
   async function handleAuth(mode: "login" | "register") {
     setAuthStatus(mode === "login" ? "Вхожу..." : "Создаю пользователя...");
     try {
-      const user =
+      const authResult =
         mode === "login"
-          ? await loginUser(authUsername, authPassword)
-          : await registerUser(authUsername, authPassword);
+          ? { user: await loginUser(authUsername, authPassword), profile: null }
+          : await registerUser(authUsername, authPassword, {
+              display_name: profileName || "Моя карта",
+              birth_date: birthDate,
+              birth_time: birthTime,
+              birth_time_accuracy: birthTime ? "exact" : "unknown",
+              place_name: placeName,
+              timezone: selectedPlace?.timezone,
+              latitude: selectedPlace?.latitude,
+              longitude: selectedPlace?.longitude,
+            });
+      const user = authResult.user;
       if (!user.is_active) {
         setCurrentUser(null);
         setProfiles([]);
+        setProfileRelationships([]);
+        setIncomingProfileRelationshipRequests([]);
+        setIncomingRequestAcceptedProfileIds({});
+        setRelationshipBaseProfileId("");
         setAuthStatus("Регистрация отправлена. Доступ появится после одобрения администратора.");
         setProfileStatus("После одобрения можно будет сохранять карты");
         return;
       }
       setCurrentUser(user);
-      setAuthStatus(`Вход: ${user.username}`);
+      if (mode === "register" && authResult.profile) {
+        setProfiles([authResult.profile]);
+        setRelationshipBaseProfileId(String(authResult.profile.id));
+        setProfileStatus(`${authResult.profile.display_name}: создана ваша первая карта`);
+        setAuthStatus(
+          authResult.profile.birth_time
+            ? `Регистрация завершена: ${user.username}. Моя карта создана.`
+            : `Регистрация завершена: ${user.username}. Моя карта создана без времени рождения; его можно уточнить позже.`,
+        );
+      } else {
+        setAuthStatus(mode === "register" ? `Регистрация завершена: ${user.username}` : `Вход: ${user.username}`);
+      }
       await refreshProfiles();
     } catch (error) {
       setCurrentUser(null);
       setProfiles([]);
+      setProfileRelationships([]);
+      setIncomingProfileRelationshipRequests([]);
+      setIncomingRequestAcceptedProfileIds({});
+      setRelationshipBaseProfileId("");
       setAuthStatus(error instanceof Error ? error.message : "Ошибка авторизации");
     }
   }
@@ -5864,6 +8912,10 @@ export default function Home() {
     await logoutUser();
     setCurrentUser(null);
     setProfiles([]);
+    setProfileRelationships([]);
+    setIncomingProfileRelationshipRequests([]);
+    setIncomingRequestAcceptedProfileIds({});
+    setRelationshipBaseProfileId("");
     setAuthStatus("Вы вышли");
     setProfileStatus("Сохранённые карты не загружены");
   }
@@ -5880,6 +8932,7 @@ export default function Home() {
       await createChartProfile({
         ...payload,
         display_name: profileName.trim() || "Моя карта",
+        is_self_profile: profileIsSelf,
       });
       await refreshProfiles();
     } catch (error) {
@@ -5912,20 +8965,16 @@ export default function Home() {
   }
 
   function handleSelectCompatibilityPersonAProfile(profileId: string) {
+    setActiveCompatibilityRelationshipId("");
     setCompatibilityPersonAProfileId(profileId);
-    setCompatibilityReport(null);
-    setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
-    setCompatibilityCodexAnalysis(null);
-    setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+    resetCompatibilityResultState();
     setCompatibilityStatus(profileId ? "Карта A взята из сохранённых" : "Карта A: текущий расчёт");
   }
 
   function handleSelectCompatibilityPersonBProfile(profileId: string) {
+    setActiveCompatibilityRelationshipId("");
     setCompatibilityPersonBProfileId(profileId);
-    setCompatibilityReport(null);
-    setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
-    setCompatibilityCodexAnalysis(null);
-    setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+    resetCompatibilityResultState();
     const profile = profiles.find((item) => String(item.id) === profileId);
     if (!profile) {
       setCompatibilityStatus("Карта B: ручной ввод");
@@ -5951,12 +9000,37 @@ export default function Home() {
       const saved = await createChartProfile({
         ...payload,
         display_name: partnerProfileName.trim() || "Карта партнёра",
+        is_self_profile: false,
       });
       await refreshProfiles();
+      setActiveCompatibilityRelationshipId("");
       setCompatibilityPersonBProfileId(String(saved.id));
+      resetCompatibilityResultState();
       setCompatibilityStatus(`Карта B сохранена: ${saved.display_name}`);
     } catch (error) {
       setProfileStatus(error instanceof Error ? error.message : "Не удалось сохранить карту партнёра");
+    }
+  }
+
+  async function handleMarkSelfProfile(profile: ChartProfile, isSelf: boolean) {
+    setProfileStatus(isSelf ? "Помечаю карту как вашу..." : "Снимаю пометку вашей карты...");
+    try {
+      const updated = await updateChartProfile(profile.id, { is_self_profile: isSelf });
+      setProfiles((current) =>
+        current.map((item) => ({
+          ...item,
+          is_self_profile: isSelf ? item.id === updated.id : item.id === updated.id ? false : item.is_self_profile,
+        })),
+      );
+      if (isSelf) {
+        setProfileName(updated.display_name);
+        setProfileIsSelf(true);
+      } else {
+        setProfileIsSelf(false);
+      }
+      setProfileStatus(isSelf ? `${updated.display_name}: теперь это ваша карта` : `${updated.display_name}: пометка снята`);
+    } catch (error) {
+      setProfileStatus(error instanceof Error ? error.message : "Не удалось обновить карту");
     }
   }
 
@@ -6062,11 +9136,18 @@ export default function Home() {
   }
 
   async function handleGenerateCurrentDayOverview() {
-    const payload = lastBirthPayload ?? buildBirthPayload();
+    if (currentDayBusy) return;
+    if (aiAccessLocked) {
+      setCurrentDayStatus("Войдите или зарегистрируйтесь, чтобы сохранять обзор нынешнего дня в личной истории.");
+      return;
+    }
+    const basePayload = lastBirthPayload ?? buildBirthPayload();
+    const payload = basePayload ? payloadWithCurrentRelatedProfiles(basePayload) : null;
     if (!payload) return;
     const today = isoDateOffset(0);
     const nowTime = new Date().toTimeString().slice(0, 5);
     setCurrentDayOverview(null);
+    setCurrentDayBusy(true);
     setCurrentDayStatus("Сохраняю обзор нынешнего дня...");
     setActiveAnalysisTab("transits");
     try {
@@ -6085,6 +9166,8 @@ export default function Home() {
     } catch (error) {
       setCurrentDayOverview(null);
       setCurrentDayStatus(error instanceof Error ? error.message : "Не удалось сохранить обзор нынешнего дня");
+    } finally {
+      setCurrentDayBusy(false);
     }
   }
 
@@ -6099,8 +9182,7 @@ export default function Home() {
     setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
     try {
       const result = await calculateCompatibility({
-        person_a: personA,
-        person_b: personB,
+        ...buildCompatibilityPayload(personA, personB),
       });
       setCompatibilityReport(result);
       setCompatibilityPacketStatus("Можно сформировать Codex-пакет по этому расчёту");
@@ -6121,8 +9203,7 @@ export default function Home() {
     setCompatibilityPacketStatus("Формирую Codex-пакет...");
     try {
       const packet = await generateCompatibilityAnalysisPacket({
-        person_a: personA,
-        person_b: personB,
+        ...buildCompatibilityPayload(personA, personB),
       });
       const compatibility = packet.context.compatibility as CompatibilityReport | undefined;
       if (compatibility) {
@@ -6149,6 +9230,10 @@ export default function Home() {
   }
 
   async function handleCompatibilityCodexAnalysis() {
+    if (aiAccessLocked) {
+      setCompatibilityCodexStatus("Войдите или зарегистрируйтесь, чтобы сохранить AI-разбор совместимости в личной истории.");
+      return;
+    }
     const personA = selectedProfilePayload(compatibilityPersonAProfileId) ?? lastBirthPayload ?? buildBirthPayload();
     const personB = buildPartnerPayload();
     if (!personA || !personB) return;
@@ -6156,8 +9241,7 @@ export default function Home() {
     setCompatibilityCodexStatus("Запускаю Codex CLI для полного разбора двух карт...");
     try {
       const result = await generateCompatibilityCodexAnalysis({
-        person_a: personA,
-        person_b: personB,
+        ...buildCompatibilityPayload(personA, personB),
       });
       setCompatibilityCodexAnalysis(result);
       setCompatibilityChatMessages([]);
@@ -6173,6 +9257,10 @@ export default function Home() {
   }
 
   async function handleAskCompatibilityQuestion(question: string) {
+    if (aiAccessLocked) {
+      setCompatibilityChatStatus("Войдите, чтобы продолжать диалог по сохранённому обзору совместимости.");
+      return;
+    }
     if (!compatibilityCodexAnalysis) return;
     const userMessage: CodexAnalysisChatMessage = { role: "user", content: question };
     const history = [...compatibilityChatMessages, userMessage];
@@ -6193,7 +9281,20 @@ export default function Home() {
   }
 
   async function handleGenerateDraftAnalysis(forceRegenerate = false) {
-    const payload = lastBirthPayload ?? buildBirthPayload();
+    if (aiAccessLocked) {
+      setDraftAnalysisStatus("Войдите или зарегистрируйтесь, чтобы сохранить личный AI-разбор.");
+      return;
+    }
+    if (!activeSavedBirthProfile) {
+      setDraftAnalysisStatus("Сначала сохраните расчёт как вашу личную карту. Первый AI-разбор доступен только для сохранённой «моей карты».");
+      return;
+    }
+    if (!activeSavedBirthProfile.is_self_profile) {
+      setDraftAnalysisStatus("AI-разбор чужой сохранённой карты будет платным действием после подключения оплаты. Карту можно хранить и смотреть бесплатно.");
+      return;
+    }
+    const basePayload = lastBirthPayload ?? buildBirthPayload();
+    const payload = basePayload ? payloadWithCurrentRelatedProfiles(basePayload) : null;
     if (!payload) return;
     setDraftAnalysis(null);
     resetCodexChat();
@@ -6208,7 +9309,9 @@ export default function Home() {
       setCodexChatMessages([]);
       setCodexChatStatus("Можно задавать вопросы по этому разбору");
       setDraftAnalysisStatus(
-        `Codex CLI #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
+        result.billing_status === "free_personal_analysis_already_used"
+          ? `Codex CLI #${result.id}: сохранённый бесплатный личный разбор, ${result.sections.length} разделов`
+          : `Codex CLI #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
       );
     } catch (error) {
       setDraftAnalysis(null);
@@ -6217,58 +9320,11 @@ export default function Home() {
     }
   }
 
-  async function handleGenerateQwenAnalysis() {
-    const payload = lastBirthPayload ?? buildBirthPayload();
-    if (!payload) return;
-    setQwenAnalysis(null);
-    setQwenAnalysisStatus("Запускаю QWEN через локальный FreeQwenApi...");
-    try {
-      const result = await generateBirthQwenAnalysis(payload);
-      setQwenAnalysis(result);
-      setQwenAnalysisStatus(
-        `QWEN #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
-      );
-    } catch (error) {
-      setQwenAnalysis(null);
-      setQwenAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации QWEN-разбора");
-    }
-  }
-
-  async function handleGenerateDeepseekAnalysis() {
-    const payload = lastBirthPayload ?? buildBirthPayload();
-    if (!payload) return;
-    setDeepseekAnalysis(null);
-    setDeepseekAnalysisStatus("Запускаю DeepSeek через локальный FreeDeepseekAPI...");
-    try {
-      const result = await generateBirthDeepseekAnalysis(payload);
-      setDeepseekAnalysis(result);
-      setDeepseekAnalysisStatus(
-        `DeepSeek #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
-      );
-    } catch (error) {
-      setDeepseekAnalysis(null);
-      setDeepseekAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации DeepSeek-обзора");
-    }
-  }
-
-  async function handleGenerateNemotronAnalysis() {
-    const payload = lastBirthPayload ?? buildBirthPayload();
-    if (!payload) return;
-    setNemotronAnalysis(null);
-    setNemotronAnalysisStatus("Запускаю Nemotron через OpenRouter...");
-    try {
-      const result = await generateBirthNemotronAnalysis(payload);
-      setNemotronAnalysis(result);
-      setNemotronAnalysisStatus(
-        `Nemotron #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
-      );
-    } catch (error) {
-      setNemotronAnalysis(null);
-      setNemotronAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации Nemotron-обзора");
-    }
-  }
-
   async function handleAskDraftQuestion(question: string) {
+    if (aiAccessLocked) {
+      setCodexChatStatus("Войдите, чтобы продолжать диалог по сохранённому личному обзору.");
+      return;
+    }
     if (!draftAnalysis) return;
     const userMessage: CodexAnalysisChatMessage = { role: "user", content: question };
     const history = [...codexChatMessages, userMessage];
@@ -6310,22 +9366,18 @@ export default function Home() {
       setShowBirthEditor(false);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
-      setQwenAnalysis(null);
-      setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
-      setDeepseekAnalysis(null);
-      setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
       setCurrentDayOverview(null);
       setCurrentDayStatus("Текущий день ещё не сохранялся");
-      setNemotronAnalysis(null);
-      setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
       setCompatibilityCodexAnalysis(null);
       setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
-      await Promise.all([refreshWorkflowReports(payload), refreshDualCalculation(payload)]);
+      setWorkflowStatus("Дополнительные отчёты не запускались автоматически, чтобы не перегружать сервер");
+      setDualCalculationStatus("JHora witness запускается отдельно во вкладке точности");
       setActiveAnalysisTab("overview");
       setStatus("Сохранённая карта загружена и рассчитана");
+      scrollToChartAfterCalculation();
       await refreshProfiles();
     } catch (error) {
       setProfileStatus(error instanceof Error ? error.message : "Не удалось рассчитать профиль");
@@ -6342,34 +9394,24 @@ export default function Home() {
       setBirthReport(result.report);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
-      setQwenAnalysis(null);
-      setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
-      setDeepseekAnalysis(null);
-      setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
       setCurrentDayOverview(null);
       setCurrentDayStatus("Текущий день ещё не сохранялся");
-      setNemotronAnalysis(null);
-      setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setLastBirthPayload(payload);
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
       setCompatibilityCodexAnalysis(null);
       setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
-      await Promise.all([refreshWorkflowReports(payload), refreshDualCalculation(payload)]);
+      setWorkflowStatus("Дополнительные отчёты не запускались автоматически, чтобы не перегружать сервер");
+      setDualCalculationStatus("JHora witness запускается отдельно во вкладке точности");
       setStatus("Отчёт построен");
+      scrollToChartAfterCalculation();
     } catch (error) {
       setChart(null);
       setBirthReport(null);
       setDraftAnalysis(null);
       setDraftAnalysisStatus("Личный разбор ещё не генерировался");
-      setQwenAnalysis(null);
-      setQwenAnalysisStatus("QWEN разбор ещё не генерировался");
-      setDeepseekAnalysis(null);
-      setDeepseekAnalysisStatus("DeepSeek обзор ещё не генерировался");
       setCurrentDayOverview(null);
       setCurrentDayStatus("Текущий день ещё не сохранялся");
-      setNemotronAnalysis(null);
-      setNemotronAnalysisStatus("Nemotron обзор ещё не генерировался");
       setTransitReport(null);
       setMuhurtaReport(null);
       setCompatibilityReport(null);
@@ -6383,11 +9425,20 @@ export default function Home() {
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitBirthCalculation() {
     const payload = buildBirthPayload();
     if (!payload) return;
     await runBirthCalculation(payload);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitBirthCalculation();
+  }
+
+  async function handleCalculateClick(event: { preventDefault: () => void }) {
+    event.preventDefault();
+    await submitBirthCalculation();
   }
 
   async function handleSourceSearch(event: FormEvent<HTMLFormElement>) {
@@ -6415,24 +9466,130 @@ export default function Home() {
     }
   }
 
+  const activeSavedBirthProfile = typeof lastBirthPayload?.profile_id === "number"
+    ? profiles.find((profile) => profile.id === lastBirthPayload.profile_id) ?? null
+    : null;
+  const aiBillingStatus = activeSavedBirthProfile
+    ? activeSavedBirthProfile.is_self_profile
+      ? {
+          label: "Личный AI-разбор",
+          text: "Эта карта отмечена как «моя карта»: первый Codex-разбор доступен бесплатно; повтор вернёт сохранённый отчёт.",
+          tone: "free" as const,
+        }
+      : {
+          label: "Чужая сохранённая карта",
+          text: "Карту можно хранить и смотреть бесплатно. AI-разбор этой карты будет платным действием после подключения оплаты.",
+          tone: "paid" as const,
+        }
+    : {
+        label: currentUser ? "Карта ещё не сохранена" : "Нужен вход",
+        text: currentUser
+          ? "Сохраните расчёт как «моя карта», чтобы использовать первый бесплатный личный AI-разбор."
+          : "Войдите или зарегистрируйтесь: первый AI-разбор доступен только для вашей сохранённой карты.",
+        tone: "neutral" as const,
+      };
+
+  const activeMainNavKey: AppNavKey =
+    activeAnalysisTab === "overview"
+      ? chartWorkspaceTab === "vargas"
+        ? "vargas"
+        : "charts"
+      : activeAnalysisTab === "calculations" ||
+          activeAnalysisTab === "yogas" ||
+          activeAnalysisTab === "timeline" ||
+          activeAnalysisTab === "transits" ||
+          activeAnalysisTab === "compatibility" ||
+          activeAnalysisTab === "accuracy" ||
+          activeAnalysisTab === "guidance" ||
+          activeAnalysisTab === "sources"
+        ? activeAnalysisTab
+        : "charts";
+
+  function handleMainNavSelect(key: AppNavKey) {
+    if (key === "charts" || key === "settings") {
+      setChartWorkspaceTab("essentials");
+      setActiveAnalysisTab("overview");
+      return;
+    }
+    if (key === "vargas") {
+      setChartWorkspaceTab("vargas");
+      setActiveAnalysisTab("overview");
+      return;
+    }
+    if (
+      key === "calculations" ||
+      key === "yogas" ||
+      key === "timeline" ||
+      key === "transits" ||
+      key === "guidance" ||
+      key === "sources" ||
+      key === "accuracy"
+    ) {
+      setActiveAnalysisTab(key);
+    }
+  }
+
+  const initialUiReady = !browserStorageAvailable() || (formDraftHydrated && chartStyleHydrated && chartViewHydrated);
+
+  if (!initialUiReady) {
+    return (
+      <main className={`app-shell shell-loading ${interfaceMode === "beginner" ? "beginner-mode" : "pro-mode"}${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+        <aside className="sidebar">
+          <div className="sidebar-brand-row">
+            <div className="mark">Ом</div>
+            <button
+              type="button"
+              className="sidebar-collapse-button"
+              onClick={toggleSidebarCollapsed}
+              aria-label={sidebarCollapsed ? "Развернуть меню" : "Свернуть меню"}
+              title={sidebarCollapsed ? "Развернуть меню" : "Свернуть меню"}
+            >
+              {sidebarCollapsed ? "›" : "‹"}
+            </button>
+          </div>
+          <div className="sidebar-title">
+            <h1>Jyotish Agent</h1>
+            <p>Гаудия-сиддханта джйотиш</p>
+          </div>
+          <AppNavigation activeKey="charts" home />
+        </aside>
+        <section className="workspace">
+          <header className="topbar">
+            <div className="topbar-title">
+              <strong>Карта рождения</strong>
+              <span>Загружаю сохранённый рабочий стол...</span>
+            </div>
+          </header>
+          <section className="panel initial-ui-loading" aria-live="polite">
+            <strong>Открываю сохранённые данные</strong>
+            <span>Сейчас подтянутся карта, настройки вида, язык терминов и последний выбранный раздел.</span>
+          </section>
+        </section>
+      </main>
+    );
+  }
+
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${interfaceMode === "beginner" ? "beginner-mode" : "pro-mode"}${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
       <aside className="sidebar">
-        <div className="mark">Ом</div>
-        <div>
+        <div className="sidebar-brand-row">
+          <div className="mark">Ом</div>
+          <button
+            type="button"
+            className="sidebar-collapse-button"
+            onClick={toggleSidebarCollapsed}
+            aria-label={sidebarCollapsed ? "Развернуть меню" : "Свернуть меню"}
+            title={sidebarCollapsed ? "Развернуть меню" : "Свернуть меню"}
+          >
+            {sidebarCollapsed ? "›" : "‹"}
+          </button>
+        </div>
+        <div className="sidebar-title">
           <h1>Jyotish Agent</h1>
           <p>Гаудия-сиддханта джйотиш</p>
         </div>
-        <nav aria-label="Основная навигация">
-          <a className="active" href="#chart">Карты</a>
-          <a href="#varga-charts">D-карты</a>
-          <a href="/compatibility">Совместимость</a>
-          <a href="/reports">История отчётов</a>
-          <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>Отчёт</a>
-          <a href="#reports" onClick={() => setActiveAnalysisTab("sources")}>Источники</a>
-          <a href="#reports" onClick={() => setActiveAnalysisTab("accuracy")}>Точность</a>
-          <a href="#display-settings">Вид</a>
-        </nav>
+        <AppNavigation activeKey={activeMainNavKey} home onSelect={handleMainNavSelect} />
+        <InterfaceModeSwitch value={interfaceMode} onChange={handleInterfaceModeChange} />
         <blockquote>
           yatha shastram
           <br />
@@ -6475,6 +9632,21 @@ export default function Home() {
                   onChange={(event) => setAuthPassword(event.target.value)}
                 />
               </label>
+              <div className="registration-birth-fields">
+                <span>Для регистрации: дата и город рождения. Время необязательно; первый AI-разбор будет доступен для вашей карты.</span>
+                <label>
+                  Дата рождения
+                  <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
+                </label>
+                <label>
+                  Время рождения (необязательно)
+                  <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
+                </label>
+                <label>
+                  Город рождения
+                  <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
+                </label>
+              </div>
               <div className="auth-actions">
                 <button type="button" className="secondary-button" onClick={() => handleAuth("login")}>Войти</button>
                 <button type="button" className="secondary-button" onClick={() => handleAuth("register")}>Регистрация</button>
@@ -6496,16 +9668,26 @@ export default function Home() {
             />
             <div className="panel-heading">
               <h2>Данные рождения</h2>
-              <button type="button" className="secondary-button">Пример</button>
+              <button type="button" className="secondary-button" onClick={loadSampleBirthData}>Пример</button>
             </div>
-            <form onSubmit={handleSubmit} className="birth-form">
+            <form onSubmit={handleSubmit} className="birth-form" id="birth-form">
               <label>
                 Дата рождения
-                <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
+                <input
+                  type="date"
+                  value={birthDate}
+                  onInput={(event) => setBirthDate(event.currentTarget.value)}
+                  onChange={(event) => setBirthDate(event.target.value)}
+                />
               </label>
               <label>
                 Время рождения
-                <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
+                <input
+                  type="time"
+                  value={birthTime}
+                  onInput={(event) => setBirthTime(event.currentTarget.value)}
+                  onChange={(event) => setBirthTime(event.target.value)}
+                />
               </label>
               <label>
                 Пол
@@ -6607,106 +9789,129 @@ export default function Home() {
                   ))}
                 </div>
               ) : null}
-              <fieldset className="calculation-settings" id="calculation-settings">
-                <legend>Настройки расчёта</legend>
-                <div className="settings-grid">
-                  <label>
-                    Зодиак
-                    <select value={zodiac} onChange={(event) => setZodiac(event.target.value)}>
-                      <option value="sidereal">Sidereal</option>
-                    </select>
-                  </label>
-                  <label>
-                    Модель
-                    <select value={calculationModel} onChange={(event) => setCalculationModel(event.target.value)}>
-                      <option value="drik_siddhanta">Drik Siddhanta</option>
-                      <option value="surya_siddhanta" disabled>Sri Surya Siddhanta</option>
-                    </select>
-                  </label>
-                  <label>
-                    Айанамша
-                    <select value={ayanamsa} onChange={(event) => setAyanamsa(event.target.value)}>
-                      <option value="lahiri">Lahiri</option>
-                    </select>
-                  </label>
-                  <label>
-                    Узлы
-                    <select value={nodeType} onChange={(event) => setNodeType(event.target.value)}>
-                      <option value="true">True Node</option>
-                      <option value="mean">Mean Node</option>
-                    </select>
-                  </label>
-                  <label>
-                    Эфемериды
-                    <select value={ephemeris} onChange={(event) => setEphemeris(event.target.value)}>
-                      <option value="swiss">Swiss Ephemeris</option>
-                      <option value="jpl">JPL через Swiss</option>
-                    </select>
-                  </label>
-                  <label>
-                    Дома
-                    <select value={houseSystem} onChange={(event) => setHouseSystem(event.target.value)}>
-                      <option value="whole_sign">Whole Sign</option>
-                    </select>
-                  </label>
-                  <label>
-                    Бхава
-                    <select value={bhavaSystem} onChange={(event) => setBhavaSystem(event.target.value)}>
-                      <option value="whole_sign">Whole Sign</option>
-                    </select>
-                  </label>
-                  <label>
-                    Варги
-                    <select value={vargaScheme} onChange={(event) => setVargaScheme(event.target.value)}>
-                      <option value="parashara">Parashara</option>
-                    </select>
-                  </label>
-                  <label>
-                    Восход
-                    <select value={sunriseSource} onChange={(event) => setSunriseSource(event.target.value)}>
-                      <option value="noaa">NOAA</option>
-                    </select>
-                  </label>
-                  <label>
-                    Часовой пояс
-                    <select value={timezoneSource} onChange={(event) => setTimezoneSource(event.target.value)}>
-                      <option value="iana">IANA historical</option>
-                    </select>
-                  </label>
-                  <label>
-                    Шадбала
-                    <select value={shadbalaProfile} onChange={(event) => setShadbalaProfile(event.target.value)}>
-                      <option value="bphs_classical">BPHS classical</option>
-                    </select>
-                  </label>
-                </div>
-                <span className="settings-note">SSS ведётся как отдельный профиль; сейчас расчёт Drik.</span>
-              </fieldset>
+              <button className="primary-button mobile-calculate-button" type="button" onClick={handleCalculateClick}>Рассчитать карту</button>
+              <a className="mobile-chart-jump" href="#varga-charts">К карте и D-картам</a>
+              <section className="advanced-settings-toggle" aria-labelledby="advanced-settings-title">
+                <button
+                  type="button"
+                  className="advanced-settings-button"
+                  onClick={() => setShowAdvancedSettings((value) => !value)}
+                  aria-expanded={showAdvancedSettings}
+                  aria-controls="calculation-settings"
+                >
+                  <span id="advanced-settings-title">Настройки расчёта</span>
+                  <strong>{showAdvancedSettings ? "Скрыть" : "Показать"}</strong>
+                </button>
+                {showAdvancedSettings ? (
+                  <fieldset className="calculation-settings" id="calculation-settings">
+                    <legend>Профиль расчёта</legend>
+                    <div className="settings-grid">
+                      <label>
+                        Зодиак
+                        <select value={zodiac} onChange={(event) => setZodiac(event.target.value)}>
+                          <option value="sidereal">Sidereal</option>
+                        </select>
+                      </label>
+                      <label>
+                        Модель
+                        <select value={calculationModel} onChange={(event) => setCalculationModel(event.target.value)}>
+                          <option value="drik_siddhanta">Drik Siddhanta</option>
+                          <option value="surya_siddhanta" disabled>Sri Surya Siddhanta</option>
+                        </select>
+                      </label>
+                      <label>
+                        Айанамша
+                        <select value={ayanamsa} onChange={(event) => setAyanamsa(event.target.value)}>
+                          <option value="lahiri">Lahiri</option>
+                        </select>
+                      </label>
+                      <label>
+                        Узлы
+                        <select value={nodeType} onChange={(event) => setNodeType(event.target.value)}>
+                          <option value="true">True Node</option>
+                          <option value="mean">Mean Node</option>
+                        </select>
+                      </label>
+                      <label>
+                        Эфемериды
+                        <select value={ephemeris} onChange={(event) => setEphemeris(event.target.value)}>
+                          <option value="swiss">Swiss Ephemeris</option>
+                          <option value="jpl">JPL через Swiss</option>
+                        </select>
+                      </label>
+                      <label>
+                        Дома
+                        <select value={houseSystem} onChange={(event) => setHouseSystem(event.target.value)}>
+                          <option value="whole_sign">Whole Sign</option>
+                        </select>
+                      </label>
+                      <label>
+                        Бхава
+                        <select value={bhavaSystem} onChange={(event) => setBhavaSystem(event.target.value)}>
+                          <option value="whole_sign">Whole Sign</option>
+                        </select>
+                      </label>
+                      <label>
+                        Варги
+                        <select value={vargaScheme} onChange={(event) => setVargaScheme(event.target.value)}>
+                          <option value="parashara">Parashara</option>
+                        </select>
+                      </label>
+                      <label>
+                        Восход
+                        <select value={sunriseSource} onChange={(event) => setSunriseSource(event.target.value)}>
+                          <option value="noaa">NOAA</option>
+                        </select>
+                      </label>
+                      <label>
+                        Часовой пояс
+                        <select value={timezoneSource} onChange={(event) => setTimezoneSource(event.target.value)}>
+                          <option value="iana">IANA historical</option>
+                        </select>
+                      </label>
+                      <label>
+                        <GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm>
+                        <select value={shadbalaProfile} onChange={(event) => setShadbalaProfile(event.target.value)}>
+                          <option value="bphs_classical">BPHS classical</option>
+                        </select>
+                      </label>
+                    </div>
+                    <span className="settings-note">SSS ведётся как отдельный профиль; сейчас расчёт Drik.</span>
+                  </fieldset>
+                ) : null}
+              </section>
               <fieldset className="calculation-settings display-settings" id="display-settings">
                 <legend>Настройки отображения</legend>
                 <div className="settings-grid">
                   <label>
                     Стиль карты
-                    <select value={chartStyle} onChange={(event) => setChartStyle(event.target.value as "north" | "south")}>
+                    <select value={chartStyle} onChange={(event) => handleChartStyleChange(event.target.value as "north" | "south")}>
                       <option value="north">Северный: дома фиксированы</option>
                       <option value="south">Южный: знаки фиксированы</option>
                     </select>
                   </label>
                   <label>
                     Язык терминов
-                    <select value={termLanguage} onChange={(event) => setTermLanguage(event.target.value as TermLanguage)}>
+                    <select value={termLanguage} onChange={(event) => handleTermLanguageChange(event.target.value as TermLanguage)}>
                       <option value="sanskrit">Санскрит: Surya, Mithuna</option>
                       <option value="ru">Русский: Солнце, Близнецы</option>
                       <option value="en">English: Sun, Gemini</option>
                     </select>
                   </label>
+                  <label>
+                    Режим интерфейса
+                    <select value={interfaceMode} onChange={(event) => handleInterfaceModeChange(event.target.value as InterfaceMode)}>
+                      <option value="pro">Астролог: все рабочие панели</option>
+                      <option value="beginner">Новичок: главное и объяснения</option>
+                    </select>
+                  </label>
                 </div>
-                <span className="settings-note">Влияет только на внешний вид карт и таблиц; расчёт не меняется.</span>
+                <span className="settings-note">Влияет только на внешний вид карт, таблиц и плотность интерфейса; расчёт не меняется.</span>
               </fieldset>
               <div className="notice">
                 Политика MVP: айанамша Lahiri, рамка Парашары, обязательные ссылки на источники.
               </div>
-              <button className="primary-button" type="submit">Рассчитать карту</button>
+              <button className="primary-button desktop-calculate-button" type="button" onClick={handleCalculateClick}>Рассчитать карту</button>
               <p className="status-line">{status}</p>
             </form>
             <div className="account-block">
@@ -6733,6 +9938,21 @@ export default function Home() {
                       onChange={(event) => setAuthPassword(event.target.value)}
                     />
                   </label>
+                  <div className="registration-birth-fields">
+                    <span>Для регистрации: дата и город рождения. Время необязательно; первый AI-разбор будет доступен для вашей карты.</span>
+                    <label>
+                      Дата рождения
+                      <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
+                    </label>
+                    <label>
+                      Время рождения (необязательно)
+                      <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
+                    </label>
+                    <label>
+                      Город рождения
+                      <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
+                    </label>
+                  </div>
                   <div className="auth-actions">
                     <button type="button" className="secondary-button" onClick={() => handleAuth("login")}>Войти</button>
                     <button type="button" className="secondary-button" onClick={() => handleAuth("register")}>Регистрация</button>
@@ -6742,6 +9962,17 @@ export default function Home() {
               <label>
                 Название карты
                 <input value={profileName} onChange={(event) => setProfileName(event.target.value)} />
+              </label>
+              <label className="self-profile-toggle">
+                <input
+                  type="checkbox"
+                  checked={profileIsSelf}
+                  onChange={(event) => setProfileIsSelf(event.target.checked)}
+                />
+                <span>
+                  <strong>Это моя карта</strong>
+                  <small>Первый личный AI-разбор бесплатно доступен только для карты, отмеченной как ваша.</small>
+                </span>
               </label>
               <button type="button" className="secondary-button save-profile-button" onClick={handleSaveProfile}>
                 Сохранить профиль рождения
@@ -6764,39 +9995,152 @@ export default function Home() {
                     .join(", ")}
                 </p>
               ) : null}
+              {profiles.length >= 2 ? (
+                <label className="relationship-base-select">
+                  Базовая карта для взаимодействий
+                  <select value={relationshipBaseProfileId} onChange={(event) => setRelationshipBaseProfileId(event.target.value)}>
+                    {profiles.map((profile) => (
+                      <option key={`relation-base-${profile.id}`} value={String(profile.id)}>
+                        {profile.display_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {incomingProfileRelationshipRequests.length ? (
+                <div className="profile-relationship-inbox">
+                  <strong>Запросы на связь</strong>
+                  {incomingProfileRelationshipRequests.map((request) => {
+                    const roleLabel = compatibilityRelationshipRole(request.role).label;
+                    return (
+                      <div className="profile-relationship-request" key={request.id}>
+                        <div>
+                          <span>{request.user?.username ?? "Пользователь"} просит связать карты</span>
+                          <strong>{request.profile?.display_name ?? "Карта"} → {request.related_profile?.display_name ?? "ваша карта"}</strong>
+                          <small>{roleLabel} · {request.related_profile?.birth_date ?? ""}</small>
+                        </div>
+                        <label>
+                          Моя карта
+                          <select
+                            value={incomingRequestAcceptedProfileIds[request.id] ?? ""}
+                            onChange={(event) =>
+                              setIncomingRequestAcceptedProfileIds((current) => ({
+                                ...current,
+                                [request.id]: event.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">Выбрать</option>
+                            {profiles.map((profile) => (
+                              <option value={String(profile.id)} key={`incoming-${request.id}-${profile.id}`}>
+                                {profile.display_name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button type="button" className="secondary-button" onClick={() => handleIncomingProfileRelationshipAction(request.id, "accept")}>
+                          Принять
+                        </button>
+                        <button type="button" className="secondary-button" onClick={() => handleIncomingProfileRelationshipAction(request.id, "decline")}>
+                          Отклонить
+                        </button>
+                        <button type="button" className="secondary-button" onClick={() => handleIncomingProfileRelationshipAction(request.id, "block")}>
+                          Блок
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
               {profiles.length ? (
                 <div className="profile-list">
-                  {profiles.map((profile) => (
-                    <div className="profile-row" key={profile.id}>
-                      <div>
-                        <strong>{profile.display_name}</strong>
-                        <span>{profile.birth_date} · {profile.place.label}</span>
-                        <small>
-                          {profile.latest_calculation
-                            ? `${profile.latest_calculation.status}, ${profile.latest_calculation.graha_count} грах`
-                            : "Расчёт ещё не сохранён"}
-                        </small>
+                  {profiles.map((profile) => {
+                    const isBaseProfile = relationshipBaseProfileId === String(profile.id);
+                    const relationship = profileRelationshipFor(relationshipBaseProfileId, profile.id);
+                    const relationshipRole = relationship ? compatibilityRelationshipRole(relationship.role) : null;
+                    return (
+                      <div className="profile-row" key={profile.id}>
+                        <div>
+                          <strong>
+                            {profile.display_name}
+                            {profile.is_self_profile ? (
+                              <GlossaryTerm termKey="self_profile">
+                                <em className="self-profile-badge">моя карта</em>
+                              </GlossaryTerm>
+                            ) : null}
+                          </strong>
+                          <span>{profile.birth_date} · {profile.place.label}</span>
+                          <small>
+                            {profile.latest_calculation
+                              ? `${profile.latest_calculation.status}, ${profile.latest_calculation.graha_count} грах`
+                              : "Расчёт ещё не сохранён"}
+                          </small>
+                          {profile.is_self_profile ? (
+                            <small className="profile-ai-note">
+                              <GlossaryTerm termKey="free_personal_ai">первый AI-разбор для этой карты</GlossaryTerm>
+                            </small>
+                          ) : (
+                            <small className="profile-ai-note">карту можно хранить бесплатно; AI-разбор чужой карты будет отдельным действием</small>
+                          )}
+                        </div>
+                        <label className="profile-relationship-role">
+                          <GlossaryTerm termKey="relationship_role">Роль</GlossaryTerm>
+                          <select
+                            value={isBaseProfile ? "self" : relationship?.role ?? ""}
+                            disabled={isBaseProfile || !relationshipBaseProfileId}
+                            onChange={(event) => handleProfileRelationshipRoleChange(profile.id, event.target.value)}
+                          >
+                            <option value="">{isBaseProfile ? "Это базовая карта" : "Указать роль"}</option>
+                            <option value="self">Это базовая карта</option>
+                            {compatibilityRelationshipRoles.map((role) => (
+                              <option value={role.key} key={`profile-role-${profile.id}-${role.key}`}>
+                                {role.label}
+                              </option>
+                            ))}
+                          </select>
+                          {!isBaseProfile && relationship ? (
+                            <small>
+                              <GlossaryTerm termKey="relationship_status">
+                                {relationshipStatusLabel(relationship.link_status)}
+                              </GlossaryTerm>
+                            </small>
+                          ) : null}
+                          {!isBaseProfile && relationshipRole ? (
+                            <div className="profile-role-focus" aria-label="Фокус роли для AI-разбора">
+                              <span>{relationshipRole.focus}</span>
+                              <small>Дома <HouseTerms houses={relationshipRole.focusHouses} /></small>
+                              <small>D-карты <VargaTerms vargas={relationshipRole.focusVargas} /></small>
+                            </div>
+                          ) : null}
+                        </label>
+                        <label className="related-profile-toggle">
+                          <input
+                            type="checkbox"
+                            checked={relatedProfileIds.includes(profile.id)}
+                            onChange={() => toggleRelatedProfile(profile.id)}
+                          />
+                          <GlossaryTerm termKey="ai_context">Контекст AI</GlossaryTerm>
+                        </label>
+                        <button
+                          type="button"
+                          className="secondary-button self-profile-row-action"
+                          onClick={() => handleMarkSelfProfile(profile, !profile.is_self_profile)}
+                        >
+                          {profile.is_self_profile ? "Не моя" : "Сделать моей"}
+                        </button>
+                        <button type="button" className="secondary-button" onClick={() => handleCalculateProfile(profile)}>
+                          Загрузить
+                        </button>
                       </div>
-                      <label className="related-profile-toggle">
-                        <input
-                          type="checkbox"
-                          checked={relatedProfileIds.includes(profile.id)}
-                          onChange={() => toggleRelatedProfile(profile.id)}
-                        />
-                        Контекст AI
-                      </label>
-                      <button type="button" className="secondary-button" onClick={() => handleCalculateProfile(profile)}>
-                        Загрузить
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : null}
             </div>
           </section>
 
           <section className="main-stack">
-            <section className="panel chart-panel" id="varga-charts">
+            <section className="panel chart-panel" id="varga-charts" ref={chartPanelRef}>
               <div className="panel-heading">
                 <div className="chart-title-block">
                   <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
@@ -6810,36 +10154,82 @@ export default function Home() {
                 </div>
                 <div className="chart-heading-tools">
                   <div className="chart-action-strip" aria-label="Действия с текущей картой">
-                    <a href="#reports" onClick={() => setActiveAnalysisTab("guidance")}>AI-разбор</a>
-                    <a href="/reports">История</a>
-                    <button type="button" onClick={handleSaveProfile} disabled={!chart}>Сохранить</button>
-                    <button type="button" onClick={handleExportCurrentChart} disabled={!chart}>Экспорт</button>
-                    <button type="button" onClick={() => window.print()} disabled={!chart}>Печать</button>
+                    <div className="chart-action-group primary">
+                      <a
+                        href="/?analysis=calculations#reports"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setActiveAnalysisTab("calculations");
+                          window.history.pushState(null, "", "/?analysis=calculations#reports");
+                          document.getElementById("reports")?.scrollIntoView({ block: "start" });
+                        }}
+                      >
+                        Таблица расчётов
+                      </a>
+                      <a href="#varga-charts" onClick={() => setChartWorkspaceTab("vargas")}>Атлас D-карт</a>
+                      <a
+                        href="/?analysis=guidance#reports"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setActiveAnalysisTab("guidance");
+                          window.history.pushState(null, "", "/?analysis=guidance#reports");
+                          document.getElementById("reports")?.scrollIntoView({ block: "start" });
+                        }}
+                      >
+                        AI-разбор
+                      </a>
+                      <a href="/reports">История</a>
+                    </div>
+                    <div className="chart-action-group file">
+                      <button type="button" onClick={handleSaveProfile} disabled={!chart}>Сохранить</button>
+                      <button type="button" onClick={handleExportCurrentChart} disabled={!chart}>Экспорт</button>
+                      <button type="button" onClick={() => window.print()} disabled={!chart}>Печать</button>
+                    </div>
                   </div>
                 </div>
               </div>
-              <PrimaryVargaTabs
+              <ReadingFlowStrip
                 chart={chart}
-                activeCode={chartMode}
-                activeGroupKey={activeVargaFocusKey}
+                chartMode={chartMode}
                 workspaceTab={chartWorkspaceTab}
-                onSelect={selectVargaCode}
-                onSelectGroup={selectVargaFocusGroup}
-                onWorkspaceTabChange={setChartWorkspaceTab}
+                activeAnalysisTab={activeAnalysisTab}
+                onOpenEssentials={() => setChartWorkspaceTab("essentials")}
+                onOpenVargas={() => setChartWorkspaceTab("vargas")}
+                onOpenCalculations={() => setActiveAnalysisTab("calculations")}
+                onOpenGuidance={() => setActiveAnalysisTab("guidance")}
               />
               <div className="chart-reference-row">
                 <strong>Отсчёт домов</strong>
                 <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
               </div>
-              <VargaReadingStrip chart={chart} activeCode={chartMode} onSelect={selectVargaCode} />
+              {interfaceMode === "beginner" ? (
+                <div className="beginner-guide-strip">
+                  <strong>Сначала смотри: лагна, Луна, Солнце, 7 дом, 12 дом и таблицу расчётов.</strong>
+                  <span>Подчёркнутые термины раскрывают короткое объяснение на телефоне и на компьютере.</span>
+                </div>
+              ) : null}
               <div className="chart-layout">
                 <div className="chart-visual-stack">
                   <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} />
+                  {!chart ? <StartChartNotice /> : null}
                   <ChartNotationLegend termLanguage={termLanguage} />
+                  <HouseExplanationGrid />
+                  <FirstReadCalculationPanel
+                    chart={chart}
+                    termLanguage={termLanguage}
+                    onOpenCalculations={() => setActiveAnalysisTab("calculations")}
+                  />
                 </div>
                 <div className="chart-data-stack">
                   <CoreInfoStrip chart={chart} termLanguage={termLanguage} />
-                  <PlanetStrengthDigest chart={chart} />
+                  <AiAccessPolicyPanel />
+                  <AiRelatedContextPanel relationships={profileRelationships} />
+                  <MvpReadinessPanel />
+                  {interfaceMode === "beginner" ? <BeginnerGuidedCourse /> : null}
+                  {interfaceMode === "beginner" ? <BeginnerAskAiPanel /> : null}
+                  {interfaceMode === "beginner" ? <BeginnerNextSteps /> : null}
+                  {interfaceMode === "beginner" ? <BeginnerLearningPanel /> : null}
+                  {interfaceMode === "beginner" ? <BeginnerCalculationGuide /> : null}
                   <ActiveCalculationTable
                     chart={chart}
                     chartMode={chartMode}
@@ -6847,6 +10237,22 @@ export default function Home() {
                     selectedVargaPlacements={selectedVargaPlacements}
                     termLanguage={termLanguage}
                   />
+                  <KeyVargaComparisonPanel
+                    chart={chart}
+                    activeCode={chartMode}
+                    chartStyle={chartStyle}
+                    chartReference={chartReference}
+                    termLanguage={termLanguage}
+                    onSelect={selectVargaCode}
+                  />
+                  <PlanetStrengthDigest chart={chart} />
+                  {interfaceMode === "pro" ? (
+                    <AstrologerWorkflowPanel
+                      chart={chart}
+                      activeTab={activeAnalysisTab}
+                      onSelect={setActiveAnalysisTab}
+                    />
+                  ) : null}
                   {chartFacts.length ? (
                     <div className="fact-grid">
                       {chartFacts.map(([label, value]) => (
@@ -6859,33 +10265,59 @@ export default function Home() {
                   ) : null}
                 </div>
               </div>
+              <PractitionerVargaRail
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                chartReference={chartReference}
+                onSelect={selectVargaCode}
+              />
+              <ShodashaMiniAtlas
+                chart={chart}
+                activeCode={chartMode}
+                chartStyle={chartStyle}
+                chartReference={chartReference}
+                onSelect={selectVargaCode}
+              />
+              <PrimaryVargaTabs
+                chart={chart}
+                activeCode={chartMode}
+                activeGroupKey={activeVargaFocusKey}
+                workspaceTab={chartWorkspaceTab}
+                onSelect={selectVargaCode}
+                onFocusGroupSelect={selectVargaFocusGroup}
+                onWorkspaceTabChange={setChartWorkspaceTab}
+                onCoverageSelect={openVargaCoverageDetails}
+              />
+              <VargaCoverageSummary
+                chart={chart}
+                open={vargaCoverageOpen}
+                onOpenChange={setVargaCoverageOpen}
+                detailsRef={vargaCoverageRef}
+                onOpenAtlas={() => setChartWorkspaceTab("vargas")}
+              />
+              <JaiminiPendingStrip onOpenAtlas={() => setChartWorkspaceTab("vargas")} />
               <div className="chart-workspace-body">
                 {chartWorkspaceTab === "essentials" ? (
-                  <>
-                    <VargaCompareStrip
-                      chart={chart}
-                      activeCode={chartMode}
-                      chartStyle={chartStyle}
-                      chartReference={chartReference}
-                      onSelect={selectVargaCode}
-                    />
-                    <EssentialChartPairBoard
-                      chart={chart}
-                      activeCode={chartMode}
-                      chartStyle={chartStyle}
-                      chartReference={chartReference}
-                      onSelect={selectVargaCode}
-                      onOpenAtlas={() => setChartWorkspaceTab("vargas")}
-                    />
-                  </>
+                  <EssentialChartPairBoard
+                    chart={chart}
+                    activeCode={chartMode}
+                    chartStyle={chartStyle}
+                    chartReference={chartReference}
+                    onSelect={selectVargaCode}
+                    onOpenAtlas={() => setChartWorkspaceTab("vargas")}
+                  />
                 ) : null}
                 {chartWorkspaceTab === "references" ? (
-                  <ReferenceChartBoard
-                    chart={chart}
-                    chartStyle={chartStyle}
-                    activeReference={chartReference}
-                    onSelect={setChartReference}
-                  />
+                  <>
+                    <ReferenceChartBoard
+                      chart={chart}
+                      chartStyle={chartStyle}
+                      activeReference={chartReference}
+                      onSelect={setChartReference}
+                    />
+                    <BhavaOverviewBoard chart={chart} termLanguage={termLanguage} />
+                  </>
                 ) : null}
                 {chartWorkspaceTab === "vargas" ? (
                   <>
@@ -6928,7 +10360,11 @@ export default function Home() {
                       type="button"
                       key={tab.key}
                       className={activeAnalysisTab === tab.key ? "active" : ""}
-                      onClick={() => setActiveAnalysisTab(tab.key)}
+                      data-analysis-tab={tab.key}
+                      onClick={() => {
+                        setActiveAnalysisTab(tab.key);
+                        window.history.pushState(null, "", `/?analysis=${tab.key}#reports`);
+                      }}
                       role="tab"
                       aria-selected={activeAnalysisTab === tab.key}
                     >
@@ -6942,7 +10378,10 @@ export default function Home() {
                   <select
                     value={secondaryAnalysisTabs.some((tab) => tab.key === activeAnalysisTab) ? activeAnalysisTab : ""}
                     onChange={(event) => {
-                      if (event.target.value) setActiveAnalysisTab(event.target.value as AnalysisTab);
+                      if (event.target.value) {
+                        setActiveAnalysisTab(event.target.value as AnalysisTab);
+                        window.history.pushState(null, "", `/?analysis=${event.target.value}#reports`);
+                      }
                     }}
                   >
                     <option value="">Режим</option>
@@ -6962,15 +10401,16 @@ export default function Home() {
                 {activeAnalysisTab === "overview" ? <PersonSummaryPanel summary={personSummary} /> : null}
                 {activeAnalysisTab === "calculations" ? (
                   <div className="analysis-tab-stack">
-                    <DualCalculationPanel report={dualCalculationReport} status={dualCalculationStatus} />
                     <DetailedCalculationsPanel
                       summary={personSummary}
                       chart={chart}
                       activeCode={chartMode}
                       chartStyle={chartStyle}
                       chartReference={chartReference}
+                      termLanguage={termLanguage}
                       onSelectVarga={selectVargaCode}
                     />
+                    <DualCalculationPanel report={dualCalculationReport} status={dualCalculationStatus} />
                   </div>
                 ) : null}
                 {activeAnalysisTab === "yogas" ? <ClassicalPanel classical={chart?.classical} /> : null}
@@ -6981,26 +10421,16 @@ export default function Home() {
                   <ReportPreviewPanel
                     birthReport={birthReport}
                     draftAnalysis={draftAnalysis}
-                    qwenAnalysis={qwenAnalysis}
-                    deepseekAnalysis={deepseekAnalysis}
-                    nemotronAnalysis={nemotronAnalysis}
                     draftStatus={draftAnalysisStatus}
-                    qwenStatus={qwenAnalysisStatus}
-                    deepseekStatus={deepseekAnalysisStatus}
-                    nemotronStatus={nemotronAnalysisStatus}
+                    aiBillingStatus={aiBillingStatus}
                     onGenerateDraft={() => handleGenerateDraftAnalysis(false)}
                     onRegenerateDraft={() => handleGenerateDraftAnalysis(true)}
-                    onGenerateQwen={handleGenerateQwenAnalysis}
-                    onGenerateDeepseek={handleGenerateDeepseekAnalysis}
-                    onGenerateNemotron={handleGenerateNemotronAnalysis}
-                    draftDisabled={!birthReport}
-                    qwenDisabled={!birthReport}
-                    deepseekDisabled={!birthReport}
-                    nemotronDisabled={!birthReport}
+                    draftDisabled={!birthReport || aiAccessLocked || !activeSavedBirthProfile || !activeSavedBirthProfile.is_self_profile}
                     chatMessages={codexChatMessages}
                     chatStatus={codexChatStatus}
+                    suggestedQuestion={suggestedCodexQuestion}
                     onAskDraftQuestion={handleAskDraftQuestion}
-                    chatDisabled={!draftAnalysis || codexChatBusy}
+                    chatDisabled={!draftAnalysis || codexChatBusy || aiAccessLocked}
                   />
                 ) : null}
                 {activeAnalysisTab === "transits" ? (
@@ -7009,7 +10439,62 @@ export default function Home() {
                     status={workflowStatus}
                     currentDayStatus={currentDayStatus}
                     currentDayOverview={currentDayOverview}
+                    currentDayBusy={currentDayBusy}
+                    currentDayDisabled={aiAccessLocked}
                     onGenerateCurrentDay={handleGenerateCurrentDayOverview}
+                  />
+                ) : null}
+                {activeAnalysisTab === "compatibility" ? (
+                  <CompatibilityPanel
+                    report={compatibilityReport}
+                    status={compatibilityStatus}
+                    profiles={profiles}
+                    selectedPersonAProfileId={compatibilityPersonAProfileId}
+                    selectedPersonBProfileId={compatibilityPersonBProfileId}
+                    relationshipRole={compatibilityRelationshipRoleKey}
+                    selectedRelationship={selectedCompatibilityRelationship}
+                    personAChart={compatibilityPersonAChart}
+                    personBChart={compatibilityPersonBChart}
+                    chartStatus={compatibilityChartStatus}
+                    chartStyle={chartStyle}
+                    chartReference={chartReference}
+                    termLanguage={termLanguage}
+                    onRelationshipRoleChange={(role) => {
+                      setActiveCompatibilityRelationshipId("");
+                      setCompatibilityRelationshipRoleKey(role);
+                      resetCompatibilityResultState();
+                    }}
+                    partnerProfileName={partnerProfileName}
+                    partnerBirthDate={partnerBirthDate}
+                    setPartnerBirthDate={setPartnerBirthDate}
+                    partnerBirthTime={partnerBirthTime}
+                    setPartnerBirthTime={setPartnerBirthTime}
+                    partnerPlaceName={partnerPlaceName}
+                    setPartnerPlaceName={setPartnerPlaceName}
+                    setPartnerProfileName={setPartnerProfileName}
+                    partnerPlaceMatches={partnerPlaceMatches}
+                    selectedPartnerPlace={selectedPartnerPlace}
+                    showPartnerPlaceSuggestions={showPartnerPlaceSuggestions}
+                    setShowPartnerPlaceSuggestions={setShowPartnerPlaceSuggestions}
+                    partnerPlaceSearchStatus={partnerPlaceSearchStatus}
+                    onSelectPersonAProfile={handleSelectCompatibilityPersonAProfile}
+                    onSelectPersonBProfile={handleSelectCompatibilityPersonBProfile}
+                    onSelectPartnerPlace={selectPartnerPlace}
+                    onSavePartnerProfile={handleSavePartnerProfile}
+                    onSubmit={handleCompatibilitySubmit}
+                    onGeneratePacket={handleCompatibilityPacket}
+                    onGenerateCodexAnalysis={handleCompatibilityCodexAnalysis}
+                    disabled={privateAccessLocked}
+                    savePartnerDisabled={privateAccessLocked || !selectedPartnerPlace}
+                    packetDisabled={privateAccessLocked}
+                    packetStatus={compatibilityPacketStatus}
+                    codexDisabled={privateAccessLocked || aiAccessLocked}
+                    codexStatus={compatibilityCodexStatus}
+                    codexAnalysis={compatibilityCodexAnalysis}
+                    chatMessages={compatibilityChatMessages}
+                    chatStatus={compatibilityChatStatus}
+                    onAskCodexQuestion={handleAskCompatibilityQuestion}
+                    chatDisabled={!compatibilityCodexAnalysis || compatibilityChatBusy || aiAccessLocked}
                   />
                 ) : null}
                 {activeAnalysisTab === "tithiPravesha" ? (

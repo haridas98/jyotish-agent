@@ -25,6 +25,89 @@ RESEARCH_CONTEXT_MAX_ITEMS = 96
 RESEARCH_CONTEXT_QUERY_LIMIT = 40
 RESEARCH_CONTEXT_SEARCH_LIMIT = 6
 
+RELATIONSHIP_ROLE_FOCUS: dict[str, dict[str, Any]] = {
+    "partner": {
+        "label": "Партнёр",
+        "focus": "брак, договорённости, близость",
+        "focus_houses": [1, 7, 2, 8, 12],
+        "focus_vargas": ["D1", "D9", "D7", "D12"],
+        "primary_grahas": ["Shukra", "Mangala", "Chandra"],
+        "prompt_hint": "читать как совместимость пары: 7 дом, Шукра/Мангала, D9, семейные ценности и текущие даши",
+    },
+    "father": {
+        "label": "Отец",
+        "focus": "род, наставление, авторитет",
+        "focus_houses": [1, 9, 10, 4],
+        "focus_vargas": ["D1", "D9", "D12", "D60"],
+        "primary_grahas": ["Surya", "Guru"],
+        "prompt_hint": "читать как связь с отцом: 9 дом, Солнце, дхарма, авторитет, родовая поддержка",
+    },
+    "mother": {
+        "label": "Мать",
+        "focus": "забота, дом, эмоциональная опора",
+        "focus_houses": [1, 4, 9, 12],
+        "focus_vargas": ["D1", "D9", "D12", "D60"],
+        "primary_grahas": ["Chandra", "Shukra"],
+        "prompt_hint": "читать как связь с матерью: 4 дом, Луна, эмоциональная опора, дом и родовая линия",
+    },
+    "sibling": {
+        "label": "Брат/сестра",
+        "focus": "поддержка, соперничество, коммуникация",
+        "focus_houses": [1, 3, 11, 6],
+        "focus_vargas": ["D1", "D3", "D9"],
+        "primary_grahas": ["Mangala", "Budha"],
+        "prompt_hint": "читать как взаимодействие с братом или сестрой: 3 дом, инициатива, поддержка, конкуренция",
+    },
+    "brother": {
+        "label": "Брат",
+        "focus": "инициатива, защита, соперничество и поддержка",
+        "focus_houses": [1, 3, 11, 6],
+        "focus_vargas": ["D1", "D3", "D9"],
+        "primary_grahas": ["Mangala", "Budha"],
+        "prompt_hint": "читать как взаимодействие с братом: 3 дом, Марс, инициатива, соперничество, защита и поддержка",
+    },
+    "sister": {
+        "label": "Сестра",
+        "focus": "эмоциональная связь, поддержка и бытовая коммуникация",
+        "focus_houses": [1, 3, 11, 4],
+        "focus_vargas": ["D1", "D3", "D9"],
+        "primary_grahas": ["Chandra", "Shukra", "Budha"],
+        "prompt_hint": "читать как взаимодействие с сестрой: 3 дом, Луна/Венера, эмоциональная связь, поддержка и коммуникация",
+    },
+    "boss": {
+        "label": "Руководитель",
+        "focus": "карьера, власть, ответственность",
+        "focus_houses": [1, 10, 6, 9],
+        "focus_vargas": ["D1", "D10", "D9"],
+        "primary_grahas": ["Surya", "Shani", "Guru"],
+        "prompt_hint": "читать как рабочую иерархию: 10 дом, 6 дом, статус, обязанности и границы",
+    },
+    "subordinate": {
+        "label": "Подчинённый",
+        "focus": "делегирование, служение, рабочая динамика",
+        "focus_houses": [1, 6, 10, 11],
+        "focus_vargas": ["D1", "D10", "D9"],
+        "primary_grahas": ["Shani", "Budha", "Surya"],
+        "prompt_hint": "читать как управление и сотрудничество: 6 дом служения, 10 дом роли, 11 дом результата",
+    },
+    "opponent": {
+        "label": "Оппонент",
+        "focus": "конфликты, долги, скрытые напряжения",
+        "focus_houses": [1, 6, 7, 8],
+        "focus_vargas": ["D1", "D6", "D10", "D60"],
+        "primary_grahas": ["Mangala", "Shani", "Rahu"],
+        "prompt_hint": "читать как конфликтное взаимодействие: 6 дом споров, 7 дом открытого противостояния, 8 дом кризисов",
+    },
+    "other": {
+        "label": "Другая роль",
+        "focus": "общая динамика контакта",
+        "focus_houses": [1, 7],
+        "focus_vargas": ["D1", "D9"],
+        "primary_grahas": ["Chandra", "Budha"],
+        "prompt_hint": "читать как общий ракурс взаимодействия: лагна, 7 дом, Луна, текущие даши и контекст вопроса",
+    },
+}
+
 
 def build_analysis_packet(
     data: dict[str, Any],
@@ -115,6 +198,7 @@ def build_compatibility_analysis_packet(
     citation_search = citation_search or (lambda query: [])
     person_a_input = _required_mapping(data, "person_a")
     person_b_input = _required_mapping(data, "person_b")
+    relationship_context = _relationship_context_payload(data.get("relationship_context"))
     person_a_chart = build_birth_chart(person_a_input, provider=provider)
     person_b_chart = build_birth_chart(person_b_input, provider=provider)
     compatibility = build_compatibility_report(data, provider=provider)
@@ -151,6 +235,8 @@ def build_compatibility_analysis_packet(
                 "input": person_b_input,
                 "chart": person_b_chart,
             },
+            "relationship_context": relationship_context,
+            "interaction_focus": relationship_context.get("interaction_focus", {}),
             "compatibility": compatibility,
             "shastra_coverage": shastra_coverage,
             "source_inventory": source_inventory,
@@ -204,6 +290,40 @@ def render_analysis_prompt(packet: dict[str, Any]) -> str:
         f"{json.dumps(packet_for_prompt, ensure_ascii=False, indent=2)}\n"
         "```\n"
     )
+
+
+def _relationship_context_payload(raw_context: object) -> dict[str, Any]:
+    context = dict(raw_context) if isinstance(raw_context, dict) else {}
+    role = str(context.get("role") or "partner").strip().lower()
+    focus = RELATIONSHIP_ROLE_FOCUS.get(role) or RELATIONSHIP_ROLE_FOCUS["other"]
+    role = str(focus.get("role") or role if role in RELATIONSHIP_ROLE_FOCUS else "other")
+    payload = {
+        **context,
+        "role": role,
+        "label": context.get("label") or focus["label"],
+        "focus": context.get("focus") or focus["focus"],
+        "focus_houses": context.get("focus_houses") or focus["focus_houses"],
+        "focus_vargas": context.get("focus_vargas") or focus["focus_vargas"],
+        "primary_grahas": context.get("primary_grahas") or focus["primary_grahas"],
+        "prompt_hint": context.get("prompt_hint") or focus["prompt_hint"],
+        "consent_policy": context.get("consent_policy") or "private_saved_relation_until_user_link_accepted",
+    }
+    payload["interaction_focus"] = {
+        "role": payload["role"],
+        "label": payload["label"],
+        "focus": payload["focus"],
+        "houses": payload["focus_houses"],
+        "vargas": payload["focus_vargas"],
+        "grahas": payload["primary_grahas"],
+        "prompt_hint": payload["prompt_hint"],
+        "reading_contract": [
+            "show both charts before interpretation",
+            "read relationship from the selected role, not as generic marriage compatibility",
+            "compare role-specific houses and divisional charts in both charts",
+            "keep consent and privacy status visible when the second person is a registered user",
+        ],
+    }
+    return payload
 
 
 def render_compatibility_analysis_prompt(packet: dict[str, Any]) -> str:
@@ -348,6 +468,8 @@ def _compatibility_generator_policy() -> dict[str, Any]:
     policy = _generator_policy()
     policy["required_behaviors"] = [
         "compare_both_charts_from_multiple_angles",
+        "honor_relationship_role_interaction_focus",
+        "show_role_specific_houses_vargas_and_grahas",
         *policy["required_behaviors"],
         "keep_final_marriage_guidance_under_human_review",
     ]

@@ -1,12 +1,15 @@
 import json
+from datetime import date, time
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import override_settings
 from rest_framework.test import APIClient
 
 from apps.calculations.ephemeris import BodyPosition
 from apps.calculations.primitives import zodiac_placement
+from apps.charts.models import BirthProfile, Place
 from apps.reports.models import GeneratedAnalysisDraft
 
 
@@ -48,6 +51,29 @@ class CliProvider:
             speed_longitude=None,
             placement=zodiac_placement(90.0),
         )
+
+
+def _codex_api_place() -> Place:
+    return Place.objects.create(
+        name="Vrindavan",
+        country_code="IN",
+        latitude="27.565000",
+        longitude="77.659000",
+        timezone_name="Asia/Kolkata",
+    )
+
+
+def _codex_api_self_profile(user) -> BirthProfile:
+    return BirthProfile.objects.create(
+        user=user,
+        display_name="My chart",
+        birth_date=date(2000, 1, 1),
+        birth_time=time(15, 30),
+        birth_time_accuracy=BirthProfile.TimeAccuracy.EXACT,
+        place=_codex_api_place(),
+        timezone_name="Asia/Kolkata",
+        is_self_profile=True,
+    )
 
 
 @pytest.mark.django_db
@@ -567,9 +593,10 @@ def test_generate_compatibility_codex_cli_analysis_saves_full_private_report():
 @pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_compatibility_codex_analysis_api_returns_saved_draft(monkeypatch):
+    user = get_user_model().objects.create_user(username="compat-generate-owner", password="strong-pass-108")
     captured = {}
 
-    def fake_generate(data, citation_search=None, research_search=None, refresh_evidence=True):
+    def fake_generate(data, citation_search=None, research_search=None, refresh_evidence=True, user=None):
         captured["refresh_evidence"] = refresh_evidence
         return {
             "id": 44,
@@ -581,7 +608,9 @@ def test_compatibility_codex_analysis_api_returns_saved_draft(monkeypatch):
 
     monkeypatch.setattr("apps.reports.views.generate_compatibility_codex_cli_analysis", fake_generate)
 
-    response = APIClient().post(
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
         "/api/reports/compatibility/codex-analysis",
         {
             "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
@@ -593,6 +622,20 @@ def test_compatibility_codex_analysis_api_returns_saved_draft(monkeypatch):
     assert response.status_code == 200
     assert response.data["kind"] == "compatibility_codex_cli"
     assert captured["refresh_evidence"] is False
+
+
+@pytest.mark.django_db
+def test_compatibility_codex_analysis_api_requires_authentication():
+    response = APIClient().post(
+        "/api/reports/compatibility/codex-analysis",
+        {
+            "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+            "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur"},
+        },
+        format="json",
+    )
+
+    assert response.status_code in {401, 403}
 
 
 @pytest.mark.django_db
@@ -667,7 +710,9 @@ def test_ask_compatibility_codex_analysis_uses_saved_pair_report_and_saves_answe
 
 @pytest.mark.django_db
 def test_compatibility_codex_analysis_chat_api_returns_answer(monkeypatch):
+    user = get_user_model().objects.create_user(username="compat-chat-owner", password="strong-pass-108")
     report = GeneratedAnalysisDraft.objects.create(
+        user=user,
         kind="compatibility_codex_cli",
         review_status="private_final",
         input_snapshot={"person_a": {}, "person_b": {}},
@@ -676,7 +721,7 @@ def test_compatibility_codex_analysis_chat_api_returns_answer(monkeypatch):
 
     monkeypatch.setattr(
         "apps.reports.views.ask_compatibility_codex_cli_analysis",
-        lambda analysis_id, question, history=None: {
+        lambda analysis_id, question, history=None, user=None: {
             "kind": "compatibility_codex_cli_chat",
             "analysis_id": analysis_id,
             "question": question,
@@ -686,7 +731,9 @@ def test_compatibility_codex_analysis_chat_api_returns_answer(monkeypatch):
         },
     )
 
-    response = APIClient().post(
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
         "/api/reports/compatibility/codex-analysis/chat",
         {"analysis_id": report.id, "question": "Что по браку?", "history": [{"role": "user", "content": "Привет"}]},
         format="json",
@@ -699,8 +746,37 @@ def test_compatibility_codex_analysis_chat_api_returns_answer(monkeypatch):
 
 
 @pytest.mark.django_db
+def test_compatibility_codex_analysis_chat_rejects_other_users_report(monkeypatch):
+    owner = get_user_model().objects.create_user(username="compat-direct-owner", password="strong-pass-108")
+    viewer = get_user_model().objects.create_user(username="compat-direct-viewer", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=owner,
+        kind="compatibility_codex_cli",
+        review_status="private_final",
+        input_snapshot={"person_a": {}, "person_b": {}},
+        output_json={"sections": [{"title": "Private pair", "body": "Owner only."}]},
+    )
+    monkeypatch.setattr(
+        "apps.reports.views.ask_compatibility_codex_cli_analysis",
+        lambda **kwargs: {"answer": "Should not run"},
+    )
+    client = APIClient()
+    client.force_authenticate(user=viewer)
+
+    response = client.post(
+        "/api/reports/compatibility/codex-analysis/chat",
+        {"analysis_id": report.id, "question": "Read it?"},
+        format="json",
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_birth_codex_analysis_api_returns_saved_draft(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-generate-owner", password="strong-pass-108")
+    profile = _codex_api_self_profile(user)
     captured = {}
 
     def fake_generate(
@@ -710,6 +786,7 @@ def test_birth_codex_analysis_api_returns_saved_draft(monkeypatch):
         interpretation_provider=None,
         refresh_evidence=True,
         force_regenerate=False,
+        user=None,
     ):
         captured["refresh_evidence"] = refresh_evidence
         captured["force_regenerate"] = force_regenerate
@@ -723,7 +800,7 @@ def test_birth_codex_analysis_api_returns_saved_draft(monkeypatch):
 
     monkeypatch.setattr(
         "apps.reports.views.generate_birth_chart_codex_cli_analysis",
-        lambda data, citation_search=None, research_search=None, interpretation_provider=None, force_regenerate=False: {
+            lambda data, citation_search=None, research_search=None, interpretation_provider=None, force_regenerate=False, user=None: {
             "id": 12,
             "kind": "birth_chart_codex_cli",
             "review_status": "draft",
@@ -734,12 +811,15 @@ def test_birth_codex_analysis_api_returns_saved_draft(monkeypatch):
 
     monkeypatch.setattr("apps.reports.views.generate_birth_chart_codex_cli_analysis", fake_generate)
 
-    response = APIClient().post(
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
         "/api/reports/birth-chart/codex-analysis",
-        {
-            "birth_date": "2000-01-01",
-            "birth_time": "15:30",
-            "place_name": "Vrindavan",
+            {
+                "profile_id": profile.id,
+                "birth_date": "2000-01-01",
+                "birth_time": "15:30",
+                "place_name": "Vrindavan",
         },
         format="json",
     )
@@ -753,6 +833,8 @@ def test_birth_codex_analysis_api_returns_saved_draft(monkeypatch):
 @pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_birth_codex_analysis_api_can_force_regenerate(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-force-owner", password="strong-pass-108")
+    profile = _codex_api_self_profile(user)
     captured = {}
 
     def fake_generate(
@@ -762,6 +844,7 @@ def test_birth_codex_analysis_api_can_force_regenerate(monkeypatch):
         interpretation_provider=None,
         refresh_evidence=True,
         force_regenerate=False,
+        user=None,
     ):
         captured["data"] = data
         captured["force_regenerate"] = force_regenerate
@@ -775,12 +858,15 @@ def test_birth_codex_analysis_api_can_force_regenerate(monkeypatch):
 
     monkeypatch.setattr("apps.reports.views.generate_birth_chart_codex_cli_analysis", fake_generate)
 
-    response = APIClient().post(
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
         "/api/reports/birth-chart/codex-analysis",
-        {
-            "birth_date": "2000-01-01",
-            "birth_time": "15:30",
-            "place_name": "Vrindavan",
+            {
+                "profile_id": profile.id,
+                "birth_date": "2000-01-01",
+                "birth_time": "15:30",
+                "place_name": "Vrindavan",
             "force_regenerate": True,
         },
         format="json",
@@ -852,7 +938,9 @@ def test_ask_birth_codex_analysis_uses_saved_report_and_saves_answer():
 
 @pytest.mark.django_db
 def test_birth_codex_analysis_chat_api_returns_answer(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-chat-owner", password="strong-pass-108")
     report = GeneratedAnalysisDraft.objects.create(
+        user=user,
         kind="birth_chart_codex_cli",
         review_status="private_final",
         input_snapshot={"birth_date": "2000-01-01"},
@@ -861,7 +949,7 @@ def test_birth_codex_analysis_chat_api_returns_answer(monkeypatch):
 
     monkeypatch.setattr(
         "apps.reports.views.ask_birth_chart_codex_cli_analysis",
-        lambda analysis_id, question, history=None: {
+        lambda analysis_id, question, history=None, user=None: {
             "kind": "birth_chart_codex_cli_chat",
             "analysis_id": analysis_id,
             "question": question,
@@ -871,7 +959,9 @@ def test_birth_codex_analysis_chat_api_returns_answer(monkeypatch):
         },
     )
 
-    response = APIClient().post(
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
         "/api/reports/birth-chart/codex-analysis/chat",
         {"analysis_id": report.id, "question": "Что с браком?", "history": [{"role": "user", "content": "Привет"}]},
         format="json",
@@ -885,14 +975,44 @@ def test_birth_codex_analysis_chat_api_returns_answer(monkeypatch):
 
 @pytest.mark.django_db
 def test_birth_codex_analysis_chat_api_requires_question():
-    response = APIClient().post(
+    user = get_user_model().objects.create_user(username="birth-chat-question-owner", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        input_snapshot={"birth_date": "2000-01-01"},
+        output_json={"sections": [{"title": "Private", "body": "Owner only."}]},
+    )
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
         "/api/reports/birth-chart/codex-analysis/chat",
-        {"analysis_id": 1, "question": ""},
+        {"analysis_id": report.id, "question": ""},
         format="json",
     )
 
     assert response.status_code == 400
     assert "question" in response.data["error"]
+
+
+@pytest.mark.django_db
+def test_saved_analysis_chat_requires_authentication():
+    owner = get_user_model().objects.create_user(username="saved-chat-owner", password="strong-pass-108")
+    report = GeneratedAnalysisDraft.objects.create(
+        user=owner,
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        input_snapshot={"birth_date": "2000-01-01"},
+        output_json={"sections": [{"title": "Private", "body": "Owner only."}]},
+    )
+
+    response = APIClient().post(
+        "/api/reports/birth-chart/codex-analysis/chat",
+        {"analysis_id": report.id, "question": "Read it?"},
+        format="json",
+    )
+
+    assert response.status_code in {401, 403}
 
 
 class _Tmp:

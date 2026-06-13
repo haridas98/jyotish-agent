@@ -427,6 +427,111 @@ def test_compatibility_analysis_packet_api_returns_packet(monkeypatch):
     assert response.data["schema_version"] == "jyotish-compatibility-analysis-packet-v1"
 
 
+def test_compatibility_analysis_packet_keeps_relationship_context(monkeypatch):
+    from apps.reports import analysis_packet
+
+    monkeypatch.setattr(
+        analysis_packet,
+        "build_birth_chart",
+        lambda data, provider=None: {
+            "birth": data,
+            "calculation_version": "test",
+            "grahas": [],
+            "houses": [],
+            "vargas": {},
+        },
+    )
+    monkeypatch.setattr(
+        analysis_packet,
+        "build_compatibility_report",
+        lambda data, provider=None: {
+            "analysis": {"perspectives": [], "source_anchors": []},
+            "coverage": {},
+            "score": {},
+            "assessment": {},
+        },
+    )
+    monkeypatch.setattr(analysis_packet, "source_inventory_payload", lambda: {"summary": {}})
+    monkeypatch.setattr(analysis_packet, "source_coverage_matrix", lambda: {"summary": {}})
+    monkeypatch.setattr(analysis_packet, "shastra_condition_matrix", lambda: {"summary": {}})
+    monkeypatch.setattr(analysis_packet, "shastra_evidence_payload", lambda: {})
+    monkeypatch.setattr(analysis_packet, "shastra_source_trace_payload", lambda: {})
+    monkeypatch.setattr(analysis_packet, "jhora_parity_suite_manifest", lambda: {})
+
+    packet = analysis_packet.build_compatibility_analysis_packet(
+        {
+            "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+            "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur"},
+            "relationship_context": {
+                "role": "father",
+                "label": "Отец",
+                "focus_houses": [1, 9, 10, 4],
+                "focus_vargas": ["D1", "D9", "D12", "D60"],
+                "prompt_hint": "читать как связь с отцом",
+                "consent_policy": "requires request before mutual user link",
+            },
+        },
+        citation_search=lambda query: [],
+        research_search=lambda query, limit=6: [],
+    )
+
+    assert packet["context"]["relationship_context"]["role"] == "father"
+    assert packet["context"]["relationship_context"]["focus_houses"] == [1, 9, 10, 4]
+    assert packet["context"]["interaction_focus"]["role"] == "father"
+    assert packet["context"]["interaction_focus"]["houses"] == [1, 9, 10, 4]
+    assert packet["context"]["interaction_focus"]["vargas"] == ["D1", "D9", "D12", "D60"]
+    assert "show both charts before interpretation" in packet["context"]["interaction_focus"]["reading_contract"]
+    assert "honor_relationship_role_interaction_focus" in packet["generator_policy"]["required_behaviors"]
+    assert "relationship_context" in packet["prompt_markdown"]
+
+
+def test_compatibility_analysis_packet_derives_role_focus_when_only_role_is_sent(monkeypatch):
+    from apps.reports import analysis_packet
+
+    monkeypatch.setattr(
+        analysis_packet,
+        "build_birth_chart",
+        lambda data, provider=None: {
+            "birth": data,
+            "calculation_version": "test",
+            "grahas": [],
+            "houses": [],
+            "vargas": {},
+        },
+    )
+    monkeypatch.setattr(
+        analysis_packet,
+        "build_compatibility_report",
+        lambda data, provider=None: {
+            "analysis": {"perspectives": [], "source_anchors": []},
+            "coverage": {},
+            "score": {},
+            "assessment": {},
+        },
+    )
+    monkeypatch.setattr(analysis_packet, "source_inventory_payload", lambda: {"summary": {}})
+    monkeypatch.setattr(analysis_packet, "source_coverage_matrix", lambda: {"summary": {}})
+    monkeypatch.setattr(analysis_packet, "shastra_condition_matrix", lambda: {"summary": {}})
+    monkeypatch.setattr(analysis_packet, "shastra_evidence_payload", lambda: {})
+    monkeypatch.setattr(analysis_packet, "shastra_source_trace_payload", lambda: {})
+    monkeypatch.setattr(analysis_packet, "jhora_parity_suite_manifest", lambda: {})
+
+    packet = analysis_packet.build_compatibility_analysis_packet(
+        {
+            "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+            "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur"},
+            "relationship_context": {"role": "boss"},
+        },
+        citation_search=lambda query: [],
+        research_search=lambda query, limit=6: [],
+    )
+
+    assert packet["context"]["relationship_context"]["role"] == "boss"
+    assert packet["context"]["relationship_context"]["focus_houses"] == [1, 10, 6, 9]
+    assert packet["context"]["interaction_focus"]["vargas"] == ["D1", "D10", "D9"]
+    assert "Surya" in packet["context"]["interaction_focus"]["grahas"]
+
+
 def test_build_analysis_packet_command_writes_json_and_prompt(monkeypatch, tmp_path):
     json_path = tmp_path / "packet.json"
     prompt_path = tmp_path / "packet.prompt.md"

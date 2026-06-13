@@ -6,6 +6,17 @@ import { AnalysisReader } from "@/app/analysis-history-ui";
 import { ProductShell } from "@/app/product-shell";
 import { fetchAnalysisHistoryBySlug, type AnalysisHistoryDetail } from "@/lib/api";
 
+function friendlyCompatibilityError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  if (/401|403|auth|credential|forbidden|permission/i.test(message)) {
+    return "Войдите в аккаунт, чтобы открыть личный обзор совместимости.";
+  }
+  if (/404|not found/i.test(message)) {
+    return "Обзор совместимости не найден или недоступен этому пользователю.";
+  }
+  return message || "Ошибка загрузки обзора";
+}
+
 export default function CompatibilityDetailPage() {
   const params = useParams<{ slug: string }>();
   const slug = Array.isArray(params.slug) ? params.slug.join("/") : params.slug;
@@ -23,7 +34,7 @@ export default function CompatibilityDetailPage() {
       })
       .catch((error) => {
         if (!mounted) return;
-        setStatus(error instanceof Error ? error.message : "Ошибка загрузки обзора");
+        setStatus(friendlyCompatibilityError(error));
       });
     return () => {
       mounted = false;

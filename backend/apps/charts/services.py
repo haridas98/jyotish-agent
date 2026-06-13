@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth import get_user_model
 from django.utils.dateparse import parse_datetime
 
 from apps.calculations.chart import CALCULATION_VERSION, ChartInputError, build_birth_chart
@@ -12,7 +13,15 @@ from apps.calculations.ephemeris import CalculationSettings, EphemerisProvider, 
 from apps.places.catalog import PlaceCandidate, PlaceNotFound, resolve_place
 from apps.places.geocoding import geocode_places
 
-from .models import BirthProfile, ChartCalculation, DashaPeriod, Place, PlanetPosition, VargaPlacement
+from .models import (
+    BirthProfile,
+    BirthProfileRelationship,
+    ChartCalculation,
+    DashaPeriod,
+    Place,
+    PlanetPosition,
+    VargaPlacement,
+)
 
 
 class ChartProfileInputError(ValueError):
@@ -48,7 +57,8 @@ def create_birth_profile(user: AbstractBaseUser, data: dict[str, Any]) -> BirthP
     catalog_place = _resolve_profile_place(data, place_name)
 
     place = sync_catalog_place(catalog_place)
-    return BirthProfile.objects.create(
+    is_self_profile = _optional_bool(data.get("is_self_profile"))
+    profile = BirthProfile.objects.create(
         user=user,
         display_name=display_name,
         birth_date=birth_date,
@@ -57,8 +67,24 @@ def create_birth_profile(user: AbstractBaseUser, data: dict[str, Any]) -> BirthP
         place=place,
         timezone_name=catalog_place.timezone,
         calculation_settings=_calculation_settings_snapshot(data),
+        is_self_profile=is_self_profile,
         notes=str(data.get("notes", "")).strip(),
     )
+    if is_self_profile:
+        BirthProfile.objects.filter(user=user, is_self_profile=True).exclude(id=profile.id).update(is_self_profile=False)
+    return profile
+
+
+def update_birth_profile_flags(profile: BirthProfile, data: dict[str, Any]) -> BirthProfile:
+    if "is_self_profile" not in data:
+        return profile
+
+    is_self_profile = _optional_bool(data.get("is_self_profile"))
+    if is_self_profile:
+        BirthProfile.objects.filter(user=profile.user, is_self_profile=True).exclude(id=profile.id).update(is_self_profile=False)
+    profile.is_self_profile = is_self_profile
+    profile.save(update_fields=["is_self_profile", "updated_at"])
+    return profile
 
 
 def sync_catalog_place(candidate: PlaceCandidate) -> Place:
@@ -124,6 +150,7 @@ def profile_payload(profile: BirthProfile) -> dict[str, Any]:
         "birth_time": profile.birth_time.isoformat(timespec="minutes") if profile.birth_time else None,
         "birth_time_accuracy": profile.birth_time_accuracy,
         "timezone": profile.timezone_name,
+        "is_self_profile": profile.is_self_profile,
         "calculation_settings": _profile_calculation_settings(profile),
         "place": place_payload(profile.place),
         "latest_calculation": latest_calculation_summary(latest_calculation)
@@ -132,6 +159,171 @@ def profile_payload(profile: BirthProfile) -> dict[str, Any]:
         "created_at": profile.created_at.isoformat(),
         "updated_at": profile.updated_at.isoformat(),
     }
+
+
+def profile_relationship_payload(relationship: BirthProfileRelationship) -> dict[str, Any]:
+    return {
+        "id": relationship.id,
+        "user": {
+            "id": relationship.user_id,
+            "username": relationship.user.username,
+        }
+        if getattr(relationship, "user", None)
+        else None,
+        "profile_id": relationship.profile_id,
+        "related_profile_id": relationship.related_profile_id,
+        "profile": _relationship_profile_summary(relationship.profile)
+        if getattr(relationship, "profile", None)
+        else None,
+        "related_profile": _relationship_profile_summary(relationship.related_profile)
+        if getattr(relationship, "related_profile", None)
+        else None,
+        "role": relationship.role,
+        "link_status": relationship.link_status,
+        "requested_user": {
+            "id": relationship.requested_user_id,
+            "username": relationship.requested_user.username,
+        }
+        if relationship.requested_user_id and relationship.requested_user
+        else None,
+        "notes": relationship.notes,
+        "metadata": relationship.metadata,
+        "created_at": relationship.created_at.isoformat(),
+        "updated_at": relationship.updated_at.isoformat(),
+    }
+
+
+def _relationship_profile_summary(profile: BirthProfile) -> dict[str, Any]:
+    return {
+        "id": profile.id,
+        "display_name": profile.display_name,
+        "birth_date": profile.birth_date.isoformat(),
+        "place_label": profile.place.metadata.get("label") or profile.place.name,
+    }
+
+
+def list_profile_relationships(user: AbstractBaseUser) -> list[BirthProfileRelationship]:
+    return list(
+        BirthProfileRelationship.objects.filter(user=user)
+        .select_related("user", "profile", "related_profile", "requested_user", "profile__place", "related_profile__place")
+        .order_by("-updated_at")
+    )
+
+
+def list_incoming_profile_relationship_requests(user: AbstractBaseUser) -> list[BirthProfileRelationship]:
+    return list(
+        BirthProfileRelationship.objects.filter(
+            requested_user=user,
+            link_status=BirthProfileRelationship.LinkStatus.REQUESTED,
+        )
+        .select_related("user", "profile", "related_profile", "requested_user", "profile__place", "related_profile__place")
+        .order_by("-updated_at")
+    )
+
+
+def upsert_profile_relationship(user: AbstractBaseUser, data: dict[str, Any]) -> BirthProfileRelationship:
+    profile_id = _required_int(data, "profile_id")
+    related_profile_id = _required_int(data, "related_profile_id")
+    if profile_id == related_profile_id:
+        raise ChartProfileInputError("related_profile_id must differ from profile_id")
+
+    profile = BirthProfile.objects.get(id=profile_id, user=user)
+    related_profile = BirthProfile.objects.get(id=related_profile_id, user=user)
+    role = str(data.get("role") or BirthProfileRelationship.Role.PARTNER).strip()
+    if role not in BirthProfileRelationship.Role.values:
+        raise ChartProfileInputError("role is invalid")
+
+    requested_user = _requested_user_from_data(data)
+    link_status = (
+        BirthProfileRelationship.LinkStatus.REQUESTED
+        if requested_user
+        else str(data.get("link_status") or BirthProfileRelationship.LinkStatus.PRIVATE).strip()
+    )
+    if link_status not in BirthProfileRelationship.LinkStatus.values:
+        raise ChartProfileInputError("link_status is invalid")
+    if link_status != BirthProfileRelationship.LinkStatus.PRIVATE and requested_user is None:
+        raise ChartProfileInputError("requested_user is required for non-private links")
+    if requested_user is not None and requested_user.id == user.id:
+        raise ChartProfileInputError("requested_user must be another registered user")
+    if requested_user is not None and BirthProfileRelationship.objects.filter(
+        user=user,
+        requested_user=requested_user,
+        link_status=BirthProfileRelationship.LinkStatus.BLOCKED,
+    ).exists():
+        raise ChartProfileInputError("relationship request was blocked by this user")
+
+    relationship, _ = BirthProfileRelationship.objects.update_or_create(
+        user=user,
+        profile=profile,
+        related_profile=related_profile,
+        defaults={
+            "role": role,
+            "link_status": link_status,
+            "requested_user": requested_user,
+            "notes": str(data.get("notes") or "").strip(),
+            "metadata": data.get("metadata") if isinstance(data.get("metadata"), dict) else {},
+        },
+    )
+    return relationship
+
+
+def update_incoming_profile_relationship_request(
+    user: AbstractBaseUser,
+    relationship_id: int,
+    action: str,
+    data: dict[str, Any] | None = None,
+) -> BirthProfileRelationship:
+    data = data or {}
+    relationship = BirthProfileRelationship.objects.select_related(
+        "user",
+        "profile",
+        "profile__place",
+        "related_profile",
+        "related_profile__place",
+        "requested_user",
+    ).get(
+        id=relationship_id,
+        requested_user=user,
+        link_status=BirthProfileRelationship.LinkStatus.REQUESTED,
+    )
+    action_statuses = {
+        "accept": BirthProfileRelationship.LinkStatus.ACCEPTED,
+        "decline": BirthProfileRelationship.LinkStatus.DECLINED,
+        "block": BirthProfileRelationship.LinkStatus.BLOCKED,
+    }
+    status = action_statuses.get(action)
+    if not status:
+        raise ChartProfileInputError("action must be accept, decline, or block")
+    if status == BirthProfileRelationship.LinkStatus.ACCEPTED:
+        accepted_profile_id = _required_int(data, "accepted_profile_id")
+        try:
+            accepted_profile = BirthProfile.objects.get(id=accepted_profile_id, user=user)
+        except BirthProfile.DoesNotExist as exc:
+            raise ChartProfileInputError("accepted_profile_id must belong to the recipient user") from exc
+        relationship.related_profile = accepted_profile
+        relationship.metadata = {
+            **(relationship.metadata or {}),
+            "accepted_profile_id": accepted_profile.id,
+            "accepted_profile_display_name": accepted_profile.display_name,
+        }
+        BirthProfileRelationship.objects.update_or_create(
+            user=user,
+            profile=accepted_profile,
+            related_profile=relationship.profile,
+            defaults={
+                "role": relationship.role,
+                "link_status": BirthProfileRelationship.LinkStatus.ACCEPTED,
+                "requested_user": relationship.user,
+                "notes": relationship.notes,
+                "metadata": {
+                    "accepted_from_relationship_id": relationship.id,
+                    "requested_by_user_id": relationship.user_id,
+                },
+            },
+        )
+    relationship.link_status = status
+    relationship.save(update_fields=["related_profile", "link_status", "metadata", "updated_at"])
+    return relationship
 
 
 def place_payload(place: Place) -> dict[str, Any]:
@@ -322,6 +514,30 @@ def _required_string(data: dict[str, Any], field: str) -> str:
     return value
 
 
+def _required_int(data: dict[str, Any], field: str) -> int:
+    try:
+        value = int(data.get(field))
+    except (TypeError, ValueError) as exc:
+        raise ChartProfileInputError(f"{field} is required") from exc
+    if value <= 0:
+        raise ChartProfileInputError(f"{field} is required")
+    return value
+
+
+def _requested_user_from_data(data: dict[str, Any]) -> AbstractBaseUser | None:
+    requested_user_id = data.get("requested_user_id")
+    requested_username = str(data.get("requested_username") or "").strip()
+    if requested_user_id in {None, ""} and not requested_username:
+        return None
+    user_model = get_user_model()
+    try:
+        if requested_user_id not in {None, ""}:
+            return user_model.objects.get(id=int(requested_user_id))
+        return user_model.objects.get(username__iexact=requested_username)
+    except (ValueError, user_model.DoesNotExist) as exc:
+        raise ChartProfileInputError("requested user not found") from exc
+
+
 def _required_date(data: dict[str, Any], field: str) -> date:
     value = _required_string(data, field)
     try:
@@ -338,6 +554,16 @@ def _optional_time(data: dict[str, Any], field: str) -> time | None:
         return time.fromisoformat(value).replace(second=0, microsecond=0)
     except ValueError as exc:
         raise ChartProfileInputError(f"{field} must be HH:MM") from exc
+
+
+def _optional_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
 
 
 def _decimal(value: object) -> Decimal:

@@ -42,6 +42,7 @@ class BirthProfile(models.Model):
     place = models.ForeignKey(Place, on_delete=models.PROTECT)
     timezone_name = models.CharField(max_length=128)
     calculation_settings = models.JSONField(default=dict, blank=True)
+    is_self_profile = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -54,6 +55,58 @@ class BirthProfile(models.Model):
 
     def __str__(self) -> str:
         return self.display_name
+
+
+class BirthProfileRelationship(models.Model):
+    class Role(models.TextChoices):
+        PARTNER = "partner", "Partner"
+        FATHER = "father", "Father"
+        MOTHER = "mother", "Mother"
+        BROTHER = "brother", "Brother"
+        SISTER = "sister", "Sister"
+        SIBLING = "sibling", "Sibling"
+        BOSS = "boss", "Boss"
+        SUBORDINATE = "subordinate", "Subordinate"
+        OPPONENT = "opponent", "Opponent"
+        OTHER = "other", "Other"
+
+    class LinkStatus(models.TextChoices):
+        PRIVATE = "private", "Private saved relation"
+        REQUESTED = "requested", "User link requested"
+        ACCEPTED = "accepted", "User link accepted"
+        DECLINED = "declined", "User link declined"
+        BLOCKED = "blocked", "User link blocked"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="birth_profile_relationships")
+    profile = models.ForeignKey(BirthProfile, on_delete=models.CASCADE, related_name="outgoing_relationships")
+    related_profile = models.ForeignKey(BirthProfile, on_delete=models.CASCADE, related_name="incoming_relationships")
+    role = models.CharField(max_length=32, choices=Role.choices, default=Role.PARTNER)
+    link_status = models.CharField(max_length=32, choices=LinkStatus.choices, default=LinkStatus.PRIVATE)
+    requested_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="birth_profile_relationship_requests",
+    )
+    notes = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "profile", "related_profile"], name="unique_birth_profile_relationship"),
+            models.CheckConstraint(condition=~models.Q(profile=models.F("related_profile")), name="birth_profile_relationship_not_self"),
+        ]
+        indexes = [
+            models.Index(fields=["user", "role"]),
+            models.Index(fields=["user", "link_status"]),
+            models.Index(fields=["requested_user", "link_status"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.profile_id}->{self.related_profile_id}:{self.role}:{self.link_status}"
 
 
 class ChartCalculation(models.Model):

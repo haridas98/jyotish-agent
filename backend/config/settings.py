@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+import importlib.util
 from pathlib import Path
 from urllib.parse import urlparse
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -83,6 +85,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 def database_from_url(url: str | None) -> dict[str, object]:
     if not url:
+        if not DEBUG:
+            raise ImproperlyConfigured("DATABASE_URL is required when DJANGO_DEBUG=false")
         return {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
@@ -129,7 +133,7 @@ SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", not DEBUG)
 CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", not DEBUG)
 SESSION_COOKIE_AGE = int(os.getenv("DJANGO_SESSION_COOKIE_AGE", "2592000"))
 SESSION_EXPIRE_AT_BROWSER_CLOSE = env_bool("DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE", False)
-SESSION_SAVE_EVERY_REQUEST = env_bool("DJANGO_SESSION_SAVE_EVERY_REQUEST", True)
+SESSION_SAVE_EVERY_REQUEST = env_bool("DJANGO_SESSION_SAVE_EVERY_REQUEST", False)
 SESSION_COOKIE_SAMESITE = os.getenv("DJANGO_SESSION_COOKIE_SAMESITE", "Lax")
 CSRF_COOKIE_SAMESITE = os.getenv("DJANGO_CSRF_COOKIE_SAMESITE", "Lax")
 
@@ -153,31 +157,36 @@ REST_FRAMEWORK = {
     ],
 }
 
+REDIS_URL = os.getenv("REDIS_URL", "")
+DJANGO_REDIS_AVAILABLE = importlib.util.find_spec("django_redis") is not None
+if REDIS_URL and DJANGO_REDIS_AVAILABLE:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+            "TIMEOUT": int(os.getenv("DJANGO_CACHE_TIMEOUT_SECONDS", "600")),
+        }
+    }
+else:
+    if REDIS_URL and not DEBUG:
+        raise ImproperlyConfigured("django-redis must be installed when REDIS_URL is set in production")
+    CACHES = {
+        "default": {
+            "BACKEND": os.getenv("DJANGO_CACHE_BACKEND", "django.core.cache.backends.locmem.LocMemCache"),
+            "LOCATION": os.getenv("DJANGO_CACHE_LOCATION", "jyotish-agent-cache"),
+            "TIMEOUT": int(os.getenv("DJANGO_CACHE_TIMEOUT_SECONDS", "600")),
+        }
+    }
+BIRTH_REPORT_CACHE_SECONDS = int(os.getenv("BIRTH_REPORT_CACHE_SECONDS", "3600"))
+
 VL_DATABASE_URL = os.getenv("VL_DATABASE_URL", "")
 VL_PUBLIC_BASE_URL = os.getenv("VL_PUBLIC_BASE_URL", "http://127.0.0.1:3001")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.2")
 CODEX_ANALYSIS_PROVIDER = os.getenv("CODEX_ANALYSIS_PROVIDER", "codex_cli").strip().lower()
-QWEN_API_BASE_URL = os.getenv("QWEN_API_BASE_URL", "http://localhost:3264/api").rstrip("/")
-QWEN_API_KEY = os.getenv("QWEN_API_KEY", "dummy-key")
-QWEN_MODEL = os.getenv("QWEN_MODEL", "qwen3.7-max")
-QWEN_TIMEOUT_SECONDS = int(os.getenv("QWEN_TIMEOUT_SECONDS", "420"))
-FREE_DEEPSEEK_API_BASE_URL = os.getenv("FREE_DEEPSEEK_API_BASE_URL", "http://localhost:9655/v1").rstrip("/")
-FREE_DEEPSEEK_API_KEY = os.getenv("FREE_DEEPSEEK_API_KEY", "dummy-key")
-FREE_DEEPSEEK_MODEL = os.getenv("FREE_DEEPSEEK_MODEL", "deepseek-chat")
-FREE_DEEPSEEK_TIMEOUT_SECONDS = int(os.getenv("FREE_DEEPSEEK_TIMEOUT_SECONDS", "420"))
-FREE_DEEPSEEK_MAX_TOKENS = int(os.getenv("FREE_DEEPSEEK_MAX_TOKENS", "5000"))
-OPENROUTER_API_BASE_URL = os.getenv("OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_HTTP_REFERER = os.getenv("OPENROUTER_HTTP_REFERER", "")
-OPENROUTER_APP_TITLE = os.getenv("OPENROUTER_APP_TITLE", "Jyotish Agent")
-NEMOTRON_ANALYSIS_ENABLED = env_bool("NEMOTRON_ANALYSIS_ENABLED", False)
-NEMOTRON_MODEL = os.getenv(
-    "NEMOTRON_MODEL",
-    os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free"),
-)
-NEMOTRON_TIMEOUT_SECONDS = int(os.getenv("NEMOTRON_TIMEOUT_SECONDS", "420"))
-NEMOTRON_MAX_TOKENS = int(os.getenv("NEMOTRON_MAX_TOKENS", "5000"))
 JHORA_ACCURACY_REPORT_PATH = os.getenv(
     "JHORA_ACCURACY_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "jhora" / "sterlitamak-1998" / "accuracy-report.json"),

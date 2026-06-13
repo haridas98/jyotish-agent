@@ -69,6 +69,20 @@ export type MuhurtaRequest = CalculationSettingsRequest & {
 export type CompatibilityRequest = {
   person_a: BirthChartRequest;
   person_b: BirthChartRequest;
+  relationship_context?: {
+    role: string;
+    label: string;
+    focus_houses: number[];
+    focus_vargas: string[];
+    prompt_hint: string;
+    consent_policy: string;
+    relationship_id?: number;
+    link_status?: string;
+    profile_id?: number;
+    related_profile_id?: number;
+    profile_label?: string;
+    related_profile_label?: string;
+  };
 };
 
 export type TithiPraveshaRequest = BirthChartRequest & {
@@ -131,6 +145,13 @@ export type HousePlacement = {
   house: number;
   rashi_index: number;
   rashi: string;
+};
+
+export type HouseCusp = {
+  house: number;
+  longitude: number;
+  rashi: string;
+  rashi_index: number;
 };
 
 export type VargaPlacement = {
@@ -427,6 +448,7 @@ export type BirthChart = {
   grahas: GrahaPosition[];
   ascendant: GrahaPosition | null;
   houses: HousePlacement[];
+  house_cusps?: HouseCusp[];
   vargas?: Record<string, VargaChart>;
   panchanga: Panchanga;
   classical?: ClassicalCalculations;
@@ -1214,6 +1236,8 @@ export type GeneratedDraftAnalysis = {
   model?: string;
   engine_label?: string;
   language?: string;
+  billing_status?: string;
+  billing_message?: string;
   sections: {
     title: string;
     body: string;
@@ -1257,7 +1281,7 @@ export type CodexAnalysisChatResponse = {
   }[];
 };
 
-export type AnalysisChatProvider = "codex" | "qwen" | "deepseek";
+export type AnalysisChatProvider = "codex";
 
 export type AnalysisHistoryItem = {
   id: number;
@@ -1481,6 +1505,21 @@ export type MundaneReport = {
 export type CompatibilityReport = {
   status: string;
   method: string;
+  relationship_context?: {
+    role: string;
+    label: string;
+    focus_houses: number[];
+    focus_vargas: string[];
+    prompt_hint: string;
+    relationship_id?: number | null;
+    link_status?: string | null;
+    profile_id?: number | null;
+    related_profile_id?: number | null;
+    profile_label?: string | null;
+    related_profile_label?: string | null;
+    consent_policy?: string;
+    required_factors?: string[];
+  };
   interpretation_plan?: WorkflowInterpretationPlan;
   coverage: {
     system: string;
@@ -1583,6 +1622,7 @@ export type ChartProfile = {
   birth_time: string | null;
   birth_time_accuracy: string;
   timezone: string;
+  is_self_profile: boolean;
   calculation_settings: NonNullable<BirthChart["settings"]>;
   place: {
     id: number;
@@ -1602,6 +1642,38 @@ export type ChartProfile = {
     created_at: string;
     updated_at: string;
   };
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChartProfileRelationship = {
+  id: number;
+  user: null | {
+    id: number;
+    username: string;
+  };
+  profile_id: number;
+  related_profile_id: number;
+  profile: null | {
+    id: number;
+    display_name: string;
+    birth_date: string;
+    place_label: string;
+  };
+  related_profile: null | {
+    id: number;
+    display_name: string;
+    birth_date: string;
+    place_label: string;
+  };
+  role: string;
+  link_status: string;
+  requested_user: null | {
+    id: number;
+    username: string;
+  };
+  notes: string;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 };
@@ -1710,6 +1782,12 @@ function apiBaseUrls() {
   );
 }
 
+function apiNetworkError(path: string, baseUrls: string[], lastError: unknown) {
+  const rawDetail = lastError instanceof Error ? lastError.message : String(lastError ?? "network error");
+  const detail = rawDetail === "Failed to fetch" ? "сетевой запрос не выполнен" : rawDetail;
+  return new Error(`Backend API недоступен для ${path}. Проверены адреса: ${baseUrls.join(", ")}. Деталь: ${detail}`);
+}
+
 function csrfToken() {
   if (typeof document === "undefined") return "";
   return document.cookie
@@ -1721,7 +1799,8 @@ function csrfToken() {
 async function ensureCsrf(force = false) {
   if (!force && csrfToken()) return;
   let lastError: unknown = null;
-  for (const baseUrl of apiBaseUrls()) {
+  const baseUrls = apiBaseUrls();
+  for (const baseUrl of baseUrls) {
     try {
       const response = await fetch(`${baseUrl}/api/auth/csrf`, {
         credentials: "include",
@@ -1733,7 +1812,7 @@ async function ensureCsrf(force = false) {
       lastError = error;
     }
   }
-  throw lastError;
+  throw apiNetworkError("/api/auth/csrf", baseUrls, lastError);
 }
 
 async function apiFetch(path: string, init: RequestInit = {}) {
@@ -1766,7 +1845,7 @@ async function apiFetch(path: string, init: RequestInit = {}) {
       lastError = error;
     }
   }
-  throw lastError;
+  throw apiNetworkError(path, baseUrls, lastError);
 }
 
 async function retryNetworkFetch<T>(operation: () => Promise<T>, retries = 1): Promise<T> {
@@ -1925,6 +2004,9 @@ export async function generateCompatibilityCodexAnalysis(payload: CompatibilityR
 
     const data = await response.json();
     if (!response.ok) {
+      if (data.payment_required) {
+        throw new Error(data.message ?? "AI-разбор этой карты требует оплаты.");
+      }
       throw new Error(data.error ?? `API returned ${response.status}`);
     }
 
@@ -1974,57 +2056,9 @@ export async function generateBirthCodexAnalysis(
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error ?? `API returned ${response.status}`);
-    }
-
-    return data;
-  });
-}
-
-export async function generateBirthQwenAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
-  return retryNetworkFetch(async () => {
-    const response = await apiFetch("/api/reports/birth-chart/qwen-analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error ?? `API returned ${response.status}`);
-    }
-
-    return data;
-  });
-}
-
-export async function generateBirthDeepseekAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
-  return retryNetworkFetch(async () => {
-    const response = await apiFetch("/api/reports/birth-chart/deepseek-analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error ?? `API returned ${response.status}`);
-    }
-
-    return data;
-  });
-}
-
-export async function generateBirthNemotronAnalysis(payload: BirthChartRequest): Promise<GeneratedDraftAnalysis> {
-  return retryNetworkFetch(async () => {
-    const response = await apiFetch("/api/reports/birth-chart/nemotron-analysis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
+      if (data.payment_required) {
+        throw new Error(data.message ?? "AI-разбор чужой сохранённой карты требует оплаты. Карту можно хранить и смотреть бесплатно.");
+      }
       throw new Error(data.error ?? `API returned ${response.status}`);
     }
 
@@ -2360,18 +2394,35 @@ export async function loginUser(username: string, password: string): Promise<Use
   return data.user;
 }
 
-export async function registerUser(username: string, password: string): Promise<User> {
+export type RegisterOptions = {
+  display_name?: string;
+  birth_date?: string;
+  birth_time?: string;
+  birth_time_accuracy?: string;
+  place_name?: string;
+  timezone?: string;
+  latitude?: number;
+  longitude?: number;
+};
+
+export type RegisterResult = {
+  user: User;
+  status: string;
+  profile?: ChartProfile;
+};
+
+export async function registerUser(username: string, password: string, options: RegisterOptions = {}): Promise<RegisterResult> {
   const response = await apiFetch("/api/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, ...options }),
   });
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error ?? `API returned ${response.status}`);
   }
   await ensureCsrf(true);
-  return data.user;
+  return data;
 }
 
 export async function logoutUser(): Promise<void> {
@@ -2392,13 +2443,14 @@ export async function listChartProfiles(): Promise<ChartProfile[]> {
   return data.profiles ?? [];
 }
 
-export async function createChartProfile(payload: BirthChartRequest & { display_name: string }): Promise<ChartProfile> {
+export async function createChartProfile(payload: BirthChartRequest & { display_name: string; is_self_profile?: boolean }): Promise<ChartProfile> {
+  const birthTimeAccuracy = payload.birth_time?.trim() ? "exact" : "unknown";
   const response = await apiFetch("/api/charts/profiles", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ...payload,
-      birth_time_accuracy: "exact",
+      birth_time_accuracy: birthTimeAccuracy,
     }),
   });
   const data = await response.json();
@@ -2406,6 +2458,19 @@ export async function createChartProfile(payload: BirthChartRequest & { display_
     if (response.status === 403) {
       throw new Error("Нет доступа к сохранению: войдите заново или обновите страницу для CSRF-сессии");
     }
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.profile;
+}
+
+export async function updateChartProfile(profileId: number, payload: { is_self_profile?: boolean }): Promise<ChartProfile> {
+  const response = await apiFetch(`/api/charts/profiles/${profileId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
     throw new Error(data.error ?? `API returned ${response.status}`);
   }
   return data.profile;
@@ -2420,4 +2485,73 @@ export async function calculateSavedProfile(profileId: number): Promise<ChartCal
     throw new Error(data.error ?? data.calculation?.error ?? `API returned ${response.status}`);
   }
   return data.calculation;
+}
+
+export async function listChartProfileRelationships(): Promise<ChartProfileRelationship[]> {
+  const response = await apiFetch("/api/charts/profile-relationships", { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.relationships ?? [];
+}
+
+export async function fetchChartProfileRelationship(relationshipId: number): Promise<ChartProfileRelationship> {
+  const response = await apiFetch(`/api/charts/profile-relationships/${relationshipId}`, { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.relationship;
+}
+
+export async function listIncomingChartProfileRelationshipRequests(): Promise<ChartProfileRelationship[]> {
+  const response = await apiFetch("/api/charts/profile-relationships/inbox", { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.relationships ?? [];
+}
+
+export async function upsertChartProfileRelationship(payload: {
+  profile_id: number;
+  related_profile_id: number;
+  role: string;
+  link_status?: string;
+  requested_user_id?: number;
+  requested_username?: string;
+  notes?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<ChartProfileRelationship> {
+  const response = await apiFetch("/api/charts/profile-relationships", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.relationship;
+}
+
+export async function updateChartProfileRelationshipRequest(
+  relationshipId: number,
+  action: "accept" | "decline" | "block",
+  acceptedProfileId?: number,
+): Promise<ChartProfileRelationship> {
+  const response = await apiFetch(`/api/charts/profile-relationships/${relationshipId}/action`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action,
+      ...(acceptedProfileId ? { accepted_profile_id: acceptedProfileId } : {}),
+    }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? `API returned ${response.status}`);
+  }
+  return data.relationship;
 }

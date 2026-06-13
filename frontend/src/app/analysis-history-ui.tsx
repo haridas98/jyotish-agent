@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { HouseTerms, VargaTerms } from "@/app/relationship-help";
 import {
   askAnalysis,
   type AnalysisChatProvider,
@@ -19,7 +20,7 @@ type HistoryListProps = {
 
 type AnalysisReaderProps = {
   detail: AnalysisHistoryDetail;
-  chatMode: "birth" | "compatibility" | "disabled";
+  chatMode: "birth" | "compatibility" | "current-day" | "disabled";
 };
 
 type AnalysisSection = GeneratedDraftAnalysis["sections"][number];
@@ -31,6 +32,119 @@ type CompatibilityReferenceCard = {
   placements: MiniChartPlacement[];
   highlightRashi: string;
 };
+
+const readerHelp = {
+  house_1: {
+    title: "1 дом",
+    text: "Лагна: тело, характер, жизненный старт, внешний способ действовать и главная точка отсчёта карты.",
+  },
+  house_2: {
+    title: "2 дом",
+    text: "Семья, речь, питание, накопления, ценности и ресурсы, которые человек удерживает.",
+  },
+  house_3: {
+    title: "3 дом",
+    text: "Усилия, смелость, навыки, коммуникация, младшие братья и сёстры, инициативность.",
+  },
+  house_4: {
+    title: "4 дом",
+    text: "Дом, мать, внутренний покой, недвижимость, образование и эмоциональная опора.",
+  },
+  house_5: {
+    title: "5 дом",
+    text: "Дети, интеллект, мантра, творчество, пурва-пунья и способность делать тонкий выбор.",
+  },
+  house_6: {
+    title: "6 дом",
+    text: "Болезни, долги, служение, конфликты, оппоненты и повседневное преодоление.",
+  },
+  house_7: {
+    title: "7 дом",
+    text: "Партнерство, брак, договоры и открытое взаимодействие. В совместимости это первая ось проверки.",
+  },
+  house_8: {
+    title: "8 дом",
+    text: "Кризисы, тайны, трансформация, долговечность, наследство и скрытые страхи.",
+  },
+  house_9: {
+    title: "9 дом",
+    text: "Дхарма, отец, гуру, удача, высшее знание, паломничество и благословения.",
+  },
+  house_10: {
+    title: "10 дом",
+    text: "Карьера, действие в мире, статус, обязанности, публичная роль и видимая карма.",
+  },
+  house_11: {
+    title: "11 дом",
+    text: "Доходы, друзья, старшие братья и сёстры, сети, исполнение желаний и результаты.",
+  },
+  house_12: {
+    title: "12 дом",
+    text: "Расходы, сон, уединение, близость, потери и скрытая сторона отношений.",
+  },
+  focus_houses: {
+    title: "Фокусные дома",
+    text: "Дома, которые важнее всего для выбранной роли: например отец, мать, партнер, руководитель или оппонент.",
+  },
+  d1: {
+    title: "D1 / Rashi",
+    text: "Основная карта рождения. Все дробные карты читаются вместе с D1, а не отдельно от нее.",
+  },
+  d3: {
+    title: "D3 / Drekkana",
+    text: "Drekkana. Важна для братьев, сестёр, усилий, инициативы и смелости.",
+  },
+  d6: {
+    title: "D6",
+    text: "Shashtamsha. Помогает смотреть конфликты, болезни, долги и оппонентов.",
+  },
+  d7: {
+    title: "D7",
+    text: "Saptamsha. Часто используется для тем детей и продолжения рода.",
+  },
+  d9: {
+    title: "D9 / Navamsa",
+    text: "Навамша: важна для брака, дхармы и тонкой силы положения грах.",
+  },
+  d10: {
+    title: "D10 / Dashamsha",
+    text: "Dashamsha. Главная D-карта для карьеры, статуса, действия в мире и иерархии.",
+  },
+  d12: {
+    title: "D12",
+    text: "Dvadashamsha. Используется для родителей, рода и наследственных тем.",
+  },
+  d30: {
+    title: "D30",
+    text: "Trimshamsha. Помогает смотреть риски, напряжения и неприятные скрытые факторы.",
+  },
+  d60: {
+    title: "D60",
+    text: "Shashtyamsha. Глубокий кармический слой; требует особенно аккуратной трактовки.",
+  },
+  ashta_kuta: {
+    title: "Ашта-кута",
+    text: "Классическая система баллов совместимости по лунным факторам. Это не единственный слой вывода.",
+  },
+  shadbala: {
+    title: "Шадбала",
+    text: "Шесть групп расчётной силы грахи. Это слой проверки, а не самостоятельный окончательный вывод.",
+  },
+  combustion: {
+    title: "Аста / сожжение",
+    text: "Граха слишком близко к Солнцу и может слабее проявлять свои качества.",
+  },
+  varga: {
+    title: "D-карта",
+    text: "Дробная карта для конкретной сферы жизни. Ее нужно сверять с D1 и контекстом вопроса.",
+  },
+  consent: {
+    title: "Статус связи",
+    text: "Показывает, является ли связь личной заметкой или подтверждена вторым зарегистрированным пользователем.",
+  },
+} as const;
+
+type ReaderHelpKey = keyof typeof readerHelp;
 
 const miniRashiNames = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena"];
 const miniRashiShort = ["Me", "Vr", "Mi", "Ka", "Si", "Kn", "Tu", "Vr", "Dh", "Mk", "Ku", "Pi"];
@@ -106,6 +220,7 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
 
       {chatMode === "birth" ? <BirthChartContext detail={detail} /> : null}
       {chatMode === "compatibility" ? <CompatibilityPairContext detail={detail} /> : null}
+      {chatMode === "current-day" ? <CurrentDayContext detail={detail} /> : null}
 
       <section className="analysis-body">
         {sections.length ? (
@@ -143,6 +258,78 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
   );
 }
 
+function ReaderHelp({ termKey, children }: { termKey: ReaderHelpKey; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement | null>(null);
+  const item = readerHelp[termKey];
+
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (wrapRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open]);
+
+  return (
+    <span
+      ref={wrapRef}
+      className={`reader-help${open ? " open" : ""}`}
+      data-open={open ? "true" : "false"}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className="reader-help-trigger"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        {children}
+      </button>
+      {open ? (
+        <span className="reader-help-popover" role="tooltip">
+          <strong>{item.title}</strong>
+          <span>{item.text}</span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function HouseHelp({ value, suffix }: { value: unknown; suffix: string }) {
+  const house = Number(value);
+  if (!Number.isFinite(house) || house < 1 || house > 12) return null;
+  const key = `house_${house}` as ReaderHelpKey;
+  return (
+    <span className="reader-help-inline">
+      <ReaderHelp termKey={key}>{house}</ReaderHelp> {suffix}
+    </span>
+  );
+}
+
+function TransitHouseSummary({ row }: { row: Record<string, unknown> }) {
+  const items = [
+    <HouseHelp value={row.house_from_lagna} suffix="от лагны" key="lagna" />,
+    <HouseHelp value={row.house_from_moon} suffix="от Луны" key="moon" />,
+  ].filter(Boolean);
+  if (!items.length) return <>дом не определён</>;
+  return (
+    <>
+      {items.map((item, index) => (
+        <span key={`transit-house-${index}`}>
+          {index > 0 ? " · " : ""}
+          {item}
+        </span>
+      ))}
+    </>
+  );
+}
+
 function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail }) {
   const packet = isRecord(detail.analysis.packet_snapshot) ? detail.analysis.packet_snapshot : {};
   const snapshot = detail.analysis.input_snapshot;
@@ -158,6 +345,14 @@ function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail })
   const assessment = recordOrNull(compatibility.assessment) ?? {};
   const kutaRows = recordArray(compatibility.kuta_rows).slice(0, 6);
   const hasSavedPacket = Object.keys(packet).length > 0;
+  const relationshipContext = recordOrNull(context.relationship_context) ?? {};
+  const focusHouses = numberArray(relationshipContext.focus_houses);
+  const focusVargas = textArray(relationshipContext.focus_vargas);
+  const roleLabel = relationshipRoleLabel(relationshipContext);
+  const rolePrompt = asText(relationshipContext.prompt_hint);
+  const consentPolicy = asText(relationshipContext.consent_policy);
+  const personAChart = recordOrNull(personA.chart) ?? {};
+  const personBChart = recordOrNull(personB.chart) ?? {};
 
   return (
     <section className="compatibility-detail-context">
@@ -171,9 +366,38 @@ function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail })
           </p>
         </div>
         <div className="compatibility-context-score">
-          <span>Ашта-кута</span>
+          <span><ReaderHelp termKey="ashta_kuta">Ашта-кута</ReaderHelp></span>
           <strong>{scoreText(score)}</strong>
           <small>{asText(assessment.level) || asText(assessment.note) || "оценка в тексте обзора"}</small>
+        </div>
+      </div>
+
+      <div className="compatibility-saved-role-context">
+        <div className="compatibility-saved-role-head">
+          <div>
+            <span>Ракурс взаимодействия</span>
+            <strong>{roleLabel}</strong>
+          </div>
+          <small><ReaderHelp termKey="consent">{consentPolicy || "личная заметка или подтверждённая связь профилей"}</ReaderHelp></small>
+        </div>
+        {rolePrompt ? <p>{rolePrompt}</p> : null}
+        <div className="compatibility-saved-role-grid">
+          <div>
+            <span>Фокусные дома</span>
+            <strong><HouseTerms houses={focusHouses.length ? focusHouses : [7, 12]} /></strong>
+          </div>
+          <div>
+            <span>D-карты</span>
+            <strong><VargaTerms vargas={focusVargas.length ? focusVargas : ["D1", "D9"]} /></strong>
+          </div>
+          <div>
+            <span>Человек A</span>
+            <strong>{roleFocusLine(personAChart, focusHouses, focusVargas)}</strong>
+          </div>
+          <div>
+            <span>Человек B</span>
+            <strong>{roleFocusLine(personBChart, focusHouses, focusVargas)}</strong>
+          </div>
         </div>
       </div>
 
@@ -181,23 +405,25 @@ function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail })
         <CompatibilityPersonContextCard
           label="Человек A"
           input={personAInput}
-          chart={recordOrNull(personA.chart) ?? {}}
+          chart={personAChart}
           summary={recordOrNull(summaries.person_a) ?? {}}
+          focusVargas={focusVargas}
         />
         <CompatibilityPersonContextCard
           label="Человек B"
           input={personBInput}
-          chart={recordOrNull(personB.chart) ?? {}}
+          chart={personBChart}
           summary={recordOrNull(summaries.person_b) ?? {}}
+          focusVargas={focusVargas}
         />
       </div>
 
       <div className="compatibility-checklist">
         <strong>Что обязательно учитывать</strong>
-        <span>7 дом, управитель 7 дома и планеты в 7 доме в обеих D1.</span>
-        <span>D9: навамша лагны, Шукры/Гуру, брачная устойчивость и дхармический слой союза.</span>
-        <span>2, 4, 8, 12 дома: семья, быт, близость, расходы, уединение и скрытые напряжения.</span>
-        <span>D7/D12/D30/D60: дети, родители/родовые темы, риски и глубинная кармическая подоплёка.</span>
+        <span><ReaderHelp termKey="house_7">7 дом</ReaderHelp>, управитель 7 дома и планеты в 7 доме в обеих <ReaderHelp termKey="d1">D1</ReaderHelp>.</span>
+        <span><ReaderHelp termKey="d9">D9</ReaderHelp>: навамша лагны, Шукры/Гуру, брачная устойчивость и дхармический слой союза.</span>
+        <span><HouseTerms houses={[2, 4, 8, 12]} />: семья, быт, близость, расходы, уединение и скрытые напряжения.</span>
+        <span><VargaTerms vargas={["D7", "D12", "D30", "D60"]} />: дети, родители/родовые темы, риски и глубинная кармическая подоплёка.</span>
       </div>
 
       {kutaRows.length ? (
@@ -267,16 +493,79 @@ function BirthChartContext({ detail }: { detail: AnalysisHistoryDetail }) {
   );
 }
 
+function CurrentDayContext({ detail }: { detail: AnalysisHistoryDetail }) {
+  const packet = isRecord(detail.analysis.packet_snapshot) ? detail.analysis.packet_snapshot : {};
+  const snapshot = detail.analysis.input_snapshot;
+  const transitReport = recordOrNull(packet.transit_report) ?? {};
+  const asOf = recordOrNull(transitReport.as_of) ?? recordOrNull(detail.analysis.output_json?.as_of) ?? {};
+  const transits = recordArray(transitReport.transits).slice(0, 8);
+  const relatedProfiles = recordArray(snapshot.related_profile_context);
+  const place = asText(snapshot.place_name || snapshot.place_id);
+  const moment = [asText(asOf.date || snapshot.as_of_date), asText(asOf.time || snapshot.as_of_time), asText(asOf.timezone || snapshot.timezone)]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <section className="birth-detail-context current-day-detail-context">
+      <div className="birth-context-head">
+        <div>
+          <h2>Контекст текущего дня</h2>
+          <p>{moment || "Момент обзора не указан"}{place ? ` · ${place}` : ""}</p>
+        </div>
+        <div className="birth-context-facts">
+          <div>
+            <span>Карта рождения</span>
+            <strong>{formatBirthSnapshot(snapshot)}</strong>
+          </div>
+          <div>
+            <span>Связанные карты</span>
+            <strong>{relatedProfiles.length ? `${relatedProfiles.length}` : "нет"}</strong>
+          </div>
+          <div>
+            <span>Метод</span>
+            <strong>{asText(transitReport.method) || "транзиты от лагны и Луны"}</strong>
+          </div>
+        </div>
+      </div>
+      {transits.length ? (
+        <div className="compatibility-context-table current-day-transit-table">
+          {transits.map((row) => (
+            <div key={`${asText(row.body)}-${asText(row.rashi)}-${asText(row.longitude)}`}>
+              <strong>{bodyLabel(asText(row.body))}</strong>
+              <span>{asText(row.rashi)} {asText(row.nakshatra) ? `· ${asText(row.nakshatra)}` : ""}</span>
+              <small>
+                <TransitHouseSummary row={row} />
+              </small>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="birth-context-strip">
+          <span>Транзитная таблица не сохранена в этом обзоре.</span>
+        </div>
+      )}
+      {relatedProfiles.length ? (
+        <div className="birth-context-strip">
+          <span>AI-вопросы по этому обзору получают контекст связанных карт из профиля.</span>
+          <span>{relatedProfiles.map((profile) => asText(profile.display_name || profile.profile_id)).filter(Boolean).slice(0, 4).join(" · ")}</span>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function CompatibilityPersonContextCard({
   label,
   input,
   chart,
   summary,
+  focusVargas,
 }: {
   label: string;
   input: Record<string, unknown>;
   chart: Record<string, unknown>;
   summary: Record<string, unknown>;
+  focusVargas: string[];
 }) {
   const seventhHouse = recordOrNull(summary.seventh_house) ?? {};
   const seventhLord = recordOrNull(summary.seventh_lord) ?? {};
@@ -284,7 +573,8 @@ function CompatibilityPersonContextCard({
   const birthDashaLord = bodyLabel(asText(summary.birth_dasha_lord));
   const twelfthHouse = houseLine(chart, 12);
   const familyHouses = [2, 4, 8, 12].map((house) => houseLine(chart, house)).join(" · ");
-  const chartCards = compatibilityReferenceCards(chart, summary);
+  const visibleVargas = visibleCompatibilityVargas(focusVargas);
+  const chartCards = compatibilityReferenceCards(chart, summary, visibleVargas);
 
   return (
     <article className="compatibility-person-card">
@@ -302,7 +592,7 @@ function CompatibilityPersonContextCard({
           <dd>{placementLine(recordOrNull(summary.moon) ?? findGraha(chart, ["Chandra", "Moon"]), "Луна")}</dd>
         </div>
         <div>
-          <dt>7 дом</dt>
+          <dt><HouseTerms houses={[7]} /></dt>
           <dd>
             {asText(seventhHouse.rashi) || "-"}
             {asText(seventhHouse.lord) ? `, упр. ${bodyLabel(asText(seventhHouse.lord))}` : ""}
@@ -314,11 +604,11 @@ function CompatibilityPersonContextCard({
           <dd>{placementLine(seventhLord, bodyLabel(asText(seventhLord.body) || asText(seventhHouse.lord)))}</dd>
         </div>
         <div>
-          <dt>12 дом</dt>
+          <dt><HouseTerms houses={[12]} /></dt>
           <dd>{twelfthHouse}</dd>
         </div>
         <div>
-          <dt>2/4/8/12</dt>
+          <dt><HouseTerms houses={[2, 4, 8, 12]} /></dt>
           <dd>{familyHouses}</dd>
         </div>
       </dl>
@@ -361,9 +651,9 @@ function CompatibilityPersonContextCard({
         ))}
       </div>
       <div className="compatibility-varga-list">
-        {["D7", "D9", "D12", "D30", "D60"].map((code) => (
+        {visibleVargas.map((code) => (
           <div key={code}>
-            <span>{code}</span>
+            <span><VargaTerms vargas={[code]} /></span>
             <small>{vargaLine(chart, code)}</small>
           </div>
         ))}
@@ -372,7 +662,7 @@ function CompatibilityPersonContextCard({
   );
 }
 
-function compatibilityReferenceCards(chart: Record<string, unknown>, summary: Record<string, unknown>) {
+function compatibilityReferenceCards(chart: Record<string, unknown>, summary: Record<string, unknown>, focusVargas: string[]) {
   const seventhHouse = recordOrNull(summary.seventh_house) ?? {};
   const seventhLord = recordOrNull(summary.seventh_lord) ?? {};
   const lagna = placementLine(recordOrNull(summary.lagna) ?? recordOrNull(chart.ascendant), "Лагна");
@@ -429,7 +719,20 @@ function compatibilityReferenceCards(chart: Record<string, unknown>, summary: Re
       highlightRashi: vargaLagnaRashi(chart, "D12"),
     },
   ];
-  return cards.map((card) => ({ ...card, lines: card.lines.length ? card.lines.slice(0, 3) : ["нет данных"] }));
+  const roleVargaCards = focusVargas
+    .filter((code) => code.toUpperCase() !== "D1")
+    .map((code) => {
+      const normalized = code.toUpperCase();
+      return {
+        title: normalized,
+        hint: vargaCardHint(normalized),
+        lines: vargaFocusLines(chart, normalized, vargaFocusBodiesForCode(normalized)),
+        placements: vargaMiniPlacements(chart, normalized),
+        highlightRashi: vargaLagnaRashi(chart, normalized),
+      };
+    });
+  return uniqueCards([...roleVargaCards, ...cards])
+    .map((card) => ({ ...card, lines: card.lines.length ? card.lines.slice(0, 3) : ["нет данных"] }));
 }
 
 function birthReferenceCards(chart: Record<string, unknown>, layers: Record<string, unknown>) {
@@ -511,11 +814,11 @@ function AnalysisChatBox({
 }: {
   analysisId: number;
   initialMessages: CodexAnalysisChatMessage[];
-  mode: "birth" | "compatibility" | "disabled";
+  mode: "birth" | "compatibility" | "current-day" | "disabled";
 }) {
   const [messages, setMessages] = useState<CodexAnalysisChatMessage[]>(initialMessages);
   const [question, setQuestion] = useState("");
-  const [provider, setProvider] = useState<AnalysisChatProvider>("qwen");
+  const [provider, setProvider] = useState<AnalysisChatProvider>("codex");
   const [status, setStatus] = useState(
     mode === "disabled" ? "Диалог пока доступен только для Codex-обзоров." : "Можно задать вопрос по сохранённому обзору.",
   );
@@ -551,9 +854,7 @@ function AnalysisChatBox({
         <h2>Диалог</h2>
         <div className="analysis-chat-tools">
           <select value={provider} onChange={(event) => setProvider(event.target.value as AnalysisChatProvider)} disabled={mode === "disabled" || busy}>
-            <option value="qwen">Qwen</option>
-            <option value="deepseek">DeepSeek</option>
-            <option value="codex">Codex</option>
+            <option value="codex">Codex CLI</option>
           </select>
           <span>{status}</span>
         </div>
@@ -621,6 +922,79 @@ function scoreText(score: Record<string, unknown>) {
   const max = asText(score.max);
   const percent = typeof score.percent === "number" ? `${score.percent.toFixed(1)}%` : asText(score.percent);
   return [total && max ? `${total}/${max}` : "", percent].filter(Boolean).join(" · ") || "-";
+}
+
+function visibleCompatibilityVargas(codes: string[]) {
+  const normalized = codes
+    .map((code) => code.trim().toUpperCase())
+    .filter(Boolean);
+  const fallback = ["D7", "D9", "D12", "D30", "D60"];
+  const source = normalized.length ? normalized : fallback;
+  return Array.from(new Set(source.filter((code) => code !== "D1"))).slice(0, 5);
+}
+
+function uniqueCards(cards: CompatibilityReferenceCard[]) {
+  const seen = new Set<string>();
+  return cards.filter((card) => {
+    const key = card.title.toUpperCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function vargaCardHint(code: string) {
+  const hints: Record<string, string> = {
+    D3: "сиблинги",
+    D6: "конфликты",
+    D7: "дети",
+    D9: "навамша",
+    D10: "карьера",
+    D12: "род",
+    D30: "риски",
+    D60: "карма",
+  };
+  return hints[code.toUpperCase()] ?? "D-карта";
+}
+
+function vargaFocusBodiesForCode(code: string) {
+  const bodies: Record<string, string[]> = {
+    D3: ["Lagna", "Ascendant", "Mangala", "Mars", "Budha", "Mercury"],
+    D6: ["Lagna", "Ascendant", "Mangala", "Mars", "Shani", "Saturn", "Rahu", "Ketu"],
+    D7: ["Lagna", "Ascendant", "Guru", "Jupiter", "Shukra", "Venus"],
+    D9: ["Lagna", "Ascendant", "Shukra", "Venus", "Guru", "Jupiter"],
+    D10: ["Lagna", "Ascendant", "Surya", "Sun", "Shani", "Saturn", "Budha", "Mercury"],
+    D12: ["Lagna", "Ascendant", "Surya", "Sun", "Chandra", "Moon"],
+    D30: ["Lagna", "Ascendant", "Mangala", "Mars", "Shani", "Saturn", "Rahu", "Ketu"],
+    D60: ["Lagna", "Ascendant", "Surya", "Sun", "Chandra", "Moon", "Guru", "Jupiter"],
+  };
+  return bodies[code.toUpperCase()] ?? ["Lagna", "Ascendant"];
+}
+
+function relationshipRoleLabel(context: Record<string, unknown>) {
+  const label = asText(context.label);
+  if (label) return label;
+  const labels: Record<string, string> = {
+    partner: "партнёр",
+    father: "отец",
+    mother: "мать",
+    brother: "брат",
+    sister: "сестра",
+    sibling: "брат/сестра",
+    boss: "руководитель",
+    subordinate: "подчинённый",
+    opponent: "оппонент",
+    other: "другая роль",
+  };
+  return labels[asText(context.role)] ?? "совместимость";
+}
+
+function roleFocusLine(chart: Record<string, unknown>, houses: number[], vargas: string[]) {
+  const houseNumbers = houses.length ? houses.slice(0, 4) : [7, 12];
+  const vargaCodes = vargas.length ? vargas.slice(0, 3) : ["D1", "D9"];
+  const houseText = houseNumbers.map((house) => houseLine(chart, house)).join("; ");
+  const vargaText = vargaCodes.map((code) => `${code}: ${vargaLine(chart, code)}`).join("; ");
+  return [houseText, vargaText].filter(Boolean).join(" · ") || "нет данных";
 }
 
 function houseLine(chart: Record<string, unknown>, houseNumber: number) {
@@ -810,6 +1184,14 @@ function recordArray(value: unknown): Record<string, unknown>[] {
 
 function textArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(asText).filter(Boolean) : [];
+}
+
+function numberArray(value: unknown): number[] {
+  return Array.isArray(value)
+    ? value
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item))
+    : [];
 }
 
 function asText(value: unknown) {

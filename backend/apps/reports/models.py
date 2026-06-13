@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import models
 
 
 class GeneratedAnalysisDraft(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="generated_analysis_drafts",
+    )
     kind = models.CharField(max_length=64)
     review_status = models.CharField(max_length=32, default="draft")
     source_policy = models.CharField(max_length=64, default="citation_first")
@@ -17,6 +25,7 @@ class GeneratedAnalysisDraft(models.Model):
 
     class Meta:
         indexes = [
+            models.Index(fields=["user", "kind", "created_at"], name="reports_gen_user_kind_idx"),
             models.Index(fields=["kind", "review_status"], name="reports_gen_kind_89d737_idx"),
             models.Index(fields=["created_at"], name="reports_gen_created_8d2ced_idx"),
         ]
