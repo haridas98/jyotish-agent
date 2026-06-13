@@ -102,7 +102,9 @@ class BirthProfileRelationship(models.Model):
         indexes = [
             models.Index(fields=["user", "role"]),
             models.Index(fields=["user", "link_status"]),
+            models.Index(fields=["user", "updated_at"], name="charts_rel_user_updated_idx"),
             models.Index(fields=["requested_user", "link_status"]),
+            models.Index(fields=["requested_user", "link_status", "updated_at"], name="charts_rel_inbox_updated_idx"),
         ]
 
     def __str__(self) -> str:
