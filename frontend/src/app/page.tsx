@@ -26,6 +26,7 @@ import {
   generateCompatibilityAnalysisPacket,
   generateCompatibilityCodexAnalysis,
   generateCurrentDayOverview,
+  isAnalysisInProgressError,
   listIncomingChartProfileRelationshipRequests,
   listChartProfiles,
   listChartProfileRelationships,
@@ -9304,9 +9305,13 @@ export default function Home() {
         `Codex CLI #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
       );
     } catch (error) {
-      setCompatibilityCodexAnalysis(null);
-      resetCompatibilityChat();
-      setCompatibilityCodexStatus(error instanceof Error ? error.message : "Ошибка полного разбора совместимости");
+      if (isAnalysisInProgressError(error)) {
+        setCompatibilityCodexStatus(error.message);
+      } else {
+        setCompatibilityCodexAnalysis(null);
+        resetCompatibilityChat();
+        setCompatibilityCodexStatus(error instanceof Error ? error.message : "Ошибка полного разбора совместимости");
+      }
     }
   }
 
@@ -9328,7 +9333,7 @@ export default function Home() {
       setCompatibilityChatStatus(sourceCount ? `Ответ готов, источников: ${sourceCount}` : "Ответ готов");
     } catch (error) {
       setCompatibilityChatMessages([...history, { role: "assistant", content: error instanceof Error ? error.message : "Ошибка Codex CLI" }]);
-      setCompatibilityChatStatus("Ошибка ответа");
+      setCompatibilityChatStatus(isAnalysisInProgressError(error) ? "Ответ уже формируется" : "Ошибка ответа");
     } finally {
       setCompatibilityChatBusy(false);
     }
@@ -9368,9 +9373,13 @@ export default function Home() {
           : `Codex CLI #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
       );
     } catch (error) {
-      setDraftAnalysis(null);
-      resetCodexChat();
-      setDraftAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации разбора");
+      if (isAnalysisInProgressError(error)) {
+        setDraftAnalysisStatus(error.message);
+      } else {
+        setDraftAnalysis(null);
+        resetCodexChat();
+        setDraftAnalysisStatus(error instanceof Error ? error.message : "Ошибка генерации разбора");
+      }
     }
   }
 
@@ -9392,7 +9401,7 @@ export default function Home() {
       setCodexChatStatus(sourceCount ? `Ответ готов, источников: ${sourceCount}` : "Ответ готов");
     } catch (error) {
       setCodexChatMessages([...history, { role: "assistant", content: error instanceof Error ? error.message : "Ошибка Codex CLI" }]);
-      setCodexChatStatus("Ошибка ответа");
+      setCodexChatStatus(isAnalysisInProgressError(error) ? "Ответ уже формируется" : "Ошибка ответа");
     } finally {
       setCodexChatBusy(false);
     }

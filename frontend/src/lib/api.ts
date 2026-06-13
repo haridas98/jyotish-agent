@@ -1763,6 +1763,42 @@ export type SourcePassagesResponse = {
   items: SourcePassageResult[];
 };
 
+type ApiErrorPayload = {
+  error?: unknown;
+  message?: unknown;
+  retry_after_seconds?: unknown;
+  [key: string]: unknown;
+};
+
+export class ApiError extends Error {
+  code: string;
+  payload: ApiErrorPayload;
+  retryAfterSeconds?: number;
+  status: number;
+
+  constructor(message: string, options: { status: number; code: string; payload?: ApiErrorPayload }) {
+    super(message);
+    this.name = "ApiError";
+    this.status = options.status;
+    this.code = options.code;
+    this.payload = options.payload ?? {};
+    const retryAfter = Number(this.payload.retry_after_seconds);
+    if (Number.isFinite(retryAfter) && retryAfter > 0) {
+      this.retryAfterSeconds = retryAfter;
+    }
+  }
+}
+
+function apiErrorFromResponse(status: number, data: ApiErrorPayload, fallbackMessage: string) {
+  const code = typeof data.error === "string" ? data.error : `api_status_${status}`;
+  const message = typeof data.message === "string" && data.message.trim() ? data.message : fallbackMessage;
+  return new ApiError(message, { status, code, payload: data });
+}
+
+export function isAnalysisInProgressError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 409 && ["analysis_generation_in_progress", "analysis_chat_in_progress"].includes(error.code);
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const FALLBACK_RESPONSE_STATUSES = new Set([404, 502, 503, 504]);
 
@@ -2005,9 +2041,9 @@ export async function generateCompatibilityCodexAnalysis(payload: CompatibilityR
     const data = await response.json();
     if (!response.ok) {
       if (data.payment_required) {
-        throw new Error(data.message ?? "AI-разбор этой карты требует оплаты.");
+        throw apiErrorFromResponse(response.status, data, "AI-разбор этой карты требует оплаты.");
       }
-      throw new Error(data.error ?? `API returned ${response.status}`);
+      throw apiErrorFromResponse(response.status, data, `API returned ${response.status}`);
     }
 
     return data;
@@ -2057,9 +2093,13 @@ export async function generateBirthCodexAnalysis(
     const data = await response.json();
     if (!response.ok) {
       if (data.payment_required) {
-        throw new Error(data.message ?? "AI-разбор чужой сохранённой карты требует оплаты. Карту можно хранить и смотреть бесплатно.");
+        throw apiErrorFromResponse(
+          response.status,
+          data,
+          "AI-разбор чужой сохранённой карты требует оплаты. Карту можно хранить и смотреть бесплатно.",
+        );
       }
-      throw new Error(data.error ?? `API returned ${response.status}`);
+      throw apiErrorFromResponse(response.status, data, `API returned ${response.status}`);
     }
 
     return data;
@@ -2075,7 +2115,7 @@ export async function generateCurrentDayOverview(payload: TransitRequest): Promi
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? `API returned ${response.status}`);
+    throw apiErrorFromResponse(response.status, data, `API returned ${response.status}`);
   }
 
   return data;
@@ -2095,7 +2135,7 @@ export async function askAnalysis(
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? `API returned ${response.status}`);
+    throw apiErrorFromResponse(response.status, data, `API returned ${response.status}`);
   }
 
   return data;
@@ -2114,7 +2154,7 @@ export async function askBirthCodexAnalysis(
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? `API returned ${response.status}`);
+    throw apiErrorFromResponse(response.status, data, `API returned ${response.status}`);
   }
 
   return data;
@@ -2133,7 +2173,7 @@ export async function askCompatibilityCodexAnalysis(
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? `API returned ${response.status}`);
+    throw apiErrorFromResponse(response.status, data, `API returned ${response.status}`);
   }
 
   return data;

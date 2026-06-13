@@ -5,6 +5,7 @@ import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "reac
 import { HouseTerms, VargaTerms } from "@/app/relationship-help";
 import {
   askAnalysis,
+  isAnalysisInProgressError,
   type AnalysisChatProvider,
   type AnalysisHistoryDetail,
   type AnalysisHistoryItem,
@@ -842,7 +843,7 @@ function AnalysisChatBox({
         ...nextMessages,
         { role: "assistant", content: error instanceof Error ? error.message : "Ошибка ответа" },
       ]);
-      setStatus("Не удалось получить ответ.");
+      setStatus(isAnalysisInProgressError(error) ? "Ответ уже формируется." : "Не удалось получить ответ.");
     } finally {
       setBusy(false);
     }
