@@ -786,11 +786,12 @@ def _birth_analysis_data_for_request(request) -> dict[str, object]:
     related_ids = _int_list(data.get("related_profile_ids"))
     related_contexts: list[dict[str, object]] = []
     seen_related_profile_ids: set[int] = set()
+    selected_profile_id = selected_profile.id if selected_profile is not None else None
     if related_ids:
         profiles = BirthProfile.objects.filter(id__in=related_ids, user=user).select_related("place")
         by_id = {profile.id: profile for profile in profiles}
         for related_id in related_ids:
-            if related_id not in by_id or related_id in seen_related_profile_ids:
+            if related_id == selected_profile_id or related_id not in by_id or related_id in seen_related_profile_ids:
                 continue
             related_contexts.append(_profile_context(by_id[related_id], viewer_user=user))
             seen_related_profile_ids.add(related_id)

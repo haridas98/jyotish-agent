@@ -3,11 +3,12 @@ from datetime import date, time
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db import connection
+from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from apps.charts.models import BirthProfile, BirthProfileRelationship, ChartCalculation, Place
-from apps.reports.models import GeneratedAnalysisDraft, GeneratedAnalysisProfileLink
+from apps.reports.models import GeneratedAnalysisDraft, GeneratedAnalysisJob, GeneratedAnalysisProfileLink
 
 
 def create_test_place(suffix: str = "default") -> Place:
@@ -816,6 +817,7 @@ def test_universal_analysis_chat_supports_current_day_overview(monkeypatch):
 
 
 @pytest.mark.django_db
+@override_settings(CODEX_GENERATION_QUEUE_ENABLED=False)
 def test_birth_analysis_request_includes_related_profile_context(monkeypatch):
     user = get_user_model().objects.create_user(username="tester", password="strong-pass-108")
     place = Place.objects.create(
@@ -895,6 +897,75 @@ def test_birth_analysis_request_includes_related_profile_context(monkeypatch):
 
 
 @pytest.mark.django_db
+@override_settings(CODEX_GENERATION_QUEUE_ENABLED=True)
+def test_queued_birth_analysis_job_keeps_related_profile_context():
+    user = get_user_model().objects.create_user(username="queued-related", password="strong-pass-108")
+    place = Place.objects.create(
+        external_id="test:queued-related",
+        name="Mayapur",
+        country_code="IN",
+        latitude=23.4241,
+        longitude=88.3883,
+        timezone_name="Asia/Kolkata",
+        metadata={"label": "Mayapur, IN"},
+    )
+    base_profile = BirthProfile.objects.create(
+        user=user,
+        display_name="Me",
+        birth_date=date(1990, 1, 1),
+        birth_time=time(8, 0),
+        place=place,
+        timezone_name="Asia/Kolkata",
+        is_self_profile=True,
+    )
+    mother_profile = BirthProfile.objects.create(
+        user=user,
+        display_name="Mother",
+        birth_date=date(1960, 1, 1),
+        birth_time=time(6, 0),
+        place=place,
+        timezone_name="Asia/Kolkata",
+    )
+    ChartCalculation.objects.create(
+        profile=mother_profile,
+        calculation_version="test",
+        status=ChartCalculation.Status.COMPLETE,
+        result={"birth": {"date": "1960-01-01"}, "grahas": [{"body": "Chandra", "rashi": "Karka"}]},
+    )
+    GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_partial",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        input_snapshot={"profile_id": mother_profile.id},
+        output_json={"sections": [{"title": "Mother", "body": "Queued context review."}]},
+    )
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        "/api/reports/birth-chart/codex-analysis",
+        {
+            "birth_date": "1990-01-01",
+            "birth_time": "08:00",
+            "place_name": "Mayapur",
+            "profile_id": base_profile.id,
+            "related_profile_ids": [base_profile.id, mother_profile.id],
+        },
+        format="json",
+    )
+
+    assert response.status_code == 202
+    job = GeneratedAnalysisJob.objects.get(user=user, kind="birth_chart_codex_cli")
+    related = job.request_snapshot["related_profile_context"]
+    assert [item["profile"]["display_name"] for item in related] == ["Mother"]
+    assert related[0]["chart"]["grahas"][0]["body"] == "Chandra"
+    assert related[0]["latest_reviews"][0]["excerpt"] == "Queued context review."
+
+
+@pytest.mark.django_db
+@override_settings(CODEX_GENERATION_QUEUE_ENABLED=False)
 def test_birth_analysis_request_includes_accepted_relationship_context(monkeypatch):
     user = get_user_model().objects.create_user(username="tester-rel", password="strong-pass-108")
     place = Place.objects.create(
@@ -973,6 +1044,7 @@ def test_birth_analysis_request_includes_accepted_relationship_context(monkeypat
 
 
 @pytest.mark.django_db
+@override_settings(CODEX_GENERATION_QUEUE_ENABLED=False)
 def test_birth_analysis_related_registered_profile_reviews_are_viewer_scoped(monkeypatch):
     user = get_user_model().objects.create_user(username="viewer-rel", password="strong-pass-108")
     other_user = get_user_model().objects.create_user(username="other-rel", password="strong-pass-108")
@@ -1068,6 +1140,7 @@ def test_birth_analysis_related_registered_profile_reviews_are_viewer_scoped(mon
 
 
 @pytest.mark.django_db
+@override_settings(CODEX_GENERATION_QUEUE_ENABLED=False)
 def test_birth_analysis_related_profile_reviews_use_profile_links(monkeypatch):
     user = get_user_model().objects.create_user(username="viewer-link-sql", password="strong-pass-108")
     place = Place.objects.create(
