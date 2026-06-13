@@ -34,7 +34,7 @@ from .codex_cli_generation import (
     generate_birth_chart_codex_cli_analysis,
     generate_compatibility_codex_cli_analysis,
 )
-from .draft_generation import DraftGenerationUnavailable, generate_birth_chart_draft_analysis
+from .draft_generation import DraftGenerationUnavailable
 from .models import GeneratedAnalysisDraft
 
 
@@ -200,20 +200,13 @@ class BirthDraftAnalysisView(APIView):
     permission_classes = [PrivateAppAccess, IsAuthenticated]
 
     def post(self, request):
-        try:
-            data = _birth_analysis_data_for_request(request)
-            return Response(
-                generate_birth_chart_draft_analysis(
-                    data,
-                    citation_search=vl_citation_search,
-                    interpretation_provider=public_interpretation_sections_for_chart,
-                    user=_request_user(request),
-                )
-            )
-        except ChartInputError as exc:
-            return Response({"error": str(exc)}, status=400)
-        except (EphemerisUnavailable, DraftGenerationUnavailable) as exc:
-            return Response({"error": str(exc)}, status=503)
+        return Response(
+            {
+                "error": "draft_analysis_disabled",
+                "message": "OpenAI draft analysis is disabled. Use /api/reports/birth-chart/codex-analysis.",
+            },
+            status=410,
+        )
 
 
 class BirthCodexAnalysisView(APIView):

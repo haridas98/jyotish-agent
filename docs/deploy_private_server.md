@@ -110,7 +110,7 @@ Practical options:
 
 - Run backend on the host venv where `codex` is installed and authenticated.
 - Or extend the backend image and mount a server-only Codex auth directory.
-- Or set `CODEX_ANALYSIS_PROVIDER=openai` and provide `OPENAI_API_KEY`.
+Do not configure Qwen, DeepSeek, Nemotron or OpenAI as runtime AI providers for this private build.
 
 ## Approval flow
 

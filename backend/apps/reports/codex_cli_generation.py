@@ -13,7 +13,7 @@ from apps.interpretations.evidence_matcher import build_shastra_evidence
 
 from .analysis_packet import build_analysis_packet, build_compatibility_analysis_packet
 from .birth_report import CitationSearch, InterpretationProvider
-from .draft_generation import DraftGenerationUnavailable, _normalize_llm_output, openai_responses_client
+from .draft_generation import DraftGenerationUnavailable, _normalize_llm_output
 from .models import GeneratedAnalysisDraft
 
 CodexRunner = Callable[[str], dict[str, Any] | str]
@@ -1484,15 +1484,11 @@ def _compatibility_review_status(private_research_mode: bool, output: dict[str, 
 
 
 def configured_analysis_runner(prompt: str) -> dict[str, Any] | str:
-    if settings.CODEX_ANALYSIS_PROVIDER == "openai":
-        return openai_responses_client()(prompt)
     return codex_exec_runner(prompt)
 
 
 def _analysis_provider_metadata(codex_runner: CodexRunner | None) -> tuple[str, str]:
-    if codex_runner is not None or settings.CODEX_ANALYSIS_PROVIDER != "openai":
-        return "codex_cli", "codex_exec"
-    return "openai", settings.OPENAI_MODEL
+    return "codex_cli", "codex_exec"
 
 
 def codex_exec_runner(prompt: str) -> str:

@@ -31,7 +31,7 @@ POST /api/reports/current-day/overview
 
 Generated records are saved in `GeneratedAnalysisDraft` and always belong to the authenticated user. Qwen, DeepSeek and Nemotron helper paths were removed from the product runtime; do not configure their proxy services for this app.
 
-OpenAI API can be reintroduced later behind the same provider boundary, but it is not the active private-build path.
+OpenAI API is not a runtime provider in this private build.
 
 ```powershell
 cd C:\Projects\jyotish-agent\backend

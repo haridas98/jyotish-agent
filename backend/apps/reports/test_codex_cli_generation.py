@@ -128,7 +128,7 @@ def test_generate_birth_chart_codex_cli_analysis_sends_evidence_prompt_and_saves
 
 @pytest.mark.django_db
 @override_settings(CODEX_ANALYSIS_PROVIDER="openai", OPENAI_MODEL="gpt-test")
-def test_generate_birth_chart_codex_cli_analysis_can_use_openai_provider(monkeypatch):
+def test_generate_birth_chart_codex_cli_analysis_ignores_openai_provider_setting(monkeypatch):
     from apps.reports import codex_cli_generation
 
     sections = [
@@ -137,8 +137,8 @@ def test_generate_birth_chart_codex_cli_analysis_can_use_openai_provider(monkeyp
     ]
     monkeypatch.setattr(
         codex_cli_generation,
-        "openai_responses_client",
-        lambda: lambda prompt: {"sections": sections},
+        "codex_exec_runner",
+        lambda prompt: {"sections": sections},
     )
 
     result = codex_cli_generation.generate_birth_chart_codex_cli_analysis(
@@ -156,8 +156,8 @@ def test_generate_birth_chart_codex_cli_analysis_can_use_openai_provider(monkeyp
 
     record = GeneratedAnalysisDraft.objects.get(id=result["id"])
     assert result["review_status"] == "private_final"
-    assert record.provider == "openai"
-    assert record.model == "gpt-test"
+    assert record.provider == "codex_cli"
+    assert record.model == "codex_exec"
 
 
 @pytest.mark.django_db

@@ -25,8 +25,8 @@ def test_generate_draft_analysis_for_packet_keeps_review_status_draft_and_saves_
             "language": "ru",
             "sections": [
                 {
-                    "title": "Главное",
-                    "body": "Черновик по карте.",
+                    "title": "Main",
+                    "body": "Draft body.",
                     "citation_titles": ["Bhagavad-gita 9.22"],
                     "review_notes": [],
                 }
@@ -63,8 +63,8 @@ def test_normalize_llm_output_extracts_json_markdown_fence():
   "language": "ru",
   "sections": [
     {
-      "title": "Ядро личности",
-      "body": "Разбор.",
+      "title": "Core",
+      "body": "Analysis.",
       "source_traces": [
         {"condition_key": "lagna", "work_title": "Brhat Jataka"}
       ],
@@ -75,24 +75,14 @@ def test_normalize_llm_output_extracts_json_markdown_fence():
 ```"""
     )
 
-    assert output["sections"][0]["title"] == "Ядро личности"
+    assert output["sections"][0]["title"] == "Core"
     assert output["sections"][0]["source_traces"][0]["work_title"] == "Brhat Jataka"
 
 
 @pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
-def test_birth_draft_analysis_api_returns_saved_draft(monkeypatch):
+def test_birth_draft_analysis_api_is_disabled():
     user = get_user_model().objects.create_user(username="draft-api-owner", password="strong-pass-108")
-    monkeypatch.setattr(
-        "apps.reports.views.generate_birth_chart_draft_analysis",
-        lambda data, citation_search=None, research_search=None, interpretation_provider=None, user=None: {
-            "id": 7,
-            "kind": "birth_chart",
-            "review_status": "draft",
-            "source_policy": "citation_first",
-            "sections": [{"title": "Главное", "body": "Черновик.", "citation_titles": []}],
-        },
-    )
 
     client = APIClient()
     client.force_authenticate(user=user)
@@ -106,9 +96,9 @@ def test_birth_draft_analysis_api_returns_saved_draft(monkeypatch):
         format="json",
     )
 
-    assert response.status_code == 200
-    assert response.data["review_status"] == "draft"
-    assert response.data["id"] == 7
+    assert response.status_code == 410
+    assert response.data["error"] == "draft_analysis_disabled"
+    assert "codex-analysis" in response.data["message"]
 
 
 @pytest.mark.django_db
