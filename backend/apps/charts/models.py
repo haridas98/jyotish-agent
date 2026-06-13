@@ -123,6 +123,7 @@ class ChartCalculation(models.Model):
     house_system = models.CharField(max_length=64, default="whole_sign")
     input_snapshot = models.JSONField(default=dict)
     result = models.JSONField(default=dict, blank=True)
+    graha_count = models.PositiveSmallIntegerField(default=0)
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.PENDING)
     error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -137,6 +138,20 @@ class ChartCalculation(models.Model):
 
     def __str__(self) -> str:
         return f"{self.profile_id}:{self.calculation_version}:{self.status}"
+
+    def save(self, *args, **kwargs):
+        self.graha_count = _graha_count_from_result(self.result)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "result" in update_fields:
+            kwargs["update_fields"] = set(update_fields) | {"graha_count"}
+        super().save(*args, **kwargs)
+
+
+def _graha_count_from_result(result: object) -> int:
+    if not isinstance(result, dict):
+        return 0
+    grahas = result.get("grahas")
+    return len(grahas) if isinstance(grahas, list) else 0
 
 
 class PlanetPosition(models.Model):

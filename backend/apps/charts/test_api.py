@@ -309,6 +309,9 @@ def test_birth_profile_list_batches_latest_calculation_queries(user):
     assert len(response.data["profiles"]) == 3
     assert all(item["latest_calculation"]["graha_count"] == 1 for item in response.data["profiles"])
     assert len(captured.captured_queries) <= 5
+    sql = "\n".join(query["sql"].lower() for query in captured.captured_queries)
+    assert '"charts_chartcalculation"."input_snapshot"' not in sql
+    assert '"charts_chartcalculation"."result"' not in sql
 
 
 @pytest.mark.django_db

@@ -178,7 +178,7 @@ def profiles_payload(profiles: list[BirthProfile]) -> list[dict[str, Any]]:
         .values_list("latest_calculation_id", flat=True)
         if calculation_id is not None
     ]
-    calculations = ChartCalculation.objects.filter(id__in=latest_ids)
+    calculations = ChartCalculation.objects.filter(id__in=latest_ids).defer("input_snapshot", "result")
     by_profile_id = {calculation.profile_id: calculation for calculation in calculations}
     return [
         profile_payload(profile, latest_calculation=by_profile_id.get(profile.id))
@@ -402,12 +402,11 @@ def calculation_payload(calculation: ChartCalculation) -> dict[str, Any]:
 
 
 def latest_calculation_summary(calculation: ChartCalculation) -> dict[str, Any]:
-    result = calculation.result or {}
     return {
         "id": calculation.id,
         "status": calculation.status,
         "calculation_version": calculation.calculation_version,
-        "graha_count": len(result.get("grahas", [])) if isinstance(result, dict) else 0,
+        "graha_count": calculation.graha_count,
         "created_at": calculation.created_at.isoformat(),
         "updated_at": calculation.updated_at.isoformat(),
     }
