@@ -89,8 +89,22 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 def database_from_url(url: str | None) -> dict[str, object]:
     if not url:
+        postgres_db = os.getenv("POSTGRES_DB")
+        postgres_user = os.getenv("POSTGRES_USER")
+        postgres_password = os.getenv("POSTGRES_PASSWORD")
+        postgres_host = os.getenv("POSTGRES_HOST", "127.0.0.1")
+        postgres_port = os.getenv("POSTGRES_PORT", "5432")
+        if postgres_db and postgres_user and postgres_password:
+            return {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": postgres_db,
+                "USER": postgres_user,
+                "PASSWORD": postgres_password,
+                "HOST": postgres_host,
+                "PORT": postgres_port,
+            }
         if not DEBUG:
-            raise ImproperlyConfigured("DATABASE_URL is required when DJANGO_DEBUG=false")
+            raise ImproperlyConfigured("DATABASE_URL or POSTGRES_DB/POSTGRES_USER/POSTGRES_PASSWORD is required when DJANGO_DEBUG=false")
         return {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
