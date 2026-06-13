@@ -1980,6 +1980,10 @@ function NorthIndianChartPreview({
   }, [houseHintsEnabled]);
   const activeHouse = houseHintsEnabled ? pinnedHouse ?? hoveredHouse : null;
   const activeCell = activeHouse ? northIndianHouseCells[activeHouse] : null;
+  function selectHouse(house: number) {
+    setPinnedHouse((current) => (current === house ? null : house));
+    publishReaderExplanation(readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage }));
+  }
   return (
     <>
       <div className="chart-box" aria-label="Предпросмотр североиндийской карты">
@@ -1988,9 +1992,7 @@ function NorthIndianChartPreview({
           varga={varga}
           chartReference={chartReference}
           termLanguage={termLanguage}
-          onHouseSelect={houseHintsEnabled ? (house) => {
-            setPinnedHouse((current) => (current === house ? null : house));
-          } : undefined}
+          onHouseSelect={houseHintsEnabled ? selectHouse : undefined}
           onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
           onHouseLeave={houseHintsEnabled ? () => setHoveredHouse(null) : undefined}
           selectedHouse={activeHouse}
@@ -2077,7 +2079,15 @@ function NorthIndianChartSvg({
                 <polygon
                   className="chart-house-hit-zone"
                   points={hitPolygon.map((point) => `${point.x},${point.y}`).join(" ")}
-                  onClick={() => onHouseSelect(house.house)}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onHouseSelect(house.house);
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
                 />
               ) : null}
               <text
@@ -2162,6 +2172,10 @@ function SouthIndianChartPreview({
   }, [houseHintsEnabled]);
   const activeHouse = houseHintsEnabled ? pinnedHouse ?? hoveredHouse : null;
   const activePosition = activeHouse ? southIndianHouseTooltipPosition(chart, varga, chartReference, activeHouse) : null;
+  function selectHouse(house: number) {
+    setPinnedHouse((current) => (current === house ? null : house));
+    publishReaderExplanation(readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage }));
+  }
   return (
     <>
       <div className="chart-box south-chart-box" aria-label="Предпросмотр южноиндийской карты">
@@ -2170,9 +2184,7 @@ function SouthIndianChartPreview({
           varga={varga}
           chartReference={chartReference}
           termLanguage={termLanguage}
-          onHouseSelect={houseHintsEnabled ? (house) => {
-            setPinnedHouse((current) => (current === house ? null : house));
-          } : undefined}
+          onHouseSelect={houseHintsEnabled ? selectHouse : undefined}
           onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
           onHouseLeave={houseHintsEnabled ? () => setHoveredHouse(null) : undefined}
           selectedHouse={activeHouse}
@@ -2240,7 +2252,15 @@ function SouthIndianChartGrid({
             aria-label={interactive && house ? `${house} дом` : undefined}
             tabIndex={interactive ? 0 : undefined}
             title={house ? `${house} дом` : undefined}
-            onClick={interactive && house ? () => onHouseSelect?.(house) : undefined}
+            onPointerDown={interactive && house ? (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onHouseSelect?.(house);
+            } : undefined}
+            onClick={interactive ? (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            } : undefined}
             onMouseEnter={interactive && house ? () => onHouseHover?.(house) : undefined}
             onMouseLeave={onHouseLeave}
             onFocus={interactive && house ? () => onHouseHover?.(house) : undefined}
