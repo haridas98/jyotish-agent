@@ -1,5 +1,6 @@
 import json
 
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -382,6 +383,35 @@ def test_parashara_light_packet_report_api_reads_configured_packet(settings, tmp
     assert response.status_code == 200
     assert response.data["id"] == "pl7-api"
     assert response.data["summary"]["review_status"] == "draft"
+
+
+def test_parashara_light_packet_report_api_caches_until_packet_changes(settings, tmp_path, monkeypatch):
+    cache.clear()
+    path = tmp_path / "packet.json"
+    path.write_text('{"id":"cached"}', encoding="utf-8")
+    settings.PARASHARA_LIGHT_PACKET_PATH = path
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    calls = {"count": 0}
+
+    def fake_loader(source_path, *, manual_witness_values_path=""):
+        calls["count"] += 1
+        return {"id": json.loads(path.read_text(encoding="utf-8"))["id"], "source_packet": str(source_path)}
+
+    monkeypatch.setattr("apps.calculations.views.load_parashara_light_packet_report", fake_loader)
+    client = APIClient()
+
+    first = client.get(reverse("parashara-light-packet"))
+    second = client.get(reverse("parashara-light-packet"))
+    path.write_text('{"id":"changed","extra":"size"}', encoding="utf-8")
+    third = client.get(reverse("parashara-light-packet"))
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert third.status_code == 200
+    assert first.data["id"] == "cached"
+    assert second.data["id"] == "cached"
+    assert third.data["id"] == "changed"
+    assert calls["count"] == 2
 
 
 def test_parashara_light_packet_report_api_returns_404_when_missing(settings, tmp_path):

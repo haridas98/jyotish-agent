@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+from typing import Any, Callable
+
+from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.conf import settings
@@ -22,6 +27,34 @@ from .workflows import (
     build_tithi_pravesha_report,
     build_transit_report,
 )
+
+WITNESS_REPORT_CACHE_SECONDS = 300
+
+
+def _cached_witness_payload(
+    namespace: str,
+    paths: list[str | Path],
+    builder: Callable[[], dict[str, Any]],
+) -> dict[str, Any]:
+    fingerprint = []
+    for raw_path in paths:
+        if not raw_path:
+            fingerprint.append(["", "missing", 0, 0])
+            continue
+        path = Path(raw_path)
+        if not path.exists():
+            fingerprint.append([str(path), "missing", 0, 0])
+            continue
+        stat = path.stat()
+        fingerprint.append([str(path), "file", stat.st_size, stat.st_mtime_ns])
+    digest = hashlib.sha256(repr(fingerprint).encode("utf-8")).hexdigest()
+    cache_key = f"calculations:witness:{namespace}:{digest}"
+    cached = cache.get(cache_key)
+    if isinstance(cached, dict):
+        return cached
+    payload = builder()
+    cache.set(cache_key, payload, WITNESS_REPORT_CACHE_SECONDS)
+    return payload
 
 
 class ZodiacPlacementView(APIView):
@@ -91,7 +124,13 @@ class JHoraAccuracyReportView(APIView):
         if not path:
             path = settings.ROOT_DIR / ".tmp" / "jhora" / "sterlitamak-1998" / "accuracy-report.json"
         try:
-            return Response(load_jhora_accuracy_report(path))
+            return Response(
+                _cached_witness_payload(
+                    "jhora-accuracy",
+                    [path],
+                    lambda: load_jhora_accuracy_report(path),
+                )
+            )
         except FileNotFoundError:
             return Response({"error": "JHora accuracy report is not captured yet"}, status=404)
 
@@ -106,9 +145,13 @@ class ParasharaLightPacketReportView(APIView):
         manual_witness_values_path = getattr(settings, "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH", "")
         try:
             return Response(
-                load_parashara_light_packet_report(
-                    path,
-                    manual_witness_values_path=manual_witness_values_path,
+                _cached_witness_payload(
+                    "parashara-light-packet",
+                    [path, manual_witness_values_path],
+                    lambda: load_parashara_light_packet_report(
+                        path,
+                        manual_witness_values_path=manual_witness_values_path,
+                    ),
                 )
             )
         except FileNotFoundError:
@@ -125,51 +168,70 @@ class WitnessSummaryView(APIView):
         pl_packet_path = getattr(settings, "PARASHARA_LIGHT_PACKET_PATH", "")
         if not pl_packet_path:
             pl_packet_path = settings.ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"
+        jhora_witness_case_path = getattr(settings, "JHORA_WITNESS_CASE_PATH", "")
+        witness_review_batch_index_path = getattr(settings, "WITNESS_REVIEW_BATCH_INDEX_PATH", "")
+        witness_capture_queue_path = getattr(settings, "WITNESS_CAPTURE_QUEUE_PATH", "")
+        parashara_light_manual_values_path = getattr(settings, "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH", "")
+        parashara_light_profile_report_path = getattr(settings, "PARASHARA_LIGHT_PROFILE_REPORT_PATH", "")
+        parashara_light_forensic_report_path = getattr(settings, "PARASHARA_LIGHT_FORENSIC_REPORT_PATH", "")
+        parashara_light_settings_evidence_path = getattr(settings, "PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH", "")
+        parashara_light_visible_settings_capture_path = getattr(
+            settings,
+            "PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH",
+            "",
+        )
+        parashara_light_calculation_options_report_path = getattr(
+            settings,
+            "PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH",
+            "",
+        )
+        parashara_light_settings_aware_forensic_path = getattr(
+            settings,
+            "PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH",
+            "",
+        )
+        parashara_light_preferences_inventory_path = getattr(settings, "PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH", "")
+        parashara_light_hidden_option_store_path = getattr(settings, "PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH", "")
+        parashara_light_option_store_diff_path = getattr(settings, "PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH", "")
+        parashara_light_internal_settings_audit_path = getattr(settings, "PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH", "")
         return Response(
-            build_witness_summary(
-                jhora_report_path=jhora_path,
-                jhora_witness_case_path=getattr(settings, "JHORA_WITNESS_CASE_PATH", ""),
-                witness_review_batch_index_path=getattr(settings, "WITNESS_REVIEW_BATCH_INDEX_PATH", ""),
-                witness_capture_queue_path=getattr(settings, "WITNESS_CAPTURE_QUEUE_PATH", ""),
-                parashara_light_packet_path=pl_packet_path,
-                parashara_light_manual_values_path=getattr(settings, "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH", ""),
-                parashara_light_profile_report_path=getattr(settings, "PARASHARA_LIGHT_PROFILE_REPORT_PATH", ""),
-                parashara_light_forensic_report_path=getattr(settings, "PARASHARA_LIGHT_FORENSIC_REPORT_PATH", ""),
-                parashara_light_settings_evidence_path=getattr(settings, "PARASHARA_LIGHT_SETTINGS_EVIDENCE_PATH", ""),
-                parashara_light_visible_settings_capture_path=getattr(
-                    settings,
-                    "PARASHARA_LIGHT_VISIBLE_SETTINGS_CAPTURE_PATH",
-                    "",
-                ),
-                parashara_light_calculation_options_report_path=getattr(
-                    settings,
-                    "PARASHARA_LIGHT_CALCULATION_OPTIONS_REPORT_PATH",
-                    "",
-                ),
-                parashara_light_settings_aware_forensic_path=getattr(
-                    settings,
-                    "PARASHARA_LIGHT_SETTINGS_AWARE_FORENSIC_PATH",
-                    "",
-                ),
-                parashara_light_preferences_inventory_path=getattr(
-                    settings,
-                    "PARASHARA_LIGHT_PREFERENCES_INVENTORY_PATH",
-                    "",
-                ),
-                parashara_light_hidden_option_store_path=getattr(
-                    settings,
-                    "PARASHARA_LIGHT_HIDDEN_OPTION_STORE_PATH",
-                    "",
-                ),
-                parashara_light_option_store_diff_path=getattr(
-                    settings,
-                    "PARASHARA_LIGHT_OPTION_STORE_DIFF_PATH",
-                    "",
-                ),
-                parashara_light_internal_settings_audit_path=getattr(
-                    settings,
-                    "PARASHARA_LIGHT_INTERNAL_SETTINGS_AUDIT_PATH",
-                    "",
+            _cached_witness_payload(
+                "witness-summary",
+                [
+                    jhora_path,
+                    jhora_witness_case_path,
+                    witness_review_batch_index_path,
+                    witness_capture_queue_path,
+                    pl_packet_path,
+                    parashara_light_manual_values_path,
+                    parashara_light_profile_report_path,
+                    parashara_light_forensic_report_path,
+                    parashara_light_settings_evidence_path,
+                    parashara_light_visible_settings_capture_path,
+                    parashara_light_calculation_options_report_path,
+                    parashara_light_settings_aware_forensic_path,
+                    parashara_light_preferences_inventory_path,
+                    parashara_light_hidden_option_store_path,
+                    parashara_light_option_store_diff_path,
+                    parashara_light_internal_settings_audit_path,
+                ],
+                lambda: build_witness_summary(
+                    jhora_report_path=jhora_path,
+                    jhora_witness_case_path=jhora_witness_case_path,
+                    witness_review_batch_index_path=witness_review_batch_index_path,
+                    witness_capture_queue_path=witness_capture_queue_path,
+                    parashara_light_packet_path=pl_packet_path,
+                    parashara_light_manual_values_path=parashara_light_manual_values_path,
+                    parashara_light_profile_report_path=parashara_light_profile_report_path,
+                    parashara_light_forensic_report_path=parashara_light_forensic_report_path,
+                    parashara_light_settings_evidence_path=parashara_light_settings_evidence_path,
+                    parashara_light_visible_settings_capture_path=parashara_light_visible_settings_capture_path,
+                    parashara_light_calculation_options_report_path=parashara_light_calculation_options_report_path,
+                    parashara_light_settings_aware_forensic_path=parashara_light_settings_aware_forensic_path,
+                    parashara_light_preferences_inventory_path=parashara_light_preferences_inventory_path,
+                    parashara_light_hidden_option_store_path=parashara_light_hidden_option_store_path,
+                    parashara_light_option_store_diff_path=parashara_light_option_store_diff_path,
+                    parashara_light_internal_settings_audit_path=parashara_light_internal_settings_audit_path,
                 ),
             )
         )
