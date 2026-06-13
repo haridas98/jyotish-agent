@@ -7,12 +7,36 @@ from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from apps.charts.models import BirthProfile, BirthProfileRelationship, ChartCalculation, Place
-from apps.reports.models import GeneratedAnalysisDraft
+from apps.reports.models import GeneratedAnalysisDraft, GeneratedAnalysisProfileLink
+
+
+def create_test_place(suffix: str = "default") -> Place:
+    return Place.objects.create(
+        external_id=f"test:history:{suffix}",
+        name=f"History place {suffix}",
+        country_code="IN",
+        latitude=27.5650,
+        longitude=77.6593,
+        timezone_name="Asia/Kolkata",
+        metadata={"label": f"History place {suffix}, IN"},
+    )
+
+
+def create_test_profile(user, *, name: str = "Profile", suffix: str = "default") -> BirthProfile:
+    return BirthProfile.objects.create(
+        user=user,
+        display_name=name,
+        birth_date=date(2000, 1, 1),
+        birth_time=time(12, 0),
+        place=create_test_place(suffix),
+        timezone_name="Asia/Kolkata",
+    )
 
 
 @pytest.mark.django_db
 def test_analysis_history_lists_reports_with_data_slug_and_chat_count():
     user = get_user_model().objects.create_user(username="history-owner", password="strong-pass-108")
+    profile = create_test_profile(user, name="History owner", suffix="owner")
     report = GeneratedAnalysisDraft.objects.create(
         user=user,
         kind="birth_chart_codex_cli",
@@ -24,7 +48,7 @@ def test_analysis_history_lists_reports_with_data_slug_and_chat_count():
             "birth_date": "1998-04-30",
             "birth_time": "13:45",
             "place_name": "Sterlitamak",
-            "profile_id": 7,
+            "profile_id": profile.id,
         },
         output_json={
             "engine_label": "Codex CLI personal overview",
@@ -42,12 +66,13 @@ def test_analysis_history_lists_reports_with_data_slug_and_chat_count():
 
     client = APIClient()
     client.force_authenticate(user=user)
-    response = client.get("/api/reports/history", {"kind": "birth_chart_codex_cli", "profile_id": 7})
+    response = client.get("/api/reports/history", {"kind": "birth_chart_codex_cli", "profile_id": profile.id})
 
     assert response.status_code == 200
     assert response.data["items"][0]["id"] == report.id
     assert response.data["items"][0]["slug"] == f"birth-1998-04-30-1345-sterlitamak-codex-cli-{report.id}"
     assert response.data["items"][0]["chat_count"] == 1
+    assert GeneratedAnalysisProfileLink.objects.filter(analysis=report, profile=profile, role="primary").exists()
 
 
 @pytest.mark.django_db
@@ -218,6 +243,8 @@ def test_analysis_history_detail_limits_long_chat_history():
 @pytest.mark.django_db
 def test_analysis_history_filters_compatibility_by_related_profile():
     user = get_user_model().objects.create_user(username="history-compat-owner", password="strong-pass-108")
+    profile_a = create_test_profile(user, name="A", suffix="compat-a")
+    profile_b = create_test_profile(user, name="B", suffix="compat-b")
     record = GeneratedAnalysisDraft.objects.create(
         user=user,
         kind="compatibility_codex_cli",
@@ -225,18 +252,50 @@ def test_analysis_history_filters_compatibility_by_related_profile():
         source_policy="private_shastra_research_first",
         provider="codex_cli",
         input_snapshot={
-            "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan", "profile_id": 10},
-            "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur", "profile_id": 11},
+            "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan", "profile_id": profile_a.id},
+            "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur", "profile_id": profile_b.id},
         },
         output_json={"sections": [{"title": "Compatibility", "body": "Body."}]},
     )
 
     client = APIClient()
     client.force_authenticate(user=user)
-    response = client.get("/api/reports/history", {"kind": "compatibility_codex_cli", "profile_id": 11})
+    response = client.get("/api/reports/history", {"kind": "compatibility_codex_cli", "profile_id": profile_b.id})
 
     assert response.status_code == 200
     assert [item["id"] for item in response.data["items"]] == [record.id]
+
+
+@pytest.mark.django_db
+def test_analysis_history_profile_filter_uses_profile_link_beyond_recent_json_window():
+    user = get_user_model().objects.create_user(username="history-link-window", password="strong-pass-108")
+    profile = create_test_profile(user, name="Deep profile", suffix="deep")
+    matching = GeneratedAnalysisDraft.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        review_status="private_final",
+        source_policy="private_shastra_research_first",
+        provider="codex_cli",
+        input_snapshot={"birth_date": "1998-04-30", "birth_time": "13:45", "place_name": "Sterlitamak", "profile_id": profile.id},
+        output_json={"sections": [{"title": "Deep", "body": "Should be found by DB link."}]},
+    )
+    for index in range(205):
+        GeneratedAnalysisDraft.objects.create(
+            user=user,
+            kind="birth_chart_codex_cli",
+            review_status="private_final",
+            source_policy="private_shastra_research_first",
+            provider="codex_cli",
+            input_snapshot={"birth_date": "2000-01-01", "birth_time": "10:00", "place_name": f"Other {index}"},
+            output_json={"sections": [{"title": "Other", "body": "Non matching."}]},
+        )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.get("/api/reports/history", {"kind": "birth_chart_codex_cli", "profile_id": profile.id, "limit": 5})
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data["items"]] == [matching.id]
 
 
 @pytest.mark.django_db

@@ -100,20 +100,16 @@ class AnalysisHistoryView(APIView):
         kinds = _history_kinds(request.query_params.get("kind"))
         profile_id = _optional_int(request.query_params.get("profile_id"))
         limit = min(max(_optional_int(request.query_params.get("limit")) or 20, 1), 100)
+        queryset = _owned_analysis_records(request).filter(kind__in=kinds)
+        if profile_id is not None:
+            queryset = queryset.filter(profile_links__profile_id=profile_id).distinct()
         records = list(
-            _owned_analysis_records(request)
-            .filter(kind__in=kinds)
+            queryset
             .defer("packet_snapshot", "output_json", "prompt_markdown")
-            .order_by("-created_at")[:200]
+            .order_by("-created_at")[:limit]
         )
         chat_counts = _chat_counts_for_records(records, request)
-        items = []
-        for record in records:
-            if profile_id is not None and not _record_mentions_profile(record, profile_id):
-                continue
-            items.append(_analysis_history_payload(record, chat_count=chat_counts.get(record.id, 0)))
-            if len(items) >= limit:
-                break
+        items = [_analysis_history_payload(record, chat_count=chat_counts.get(record.id, 0)) for record in records]
         return Response({"items": items})
 
 

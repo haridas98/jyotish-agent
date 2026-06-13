@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.apps import apps
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class GeneratedAnalysisDraft(models.Model):
@@ -64,3 +67,85 @@ class GeneratedAnalysisDraft(models.Model):
             self.excerpt = str(output.get("answer") or "")[:720]
         else:
             self.excerpt = ""
+
+
+class GeneratedAnalysisProfileLink(models.Model):
+    analysis = models.ForeignKey(
+        GeneratedAnalysisDraft,
+        on_delete=models.CASCADE,
+        related_name="profile_links",
+    )
+    profile = models.ForeignKey(
+        "charts.BirthProfile",
+        on_delete=models.CASCADE,
+        related_name="analysis_links",
+    )
+    role = models.CharField(max_length=32, default="primary")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["analysis", "profile", "role"], name="unique_analysis_profile_role"),
+        ]
+        indexes = [
+            models.Index(fields=["profile", "analysis"], name="reports_profile_analysis_idx"),
+            models.Index(fields=["analysis", "role"], name="reports_analysis_role_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.analysis_id}:{self.profile_id}:{self.role}"
+
+
+def analysis_profile_links_from_snapshot(snapshot: object) -> list[tuple[int, str]]:
+    if not isinstance(snapshot, dict):
+        return []
+    links: list[tuple[int, str]] = []
+
+    def add(value: object, role: str) -> None:
+        try:
+            profile_id = int(str(value))
+        except (TypeError, ValueError):
+            return
+        if profile_id <= 0:
+            return
+        item = (profile_id, role)
+        if item not in links:
+            links.append(item)
+
+    add(snapshot.get("profile_id"), "primary")
+    for key in ("person_a", "person_b"):
+        person = snapshot.get(key)
+        if isinstance(person, dict):
+            add(person.get("profile_id"), key)
+    related_ids = snapshot.get("related_profile_ids")
+    if isinstance(related_ids, list):
+        for related_id in related_ids:
+            add(related_id, "related")
+    related_context = snapshot.get("related_profile_context")
+    if isinstance(related_context, list):
+        for item in related_context:
+            profile = item.get("profile") if isinstance(item, dict) else None
+            if isinstance(profile, dict):
+                add(profile.get("id"), "related")
+    return links
+
+
+def refresh_generated_analysis_profile_links(analysis: GeneratedAnalysisDraft) -> None:
+    BirthProfile = apps.get_model("charts", "BirthProfile")
+    links = analysis_profile_links_from_snapshot(analysis.input_snapshot)
+    profile_ids = {profile_id for profile_id, _role in links}
+    existing_profile_ids = set(BirthProfile.objects.filter(id__in=profile_ids).values_list("id", flat=True))
+    GeneratedAnalysisProfileLink.objects.filter(analysis=analysis).delete()
+    GeneratedAnalysisProfileLink.objects.bulk_create(
+        [
+            GeneratedAnalysisProfileLink(analysis=analysis, profile_id=profile_id, role=role)
+            for profile_id, role in links
+            if profile_id in existing_profile_ids
+        ],
+        ignore_conflicts=True,
+    )
+
+
+@receiver(post_save, sender=GeneratedAnalysisDraft)
+def sync_generated_analysis_profile_links(sender, instance: GeneratedAnalysisDraft, **kwargs) -> None:
+    refresh_generated_analysis_profile_links(instance)
