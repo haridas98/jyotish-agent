@@ -519,6 +519,16 @@ def _codex_generation_response(kind: str, user, data: dict[str, object], generat
     if concurrency_response is not None:
         cache.delete(lock_key)
         return concurrency_response
+    if getattr(settings, "CODEX_GENERATION_QUEUE_ENABLED", False):
+        job = _create_queued_generation_job(kind, user, data)
+        return Response(
+            {
+                "queued": True,
+                "job": _analysis_generation_job_payload(job),
+                "message": "Codex-разбор поставлен в очередь. Он появится в истории после обработки воркером.",
+            },
+            status=202,
+        )
     job = _create_running_generation_job(kind, user, data)
     try:
         output = generate()
@@ -586,6 +596,18 @@ def _create_running_generation_job(kind: str, user, data: dict[str, object]) -> 
         input_summary=input_summary_from_snapshot(data, kind),
         request_snapshot=data,
         started_at=timezone.now(),
+    )
+
+
+def _create_queued_generation_job(kind: str, user, data: dict[str, object]) -> GeneratedAnalysisJob:
+    if user is None:
+        raise ValueError("queued Codex generation requires authenticated user")
+    return GeneratedAnalysisJob.objects.create(
+        user=user,
+        kind=kind,
+        status=GeneratedAnalysisJob.Status.QUEUED,
+        input_summary=input_summary_from_snapshot(data, kind),
+        request_snapshot=data,
     )
 
 

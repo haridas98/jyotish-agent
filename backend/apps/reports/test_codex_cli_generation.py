@@ -951,6 +951,78 @@ def test_generation_job_api_is_scoped_to_authenticated_user():
 
 
 @pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="", CODEX_GENERATION_QUEUE_ENABLED=True)
+def test_birth_codex_analysis_api_queues_generation_when_queue_enabled(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-queue-owner", password="strong-pass-108")
+    profile = _codex_api_self_profile(user)
+    cache.clear()
+
+    monkeypatch.setattr(
+        "apps.reports.views.generate_birth_chart_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("queued API response must not run Codex inline"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(
+        "/api/reports/birth-chart/codex-analysis",
+        {
+            "profile_id": profile.id,
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 202
+    assert response.data["queued"] is True
+    assert response.data["job"]["status"] == GeneratedAnalysisJob.Status.QUEUED
+    job = GeneratedAnalysisJob.objects.get(user=user, kind="birth_chart_codex_cli")
+    assert job.status == GeneratedAnalysisJob.Status.QUEUED
+    assert job.started_at is None
+
+
+@pytest.mark.django_db
+def test_process_generation_jobs_completes_queued_birth_job(monkeypatch):
+    user = get_user_model().objects.create_user(username="birth-worker-owner", password="strong-pass-108")
+    job = GeneratedAnalysisJob.objects.create(
+        user=user,
+        kind="birth_chart_codex_cli",
+        status=GeneratedAnalysisJob.Status.QUEUED,
+        request_snapshot={"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+    )
+
+    def fake_generate(data, **kwargs):
+        draft = GeneratedAnalysisDraft.objects.create(
+            user=user,
+            kind="birth_chart_codex_cli",
+            review_status="private_final",
+            source_policy="private_shastra_research_first",
+            provider="codex_cli",
+            model="test",
+            input_snapshot=data,
+            packet_snapshot={},
+            output_json={"sections": [{"title": "Ready", "body": "Done."}]},
+            prompt_markdown="",
+        )
+        return {"id": draft.id, "kind": "birth_chart_codex_cli", "sections": [{"title": "Ready", "body": "Done."}]}
+
+    monkeypatch.setattr(
+        "apps.reports.management.commands.process_generation_jobs.generate_birth_chart_codex_cli_analysis",
+        fake_generate,
+    )
+
+    call_command("process_generation_jobs", limit=1, skip_evidence_refresh=True)
+
+    job.refresh_from_db()
+    assert job.status == GeneratedAnalysisJob.Status.COMPLETE
+    assert job.started_at is not None
+    assert job.completed_at is not None
+    assert job.analysis_id is not None
+
+
+@pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_birth_codex_analysis_api_can_force_regenerate(monkeypatch):
     user = get_user_model().objects.create_user(username="birth-force-owner", password="strong-pass-108")

@@ -1334,11 +1334,26 @@ export type AnalysisGenerationJob = {
   completed_at: string | null;
 };
 
+export type QueuedAnalysisGeneration = {
+  queued: true;
+  job: AnalysisGenerationJob;
+  message?: string;
+};
+
 export type AnalysisGenerationJobQuery = {
   kind?: string;
   status?: AnalysisGenerationJob["status"];
   limit?: number;
 };
+
+export function isQueuedAnalysisGeneration(value: unknown): value is QueuedAnalysisGeneration {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      (value as { queued?: unknown }).queued === true &&
+      typeof (value as { job?: { id?: unknown } }).job?.id === "number",
+  );
+}
 
 export type TransitRow = {
   body: string;
@@ -2056,7 +2071,7 @@ export async function generateCompatibilityAnalysisPacket(payload: Compatibility
   return data;
 }
 
-export async function generateCompatibilityCodexAnalysis(payload: CompatibilityRequest): Promise<GeneratedDraftAnalysis> {
+export async function generateCompatibilityCodexAnalysis(payload: CompatibilityRequest): Promise<GeneratedDraftAnalysis | QueuedAnalysisGeneration> {
   return retryNetworkFetch(async () => {
     const response = await apiFetch("/api/reports/compatibility/codex-analysis", {
       method: "POST",
@@ -2108,7 +2123,7 @@ export async function generateBirthDraftAnalysis(payload: BirthChartRequest): Pr
 export async function generateBirthCodexAnalysis(
   payload: BirthChartRequest,
   options: { forceRegenerate?: boolean } = {},
-): Promise<GeneratedDraftAnalysis> {
+): Promise<GeneratedDraftAnalysis | QueuedAnalysisGeneration> {
   return retryNetworkFetch(async () => {
     const response = await apiFetch("/api/reports/birth-chart/codex-analysis", {
       method: "POST",

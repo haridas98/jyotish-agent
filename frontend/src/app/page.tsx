@@ -27,6 +27,7 @@ import {
   generateCompatibilityCodexAnalysis,
   generateCurrentDayOverview,
   isAnalysisInProgressError,
+  isQueuedAnalysisGeneration,
   listIncomingChartProfileRelationshipRequests,
   listChartProfiles,
   listChartProfileRelationships,
@@ -9331,6 +9332,12 @@ export default function Home() {
       const result = await generateCompatibilityCodexAnalysis({
         ...buildCompatibilityPayload(personA, personB),
       });
+      if (isQueuedAnalysisGeneration(result)) {
+        setCompatibilityCodexStatus(
+          result.message || `Codex CLI задача #${result.job.id} поставлена в очередь. Статус появится в блоке активных генераций.`,
+        );
+        return;
+      }
       setCompatibilityCodexAnalysis(result);
       setCompatibilityChatMessages([]);
       setCompatibilityChatStatus("Можно задавать вопросы по этому разбору совместимости");
@@ -9397,6 +9404,12 @@ export default function Home() {
     );
     try {
       const result = await generateBirthCodexAnalysis(payload, { forceRegenerate });
+      if (isQueuedAnalysisGeneration(result)) {
+        setDraftAnalysisStatus(
+          result.message || `Codex CLI задача #${result.job.id} поставлена в очередь. Отчёт появится в истории после обработки.`,
+        );
+        return;
+      }
       setDraftAnalysis(result);
       setCodexChatMessages([]);
       setCodexChatStatus("Можно задавать вопросы по этому разбору");
