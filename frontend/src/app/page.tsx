@@ -8272,6 +8272,14 @@ export default function Home() {
     setChartMode(code);
   }
 
+  function openCurrentDayPanel() {
+    setActiveAnalysisTab("transits");
+    window.history.pushState(null, "", "/?analysis=transits#reports");
+    window.requestAnimationFrame(() => {
+      document.getElementById("reports")?.scrollIntoView({ block: "start" });
+    });
+  }
+
   function persistDisplaySetting(key: string, value: string) {
     try {
       window.localStorage.setItem(key, value);
@@ -10687,7 +10695,7 @@ export default function Home() {
                       >
                         AI-разбор
                       </a>
-                      <a href="/reports">История</a>
+                      <button type="button" onClick={openCurrentDayPanel}>Сегодня</button>
                     </div>
                     <div className="chart-action-group file">
                       <button type="button" onClick={handleSaveProfile} disabled={!chart}>Сохранить</button>
