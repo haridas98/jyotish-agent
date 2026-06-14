@@ -2,6 +2,7 @@
 
 export type AppNavKey =
   | "charts"
+  | "people"
   | "vargas"
   | "calculations"
   | "yogas"
@@ -25,6 +26,7 @@ type AppNavItem = {
 
 const navIconPaths: Record<AppNavKey, string[]> = {
   charts: ["M4 5.5h16v13H4z", "M4 12h16", "M12 5.5v13", "M4 5.5l8 6.5 8-6.5", "M4 18.5l8-6.5 8 6.5"],
+  people: ["M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M3.5 20a4.5 4.5 0 0 1 9 0", "M11.5 20a4.5 4.5 0 0 1 9 0"],
   vargas: ["M5 4h14v14H5z", "M9 4v14", "M15 4v14", "M5 9h14", "M5 15h14"],
   calculations: ["M6 4h12v16H6z", "M9 8h6", "M9 12h6", "M9 16h3"],
   yogas: ["M12 3v18", "M3 12h18", "M5.6 5.6l12.8 12.8", "M18.4 5.6 5.6 18.4"],
@@ -41,6 +43,7 @@ const navIconPaths: Record<AppNavKey, string[]> = {
 
 export const appNavItems: AppNavItem[] = [
   { key: "charts", homeHref: "#chart", href: "/", label: "Карта", shortLabel: "К" },
+  { key: "people", homeHref: "/people", href: "/people", label: "Люди", shortLabel: "Л" },
   { key: "vargas", homeHref: "/vargas", href: "/vargas", label: "D-карты", shortLabel: "D" },
   { key: "compatibility", homeHref: "/compatibility", href: "/compatibility", label: "Совместимость", shortLabel: "С" },
   { key: "interactions", homeHref: "/interactions", href: "/interactions", label: "Взаимодействия", shortLabel: "В" },
