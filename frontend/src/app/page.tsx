@@ -125,6 +125,8 @@ type BirthFormDraft = {
   activeCompatibilityRelationshipId?: string;
   relationshipBaseProfileId?: string;
   relatedProfileIds?: number[];
+  showBirthEditor?: boolean;
+  showAdvancedSettings?: boolean;
 };
 
 function readBirthFormDraft(): BirthFormDraft | null {
@@ -8520,6 +8522,8 @@ export default function Home() {
       if (Array.isArray(draft.relatedProfileIds)) {
         setRelatedProfileIds(draft.relatedProfileIds.filter((id) => Number.isInteger(id) && id > 0));
       }
+      if (typeof draft.showBirthEditor === "boolean") setShowBirthEditor(draft.showBirthEditor);
+      if (typeof draft.showAdvancedSettings === "boolean") setShowAdvancedSettings(draft.showAdvancedSettings);
     }
     setFormDraftHydrated(true);
   }, []);
@@ -8559,6 +8563,8 @@ export default function Home() {
       activeCompatibilityRelationshipId,
       relationshipBaseProfileId,
       relatedProfileIds,
+      showBirthEditor,
+      showAdvancedSettings,
     });
   }, [
     activeCompatibilityRelationshipId,
@@ -8590,6 +8596,8 @@ export default function Home() {
     selectedPartnerPlace,
     selectedPlace,
     shadbalaProfile,
+    showAdvancedSettings,
+    showBirthEditor,
     sunriseSource,
     timezoneSource,
     vargaScheme,
