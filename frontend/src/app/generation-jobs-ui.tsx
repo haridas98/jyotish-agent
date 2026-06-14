@@ -9,7 +9,7 @@ import {
 } from "@/lib/api";
 
 type GenerationJobsPanelProps = {
-  basePath: "/reports" | "/compatibility";
+  basePath: "/reports" | "/compatibility" | "/transits";
   kind?: string;
   title: string;
 };

@@ -14,7 +14,7 @@ import {
 
 type HistoryListProps = {
   items: AnalysisHistoryItem[];
-  basePath: "/reports" | "/compatibility";
+  basePath: "/reports" | "/compatibility" | "/transits";
   emptyText: string;
 };
 
@@ -198,7 +198,7 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
     <div className="analysis-reader">
       <header className="analysis-hero">
         <div>
-          <Link href={chatMode === "compatibility" ? "/compatibility" : "/reports"}>← Назад</Link>
+          <Link href={chatMode === "compatibility" ? "/compatibility" : chatMode === "current-day" ? "/transits" : "/reports"}>← Назад</Link>
           <h1>{formatHistoryTitle(detail.analysis)}</h1>
           <p>{formatSnapshot(detail.analysis.input_snapshot)}</p>
         </div>

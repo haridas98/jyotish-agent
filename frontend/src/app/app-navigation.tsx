@@ -46,7 +46,7 @@ export const appNavItems: AppNavItem[] = [
   { key: "interactions", homeHref: "/interactions", href: "/interactions", label: "Взаимодействия", shortLabel: "В" },
   { key: "calculations", homeHref: "#reports", href: "/?analysis=calculations#reports", label: "Расчёты", shortLabel: "Р" },
   { key: "timeline", homeHref: "#reports", href: "/?analysis=timeline#reports", label: "Даши", shortLabel: "Д" },
-  { key: "transits", homeHref: "#reports", href: "/?analysis=transits#reports", label: "Транзиты", shortLabel: "Т" },
+  { key: "transits", homeHref: "/transits", href: "/transits", label: "Транзиты", shortLabel: "Т" },
   { key: "yogas", homeHref: "#reports", href: "/?analysis=yogas#reports", label: "Йоги", shortLabel: "Й" },
   { key: "reports", homeHref: "/reports", href: "/reports", label: "Отчёты", shortLabel: "О" },
   { key: "sources", homeHref: "#reports", href: "/?analysis=sources#reports", label: "Источники", shortLabel: "И" },
