@@ -81,14 +81,19 @@ function AppNavLink({
   item: AppNavItem;
   onSelect?: (key: AppNavKey) => void;
 }) {
+  const href = home ? item.homeHref : item.href;
+  const isLocalAnchor = href.startsWith("#");
+
   return (
     <a
       aria-current={activeKey === item.key ? "page" : undefined}
       className={activeKey === item.key ? "active" : ""}
       data-short-label={item.shortLabel}
       data-nav-key={item.key}
-      href={home ? item.homeHref : item.href}
-      onClick={() => onSelect?.(item.key)}
+      href={href}
+      onClick={() => {
+        if (isLocalAnchor) onSelect?.(item.key);
+      }}
     >
       <span aria-hidden="true" className="app-nav-icon" data-short-label={item.shortLabel}>
         <svg viewBox="0 0 24 24" focusable="false">
