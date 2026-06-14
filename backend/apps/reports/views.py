@@ -370,9 +370,12 @@ class CompatibilityAnalysisPacketView(APIView):
 
     def post(self, request):
         try:
+            data, error_response = _compatibility_analysis_data_for_request(request)
+            if error_response is not None:
+                return error_response
             return Response(
                 build_compatibility_analysis_packet(
-                    request.data,
+                    data,
                     citation_search=vl_citation_search,
                     research_search=local_research_corpus_search,
                 )
@@ -828,9 +831,16 @@ def _compatibility_analysis_data_for_request(request) -> tuple[dict[str, object]
         profile_id = _optional_int(person.get("profile_id"))
         if profile_id is None:
             continue
-        if not BirthProfile.objects.filter(id=profile_id, user=user).exists():
+        profile = BirthProfile.objects.filter(id=profile_id, user=user).select_related("place").first()
+        if profile is None:
             return data, Response({"error": "profile not found"}, status=404)
         profile_ids.append(profile_id)
+        data[key] = {
+            **person,
+            **_profile_chart_request(profile),
+            "profile_id": profile.id,
+            "profile_label": profile.display_name,
+        }
 
     relationship_context, error_response = _trusted_compatibility_relationship_context(
         user,
@@ -924,6 +934,21 @@ def _profile_context(profile: BirthProfile, *, viewer_user=None) -> dict[str, ob
         "calculation_error": calculation.error,
         "latest_reviews": _latest_profile_reviews(profile.id, viewer_user=viewer_user),
     }
+    return payload
+
+
+def _profile_chart_request(profile: BirthProfile) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "birth_date": profile.birth_date.isoformat(),
+        "birth_time": profile.birth_time.isoformat(timespec="minutes") if profile.birth_time else "",
+        "place_id": profile.place.external_id or str(profile.place_id),
+        "place_name": profile.place.metadata.get("label") or profile.place.name,
+        "timezone": profile.timezone_name,
+        "latitude": float(profile.place.latitude),
+        "longitude": float(profile.place.longitude),
+    }
+    if isinstance(profile.calculation_settings, dict):
+        payload.update(profile.calculation_settings)
     return payload
 
 

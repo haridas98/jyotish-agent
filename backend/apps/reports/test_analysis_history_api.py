@@ -464,6 +464,78 @@ def test_compatibility_history_and_chat_are_scoped_to_owner():
 
 
 @pytest.mark.django_db
+@override_settings(CODEX_GENERATION_QUEUE_ENABLED=False)
+def test_compatibility_analysis_uses_saved_profile_birth_data(monkeypatch):
+    user = get_user_model().objects.create_user(username="compat-saved-data", password="strong-pass-108")
+    place_a = create_test_place("compat-saved-a")
+    place_b = create_test_place("compat-saved-b")
+    profile_a = BirthProfile.objects.create(
+        user=user,
+        display_name="Saved A",
+        birth_date=date(1998, 4, 30),
+        birth_time=time(13, 45),
+        place=place_a,
+        timezone_name="Asia/Kolkata",
+    )
+    profile_b = BirthProfile.objects.create(
+        user=user,
+        display_name="Saved B",
+        birth_date=date(2002, 6, 10),
+        birth_time=time(18, 0),
+        place=place_b,
+        timezone_name="Asia/Kolkata",
+    )
+    captured = {}
+
+    def fake_generate(data, **kwargs):
+        captured["data"] = data
+        return {
+            "id": 88,
+            "kind": "compatibility_codex_cli",
+            "provider": "codex_cli",
+            "review_status": "private_partial",
+            "source_policy": "private_shastra_research_first",
+            "sections": [],
+        }
+
+    monkeypatch.setattr(
+        "apps.reports.views.generate_compatibility_codex_cli_analysis",
+        fake_generate,
+    )
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        "/api/reports/compatibility/codex-analysis",
+        {
+            "person_a": {
+                "profile_id": profile_a.id,
+                "birth_date": "1900-01-01",
+                "birth_time": "00:01",
+                "place_name": "Tampered A",
+            },
+            "person_b": {
+                "profile_id": profile_b.id,
+                "birth_date": "1901-01-01",
+                "birth_time": "00:02",
+                "place_name": "Tampered B",
+            },
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert captured["data"]["person_a"]["birth_date"] == "1998-04-30"
+    assert captured["data"]["person_a"]["birth_time"] == "13:45"
+    assert captured["data"]["person_a"]["place_name"] == "History place compat-saved-a, IN"
+    assert captured["data"]["person_a"]["profile_label"] == "Saved A"
+    assert captured["data"]["person_b"]["birth_date"] == "2002-06-10"
+    assert captured["data"]["person_b"]["birth_time"] == "18:00"
+    assert captured["data"]["person_b"]["place_name"] == "History place compat-saved-b, IN"
+    assert captured["data"]["person_b"]["profile_label"] == "Saved B"
+
+
+@pytest.mark.django_db
 def test_compatibility_history_detail_keeps_both_saved_charts_visible():
     user = get_user_model().objects.create_user(username="compat-chart-owner", password="strong-pass-108")
     packet_snapshot = {
