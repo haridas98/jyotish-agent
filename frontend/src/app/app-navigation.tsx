@@ -8,6 +8,7 @@ export type AppNavKey =
   | "yogas"
   | "timeline"
   | "transits"
+  | "muhurta"
   | "compatibility"
   | "interactions"
   | "reports"
@@ -32,6 +33,7 @@ const navIconPaths: Record<AppNavKey, string[]> = {
   yogas: ["M12 3v18", "M3 12h18", "M5.6 5.6l12.8 12.8", "M18.4 5.6 5.6 18.4"],
   timeline: ["M5 5h14v14H5z", "M8 3v4", "M16 3v4", "M5 10h14", "M9 14h2", "M13 14h2"],
   transits: ["M12 4a8 8 0 1 0 8 8", "M20 4v6h-6", "M12 8v4l3 2"],
+  muhurta: ["M5 5h14v14H5z", "M8 3v4", "M16 3v4", "M5 10h14", "M12 13v4", "M10 15h4"],
   compatibility: ["M8.5 5.5a4 4 0 0 1 3.5 2.1 4 4 0 0 1 7 2.7c0 4.2-7 8.2-7 8.2s-7-4-7-8.2a4 4 0 0 1 3.5-4.8z"],
   interactions: ["M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M3.5 20a4.5 4.5 0 0 1 9 0", "M11.5 20a4.5 4.5 0 0 1 9 0"],
   reports: ["M7 3h8l4 4v14H7z", "M15 3v5h5", "M10 12h6", "M10 16h6"],
@@ -50,6 +52,7 @@ export const appNavItems: AppNavItem[] = [
   { key: "calculations", homeHref: "/calculations", href: "/calculations", label: "Расчёты", shortLabel: "Р" },
   { key: "timeline", homeHref: "/dashas", href: "/dashas", label: "Даши", shortLabel: "Д" },
   { key: "transits", homeHref: "/transits", href: "/transits", label: "Транзиты", shortLabel: "Т" },
+  { key: "muhurta", homeHref: "/muhurta", href: "/muhurta", label: "Мухурта", shortLabel: "М" },
   { key: "yogas", homeHref: "/yogas", href: "/yogas", label: "Йоги", shortLabel: "Й" },
   { key: "guidance", homeHref: "/guidance", href: "/guidance", label: "AI-разбор", shortLabel: "AI" },
   { key: "reports", homeHref: "/reports", href: "/reports", label: "Отчёты", shortLabel: "О" },

@@ -4534,7 +4534,7 @@ function ChartSideCalculationTable({
     <section className="chart-side-table" aria-label="Краткая таблица расчётов рядом с картой">
       <div className="chart-side-table-head">
         <strong>Расчёты D1</strong>
-        <span>граха, градус, раши, накшатра, дом, статус</span>
+        <span>нажмите строку или термин, чтобы открыть объяснение</span>
       </div>
       <SelectedReaderExplanationPanel explanation={selectedExplanation} onClear={onClearExplanation} />
       <div className="chart-side-table-grid">
@@ -5092,7 +5092,7 @@ function ActiveCalculationTable({
         </div>
       ) : null}
       <CalculationReadingOrder isD1={isD1} chartMode={chartMode} />
-      <CalculationTableHelp isD1={isD1} />
+      {!isD1 ? <CalculationTableHelp isD1={isD1} /> : null}
       {isD1 ? <AstrologerPrioritySummary chart={chart} termLanguage={termLanguage} /> : null}
       {isD1 ? <PanchangaDigest chart={chart} /> : null}
       {isD1 ? (
@@ -10016,6 +10016,7 @@ export default function Home() {
           activeAnalysisTab === "yogas" ||
           activeAnalysisTab === "timeline" ||
           activeAnalysisTab === "transits" ||
+          activeAnalysisTab === "muhurta" ||
           activeAnalysisTab === "compatibility" ||
           activeAnalysisTab === "accuracy" ||
           activeAnalysisTab === "guidance" ||
@@ -10039,6 +10040,7 @@ export default function Home() {
       key === "yogas" ||
       key === "timeline" ||
       key === "transits" ||
+      key === "muhurta" ||
       key === "guidance" ||
       key === "sources" ||
       key === "accuracy"
