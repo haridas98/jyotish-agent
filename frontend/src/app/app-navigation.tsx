@@ -41,7 +41,7 @@ const navIconPaths: Record<AppNavKey, string[]> = {
 
 export const appNavItems: AppNavItem[] = [
   { key: "charts", homeHref: "#chart", href: "/", label: "Карта", shortLabel: "К" },
-  { key: "vargas", homeHref: "#varga-charts", href: "/#varga-charts", label: "D-карты", shortLabel: "D" },
+  { key: "vargas", homeHref: "/vargas", href: "/vargas", label: "D-карты", shortLabel: "D" },
   { key: "compatibility", homeHref: "/compatibility", href: "/compatibility", label: "Совместимость", shortLabel: "С" },
   { key: "interactions", homeHref: "/interactions", href: "/interactions", label: "Взаимодействия", shortLabel: "В" },
   { key: "calculations", homeHref: "/calculations", href: "/calculations", label: "Расчёты", shortLabel: "Р" },
