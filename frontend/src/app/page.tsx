@@ -10180,38 +10180,11 @@ export default function Home() {
               <h2>Закрытый доступ</h2>
               <p>Зарегистрируйтесь или войдите. Сейчас аккаунт активируется сразу, чтобы астрологи могли проверить ресурс.</p>
             </div>
-            <div className="auth-grid private-gate-auth">
-              <label>
-                Логин
-                <input value={authUsername} onChange={(event) => setAuthUsername(event.target.value)} />
-              </label>
-              <label>
-                Пароль
-                <input
-                  type="password"
-                  value={authPassword}
-                  onChange={(event) => setAuthPassword(event.target.value)}
-                />
-              </label>
-              <div className="registration-birth-fields">
-                <span>Для регистрации: дата и город рождения. Время необязательно; первый AI-разбор будет доступен для вашей карты.</span>
-                <label>
-                  Дата рождения
-                  <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
-                </label>
-                <label>
-                  Время рождения (необязательно)
-                  <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
-                </label>
-                <label>
-                  Город рождения
-                  <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
-                </label>
-              </div>
-              <div className="auth-actions">
-                <button type="button" className="secondary-button" onClick={() => handleAuth("login")}>Войти</button>
-                <button type="button" className="secondary-button" onClick={() => handleAuth("register")}>Регистрация</button>
-              </div>
+            <div className="private-gate-actions">
+              <button type="button" className="primary-button" onClick={() => setAuthOpen(true)}>
+                Войти или зарегистрироваться
+              </button>
+              <span>Форма откроется в верхнем окне входа; данные рождения можно указать сразу при регистрации.</span>
             </div>
             <p className="status-line">{authStatus}</p>
           </section>

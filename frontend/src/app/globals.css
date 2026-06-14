@@ -639,8 +639,19 @@ select {
   margin: 0;
 }
 
-.private-gate-auth {
+.private-gate-actions {
+  align-items: flex-start;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
   margin-top: 18px;
+}
+
+.private-gate-actions span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 420px;
 }
 
 .auth-actions,
