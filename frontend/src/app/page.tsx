@@ -10663,7 +10663,7 @@ export default function Home() {
                     <span>{chartMode} · {activeChartPointCount || "нет"} точек</span>
                     <span>{activeChartStyleLabel}</span>
                     <span>{activeTermLanguageLabel}</span>
-                    <a href="#display-settings">Изменить вид</a>
+                    <a href="/settings">Изменить вид</a>
                   </div>
                 </div>
                 <div className="chart-heading-tools">

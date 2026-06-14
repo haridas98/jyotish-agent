@@ -51,7 +51,7 @@ export const appNavItems: AppNavItem[] = [
   { key: "reports", homeHref: "/reports", href: "/reports", label: "Отчёты", shortLabel: "О" },
   { key: "sources", homeHref: "/sources", href: "/sources", label: "Источники", shortLabel: "И" },
   { key: "accuracy", homeHref: "/accuracy", href: "/accuracy", label: "Точность", shortLabel: "!" },
-  { key: "settings", homeHref: "#display-settings", href: "/#display-settings", label: "Настройки", shortLabel: "Н" },
+  { key: "settings", homeHref: "/settings", href: "/settings", label: "Настройки", shortLabel: "Н" },
 ];
 
 type AppNavigationProps = {
