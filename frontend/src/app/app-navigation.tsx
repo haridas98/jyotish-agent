@@ -44,13 +44,13 @@ export const appNavItems: AppNavItem[] = [
   { key: "vargas", homeHref: "#varga-charts", href: "/#varga-charts", label: "D-карты", shortLabel: "D" },
   { key: "compatibility", homeHref: "/compatibility", href: "/compatibility", label: "Совместимость", shortLabel: "С" },
   { key: "interactions", homeHref: "/interactions", href: "/interactions", label: "Взаимодействия", shortLabel: "В" },
-  { key: "calculations", homeHref: "#reports", href: "/?analysis=calculations#reports", label: "Расчёты", shortLabel: "Р" },
-  { key: "timeline", homeHref: "#reports", href: "/?analysis=timeline#reports", label: "Даши", shortLabel: "Д" },
+  { key: "calculations", homeHref: "/calculations", href: "/calculations", label: "Расчёты", shortLabel: "Р" },
+  { key: "timeline", homeHref: "/dashas", href: "/dashas", label: "Даши", shortLabel: "Д" },
   { key: "transits", homeHref: "/transits", href: "/transits", label: "Транзиты", shortLabel: "Т" },
-  { key: "yogas", homeHref: "#reports", href: "/?analysis=yogas#reports", label: "Йоги", shortLabel: "Й" },
+  { key: "yogas", homeHref: "/yogas", href: "/yogas", label: "Йоги", shortLabel: "Й" },
   { key: "reports", homeHref: "/reports", href: "/reports", label: "Отчёты", shortLabel: "О" },
-  { key: "sources", homeHref: "#reports", href: "/?analysis=sources#reports", label: "Источники", shortLabel: "И" },
-  { key: "accuracy", homeHref: "#reports", href: "/?analysis=accuracy#reports", label: "Точность", shortLabel: "!" },
+  { key: "sources", homeHref: "/sources", href: "/sources", label: "Источники", shortLabel: "И" },
+  { key: "accuracy", homeHref: "/accuracy", href: "/accuracy", label: "Точность", shortLabel: "!" },
   { key: "settings", homeHref: "#display-settings", href: "/#display-settings", label: "Настройки", shortLabel: "Н" },
 ];
 

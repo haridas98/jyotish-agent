@@ -6,7 +6,7 @@ import { InterfaceModeSwitch, INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } f
 import { fetchCurrentUser, loginUser, logoutUser, registerUser, type User } from "@/lib/api";
 
 type ProductShellProps = {
-  active: "charts" | "reports" | "compatibility" | "interactions" | "transits";
+  active: AppNavKey;
   children: ReactNode;
 };
 
