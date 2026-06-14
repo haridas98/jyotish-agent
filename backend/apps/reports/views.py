@@ -234,7 +234,7 @@ class BirthDraftAnalysisView(APIView):
         return Response(
             {
                 "error": "draft_analysis_disabled",
-                "message": "OpenAI draft analysis is disabled. Use /api/reports/birth-chart/codex-analysis.",
+                "message": "Legacy draft analysis is disabled. Use /api/reports/birth-chart/codex-analysis.",
             },
             status=410,
         )

@@ -3,9 +3,6 @@ from __future__ import annotations
 import json
 import re
 from typing import Any, Callable
-from urllib import error, request
-
-from django.conf import settings
 
 from apps.calculations.ephemeris import EphemerisProvider
 
@@ -40,9 +37,9 @@ def generate_birth_chart_draft_analysis(
         packet,
         input_snapshot=data,
         kind="birth_chart",
-        llm_client=llm_client or openai_responses_client(),
-        provider="openai",
-        model=settings.OPENAI_MODEL,
+        llm_client=llm_client or disabled_legacy_draft_client(),
+        provider="disabled_legacy",
+        model="disabled_legacy",
         user=user,
     )
 
@@ -82,37 +79,9 @@ def generate_draft_analysis_for_packet(
     return output
 
 
-def openai_responses_client() -> LLMClient:
-    api_key = settings.OPENAI_API_KEY
-    model = settings.OPENAI_MODEL
-    if not api_key:
-        raise DraftGenerationUnavailable("OPENAI_API_KEY is not configured")
-
+def disabled_legacy_draft_client() -> LLMClient:
     def _client(prompt: str) -> dict[str, Any] | str:
-        payload = {
-            "model": model,
-            "input": [
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-        }
-        api_request = request.Request(
-            "https://api.openai.com/v1/responses",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        try:
-            with request.urlopen(api_request, timeout=90) as response:
-                response_payload = json.loads(response.read().decode("utf-8"))
-        except error.URLError as exc:
-            raise DraftGenerationUnavailable(str(exc)) from exc
-        return _extract_openai_text(response_payload)
+        raise DraftGenerationUnavailable("legacy draft analysis is disabled; use codex_cli generation")
 
     return _client
 
@@ -142,18 +111,3 @@ def _parse_json_fence(raw_output: str) -> dict[str, Any]:
             pass
     return {"sections": [{"title": "Черновик", "body": raw_output, "citation_titles": []}]}
 
-
-def _extract_openai_text(payload: dict[str, Any]) -> str:
-    output_text = payload.get("output_text")
-    if isinstance(output_text, str) and output_text.strip():
-        return output_text
-    pieces = []
-    for item in payload.get("output", []):
-        if not isinstance(item, dict):
-            continue
-        for content in item.get("content", []):
-            if isinstance(content, dict) and isinstance(content.get("text"), str):
-                pieces.append(content["text"])
-    if pieces:
-        return "\n".join(pieces)
-    raise DraftGenerationUnavailable("OpenAI response did not include text output")

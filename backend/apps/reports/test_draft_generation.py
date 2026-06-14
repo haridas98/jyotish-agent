@@ -80,6 +80,20 @@ def test_normalize_llm_output_extracts_json_markdown_fence():
 
 
 @pytest.mark.django_db
+def test_birth_chart_draft_analysis_without_client_is_disabled(monkeypatch):
+    from apps.reports import draft_generation
+
+    monkeypatch.setattr(
+        draft_generation,
+        "build_analysis_packet",
+        lambda *_args, **_kwargs: {"prompt_markdown": "Legacy prompt"},
+    )
+
+    with pytest.raises(draft_generation.DraftGenerationUnavailable, match="codex_cli"):
+        draft_generation.generate_birth_chart_draft_analysis({"birth_date": "2000-01-01"})
+
+
+@pytest.mark.django_db
 @override_settings(VL_DATABASE_URL="")
 def test_birth_draft_analysis_api_is_disabled():
     user = get_user_model().objects.create_user(username="draft-api-owner", password="strong-pass-108")
