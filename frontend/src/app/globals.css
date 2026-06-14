@@ -5110,10 +5110,6 @@ select {
   font-size: 11px;
 }
 
-.house-explanation-grid {
-  display: none !important;
-}
-
 .chart-side-status {
   color: var(--muted);
   font-weight: 800;
