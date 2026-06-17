@@ -2,9 +2,6 @@
 
 export type AppNavKey =
   | "charts"
-  | "workbenchV2"
-  | "aiV2"
-  | "compareV2"
   | "people"
   | "vargas"
   | "calculations"
@@ -20,7 +17,7 @@ export type AppNavKey =
   | "accuracy"
   | "settings";
 
-type AppNavItem = {
+export type AppNavItem = {
   homeHref: string;
   href: string;
   key: AppNavKey;
@@ -41,9 +38,6 @@ const icon = {
 
 const navIconPaths: Record<AppNavKey, string[]> = {
   charts: icon.chart,
-  workbenchV2: icon.chart,
-  aiV2: icon.report,
-  compareV2: icon.table,
   people: icon.people,
   vargas: icon.table,
   calculations: icon.report,
@@ -61,14 +55,14 @@ const navIconPaths: Record<AppNavKey, string[]> = {
 };
 
 export const appNavItems: AppNavItem[] = [
-  { key: "charts", homeHref: "#chart", href: "/charts", label: "РљР°СЂС‚С‹", shortLabel: "РљР°СЂС‚С‹" },
-  { key: "people", homeHref: "/people", href: "/people", label: "Р›СЋРґРё", shortLabel: "Р›СЋРґРё" },
-  { key: "reports", homeHref: "/reports", href: "/reports", label: "РћР±Р·РѕСЂС‹", shortLabel: "РћР±Р·." },
-  { key: "compatibility", homeHref: "/compatibility", href: "/compatibility", label: "РЎРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ", shortLabel: "РЎРѕРІРј." },
-  { key: "interactions", homeHref: "/interactions", href: "/interactions", label: "Р’Р·Р°РёРјРѕРґРµР№СЃС‚РІРёСЏ", shortLabel: "РЎРІСЏР·Рё" },
-  { key: "transits", homeHref: "/transits", href: "/transits", label: "РўСЂР°РЅР·РёС‚С‹", shortLabel: "РўСЂР°РЅР·." },
-  { key: "sources", homeHref: "/sources", href: "/sources", label: "РСЃС‚РѕС‡РЅРёРєРё", shortLabel: "РСЃС‚." },
-  { key: "settings", homeHref: "/settings", href: "/settings", label: "РќР°СЃС‚СЂРѕР№РєРё", shortLabel: "РќР°СЃС‚СЂ." },
+  { key: "charts", homeHref: "#chart", href: "/charts", label: "Карты", shortLabel: "Карты" },
+  { key: "people", homeHref: "/people", href: "/people", label: "Люди", shortLabel: "Люди" },
+  { key: "reports", homeHref: "/reports", href: "/reports", label: "Обзоры", shortLabel: "Обз." },
+  { key: "compatibility", homeHref: "/compatibility", href: "/compatibility", label: "Совместимость", shortLabel: "Совм." },
+  { key: "interactions", homeHref: "/interactions", href: "/interactions", label: "Взаимодействия", shortLabel: "Связи" },
+  { key: "transits", homeHref: "/transits", href: "/transits", label: "Транзиты", shortLabel: "Транз." },
+  { key: "sources", homeHref: "/sources", href: "/sources", label: "Источники", shortLabel: "Ист." },
+  { key: "settings", homeHref: "/settings", href: "/settings", label: "Настройки", shortLabel: "Настр." },
 ];
 
 type AppNavigationProps = {
@@ -79,7 +73,7 @@ type AppNavigationProps = {
 
 export function AppNavigation({ activeKey, home = false, onSelect }: AppNavigationProps) {
   return (
-    <nav aria-label="РћСЃРЅРѕРІРЅР°СЏ РЅР°РІРёРіР°С†РёСЏ" className="app-nav">
+    <nav aria-label="Основная навигация" className="app-nav">
       {appNavItems.map((item) => (
         <AppNavLink activeKey={activeKey} home={home} item={item} key={item.key} onSelect={onSelect} />
       ))}

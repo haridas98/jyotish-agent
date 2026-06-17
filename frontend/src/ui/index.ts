@@ -3,5 +3,6 @@ export * from "./blocks/registry";
 export * from "./layouts/types";
 export * from "./layouts/chart";
 export * from "./components/EntityLink";
+export * from "./components/EntityChip";
 export * from "./components/EntityInspector";
 export * from "./components/LayoutRenderer";

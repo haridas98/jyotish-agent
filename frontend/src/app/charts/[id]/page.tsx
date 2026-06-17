@@ -10,6 +10,8 @@ import {
   type ChartProfile,
   type JyotishUserSettings,
 } from "@/lib/api";
+import type { EntityId } from "@/astrology";
+import { EntityChip } from "@/ui";
 
 function profileIdFromParams(value: string | string[] | undefined) {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -132,7 +134,14 @@ export default function ChartDetailPage() {
                   <div><dt>houseSystem</dt><dd>{userSettings.calculation.houseSystem}</dd></div>
                   <div><dt>nodeType</dt><dd>{userSettings.calculation.nodeType}</dd></div>
                   <div><dt>calculationProfile</dt><dd>{userSettings.calculation.calculationProfile}</dd></div>
-                  <div><dt>D-карты</dt><dd>{userSettings.calculation.divisionalChartsEnabled.join(", ")}</dd></div>
+                  <div>
+                    <dt>D-карты</dt>
+                    <dd className="entity-chip-row">
+                      {userSettings.calculation.divisionalChartsEnabled.map((chart) => (
+                        <EntityChip key={chart} entityId={`varga.${chart}` as EntityId} />
+                      ))}
+                    </dd>
+                  </div>
                 </dl>
               </div>
               <div>

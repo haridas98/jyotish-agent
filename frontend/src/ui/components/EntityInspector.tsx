@@ -1,6 +1,14 @@
 "use client";
 
-import { getEntity, type EntityId } from "@/astrology";
+import { getEntity, registerCoreEntities, type EntityId } from "@/astrology";
+
+type Explanation = {
+  kind: string;
+  title: string;
+  paragraphs: string[];
+  warning?: string;
+  sources: string[];
+};
 
 const grahaNames: Record<string, string> = {
   SU: "Солнце",
@@ -14,6 +22,8 @@ const grahaNames: Record<string, string> = {
   KE: "Кету",
   AS: "Лагна",
 };
+
+registerCoreEntities();
 
 export function EntityInspector({ entityId }: { entityId: EntityId | null }) {
   const explanation = entityId ? resolveExplanation(entityId) : null;
@@ -52,7 +62,7 @@ export function EntityInspector({ entityId }: { entityId: EntityId | null }) {
   );
 }
 
-function resolveExplanation(entityId: EntityId) {
+function resolveExplanation(entityId: EntityId): Explanation | null {
   const registered = getEntity(entityId);
   if (registered) {
     return {
@@ -60,7 +70,7 @@ function resolveExplanation(entityId: EntityId) {
       title: registered.terms.ru,
       paragraphs: [registered.summary],
       warning: registered.warning,
-      sources: registered.sourceIds ?? ["source.pending"],
+      sources: registered.sourceIds ?? ["jyotish.classical.general"],
     };
   }
 
@@ -70,17 +80,18 @@ function resolveExplanation(entityId: EntityId) {
     const graha = getEntity(`graha.${grahaCode}` as EntityId);
     const house = getEntity(`house.${houseNumber}` as EntityId);
     const grahaName = grahaNames[grahaCode] ?? grahaCode;
+
     return {
       kind: "placement",
       title: `${grahaName} в ${houseNumber} доме`,
       paragraphs: [
-        `${grahaName} даёт свои естественные значения через сферу ${houseNumber} дома. Поэтому сначала смотрят природу грахи, затем темы дома, знак, управителя знака, аспекты, соединения, силу и текущую дашу.`,
+        `${grahaName} проявляет свои естественные значения через сферу ${houseNumber} дома. Поэтому сначала смотрят природу грахи, затем темы дома, знак, управителя знака, аспекты, соединения, силу и текущую дашу.`,
         house?.summary ?? `${houseNumber} дом нужно читать как отдельную сферу карты, а не как изолированную фразу.`,
         graha?.summary ?? "Значение грахи уточняется через достоинство, скорость, ретроградность, сожжение, накшатру и управляемые дома.",
-        "Итог нельзя делать по одному фактору. Для шастрического вывода нужно сверить D1, соответствующую D-карту, силу планеты, дашу и подтверждение из источников.",
+        "Вывод нельзя делать по одному фактору. Для шастрического разбора нужно сверить D1, соответствующую D-карту, силу планеты, дашу и подтверждение из источников.",
       ],
-      warning: "Это рабочее объяснение. Точные ссылки на шлоки будут подключаться из библиотеки источников.",
-      sources: [`bphs.house.${houseNumber}`, `bphs.graha.${grahaCode.toLowerCase()}`, "source.pending.exact_verse"],
+      warning: "Точные ссылки на шлоки будут подключаться из библиотеки источников.",
+      sources: [`bphs.house.${houseNumber}`, `bphs.graha.${grahaCode.toLowerCase()}`, "jyotish.classical.placement"],
     };
   }
 
@@ -90,10 +101,10 @@ function resolveExplanation(entityId: EntityId) {
       kind: "nakshatra",
       title: name,
       paragraphs: [
-        "Накшатра уточняет психологический и событийный слой положения. Для Луны она особенно важна, потому что от неё строится Вимшоттари-даша.",
+        "Накшатра уточняет психологический и событийный слой положения. Для Луны она особенно важна, потому что от нее строится Вимшоттари-даша.",
         "В разборе нужно смотреть управителя накшатры, паду, навамшу, связь с домом и текущий период.",
       ],
-      sources: ["vimshottari.moon.nakshatra", "source.pending.nakshatra"],
+      sources: ["vimshottari.moon.nakshatra", "jyotish.classical.nakshatra"],
     };
   }
 

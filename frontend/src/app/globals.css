@@ -307,6 +307,40 @@ body .chart-settings-summary dd {
   text-align: right;
 }
 
+body .entity-chip-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+body .entity-chip {
+  align-items: center;
+  background: #e7f6f2;
+  border: 1px solid #b9ddd6;
+  border-radius: 999px;
+  color: #075f61;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  min-height: 22px;
+  padding: 5px 9px;
+}
+
+body button.entity-chip {
+  cursor: pointer;
+}
+
+body .entity-chip.is-active,
+body button.entity-chip:hover {
+  background: #075f61;
+  border-color: #075f61;
+  color: #fff;
+}
+
 body .settings-workspace {
   display: grid;
   gap: 12px;
