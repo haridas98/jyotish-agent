@@ -254,8 +254,25 @@ body .chart-notes-panel {
   padding: 12px;
 }
 
+body .chart-settings-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body .chart-settings-summary > div,
+body .settings-panel {
+  background: #fff;
+  border: 1px solid #d7e4e8;
+  border-radius: 8px;
+  box-shadow: 0 12px 26px #1c3d4a0f;
+  padding: 14px;
+}
+
 body .chart-calculation-placeholder strong,
-body .chart-notes-panel strong {
+body .chart-notes-panel strong,
+body .chart-settings-summary strong,
+body .settings-panel h1 {
   color: #0b5962;
 }
 
@@ -264,6 +281,88 @@ body .chart-calculation-placeholder small,
 body .chart-notes-panel p {
   color: #60727c;
   margin: 0;
+}
+
+body .chart-settings-summary dl {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+body .chart-settings-summary dl div {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+body .chart-settings-summary dt {
+  color: #60727c;
+}
+
+body .chart-settings-summary dd {
+  color: #102832;
+  font-weight: 800;
+  margin: 0;
+  text-align: right;
+}
+
+body .settings-workspace {
+  display: grid;
+  gap: 12px;
+  max-width: 1120px;
+}
+
+body .settings-panel {
+  display: grid;
+  gap: 14px;
+}
+
+body .settings-panel-head h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+body .settings-panel-head span {
+  color: #60727c;
+}
+
+body .settings-form-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body .settings-checkbox-grid {
+  border: 1px solid #d7e4e8;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+}
+
+body .settings-checkbox-grid legend {
+  color: #60727c;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+body .settings-checkbox-grid label {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+body .settings-checkbox-grid input {
+  width: auto;
+}
+
+body .settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 body .chart-detail-head {
@@ -334,7 +433,9 @@ body .chart-profile-form textarea {
   }
 
   body .chart-profile-form-grid,
-  body .chart-detail-grid {
+  body .chart-detail-grid,
+  body .chart-settings-summary,
+  body .settings-form-grid {
     grid-template-columns: 1fr;
   }
 

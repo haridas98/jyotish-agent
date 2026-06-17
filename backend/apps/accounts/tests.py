@@ -4,6 +4,7 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from apps.accounts.models import UserJyotishSettings
 from apps.charts.models import BirthProfile
 
 
@@ -195,3 +196,95 @@ def test_private_app_requires_approved_login_for_calculation_api():
     )
 
     assert authenticated.status_code in {200, 503}
+
+
+@pytest.mark.django_db
+def test_user_settings_defaults_are_created_for_authenticated_user():
+    user = get_user_model().objects.create_user(username="settings-user", password="strong-pass-108")
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.get(reverse("user-settings"))
+
+    assert response.status_code == 200
+    assert response.data["userId"] == user.id
+    assert response.data["calculation"]["ayanamsa"] == "lahiri"
+    assert response.data["calculation"]["divisionalChartsEnabled"] == ["D1", "D9"]
+    assert response.data["display"]["chartStyle"] == "north_indian"
+    assert UserJyotishSettings.objects.filter(user=user).exists()
+
+
+@pytest.mark.django_db
+def test_user_settings_patch_updates_calculation_and_display():
+    user = get_user_model().objects.create_user(username="settings-patch", password="strong-pass-108")
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.patch(
+        reverse("user-settings"),
+        {
+            "calculation": {
+                "ayanamsa": "raman",
+                "zodiacType": "sidereal",
+                "houseSystem": "sripati",
+                "nodeType": "true",
+                "calculationProfile": "bphs_research",
+                "divisionalChartsEnabled": ["D1", "D9", "D10"],
+                "defaultDivisionalChart": "D9",
+                "timezoneMode": "birth_place_timezone",
+            },
+            "display": {
+                "chartStyle": "south_indian",
+                "language": "en",
+                "terminologyMode": "sanskrit",
+                "degreeFormat": "decimal",
+                "showSanskritNames": False,
+                "showTransliteration": False,
+                "themeMode": "dark",
+            },
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["calculation"]["ayanamsa"] == "raman"
+    assert response.data["calculation"]["defaultDivisionalChart"] == "D9"
+    assert response.data["display"]["chartStyle"] == "south_indian"
+    assert response.data["display"]["showSanskritNames"] is False
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "payload,error",
+    [
+        ({"calculation": {"ayanamsa": "unknown"}}, "calculation.ayanamsa"),
+        ({"display": {"chartStyle": "east_indian"}}, "display.chartStyle"),
+        ({"display": {"language": "de"}}, "display.language"),
+        ({"calculation": {"divisionalChartsEnabled": ["D1"], "defaultDivisionalChart": "D9"}}, "defaultDivisionalChart"),
+    ],
+)
+def test_user_settings_reject_invalid_values(payload, error):
+    user = get_user_model().objects.create_user(username=f"settings-invalid-{error}", password="strong-pass-108")
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.patch(reverse("user-settings"), payload, format="json")
+
+    assert response.status_code == 400
+    assert error in response.data["error"]
+
+
+@pytest.mark.django_db
+def test_user_settings_are_scoped_to_current_user():
+    first = get_user_model().objects.create_user(username="settings-first", password="strong-pass-108")
+    second = get_user_model().objects.create_user(username="settings-second", password="strong-pass-108")
+    first_client = APIClient()
+    first_client.force_authenticate(user=first)
+    second_client = APIClient()
+    second_client.force_authenticate(user=second)
+
+    first_client.patch(reverse("user-settings"), {"display": {"chartStyle": "south_indian"}}, format="json")
+    response = second_client.get(reverse("user-settings"))
+
+    assert response.status_code == 200
+    assert response.data["display"]["chartStyle"] == "north_indian"

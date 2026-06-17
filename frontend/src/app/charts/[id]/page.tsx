@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { ProductShell } from "@/app/product-shell";
-import { calculateSavedProfile, fetchChartProfile, type ChartProfile } from "@/lib/api";
+import {
+  calculateSavedProfile,
+  fetchChartProfile,
+  fetchJyotishSettings,
+  type ChartProfile,
+  type JyotishUserSettings,
+} from "@/lib/api";
 
 function profileIdFromParams(value: string | string[] | undefined) {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -32,6 +38,7 @@ export default function ChartDetailPage() {
   const params = useParams<{ id: string }>();
   const profileId = profileIdFromParams(params.id);
   const [profile, setProfile] = useState<ChartProfile | null>(null);
+  const [userSettings, setUserSettings] = useState<JyotishUserSettings | null>(null);
   const [status, setStatus] = useState("Загружаю карту...");
 
   useEffect(() => {
@@ -43,8 +50,10 @@ export default function ChartDetailPage() {
       }
       try {
         const row = await fetchChartProfile(profileId);
+        const settings = await fetchJyotishSettings();
         if (!mounted) return;
         setProfile(row);
+        setUserSettings(settings);
         setStatus("");
       } catch (error) {
         if (!mounted) return;
@@ -112,6 +121,31 @@ export default function ChartDetailPage() {
               <small>Расчёт ещё не создавался.</small>
             )}
           </section>
+
+          {userSettings ? (
+            <section className="chart-settings-summary">
+              <div>
+                <strong>Calculation Settings</strong>
+                <dl>
+                  <div><dt>ayanamsa</dt><dd>{userSettings.calculation.ayanamsa}</dd></div>
+                  <div><dt>zodiacType</dt><dd>{userSettings.calculation.zodiacType}</dd></div>
+                  <div><dt>houseSystem</dt><dd>{userSettings.calculation.houseSystem}</dd></div>
+                  <div><dt>nodeType</dt><dd>{userSettings.calculation.nodeType}</dd></div>
+                  <div><dt>calculationProfile</dt><dd>{userSettings.calculation.calculationProfile}</dd></div>
+                  <div><dt>D-карты</dt><dd>{userSettings.calculation.divisionalChartsEnabled.join(", ")}</dd></div>
+                </dl>
+              </div>
+              <div>
+                <strong>Display Settings</strong>
+                <dl>
+                  <div><dt>chartStyle</dt><dd>{userSettings.display.chartStyle}</dd></div>
+                  <div><dt>language</dt><dd>{userSettings.display.language}</dd></div>
+                  <div><dt>terminologyMode</dt><dd>{userSettings.display.terminologyMode}</dd></div>
+                  <div><dt>degreeFormat</dt><dd>{userSettings.display.degreeFormat}</dd></div>
+                </dl>
+              </div>
+            </section>
+          ) : null}
 
           {profile.notes ? (
             <section className="chart-notes-panel">

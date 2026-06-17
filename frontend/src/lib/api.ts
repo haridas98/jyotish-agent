@@ -1685,6 +1685,36 @@ export type ChartProfile = {
   updated_at: string;
 };
 
+export type JyotishCalculationSettings = {
+  ayanamsa: "lahiri" | "raman" | "krishnamurti" | "yukteshwar";
+  zodiacType: "sidereal";
+  houseSystem: "whole_sign" | "sripati" | "equal";
+  nodeType: "mean" | "true";
+  calculationProfile: "default" | "bphs_research" | "gaudiya_default";
+  divisionalChartsEnabled: string[];
+  defaultDivisionalChart: "D1" | "D9" | "D10" | "D60";
+  timezoneMode: "birth_place_timezone";
+};
+
+export type JyotishDisplaySettings = {
+  chartStyle: "north_indian" | "south_indian";
+  language: "ru" | "en";
+  terminologyMode: "russian" | "sanskrit" | "mixed";
+  degreeFormat: "dms" | "decimal";
+  showSanskritNames: boolean;
+  showTransliteration: boolean;
+  themeMode: "system" | "light" | "dark";
+};
+
+export type JyotishUserSettings = {
+  id: number;
+  userId: number;
+  calculation: JyotishCalculationSettings;
+  display: JyotishDisplaySettings;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ChartProfileRelationship = {
   id: number;
   user: null | {
@@ -2485,6 +2515,31 @@ export async function fetchCurrentUser(): Promise<User | null> {
     throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.user ?? null;
+}
+
+export async function fetchJyotishSettings(): Promise<JyotishUserSettings> {
+  const response = await apiFetch("/api/settings", { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? data.detail ?? "Запрос не выполнен");
+  }
+  return data;
+}
+
+export async function updateJyotishSettings(payload: {
+  calculation?: Partial<JyotishCalculationSettings>;
+  display?: Partial<JyotishDisplaySettings>;
+}): Promise<JyotishUserSettings> {
+  const response = await apiFetch("/api/settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? data.detail ?? "Запрос не выполнен");
+  }
+  return data;
 }
 
 export async function loginUser(username: string, password: string): Promise<User> {

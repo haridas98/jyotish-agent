@@ -11,6 +11,8 @@ from rest_framework.views import APIView
 
 from apps.charts.services import ChartProfileInputError, create_birth_profile, profile_payload
 
+from .settings_service import SettingsInputError, get_or_create_user_settings, settings_payload, update_user_settings
+
 
 def _normalize_username(value: object) -> str:
     return str(value or "").strip().casefold()
@@ -128,6 +130,23 @@ class MeView(APIView):
         if not request.user.is_authenticated:
             return Response({"user": None}, status=401)
         return Response({"user": user_payload(request.user)})
+
+
+class UserSettingsView(APIView):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({"detail": "Authentication credentials were not provided."}, status=401)
+        settings = get_or_create_user_settings(request.user)
+        return Response(settings_payload(settings))
+
+    def patch(self, request):
+        if not request.user.is_authenticated:
+            return Response({"detail": "Authentication credentials were not provided."}, status=401)
+        try:
+            settings = update_user_settings(request.user, request.data)
+        except SettingsInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        return Response(settings_payload(settings))
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
