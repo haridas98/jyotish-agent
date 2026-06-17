@@ -30,6 +30,11 @@ class BirthProfile(models.Model):
         APPROXIMATE = "approximate", "Approximate"
         UNKNOWN = "unknown", "Unknown"
 
+    class Gender(models.TextChoices):
+        MALE = "male", "Male"
+        FEMALE = "female", "Female"
+        UNKNOWN = "unknown", "Unknown"
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=255)
     birth_date = models.DateField()
@@ -39,6 +44,7 @@ class BirthProfile(models.Model):
         choices=TimeAccuracy.choices,
         default=TimeAccuracy.EXACT,
     )
+    gender = models.CharField(max_length=16, choices=Gender.choices, default=Gender.UNKNOWN)
     place = models.ForeignKey(Place, on_delete=models.PROTECT)
     timezone_name = models.CharField(max_length=128)
     calculation_settings = models.JSONField(default=dict, blank=True)

@@ -188,7 +188,9 @@ def test_chart_alias_routes_support_list_detail_update_and_delete(user):
             "birth_date": "1990-08-15",
             "birth_time": "10:24",
             "birth_time_accuracy": "exact",
+            "gender": "male",
             "place_name": "Vrindavan",
+            "notes": "first saved chart",
         },
         format="json",
     )
@@ -200,6 +202,8 @@ def test_chart_alias_routes_support_list_detail_update_and_delete(user):
     detail_response = client.get(f"/api/charts/{profile_id}")
     assert detail_response.status_code == 200
     assert detail_response.data["profile"]["display_name"] == "Client chart"
+    assert detail_response.data["profile"]["gender"] == "male"
+    assert detail_response.data["profile"]["notes"] == "first saved chart"
 
     update_response = client.patch(
         f"/api/charts/{profile_id}",
@@ -208,7 +212,9 @@ def test_chart_alias_routes_support_list_detail_update_and_delete(user):
             "birth_date": "1990-08-16",
             "birth_time": "11:25",
             "birth_time_accuracy": "approximate",
+            "gender": "female",
             "place_name": "Mayapur",
+            "notes": "updated notes",
         },
         format="json",
     )
@@ -218,6 +224,8 @@ def test_chart_alias_routes_support_list_detail_update_and_delete(user):
     assert update_response.data["profile"]["birth_date"] == "1990-08-16"
     assert update_response.data["profile"]["birth_time"] == "11:25"
     assert update_response.data["profile"]["birth_time_accuracy"] == "approximate"
+    assert update_response.data["profile"]["gender"] == "female"
+    assert update_response.data["profile"]["notes"] == "updated notes"
 
     delete_response = client.delete(f"/api/charts/{profile_id}")
     assert delete_response.status_code == 204

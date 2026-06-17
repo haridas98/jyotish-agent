@@ -244,6 +244,28 @@ body .chart-detail-panel {
   padding: 18px;
 }
 
+body .chart-calculation-placeholder,
+body .chart-notes-panel {
+  background: #f7fbfb;
+  border: 1px solid #d7e4e8;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+body .chart-calculation-placeholder strong,
+body .chart-notes-panel strong {
+  color: #0b5962;
+}
+
+body .chart-calculation-placeholder span,
+body .chart-calculation-placeholder small,
+body .chart-notes-panel p {
+  color: #60727c;
+  margin: 0;
+}
+
 body .chart-detail-head {
   align-items: start;
   display: flex;
@@ -285,6 +307,20 @@ body .charts-empty-state {
   gap: 14px;
   justify-content: space-between;
   padding: 18px;
+}
+
+body .charts-empty-state div {
+  display: grid;
+  gap: 4px;
+}
+
+body .charts-empty-state span {
+  color: #60727c;
+}
+
+body .chart-profile-form textarea {
+  min-height: 96px;
+  resize: vertical;
 }
 
 @media (max-width: 760px) {

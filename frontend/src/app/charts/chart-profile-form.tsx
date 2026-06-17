@@ -19,6 +19,7 @@ type ChartProfileDraft = {
   latitude: string;
   longitude: string;
   gender: "male" | "female" | "unknown";
+  notes: string;
   isSelfProfile: boolean;
 };
 
@@ -32,7 +33,8 @@ function draftFromProfile(profile?: ChartProfile): ChartProfileDraft {
     timezone: profile?.timezone ?? "",
     latitude: profile?.place.latitude === undefined ? "" : String(profile.place.latitude),
     longitude: profile?.place.longitude === undefined ? "" : String(profile.place.longitude),
-    gender: "unknown",
+    gender: profile?.gender ?? "unknown",
+    notes: profile?.notes ?? "",
     isSelfProfile: profile?.is_self_profile ?? false,
   };
 }
@@ -48,8 +50,12 @@ function validateDraft(draft: ChartProfileDraft) {
   if (!draft.displayName.trim()) return "Укажите имя карты.";
   if (!draft.birthDate.trim()) return "Укажите дату рождения.";
   if (Number.isNaN(Date.parse(`${draft.birthDate}T00:00:00`))) return "Дата рождения некорректна.";
-  if (!draft.birthTime.trim()) return "Укажите время рождения. Если оно неизвестно, поставьте 00:00 и точность `неизвестно`.";
-  if (!/^\d{2}:\d{2}$/.test(draft.birthTime.trim())) return "Время должно быть в формате HH:mm.";
+  if (!draft.birthTime.trim() && draft.birthTimeAccuracy !== "unknown") {
+    return "Укажите время рождения или выберите точность времени «неизвестно».";
+  }
+  if (draft.birthTime.trim() && !/^\d{2}:\d{2}$/.test(draft.birthTime.trim())) {
+    return "Время должно быть в формате HH:mm.";
+  }
   if (!draft.placeName.trim()) return "Укажите город рождения.";
 
   const latitude = numberOrUndefined(draft.latitude);
@@ -72,13 +78,15 @@ export function ChartProfileForm({ mode, profile, onSaved }: ChartProfileFormPro
   const payload = useMemo(() => {
     const latitude = numberOrUndefined(draft.latitude);
     const longitude = numberOrUndefined(draft.longitude);
+    const birthTime = draft.birthTime.trim();
     return {
       display_name: draft.displayName.trim(),
       birth_date: draft.birthDate.trim(),
-      birth_time: draft.birthTime.trim(),
+      birth_time: birthTime,
       birth_time_accuracy: draft.birthTimeAccuracy,
       gender: draft.gender,
       place_name: draft.placeName.trim(),
+      notes: draft.notes.trim(),
       is_self_profile: draft.isSelfProfile,
       ...(draft.timezone.trim() ? { timezone: draft.timezone.trim() } : {}),
       ...(latitude !== undefined ? { latitude } : {}),
@@ -112,7 +120,7 @@ export function ChartProfileForm({ mode, profile, onSaved }: ChartProfileFormPro
       <div className="chart-profile-form-head">
         <div>
           <h2>{title}</h2>
-          <span>Данные рождения хранятся отдельно от аккаунта.</span>
+          <span>Данные рождения хранятся отдельно от логина и используются для расчётов карт.</span>
         </div>
       </div>
 
@@ -137,10 +145,6 @@ export function ChartProfileForm({ mode, profile, onSaved }: ChartProfileFormPro
             <option value="unknown">Неизвестно</option>
           </select>
         </label>
-        <label className="wide">
-          <span>Место рождения</span>
-          <input value={draft.placeName} onChange={(event) => setDraft({ ...draft, placeName: event.target.value })} placeholder="Sterlitamak, Bashkortostan, RU" />
-        </label>
         <label>
           <span>Пол</span>
           <select value={draft.gender} onChange={(event) => setDraft({ ...draft, gender: event.target.value as ChartProfileDraft["gender"] })}>
@@ -148,6 +152,10 @@ export function ChartProfileForm({ mode, profile, onSaved }: ChartProfileFormPro
             <option value="male">Мужской</option>
             <option value="female">Женский</option>
           </select>
+        </label>
+        <label className="wide">
+          <span>Место рождения</span>
+          <input value={draft.placeName} onChange={(event) => setDraft({ ...draft, placeName: event.target.value })} placeholder="Sterlitamak, Bashkortostan, RU" />
         </label>
         <label>
           <span>Часовой пояс</span>
@@ -160,6 +168,10 @@ export function ChartProfileForm({ mode, profile, onSaved }: ChartProfileFormPro
         <label>
           <span>Долгота</span>
           <input value={draft.longitude} onChange={(event) => setDraft({ ...draft, longitude: event.target.value })} />
+        </label>
+        <label className="wide">
+          <span>Заметки</span>
+          <textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} rows={4} />
         </label>
       </div>
 

@@ -13,6 +13,12 @@ function formatDateTime(value: string) {
   return new Date(value).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
 }
 
+function genderLabel(gender?: ChartProfile["gender"]) {
+  if (gender === "male") return "мужской";
+  if (gender === "female") return "женский";
+  return "пол не указан";
+}
+
 function profileMeta(profile: ChartProfile) {
   return `${profile.birth_date} · ${formatTime(profile)} · ${profile.place.label}`;
 }
@@ -27,13 +33,14 @@ export default function ChartsPage() {
       const user = await fetchCurrentUser();
       if (!user) {
         setNeedsAuth(true);
+        setProfiles([]);
         setStatus("Войдите, чтобы открыть кабинет карт.");
         return;
       }
       const rows = await listChartProfiles();
       setProfiles(rows);
       setNeedsAuth(false);
-      setStatus(rows.length ? "" : "Сохранённых карт ещё нет.");
+      setStatus("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось загрузить карты.");
     }
@@ -54,12 +61,22 @@ export default function ChartsPage() {
       <section className="charts-dashboard-head">
         <div>
           <h1>Кабинет карт</h1>
-          <span>Ваши сохранённые данные рождения.</span>
+          <span>Сохранённые карты текущего пользователя.</span>
         </div>
         {!needsAuth ? <a className="primary-link-button" href="/charts/new">Создать карту</a> : null}
       </section>
 
       {status ? <div className="product-status">{status}</div> : null}
+
+      {!needsAuth && !status && !profiles.length ? (
+        <section className="charts-empty-state">
+          <div>
+            <strong>Карт ещё нет</strong>
+            <span>Создайте первую карту, затем её можно будет открыть, изменить или удалить.</span>
+          </div>
+          <a className="primary-link-button" href="/charts/new">Создать карту</a>
+        </section>
+      ) : null}
 
       {!needsAuth && profiles.length ? (
         <section className="charts-dashboard-list">
@@ -72,7 +89,7 @@ export default function ChartsPage() {
                 </strong>
                 <span>{profileMeta(profile)}</span>
                 <small>
-                  Обновлена {formatDateTime(profile.updated_at)} · {profile.timezone}
+                  {genderLabel(profile.gender)} · обновлена {formatDateTime(profile.updated_at)} · {profile.timezone}
                 </small>
               </div>
               <div className="chart-profile-card-actions">
@@ -82,13 +99,6 @@ export default function ChartsPage() {
               </div>
             </article>
           ))}
-        </section>
-      ) : null}
-
-      {!needsAuth && !profiles.length && !status ? (
-        <section className="charts-empty-state">
-          <strong>Карт ещё нет</strong>
-          <a className="primary-link-button" href="/charts/new">Создать первую карту</a>
         </section>
       ) : null}
     </ProductShell>

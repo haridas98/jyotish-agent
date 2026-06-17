@@ -1658,8 +1658,10 @@ export type ChartProfile = {
   birth_date: string;
   birth_time: string | null;
   birth_time_accuracy: string;
+  gender: "male" | "female" | "unknown";
   timezone: string;
   is_self_profile: boolean;
+  notes: string;
   calculation_settings: NonNullable<BirthChart["settings"]>;
   place: {
     id: number;
@@ -2556,7 +2558,7 @@ export async function fetchChartProfile(profileId: number): Promise<ChartProfile
   }
   return data.profile;
 }
-export async function createChartProfile(payload: BirthChartRequest & { display_name: string; is_self_profile?: boolean; birth_time_accuracy?: string }): Promise<ChartProfile> {
+export async function createChartProfile(payload: BirthChartRequest & { display_name: string; is_self_profile?: boolean; birth_time_accuracy?: string; gender?: "male" | "female" | "unknown"; notes?: string }): Promise<ChartProfile> {
   const birthTimeAccuracy = payload.birth_time_accuracy ?? (payload.birth_time?.trim() ? "exact" : "unknown");
   const response = await apiFetch("/api/charts", {
     method: "POST",
@@ -2578,7 +2580,7 @@ export async function createChartProfile(payload: BirthChartRequest & { display_
 
 export async function updateChartProfile(
   profileId: number,
-  payload: Partial<BirthChartRequest & { display_name: string; is_self_profile?: boolean; birth_time_accuracy?: string }>,
+  payload: Partial<BirthChartRequest & { display_name: string; is_self_profile?: boolean; birth_time_accuracy?: string; gender?: "male" | "female" | "unknown"; notes?: string }>,
 ): Promise<ChartProfile> {
   const response = await apiFetch(`/api/charts/${profileId}`, {
     method: "PATCH",

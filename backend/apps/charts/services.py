@@ -67,6 +67,7 @@ def create_birth_profile(user: AbstractBaseUser, data: dict[str, Any]) -> BirthP
         birth_date=birth_date,
         birth_time=birth_time,
         birth_time_accuracy=birth_time_accuracy,
+        gender=_optional_gender(data.get("gender")),
         place=place,
         timezone_name=catalog_place.timezone,
         calculation_settings=_calculation_settings_snapshot(data),
@@ -96,6 +97,9 @@ def update_birth_profile_flags(profile: BirthProfile, data: dict[str, Any]) -> B
             raise ChartProfileInputError("birth_time_accuracy is invalid")
         profile.birth_time_accuracy = birth_time_accuracy
         changed_fields.add("birth_time_accuracy")
+    if "gender" in data:
+        profile.gender = _optional_gender(data.get("gender"))
+        changed_fields.add("gender")
     if "place_name" in data:
         place_name = _required_string(data, "place_name")
         catalog_place = _resolve_profile_place(data, place_name)
@@ -230,8 +234,10 @@ def profile_payload(profile: BirthProfile, *, latest_calculation: ChartCalculati
         "birth_date": profile.birth_date.isoformat(),
         "birth_time": profile.birth_time.isoformat(timespec="minutes") if profile.birth_time else None,
         "birth_time_accuracy": profile.birth_time_accuracy,
+        "gender": profile.gender,
         "timezone": profile.timezone_name,
         "is_self_profile": profile.is_self_profile,
+        "notes": profile.notes,
         "calculation_settings": _profile_calculation_settings(profile),
         "place": place_payload(profile.place),
         "latest_calculation": latest_calculation_summary(latest_calculation)
@@ -645,6 +651,13 @@ def _optional_bool(value: Any) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in {"1", "true", "yes", "on"}
     return bool(value)
+
+
+def _optional_gender(value: Any) -> str:
+    gender = str(value or BirthProfile.Gender.UNKNOWN).strip()
+    if gender not in BirthProfile.Gender.values:
+        raise ChartProfileInputError("gender is invalid")
+    return gender
 
 
 def _decimal(value: object) -> Decimal:

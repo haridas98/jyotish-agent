@@ -15,6 +15,19 @@ function formatTime(profile: ChartProfile) {
   return profile.birth_time ? profile.birth_time.slice(0, 5) : "время неизвестно";
 }
 
+function genderLabel(gender?: ChartProfile["gender"]) {
+  if (gender === "male") return "мужской";
+  if (gender === "female") return "женский";
+  return "не указан";
+}
+
+function timeAccuracyLabel(value: string) {
+  if (value === "exact") return "точное";
+  if (value === "approximate") return "примерное";
+  if (value === "unknown") return "неизвестно";
+  return value;
+}
+
 export default function ChartDetailPage() {
   const params = useParams<{ id: string }>();
   const profileId = profileIdFromParams(params.id);
@@ -46,14 +59,14 @@ export default function ChartDetailPage() {
 
   async function handleCalculate() {
     if (!profile) return;
-    setStatus("Считаю карту...");
+    setStatus("Сохраняю расчёт...");
     try {
       await calculateSavedProfile(profile.id);
       const updated = await fetchChartProfile(profile.id);
       setProfile(updated);
       setStatus("Расчёт сохранён.");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Не удалось рассчитать карту.");
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить расчёт.");
     }
   }
 
@@ -72,20 +85,46 @@ export default function ChartDetailPage() {
           </div>
 
           <dl className="chart-detail-grid">
-            <div><dt>Дата</dt><dd>{profile.birth_date}</dd></div>
-            <div><dt>Время</dt><dd>{formatTime(profile)}</dd></div>
-            <div><dt>Точность</dt><dd>{profile.birth_time_accuracy}</dd></div>
-            <div><dt>Место</dt><dd>{profile.place.label}</dd></div>
+            <div><dt>Дата рождения</dt><dd>{profile.birth_date}</dd></div>
+            <div><dt>Время рождения</dt><dd>{formatTime(profile)}</dd></div>
+            <div><dt>Точность времени</dt><dd>{timeAccuracyLabel(profile.birth_time_accuracy)}</dd></div>
+            <div><dt>Пол</dt><dd>{genderLabel(profile.gender)}</dd></div>
+            <div><dt>Место рождения</dt><dd>{profile.place.label}</dd></div>
             <div><dt>Широта</dt><dd>{profile.place.latitude}</dd></div>
             <div><dt>Долгота</dt><dd>{profile.place.longitude}</dd></div>
             <div><dt>Часовой пояс</dt><dd>{profile.timezone}</dd></div>
+            <div><dt>Создана</dt><dd>{new Date(profile.created_at).toLocaleString("ru-RU")}</dd></div>
+            <div><dt>Обновлена</dt><dd>{new Date(profile.updated_at).toLocaleString("ru-RU")}</dd></div>
             <div><dt>Расчёт</dt><dd>{profile.latest_calculation?.status ?? "ещё не сохранён"}</dd></div>
+            <div><dt>Версия расчёта</dt><dd>{profile.latest_calculation?.calculation_version ?? "нет"}</dd></div>
           </dl>
+
+          <section className="chart-calculation-placeholder">
+            <strong>Расчётный блок</strong>
+            <span>
+              Интерпретации на этом этапе не добавлены. Здесь фиксируется статус последнего сохранённого расчёта карты.
+            </span>
+            {profile.latest_calculation ? (
+              <small>
+                Статус: {profile.latest_calculation.status}; грах: {profile.latest_calculation.graha_count}; обновлён {new Date(profile.latest_calculation.updated_at).toLocaleString("ru-RU")}.
+              </small>
+            ) : (
+              <small>Расчёт ещё не создавался.</small>
+            )}
+          </section>
+
+          {profile.notes ? (
+            <section className="chart-notes-panel">
+              <strong>Заметки</strong>
+              <p>{profile.notes}</p>
+            </section>
+          ) : null}
 
           <div className="chart-detail-actions">
             <a className="primary-link-button" href={`/?profile=${profile.id}#chart`}>Открыть рабочую карту</a>
             <a className="secondary-button" href={`/charts/${profile.id}/edit`}>Редактировать</a>
             <button type="button" className="secondary-button" onClick={() => void handleCalculate()}>Сохранить расчёт</button>
+            <a className="secondary-button" href="/charts">К списку</a>
           </div>
         </section>
       ) : null}
