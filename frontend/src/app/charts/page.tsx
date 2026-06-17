@@ -89,7 +89,7 @@ export default function ChartsPage() {
                 </strong>
                 <span>{profileMeta(profile)}</span>
                 <small>
-                  {genderLabel(profile.gender)} · обновлена {formatDateTime(profile.updated_at)} · {profile.timezone}
+                  {genderLabel(profile.gender)} · создана {formatDateTime(profile.created_at)} · обновлена {formatDateTime(profile.updated_at)} · {profile.timezone}
                 </small>
               </div>
               <div className="chart-profile-card-actions">
