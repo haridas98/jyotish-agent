@@ -1830,8 +1830,8 @@ function apiErrorFromResponse(status: number, data: ApiErrorPayload, fallbackMes
   const code = typeof data.error === "string" ? data.error : `api_status_${status}`;
   const message = typeof data.message === "string" && data.message.trim()
     ? data.message
-    : fallbackMessage === "Запрос не выполнен"
-      ? "Запрос не выполнен. Обновите страницу или попробуйте позже."
+    : fallbackMessage === "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ"
+      ? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ. РћР±РЅРѕРІРёС‚Рµ СЃС‚СЂР°РЅРёС†Сѓ РёР»Рё РїРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ."
       : fallbackMessage;
   return new ApiError(message, { status, code, payload: data });
 }
@@ -1849,26 +1849,13 @@ const FALLBACK_RESPONSE_STATUSES = new Set([404, 500, 502, 503, 504]);
 
 function apiBaseUrls() {
   if (API_BASE_URL) return [API_BASE_URL];
-  const browserHost = typeof window === "undefined" ? "" : window.location.hostname;
-  const browserProtocol = typeof window === "undefined" ? "http:" : window.location.protocol;
-  const host = browserHost || "127.0.0.1";
-  const protocol = browserProtocol === "https:" ? "https" : "http";
-  const sameOrigin = typeof window === "undefined" ? [] : [""];
-  return Array.from(
-    new Set([
-      ...sameOrigin,
-      `${protocol}://${host}:8000`,
-      `${protocol}://${host}:8100`,
-      "http://127.0.0.1:8000",
-      "http://127.0.0.1:8100",
-    ]),
-  );
+  return [""];
 }
 
 function apiNetworkError(path: string, baseUrls: string[], lastError: unknown) {
   const rawDetail = lastError instanceof Error ? lastError.message : String(lastError ?? "network error");
-  const detail = rawDetail === "Failed to fetch" ? "������� ������ �� ��������" : rawDetail;
-  return new Error(`Backend API ���������� ��� ${path}. ��������� ������: ${baseUrls.join(", ")}. ������: ${detail}`);
+  const detail = rawDetail === "Failed to fetch" ? "сетевой запрос не выполнен" : rawDetail;
+  return new Error(`Backend API недоступен для ${path}. Проверены адреса: ${baseUrls.join(", ")}. Деталь: ${detail}`);
 }
 
 function csrfToken() {
@@ -1960,7 +1947,7 @@ export async function fetchZodiacPlacement(longitude: number): Promise<ZodiacPla
   );
 
   if (!response.ok) {
-    throw new Error("Запрос не выполнен");
+    throw new Error("Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return response.json();
@@ -1972,7 +1959,7 @@ export async function fetchEphemerisStatus(): Promise<EphemerisStatus> {
   });
 
   if (!response.ok) {
-    throw new Error("Запрос не выполнен");
+    throw new Error("Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return response.json();
@@ -1988,7 +1975,7 @@ export async function calculateBirthChart(payload: BirthChartRequest, options: {
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2003,7 +1990,7 @@ export async function calculateDualCalculation(payload: BirthChartRequest): Prom
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2016,7 +2003,7 @@ export async function fetchJHoraAccuracyReport(): Promise<JHoraAccuracyReport> {
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2029,7 +2016,7 @@ export async function fetchParasharaLightPacketReport(): Promise<ParasharaLightP
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2042,7 +2029,7 @@ export async function fetchWitnessSummary(): Promise<WitnessSummary> {
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2057,7 +2044,7 @@ export async function generateBirthReport(payload: BirthChartRequest): Promise<B
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2072,7 +2059,7 @@ export async function generateCompatibilityAnalysisPacket(payload: Compatibility
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2089,9 +2076,9 @@ export async function generateCompatibilityCodexAnalysis(payload: CompatibilityR
     const data = await response.json();
     if (!response.ok) {
       if (data.payment_required) {
-        throw apiErrorFromResponse(response.status, data, "Разбор этой карты требует оплаты.");
+        throw apiErrorFromResponse(response.status, data, "Р Р°Р·Р±РѕСЂ СЌС‚РѕР№ РєР°СЂС‚С‹ С‚СЂРµР±СѓРµС‚ РѕРїР»Р°С‚С‹.");
       }
-      throw apiErrorFromResponse(response.status, data, "Запрос не выполнен");
+      throw apiErrorFromResponse(response.status, data, "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
     }
 
     return data;
@@ -2106,7 +2093,7 @@ export async function fetchShastraEvidence(keys: string[] = []): Promise<Shastra
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2121,7 +2108,7 @@ export async function generateBirthDraftAnalysis(payload: BirthChartRequest): Pr
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2144,10 +2131,10 @@ export async function generateBirthCodexAnalysis(
         throw apiErrorFromResponse(
           response.status,
           data,
-          "Разбор чужой сохранённой карты требует оплаты. Карту можно хранить и смотреть бесплатно.",
+          "Р Р°Р·Р±РѕСЂ С‡СѓР¶РѕР№ СЃРѕС…СЂР°РЅС‘РЅРЅРѕР№ РєР°СЂС‚С‹ С‚СЂРµР±СѓРµС‚ РѕРїР»Р°С‚С‹. РљР°СЂС‚Сѓ РјРѕР¶РЅРѕ С…СЂР°РЅРёС‚СЊ Рё СЃРјРѕС‚СЂРµС‚СЊ Р±РµСЃРїР»Р°С‚РЅРѕ.",
         );
       }
-      throw apiErrorFromResponse(response.status, data, "Запрос не выполнен");
+      throw apiErrorFromResponse(response.status, data, "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
     }
 
     return data;
@@ -2163,7 +2150,7 @@ export async function generateCurrentDayOverview(payload: TransitRequest): Promi
 
   const data = await response.json();
   if (!response.ok) {
-    throw apiErrorFromResponse(response.status, data, "Запрос не выполнен");
+    throw apiErrorFromResponse(response.status, data, "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2182,7 +2169,7 @@ export async function askAnalysis(
 
   const data = await response.json();
   if (!response.ok) {
-    throw apiErrorFromResponse(response.status, data, "Запрос не выполнен");
+    throw apiErrorFromResponse(response.status, data, "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2201,7 +2188,7 @@ export async function askBirthCodexAnalysis(
 
   const data = await response.json();
   if (!response.ok) {
-    throw apiErrorFromResponse(response.status, data, "Запрос не выполнен");
+    throw apiErrorFromResponse(response.status, data, "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2220,7 +2207,7 @@ export async function askCompatibilityCodexAnalysis(
 
   const data = await response.json();
   if (!response.ok) {
-    throw apiErrorFromResponse(response.status, data, "Запрос не выполнен");
+    throw apiErrorFromResponse(response.status, data, "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2238,7 +2225,7 @@ export async function fetchAnalysisHistory(query: AnalysisHistoryQuery = {}): Pr
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data.items ?? [];
@@ -2251,7 +2238,7 @@ export async function fetchAnalysisHistoryDetail(id: number): Promise<AnalysisHi
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2264,7 +2251,7 @@ export async function fetchAnalysisHistoryBySlug(slug: string): Promise<Analysis
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2277,7 +2264,7 @@ export async function fetchAnalysisChatHistory(analysisId: number): Promise<Code
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data.messages ?? [];
@@ -2295,7 +2282,7 @@ export async function fetchAnalysisGenerationJobs(query: AnalysisGenerationJobQu
 
   const data = await response.json();
   if (!response.ok) {
-    throw apiErrorFromResponse(response.status, data, "Запрос не выполнен");
+    throw apiErrorFromResponse(response.status, data, "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data.jobs ?? [];
@@ -2308,7 +2295,7 @@ export async function fetchAnalysisGenerationJob(jobId: number): Promise<Analysi
 
   const data = await response.json();
   if (!response.ok) {
-    throw apiErrorFromResponse(response.status, data, "Запрос не выполнен");
+    throw apiErrorFromResponse(response.status, data, "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data.job;
@@ -2323,7 +2310,7 @@ export async function calculateTransits(payload: TransitRequest): Promise<Transi
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2338,7 +2325,7 @@ export async function calculateMuhurta(payload: MuhurtaRequest): Promise<Muhurta
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2353,7 +2340,7 @@ export async function calculateCompatibility(payload: CompatibilityRequest): Pro
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2368,7 +2355,7 @@ export async function calculateTithiPravesha(payload: TithiPraveshaRequest): Pro
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2383,7 +2370,7 @@ export async function calculateTajaka(payload: TithiPraveshaRequest): Promise<Ta
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2398,7 +2385,7 @@ export async function calculatePrashna(payload: PrashnaRequest): Promise<Prashna
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2413,7 +2400,7 @@ export async function calculateMundane(payload: MundaneRequest): Promise<Mundane
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2426,7 +2413,7 @@ export async function searchPlaces(query: string): Promise<PlaceCandidate[]> {
   });
 
   if (!response.ok) {
-    throw new Error("Запрос не выполнен");
+    throw new Error("Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   const data = await response.json();
@@ -2441,7 +2428,7 @@ export async function searchVLSources(query: string): Promise<VLSearchResult[]> 
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data.items ?? [];
@@ -2455,7 +2442,7 @@ export async function searchResearchSources(query: string): Promise<ResearchSear
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data.items ?? [];
@@ -2468,7 +2455,7 @@ export async function fetchSourceWorks(): Promise<SourceInventory> {
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2482,7 +2469,7 @@ export async function fetchSourcePassages(slug: string, offset = 0): Promise<Sou
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
 
   return data;
@@ -2493,7 +2480,7 @@ export async function fetchCurrentUser(): Promise<User | null> {
   const data = await response.json();
   if (response.status === 401) return null;
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.user ?? null;
 }
@@ -2506,7 +2493,7 @@ export async function loginUser(username: string, password: string): Promise<Use
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   await ensureCsrf(true);
   return data.user;
@@ -2537,7 +2524,7 @@ export async function registerUser(username: string, password: string, options: 
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   await ensureCsrf(true);
   return data;
@@ -2547,23 +2534,31 @@ export async function logoutUser(): Promise<void> {
   const response = await apiFetch("/api/auth/logout", { method: "POST" });
   if (!response.ok) {
     const data = await response.json();
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   await ensureCsrf(true);
 }
 
 export async function listChartProfiles(): Promise<ChartProfile[]> {
-  const response = await apiFetch("/api/charts/profiles", { cache: "no-store" });
+  const response = await apiFetch("/api/charts", { cache: "no-store" });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.profiles ?? [];
 }
 
-export async function createChartProfile(payload: BirthChartRequest & { display_name: string; is_self_profile?: boolean }): Promise<ChartProfile> {
-  const birthTimeAccuracy = payload.birth_time?.trim() ? "exact" : "unknown";
-  const response = await apiFetch("/api/charts/profiles", {
+export async function fetchChartProfile(profileId: number): Promise<ChartProfile> {
+  const response = await apiFetch(`/api/charts/${profileId}`, { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Request failed");
+  }
+  return data.profile;
+}
+export async function createChartProfile(payload: BirthChartRequest & { display_name: string; is_self_profile?: boolean; birth_time_accuracy?: string }): Promise<ChartProfile> {
+  const birthTimeAccuracy = payload.birth_time_accuracy ?? (payload.birth_time?.trim() ? "exact" : "unknown");
+  const response = await apiFetch("/api/charts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -2574,33 +2569,43 @@ export async function createChartProfile(payload: BirthChartRequest & { display_
   const data = await response.json();
   if (!response.ok) {
     if (response.status === 403) {
-      throw new Error("Нет доступа к сохранению: войдите заново или обновите страницу для CSRF-сессии");
+      throw new Error("РќРµС‚ РґРѕСЃС‚СѓРїР° Рє СЃРѕС…СЂР°РЅРµРЅРёСЋ: РІРѕР№РґРёС‚Рµ Р·Р°РЅРѕРІРѕ РёР»Рё РѕР±РЅРѕРІРёС‚Рµ СЃС‚СЂР°РЅРёС†Сѓ РґР»СЏ CSRF-СЃРµСЃСЃРёРё");
     }
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.profile;
 }
 
-export async function updateChartProfile(profileId: number, payload: { is_self_profile?: boolean }): Promise<ChartProfile> {
-  const response = await apiFetch(`/api/charts/profiles/${profileId}`, {
+export async function updateChartProfile(
+  profileId: number,
+  payload: Partial<BirthChartRequest & { display_name: string; is_self_profile?: boolean; birth_time_accuracy?: string }>,
+): Promise<ChartProfile> {
+  const response = await apiFetch(`/api/charts/${profileId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.profile;
 }
 
+export async function deleteChartProfile(profileId: number): Promise<void> {
+  const response = await apiFetch(`/api/charts/${profileId}`, { method: "DELETE" });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error ?? "Request failed");
+  }
+}
 export async function calculateSavedProfile(profileId: number): Promise<ChartCalculationRecord> {
   const response = await apiFetch(`/api/charts/profiles/${profileId}/calculate`, {
     method: "POST",
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? data.calculation?.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? data.calculation?.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.calculation;
 }
@@ -2609,7 +2614,7 @@ export async function listChartProfileRelationships(): Promise<ChartProfileRelat
   const response = await apiFetch("/api/charts/profile-relationships", { cache: "no-store" });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.relationships ?? [];
 }
@@ -2618,7 +2623,7 @@ export async function fetchChartProfileRelationship(relationshipId: number): Pro
   const response = await apiFetch(`/api/charts/profile-relationships/${relationshipId}`, { cache: "no-store" });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.relationship;
 }
@@ -2627,7 +2632,7 @@ export async function listIncomingChartProfileRelationshipRequests(): Promise<Ch
   const response = await apiFetch("/api/charts/profile-relationships/inbox", { cache: "no-store" });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.relationships ?? [];
 }
@@ -2649,7 +2654,7 @@ export async function upsertChartProfileRelationship(payload: {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.relationship;
 }
@@ -2669,7 +2674,7 @@ export async function updateChartProfileRelationshipRequest(
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error ?? "Запрос не выполнен");
+    throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.relationship;
 }

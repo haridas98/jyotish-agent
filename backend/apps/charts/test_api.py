@@ -177,6 +177,78 @@ def test_birth_profile_patch_updates_single_self_profile(user):
 
 
 @pytest.mark.django_db
+def test_chart_alias_routes_support_list_detail_update_and_delete(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    create_response = client.post(
+        "/api/charts",
+        {
+            "display_name": "Client chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "birth_time_accuracy": "exact",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert create_response.status_code == 201
+    profile_id = create_response.data["profile"]["id"]
+    assert client.get("/api/charts").data["profiles"][0]["id"] == profile_id
+
+    detail_response = client.get(f"/api/charts/{profile_id}")
+    assert detail_response.status_code == 200
+    assert detail_response.data["profile"]["display_name"] == "Client chart"
+
+    update_response = client.patch(
+        f"/api/charts/{profile_id}",
+        {
+            "display_name": "Updated client chart",
+            "birth_date": "1990-08-16",
+            "birth_time": "11:25",
+            "birth_time_accuracy": "approximate",
+            "place_name": "Mayapur",
+        },
+        format="json",
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.data["profile"]["display_name"] == "Updated client chart"
+    assert update_response.data["profile"]["birth_date"] == "1990-08-16"
+    assert update_response.data["profile"]["birth_time"] == "11:25"
+    assert update_response.data["profile"]["birth_time_accuracy"] == "approximate"
+
+    delete_response = client.delete(f"/api/charts/{profile_id}")
+    assert delete_response.status_code == 204
+    assert BirthProfile.objects.filter(id=profile_id).exists() is False
+
+
+@pytest.mark.django_db
+def test_chart_detail_does_not_expose_other_users_profile(user):
+    other_user = get_user_model().objects.create_user(username="other", password="strong-pass-108")
+    owner_client = APIClient()
+    owner_client.force_authenticate(user=user)
+    other_client = APIClient()
+    other_client.force_authenticate(user=other_user)
+
+    profile = owner_client.post(
+        "/api/charts",
+        {
+            "display_name": "Private chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    ).data["profile"]
+
+    assert other_client.get(f"/api/charts/{profile['id']}").status_code == 404
+    assert other_client.patch(f"/api/charts/{profile['id']}", {"display_name": "Leak"}, format="json").status_code == 404
+    assert other_client.delete(f"/api/charts/{profile['id']}").status_code == 404
+
+
+@pytest.mark.django_db
 def test_birth_profile_create_accepts_geocoded_place_for_authenticated_user(user):
     client = APIClient()
     client.force_authenticate(user=user)

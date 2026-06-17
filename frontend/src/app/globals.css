@@ -97,3 +97,218 @@ body .product-status {
     width: 100% !important;
   }
 }
+body .charts-dashboard-head,
+body .chart-profile-form,
+body .chart-detail-panel,
+body .charts-empty-state {
+  background: #fff;
+  border: 1px solid #bcd0d9d1;
+  border-radius: 8px;
+  box-shadow: 0 16px 38px #1c3d4a14;
+}
+
+body .charts-dashboard-head {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 16px 18px;
+}
+
+body .charts-dashboard-head h1,
+body .chart-profile-form h2,
+body .chart-detail-head h1 {
+  color: #102832;
+  font-size: 24px;
+  line-height: 1.1;
+  margin: 0;
+}
+
+body .charts-dashboard-head span,
+body .chart-profile-form-head span,
+body .chart-detail-head span,
+body .chart-profile-card span,
+body .chart-profile-card small,
+body .chart-profile-status {
+  color: #60727c;
+}
+
+body .charts-dashboard-list {
+  display: grid;
+  gap: 8px;
+}
+
+body .chart-profile-card {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d7e4e8;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 14px 16px;
+}
+
+body .chart-profile-card div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+body .chart-profile-card strong {
+  align-items: center;
+  color: #0b5962;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 16px;
+}
+
+body .chart-profile-card em,
+body .chart-detail-head em {
+  background: #e7f6f4;
+  border: 1px solid #b8ddd7;
+  border-radius: 999px;
+  color: #0b5962;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  padding: 4px 8px;
+}
+
+body .chart-profile-card-actions,
+body .chart-detail-actions,
+body .chart-profile-form-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+body .chart-profile-card-actions a,
+body .chart-profile-card-actions button,
+body .secondary-button {
+  background: #fff;
+  border: 1px solid #bfd2db;
+  border-radius: 7px;
+  color: #0b5962;
+  min-height: 36px;
+  padding: 8px 11px;
+  text-decoration: none;
+}
+
+body .chart-profile-card-actions button {
+  color: #8a3d2c;
+}
+
+body .chart-profile-form {
+  display: grid;
+  gap: 14px;
+  max-width: 860px;
+  padding: 18px;
+}
+
+body .chart-profile-form-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body .chart-profile-form-grid label {
+  min-width: 0;
+}
+
+body .chart-profile-form-grid .wide {
+  grid-column: span 2;
+}
+
+body .chart-profile-checkbox {
+  align-items: center;
+  background: #f5fbfa;
+  border: 1px solid #d1e5e1;
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+}
+
+body .chart-profile-checkbox input {
+  width: auto;
+}
+
+body .chart-detail-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+body .chart-detail-head {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+body .chart-detail-grid {
+  border: 1px solid #d7e4e8;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  overflow: hidden;
+}
+
+body .chart-detail-grid div {
+  border-bottom: 1px solid #d7e4e8;
+  border-right: 1px solid #d7e4e8;
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+}
+
+body .chart-detail-grid dt {
+  color: #60727c;
+  font-size: 12px;
+}
+
+body .chart-detail-grid dd {
+  color: #102832;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+body .charts-empty-state {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+@media (max-width: 760px) {
+  body .charts-dashboard-head,
+  body .chart-profile-card,
+  body .chart-detail-head,
+  body .charts-empty-state {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  body .chart-profile-form-grid,
+  body .chart-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body .chart-profile-form-grid .wide {
+    grid-column: auto;
+  }
+
+  body .chart-profile-card-actions,
+  body .chart-detail-actions,
+  body .chart-profile-form-actions {
+    justify-content: stretch;
+  }
+}

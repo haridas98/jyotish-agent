@@ -58,8 +58,16 @@ class BirthProfileDetailView(APIView):
             id=profile_id,
             user=request.user,
         )
-        profile = update_birth_profile_flags(profile, request.data)
+        try:
+            profile = update_birth_profile_flags(profile, request.data)
+        except ChartProfileInputError as exc:
+            return Response({"error": str(exc)}, status=400)
         return Response({"profile": profile_payload(profile)})
+
+    def delete(self, request, profile_id: int):
+        profile = get_object_or_404(BirthProfile, id=profile_id, user=request.user)
+        profile.delete()
+        return Response(status=204)
 
 
 class BirthProfileCalculateView(APIView):

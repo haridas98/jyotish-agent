@@ -79,14 +79,49 @@ def create_birth_profile(user: AbstractBaseUser, data: dict[str, Any]) -> BirthP
 
 
 def update_birth_profile_flags(profile: BirthProfile, data: dict[str, Any]) -> BirthProfile:
-    if "is_self_profile" not in data:
+    changed_fields: set[str] = set()
+
+    if "display_name" in data:
+        profile.display_name = _required_string(data, "display_name")
+        changed_fields.add("display_name")
+    if "birth_date" in data:
+        profile.birth_date = _required_date(data, "birth_date")
+        changed_fields.add("birth_date")
+    if "birth_time" in data:
+        profile.birth_time = _optional_time(data, "birth_time")
+        changed_fields.add("birth_time")
+    if "birth_time_accuracy" in data:
+        birth_time_accuracy = str(data.get("birth_time_accuracy") or BirthProfile.TimeAccuracy.EXACT).strip()
+        if birth_time_accuracy not in BirthProfile.TimeAccuracy.values:
+            raise ChartProfileInputError("birth_time_accuracy is invalid")
+        profile.birth_time_accuracy = birth_time_accuracy
+        changed_fields.add("birth_time_accuracy")
+    if "place_name" in data:
+        place_name = _required_string(data, "place_name")
+        catalog_place = _resolve_profile_place(data, place_name)
+        profile.place = sync_catalog_place(catalog_place)
+        profile.timezone_name = catalog_place.timezone
+        changed_fields.update({"place", "timezone_name"})
+    if "notes" in data:
+        profile.notes = str(data.get("notes") or "").strip()
+        changed_fields.add("notes")
+
+    calculation_settings = _calculation_settings_snapshot(data)
+    if any(key in data for key in CALCULATION_SETTING_KEYS):
+        profile.calculation_settings = calculation_settings
+        changed_fields.add("calculation_settings")
+
+    if "is_self_profile" not in data and not changed_fields:
         return profile
 
-    is_self_profile = _optional_bool(data.get("is_self_profile"))
-    if is_self_profile:
-        BirthProfile.objects.filter(user=profile.user, is_self_profile=True).exclude(id=profile.id).update(is_self_profile=False)
-    profile.is_self_profile = is_self_profile
-    profile.save(update_fields=["is_self_profile", "updated_at"])
+    if "is_self_profile" in data:
+        is_self_profile = _optional_bool(data.get("is_self_profile"))
+        if is_self_profile:
+            BirthProfile.objects.filter(user=profile.user, is_self_profile=True).exclude(id=profile.id).update(is_self_profile=False)
+        profile.is_self_profile = is_self_profile
+        changed_fields.add("is_self_profile")
+
+    profile.save(update_fields=[*changed_fields, "updated_at"])
     return profile
 
 

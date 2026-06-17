@@ -65,6 +65,7 @@ export function ProductShell({ active, children }: ProductShellProps) {
       setAuthOpen(false);
       window.dispatchEvent(new Event("jyotish-auth-changed"));
       setAuthStatus(`Вошли как ${currentUser.username}`);
+      window.location.assign("/charts");
     } catch (error) {
       setAuthStatus(friendlyStatus(error, "Ошибка авторизации"));
     }

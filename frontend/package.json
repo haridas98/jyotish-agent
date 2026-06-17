@@ -9,6 +9,8 @@
     "lint": "next lint",
     "check:chart-geometry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-north-chart-geometry.mjs",
     "typecheck": "tsc --noEmit",
+    "production-check": "node scripts/production-check.mjs",
+    "build:prod": "next build && npm run production-check",
     "audit:workbench": "node scripts/audit-workbench-architecture.mjs"
   },
   "dependencies": {
