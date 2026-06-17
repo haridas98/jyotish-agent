@@ -62,9 +62,6 @@ const navIconPaths: Record<AppNavKey, string[]> = {
 
 export const appNavItems: AppNavItem[] = [
   { key: "charts", homeHref: "#chart", href: "/charts", label: "РљР°СЂС‚С‹", shortLabel: "РљР°СЂС‚С‹" },
-  { key: "workbenchV2", homeHref: "/workbench-v2", href: "/workbench-v2", label: "Workbench v2", shortLabel: "WB2" },
-  { key: "aiV2", homeHref: "/ai-v2", href: "/ai-v2", label: "AI v2", shortLabel: "AI2" },
-  { key: "compareV2", homeHref: "/compare-v2", href: "/compare-v2", label: "Compare v2", shortLabel: "CMP" },
   { key: "people", homeHref: "/people", href: "/people", label: "Р›СЋРґРё", shortLabel: "Р›СЋРґРё" },
   { key: "reports", homeHref: "/reports", href: "/reports", label: "РћР±Р·РѕСЂС‹", shortLabel: "РћР±Р·." },
   { key: "compatibility", homeHref: "/compatibility", href: "/compatibility", label: "РЎРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ", shortLabel: "РЎРѕРІРј." },

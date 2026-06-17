@@ -1,7 +1,13 @@
 import { relationshipRecipes } from "@/astrology";
+import { debugRoutesEnabled } from "@/app/debug-route-guard";
+import { redirect } from "next/navigation";
 import "../workbench-v2/workbench-v2.css";
 
 export default function CompareV2Page() {
+  if (!debugRoutesEnabled()) {
+    redirect("/charts");
+  }
+
   const recipes = Object.values(relationshipRecipes);
 
   return (
