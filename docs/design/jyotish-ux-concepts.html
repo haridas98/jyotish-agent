@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jyotish Agent UX concepts</title>
+  <style>
+    :root {
+      --ink: #102832;
+      --muted: #617782;
+      --line: #c8d8df;
+      --paper: #f4f9fa;
+      --surface: #ffffff;
+      --teal: #075d66;
+      --teal-2: #0d7680;
+      --gold: #c68a1b;
+      --gold-soft: #fff4d9;
+      --rose: #b74653;
+      --green-soft: #e7f4ef;
+      --blue-soft: #eaf3ff;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      line-height: 1.45;
+    }
+
+    .page {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 28px;
+      display: grid;
+      gap: 28px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #063d45, #0f6870);
+      color: white;
+      border-radius: 18px;
+      padding: 28px;
+      display: grid;
+      gap: 12px;
+      box-shadow: 0 28px 70px rgba(5, 45, 53, 0.22);
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 34px; letter-spacing: 0; }
+    h2 { font-size: 24px; }
+    h3 { font-size: 17px; }
+    .hero p { max-width: 880px; color: rgba(255,255,255,.8); font-size: 16px; }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      box-shadow: 0 18px 46px rgba(26, 54, 68, 0.10);
+    }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .reference-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f9fbfb;
+      display: grid;
+    }
+
+    .reference-card img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      object-position: top left;
+      border-bottom: 1px solid var(--line);
+      background: #eef5f7;
+    }
+
+    .reference-card div {
+      padding: 14px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      border: 1px solid #bed5dc;
+      color: var(--teal);
+      background: #edf7f7;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .priority-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .priority {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      background: #fbfdfd;
+    }
+
+    .priority strong {
+      color: var(--teal);
+      font-size: 15px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    li { margin: 5px 0; }
+
+    .concepts {
+      display: grid;
+      gap: 24px;
+    }
+
+    .concept {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #f8fcfd;
+      overflow: hidden;
+      display: grid;
+    }
+
+    .concept-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      background: white;
+    }
+
+    .concept-head p { color: var(--muted); }
+
+    .mock-app {
+      min-height: 720px;
+      background: #eef5f7;
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      color: var(--ink);
+    }
+
+    .mock-nav {
+      background: linear-gradient(#053d44, #052f36);
+      color: white;
+      padding: 18px 12px;
+      display: grid;
+      align-content: start;
+      gap: 18px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 6px;
+      font-weight: 900;
+    }
+
+    .brand span { color: rgba(255,255,255,.65); font-size: 12px; }
+
+    .nav-list { display: grid; gap: 6px; }
+
+    .nav-item {
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: rgba(255,255,255,.82);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .nav-item.active {
+      color: white;
+      background: rgba(255,255,255,.14);
+      outline: 1px solid rgba(255,255,255,.16);
+      box-shadow: inset 3px 0 var(--gold);
+    }
+
+    .mock-main {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .topbar {
+      background: rgba(255,255,255,.92);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      box-shadow: 0 14px 34px rgba(16, 40, 50, 0.08);
+    }
+
+    .topbar small { color: var(--muted); font-weight: 800; }
+
+    .button-row { display: flex; gap: 8px; }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--teal);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .btn.primary {
+      background: var(--teal);
+      color: white;
+      border-color: var(--teal);
+    }
+
+    .workspace-a {
+      display: grid;
+      grid-template-columns: minmax(380px, .78fr) minmax(560px, 1.22fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .workspace-b {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .workspace-c {
+      display: grid;
+      grid-template-columns: minmax(420px, .82fr) minmax(430px, .9fr) 280px;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(16, 40, 50, 0.07);
+    }
+
+    .panel-title {
+      min-height: 44px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-weight: 900;
+    }
+
+    .panel-title small { color: var(--muted); }
+
+    .chart-frame {
+      margin: 12px;
+      aspect-ratio: 1;
+      border: 1.5px solid #c18726;
+      background:
+        linear-gradient(45deg, transparent 49.6%, #d59a3b 49.8%, #d59a3b 50.2%, transparent 50.4%),
+        linear-gradient(-45deg, transparent 49.6%, #d59a3b 49.8%, #d59a3b 50.2%, transparent 50.4%),
+        #fffdf8;
+      border-radius: 8px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      color: #835c0f;
+      font-weight: 900;
+    }
+
+    .chart-frame.large { min-height: 430px; }
+    .chart-frame.medium { min-height: 260px; }
+    .chart-frame.small { min-height: 150px; margin: 8px; }
+
+    .chart-chip {
+      position: absolute;
+      font-size: 13px;
+      color: #12334a;
+      background: rgba(255,255,255,.72);
+      border-radius: 8px;
+      padding: 4px 6px;
+    }
+
+    .chip-1 { top: 18%; left: 43%; }
+    .chip-2 { top: 28%; right: 13%; }
+    .chip-3 { bottom: 22%; right: 22%; }
+    .chip-4 { bottom: 28%; left: 18%; }
+    .chip-5 { top: 12%; left: 12%; }
+
+    .varga-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 12px 12px;
+    }
+
+    .varga {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 7px 10px;
+      background: white;
+      color: var(--teal);
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .varga.active { background: var(--teal); color: white; }
+
+    .data-table { display: grid; }
+
+    .row {
+      display: grid;
+      grid-template-columns: .75fr .7fr .8fr .95fr .42fr .55fr .6fr .7fr;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #e1ebef;
+      font-size: 12px;
+      align-items: center;
+    }
+
+    .row.header {
+      background: #f5fafb;
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .row strong { color: var(--teal); }
+    .pill {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 7px;
+      background: #e7f6f4;
+      color: var(--teal);
+      font-weight: 900;
+      width: fit-content;
+    }
+
+    .split-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .mini-list {
+      display: grid;
+      padding: 10px 12px;
+      gap: 9px;
+    }
+
+    .mini-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      border-bottom: 1px solid #edf3f5;
+      padding-bottom: 7px;
+    }
+
+    .mini-row strong { color: var(--ink); }
+
+    .atlas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .atlas-card {
+      border: 1px solid #d5e3e8;
+      border-radius: 12px;
+      background: #fbfefe;
+      overflow: hidden;
+    }
+
+    .bars {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .bar-card {
+      min-height: 128px;
+      border: 1px solid #d9e5e9;
+      border-radius: 12px;
+      background: #fbfdfd;
+      padding: 12px;
+      display: grid;
+      align-content: end;
+      gap: 8px;
+    }
+
+    .bar-line {
+      height: 8px;
+      border-radius: 999px;
+      background: #edf3f5;
+      overflow: hidden;
+    }
+
+    .bar-line span { display:block; height:100%; background: var(--teal-2); }
+    .bar-line.gold span { background: var(--gold); }
+    .bar-line.rose span { background: var(--rose); }
+
+    .explain-drawer {
+      background: #fffaf0;
+      border: 1px solid #e6c88d;
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .explain-drawer h3 { color: #89590f; }
+    .explain-drawer p { color: #5f5140; font-size: 13px; }
+
+    .page-map {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .page-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fbfdfd;
+      display: grid;
+      gap: 8px;
+    }
+
+    .page-card em {
+      color: var(--gold);
+      font-style: normal;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    @media (max-width: 1000px) {
+      .reference-grid,
+      .priority-grid,
+      .page-map,
+      .workspace-a,
+      .workspace-b,
+      .workspace-c {
+        grid-template-columns: 1fr;
+      }
+      .mock-app { grid-template-columns: 1fr; }
+      .mock-nav { display: none; }
+      .page { padding: 14px; }
+      .row { grid-template-columns: 1fr 1fr 1fr; }
+      .row > :nth-child(n+4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>Jyotish Agent: дизайн-направления</h1>
+      <p>Цель: взять плотность JH/PL, но сделать современный веб-интерфейс. Первый экран не обучает и не объясняет проект. Он сразу показывает карту, расчёты и даёт объяснение по клику.</p>
+      <div class="tag-row">
+        <span class="tag">D1 + таблица сразу</span>
+        <span class="tag">D9/D10 вторым слоем</span>
+        <span class="tag">подсказки по клику</span>
+        <span class="tag">без технической воды</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Что берём из JH и PL</h2>
+      <div class="reference-grid">
+        <article class="reference-card">
+          <img src="../../.tmp/pl7/haridas-current/pl-main.png" alt="Parashara Light main worksheet" />
+          <div>
+            <h3>PL: рабочий лист консультации</h3>
+            <p>D1 большой, D9 рядом, даша рядом, таблицы снизу. Отлично для астролога, но визуально надо осовременить.</p>
+          </div>
+        </article>
+        <article class="reference-card">
+          <img src="../../.tmp/jhora-reference/session-20260604/sterlitamak-tabs/jhora-sterlitamak-00-loaded-main.png" alt="JHora main screen" />
+          <div>
+            <h3>JH: атлас D-карт и координат</h3>
+            <p>Много карт и расчётов на одном экране. Это нужно, но как режим “Атлас”, а не как главный экран для всех.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Приоритет полей</h2>
+      <div class="priority-grid">
+        <article class="priority">
+          <strong>1. Сразу на первом экране</strong>
+          <ul>
+            <li>Имя/дата/время/место/UTC</li>
+            <li>D1 Rashi: северный или южный стиль из настроек</li>
+            <li>Таблица: Graha, градус, Rashi, Nakshatra, Pada, дом</li>
+            <li>Статус: exalted/debilitated/moolatrikona/own/friend/enemy</li>
+            <li>Retrograde, Asta, Shadbala, D9</li>
+            <li>Клик по любой ячейке открывает объяснение</li>
+          </ul>
+        </article>
+        <article class="priority">
+          <strong>2. Второй слой, но близко</strong>
+          <ul>
+            <li>D9, D10, D12, D30, D60</li>
+            <li>Текущая Vimshottari dasha</li>
+            <li>Panchanga: tithi, vara, nakshatra, yoga, karana</li>
+            <li>Yogas, combustions, dignity details</li>
+            <li>Ashtakavarga/Shadbala как графики</li>
+          </ul>
+        </article>
+        <article class="priority">
+          <strong>3. Не на главной</strong>
+          <ul>
+            <li>Настройки расчёта: ayanamsa, ephemeris, house system</li>
+            <li>JH/PL сверки и технические статусы</li>
+            <li>Корпус книг, OCR, внутренние источники</li>
+            <li>AI jobs, API, очереди, провайдеры</li>
+            <li>Обучение новичка: отдельный режим, не рабочий экран</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section concepts">
+      <h2>Три варианта первого экрана</h2>
+
+      <article class="concept">
+        <div class="concept-head">
+          <div>
+            <h3>Вариант 1: Consultation Desk</h3>
+            <p>Лучший старт. PL-логика, но современно: D1 слева, расчётная таблица справа, вторые карты под D1.</p>
+          </div>
+          <span class="tag">рекомендую</span>
+        </div>
+        <div class="mock-app">
+          <aside class="mock-nav">
+            <div class="brand">Веда Джйотиш <span>рабочее пространство</span></div>
+            <div class="nav-list">
+              <div class="nav-item active">Карта</div>
+              <div class="nav-item">Люди</div>
+              <div class="nav-item">Обзоры</div>
+              <div class="nav-item">Совместимость</div>
+              <div class="nav-item">Транзиты</div>
+              <div class="nav-item">Источники</div>
+            </div>
+          </aside>
+          <section class="mock-main">
+            <div class="topbar">
+              <div><h2>Карта рождения</h2><small>30.04.1998 · 13:45 · Стерлитамак · UTC +06:00</small></div>
+              <div class="button-row"><span class="btn">Сейчас</span><span class="btn primary">Сохранить</span></div>
+            </div>
+            <div class="workspace-a">
+              <div class="panel">
+                <div class="panel-title">D1 Rashi <small>северный стиль</small></div>
+                <div class="chart-frame large">
+                  <span class="chart-chip chip-1">1 Рак<br>As 25°25'</span>
+                  <span class="chart-chip chip-2">10 Овен<br>Su Ma Sa</span>
+                  <span class="chart-chip chip-3">8 Водолей<br>Ke</span>
+                  <span class="chart-chip chip-4">4 Весы</span>
+                  <span class="chart-chip chip-5">2 Лев<br>Ra</span>
+                </div>
+                <div class="varga-row">
+                  <span class="varga active">D1</span><span class="varga">D9</span><span class="varga">D10</span><span class="varga">D12</span><span class="varga">D30</span><span class="varga">D60</span>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-title">Расчёты D1 <small>всё кликабельно</small></div>
+                <div class="data-table">
+                  <div class="row header"><span>Граха</span><span>Градус</span><span>Раши</span><span>Накшатра</span><span>Дом</span><span>Статус</span><span>Аста</span><span>D9</span></div>
+                  <div class="row"><strong>As</strong><span>25°25'</span><span><span class="pill">Рак</span></span><span>Ashlesha 3</span><span>1</span><span>-</span><span>-</span><span>Рыбы</span></div>
+                  <div class="row"><strong>Su</strong><span>16°03'</span><span>Овен</span><span>Bharani 1</span><span>10</span><span><span class="pill">↑ exalted</span></span><span>-</span><span>Лев</span></div>
+                  <div class="row"><strong>Ma</strong><span>18°59'</span><span>Овен</span><span>Bharani 2</span><span>10</span><span>own</span><span>c</span><span>Дева</span></div>
+                  <div class="row"><strong>Sa</strong><span>01°38'</span><span>Овен</span><span>Ashwini 1</span><span>10</span><span>↓ debil.</span><span>-</span><span>Овен</span></div>
+                  <div class="row"><strong>Mo</strong><span>08°22'</span><span>Близнецы</span><span>Ardra 1</span><span>12</span><span>-</span><span>-</span><span>Стрелец</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="split-bottom">
+              <div class="panel"><div class="panel-title">Текущая даша</div><div class="mini-list"><div class="mini-row"><strong>Ju-Ma-Su</strong><span>18.08.2026</span></div><div class="mini-row"><strong>Ju-Ma-Ma</strong><span>12.09.2026</span></div><div class="mini-row"><strong>Ju-Ma-Ra</strong><span>02.10.2026</span></div></div></div>
+              <div class="explain-drawer"><h3>Su в 10 доме</h3><p>Клик по Su открывает объяснение: каракатва Сурьи, 10 дом, Овен, хозяин Марс, управляемые дома, накшатра Bharani, статус экзальтации и практический вывод.</p></div>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <article class="concept">
+        <div class="concept-head">
+          <div>
+            <h3>Вариант 2: Research Atlas</h3>
+            <p>JH-подход для профессионалов: слева быстрый атлас D-карт, справа активная аналитика.</p>
+          </div>
+          <span class="tag">для астрологов</span>
+        </div>
+        <div class="mock-app">
+          <aside class="mock-nav">
+            <div class="brand">Jyotish Agent <span>Pro atlas</span></div>
+            <div class="nav-list"><div class="nav-item active">Атлас</div><div class="nav-item">Силы</div><div class="nav-item">Даши</div><div class="nav-item">Транзиты</div><div class="nav-item">Йоги</div></div>
+          </aside>
+          <section class="mock-main">
+            <div class="topbar"><div><h2>Атлас карты</h2><small>D1-D60 · сравнение слоёв</small></div><div class="button-row"><span class="btn">D1</span><span class="btn">D9</span><span class="btn primary">Силы</span></div></div>
+            <div class="workspace-b">
+              <div class="panel">
+                <div class="panel-title">D-карты</div>
+                <div class="atlas">
+                  <div class="atlas-card"><div class="panel-title">D1</div><div class="chart-frame small"><span>Rashi</span></div></div>
+                  <div class="atlas-card"><div class="panel-title">D9</div><div class="chart-frame small"><span>Navamsha</span></div></div>
+                  <div class="atlas-card"><div class="panel-title">D10</div><div class="chart-frame small"><span>Career</span></div></div>
+                  <div class="atlas-card"><div class="panel-title">D60</div><div class="chart-frame small"><span>Karma</span></div></div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-title">Силы и достоинства <small>второй слой</small></div>
+                <div class="bars">
+                  <div class="bar-card"><strong>Shadbala</strong><div class="bar-line"><span style="width:82%"></span></div><small>Su 132%</small></div>
+                  <div class="bar-card"><strong>Ishta Phala</strong><div class="bar-line gold"><span style="width:64%"></span></div><small>Ve 39.2</small></div>
+                  <div class="bar-card"><strong>Vimsopaka</strong><div class="bar-line rose"><span style="width:76%"></span></div><small>Ma 15.2</small></div>
+                </div>
+                <div class="data-table">
+                  <div class="row header"><span>Граха</span><span>D1</span><span>D9</span><span>D10</span><span>Шад</span><span>Аста</span><span>AV</span><span>Вывод</span></div>
+                  <div class="row"><strong>Su</strong><span>↑</span><span>Лев</span><span>10</span><span>132</span><span>-</span><span>5</span><span>сильная опора статуса</span></div>
+                  <div class="row"><strong>Sa</strong><span>↓</span><span>Овен</span><span>7</span><span>60</span><span>-</span><span>3</span><span>требует компенсации</span></div>
+                  <div class="row"><strong>Ma</strong><span>own</span><span>Дева</span><span>6</span><span>114</span><span>c</span><span>4</span><span>дело через усилие</span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <article class="concept">
+        <div class="concept-head">
+          <div>
+            <h3>Вариант 3: Guided Reader</h3>
+            <p>Для неастрологов: карта остаётся, но рядом не “простыня”, а выбранное объяснение и ключевые факты.</p>
+          </div>
+          <span class="tag">для новичков</span>
+        </div>
+        <div class="mock-app">
+          <aside class="mock-nav">
+            <div class="brand">Веда Джйотиш <span>простое чтение</span></div>
+            <div class="nav-list"><div class="nav-item active">Карта</div><div class="nav-item">Обзор</div><div class="nav-item">Учиться</div><div class="nav-item">Люди</div></div>
+          </aside>
+          <section class="mock-main">
+            <div class="topbar"><div><h2>Карта на сейчас</h2><small>Mayapur · текущий момент</small></div><div class="button-row"><span class="btn primary">Создать свою карту</span></div></div>
+            <div class="workspace-c">
+              <div class="panel"><div class="panel-title">D1 Rashi</div><div class="chart-frame medium"><span class="chart-chip chip-1">1 Телец<br>As</span><span class="chart-chip chip-2">2 Близн.<br>Su Mo Me</span><span class="chart-chip chip-4">7 Скорп.</span></div><div class="varga-row"><span class="varga active">D1</span><span class="varga">D9</span><span class="varga">D10</span></div></div>
+              <div class="panel"><div class="panel-title">Главное</div><div class="data-table"><div class="row header"><span>Точка</span><span>Знак</span><span>Дом</span><span>Статус</span><span></span><span></span><span></span><span></span></div><div class="row"><strong>Лагна</strong><span>Телец</span><span>1</span><span>-</span><span></span><span></span><span></span><span></span></div><div class="row"><strong>Солнце</strong><span>Близнецы</span><span>2</span><span>-</span><span></span><span></span><span></span><span></span></div><div class="row"><strong>Луна</strong><span>Близнецы</span><span>2</span><span>-</span><span></span><span></span><span></span><span></span></div></div></div>
+              <div class="explain-drawer"><h3>Что значит 2 дом?</h3><p>Появляется только после клика. Текст короткий: сфера дома, знак, грахи внутри, хозяин дома, как это читать по шастрам и что проверить дальше.</p></div>
+            </div>
+          </section>
+        </div>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2>Страницы проекта</h2>
+      <div class="page-map">
+        <article class="page-card"><em>Основная</em><h3>Карта</h3><p>D1 + таблица, D-карты, объяснение по клику, “сейчас” до ввода данных.</p></article>
+        <article class="page-card"><em>Люди</em><h3>Сохранённые карты</h3><p>Профили, роли: отец, мать, брат, партнёр, начальник, ученик.</p></article>
+        <article class="page-card"><em>AI</em><h3>Обзоры</h3><p>Личные разборы, история, чат по конкретной карте.</p></article>
+        <article class="page-card"><em>Пары</em><h3>Совместимость</h3><p>Две карты, аштакута, D9, 7/12 дома, история диалога.</p></article>
+        <article class="page-card"><em>Отношения</em><h3>Взаимодействия</h3><p>Не только брак: отец, мать, враг, босс, коллега, духовный наставник.</p></article>
+        <article class="page-card"><em>Время</em><h3>Транзиты</h3><p>Текущие дни, гочара, даши, календарь, мухурта.</p></article>
+        <article class="page-card"><em>Авторитет</em><h3>Источники</h3><p>Шастры, ссылки на места текста, поиск, цитирование без перегруза главного экрана.</p></article>
+        <article class="page-card"><em>Система</em><h3>Настройки</h3><p>Стиль карты, язык терминов, айанамша, эфемериды, режим новичок/астролог.</p></article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -19,7 +19,7 @@ function readDisplaySettings() {
   if (!storageAvailable()) {
     return {
       chartStyle: "north" as ChartStyle,
-      termLanguage: "sanskrit" as TermLanguage,
+      termLanguage: "ru" as TermLanguage,
       houseHintsEnabled: true,
       interfaceMode: "pro" as InterfaceMode,
     };
@@ -32,7 +32,7 @@ function readDisplaySettings() {
 
   return {
     chartStyle: chartStyle === "south" ? "south" as ChartStyle : "north" as ChartStyle,
-    termLanguage: termLanguage === "ru" || termLanguage === "en" || termLanguage === "sanskrit" ? termLanguage : "sanskrit" as TermLanguage,
+    termLanguage: termLanguage === "ru" || termLanguage === "en" || termLanguage === "sanskrit" ? termLanguage : "ru" as TermLanguage,
     houseHintsEnabled: houseHints === null ? true : houseHints !== "false",
     interfaceMode: interfaceMode === "beginner" ? "beginner" as InterfaceMode : "pro" as InterfaceMode,
   };
@@ -40,10 +40,10 @@ function readDisplaySettings() {
 
 export default function SettingsPage() {
   const [chartStyle, setChartStyle] = useState<ChartStyle>("north");
-  const [termLanguage, setTermLanguage] = useState<TermLanguage>("sanskrit");
+  const [termLanguage, setTermLanguage] = useState<TermLanguage>("ru");
   const [houseHintsEnabled, setHouseHintsEnabled] = useState(true);
   const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>("pro");
-  const [status, setStatus] = useState("Настройки загружены для этого браузера.");
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const saved = readDisplaySettings();
@@ -80,89 +80,70 @@ export default function SettingsPage() {
       window.dispatchEvent(new Event("jyotish-display-settings-changed"));
     }
 
-    setStatus("Сохранено. Новые карты и таблицы будут открываться с этими настройками.");
+    setStatus("Сохранено");
   }
 
   return (
     <ProductShell active="settings">
-      <header className="product-page-head">
-        <div>
-          <h1>Настройки</h1>
-          <p>Единое место для стиля карты, языка терминов и режима подсказок.</p>
-        </div>
-        <a className="primary-link-button" href="/">Открыть карту</a>
-      </header>
-
-      <div className="product-status">{status}</div>
+      {status ? <div className="product-status">{status}</div> : null}
 
       <section className="compatibility-saved-role-context" aria-label="Настройки отображения">
         <div className="compatibility-saved-role-head">
           <div>
             <span>Отображение карты</span>
-            <strong>Стиль выбирается один раз и применяется ко всем картам</strong>
           </div>
-          <small>Северный стиль фиксирует дома, южный стиль фиксирует знаки. Расчёты от этого не меняются.</small>
         </div>
-        <div className="settings-grid">
-          <label>
-            Стиль карты
-            <select value={chartStyle} onChange={(event) => persist({ chartStyle: event.target.value as ChartStyle })}>
-              <option value="north">Северный: дома фиксированы</option>
-              <option value="south">Южный: знаки фиксированы</option>
-            </select>
-          </label>
-          <label>
-            Язык терминов
-            <select value={termLanguage} onChange={(event) => persist({ termLanguage: event.target.value as TermLanguage })}>
-              <option value="sanskrit">Санскрит: Surya, Mithuna</option>
-              <option value="ru">Русский: Солнце, Близнецы</option>
-              <option value="en">English: Sun, Gemini</option>
-            </select>
-          </label>
-          <label>
-            Режим интерфейса
-            <select value={interfaceMode} onChange={(event) => persist({ interfaceMode: event.target.value as InterfaceMode })}>
-              <option value="pro">Астролог: рабочие панели</option>
-              <option value="beginner">Новичок: больше объяснений</option>
-            </select>
-          </label>
-          <label>
-            Подсказки внутри карты
-            <select value={houseHintsEnabled ? "on" : "off"} onChange={(event) => persist({ houseHintsEnabled: event.target.value === "on" })}>
-              <option value="on">Включены</option>
-              <option value="off">Выключены</option>
-            </select>
-          </label>
+        <div className="settings-choice-grid">
+          <section className="settings-choice-group" aria-label="Стиль карты">
+            <strong>Стиль карты</strong>
+            <div className="settings-choice-row" role="radiogroup" aria-label="Стиль карты">
+              <button type="button" className={chartStyle === "north" ? "active" : ""} aria-pressed={chartStyle === "north"} onClick={() => persist({ chartStyle: "north" })}>
+                Северный
+              </button>
+              <button type="button" className={chartStyle === "south" ? "active" : ""} aria-pressed={chartStyle === "south"} onClick={() => persist({ chartStyle: "south" })}>
+                Южный
+              </button>
+            </div>
+          </section>
+          <section className="settings-choice-group" aria-label="Язык терминов">
+            <strong>Язык терминов</strong>
+            <div className="settings-choice-row three" role="radiogroup" aria-label="Язык терминов">
+              <button type="button" className={termLanguage === "sanskrit" ? "active" : ""} aria-pressed={termLanguage === "sanskrit"} onClick={() => persist({ termLanguage: "sanskrit" })}>
+                Санскрит
+              </button>
+              <button type="button" className={termLanguage === "ru" ? "active" : ""} aria-pressed={termLanguage === "ru"} onClick={() => persist({ termLanguage: "ru" })}>
+                Русский
+              </button>
+              <button type="button" className={termLanguage === "en" ? "active" : ""} aria-pressed={termLanguage === "en"} onClick={() => persist({ termLanguage: "en" })}>
+                English
+              </button>
+            </div>
+          </section>
+          <section className="settings-choice-group" aria-label="Режим интерфейса">
+            <strong>Режим</strong>
+            <div className="settings-choice-row" role="radiogroup" aria-label="Режим интерфейса">
+              <button type="button" className={interfaceMode === "pro" ? "active" : ""} aria-pressed={interfaceMode === "pro"} onClick={() => persist({ interfaceMode: "pro" })}>
+                Астролог
+              </button>
+              <button type="button" className={interfaceMode === "beginner" ? "active" : ""} aria-pressed={interfaceMode === "beginner"} onClick={() => persist({ interfaceMode: "beginner" })}>
+                Новичок
+              </button>
+            </div>
+          </section>
+          <section className="settings-choice-group" aria-label="Подсказки внутри карты">
+            <strong>Подсказки</strong>
+            <div className="settings-choice-row" role="radiogroup" aria-label="Подсказки внутри карты">
+              <button type="button" className={houseHintsEnabled ? "active" : ""} aria-pressed={houseHintsEnabled} onClick={() => persist({ houseHintsEnabled: true })}>
+                Включены
+              </button>
+              <button type="button" className={!houseHintsEnabled ? "active" : ""} aria-pressed={!houseHintsEnabled} onClick={() => persist({ houseHintsEnabled: false })}>
+                Выключены
+              </button>
+            </div>
+          </section>
         </div>
       </section>
 
-      <section className="compatibility-saved-role-context" aria-label="Как это влияет на интерфейс">
-        <div className="compatibility-saved-role-head">
-          <div>
-            <span>Применение</span>
-            <strong>Настройки отвечают только за UX и чтение терминов</strong>
-          </div>
-          <small>Модель расчёта, ayanamsa, дома и эфемериды остаются в настройках расчёта карты.</small>
-        </div>
-        <div className="compatibility-saved-role-grid">
-          <div>
-            <span>Северный стиль</span>
-            <strong>удобен для чтения домов и бхавешей</strong>
-          </div>
-          <div>
-            <span>Южный стиль</span>
-            <strong>удобен для чтения знаков и Джаимини-ракурса</strong>
-          </div>
-          <div>
-            <span>Санскрит / русский / English</span>
-            <strong>меняет подписи в карте и таблицах</strong>
-          </div>
-          <div>
-            <span>Подсказки</span>
-            <strong>открываются в карте и таблицах без лишних блоков</strong>
-          </div>
-        </div>
-      </section>
     </ProductShell>
   );
 }

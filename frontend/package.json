@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "check:chart-geometry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-north-chart-geometry.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "audit:workbench": "node scripts/audit-workbench-architecture.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",

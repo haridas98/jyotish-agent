@@ -1,0 +1,1073 @@
+@media (min-width: 701px) {
+  html body .app-shell.sidebar-collapsed .chart-panel .chart-side-table,
+  html body .product-app.sidebar-collapsed .chart-panel .chart-side-table {
+    min-height: 540px !important;
+    height: 540px !important;
+  }
+}
+
+body .interaction-list {
+  gap: 8px !important;
+}
+
+body .interaction-card {
+  padding: 12px !important;
+}
+
+body .interaction-card .interaction-focus-grid,
+body .interaction-card-head small {
+  display: none !important;
+}
+
+body .interaction-card .interaction-actions {
+  margin-top: 8px !important;
+}
+
+/* Final visual pass: quieter SaaS workspace, less brochure text, clearer controls. */
+html body {
+  --ui-ink: #132a32;
+  --ui-muted: #627985;
+  --ui-line: #d9e5e8;
+  --ui-panel: #ffffff;
+  --ui-soft: #f4f8f8;
+  --ui-teal: #075c61;
+  --ui-teal-2: #0c7a76;
+  --ui-gold: #c68a24;
+  background: #edf4f5 !important;
+  color: var(--ui-ink) !important;
+}
+
+body .product-app,
+body .app-shell {
+  background: #edf4f5 !important;
+}
+
+body .workspace,
+body .product-workspace,
+body .product-main {
+  background: transparent !important;
+}
+
+body .product-sidebar,
+body .sidebar {
+  background: #073f44 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 18px 0 44px rgba(8, 38, 44, 0.13) !important;
+}
+
+body .sidebar-title h1,
+body .product-sidebar h1 {
+  font-size: 16px !important;
+  letter-spacing: 0 !important;
+}
+
+body .app-nav {
+  gap: 5px !important;
+}
+
+body .app-nav a {
+  min-height: 40px !important;
+  border-radius: 8px !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-weight: 800 !important;
+}
+
+body .app-nav a.active,
+body .app-nav a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.13) !important;
+  box-shadow: inset 3px 0 0 var(--ui-gold) !important;
+}
+
+body .topbar,
+body .product-shell-topbar {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(217, 229, 232, 0.85) !important;
+  border-radius: 12px !important;
+  margin: 8px 10px 6px !important;
+  box-shadow: 0 16px 44px rgba(18, 52, 61, 0.08) !important;
+}
+
+body .content-grid,
+body .product-main {
+  gap: 10px !important;
+}
+
+body .panel,
+body .history-empty,
+body .interaction-card,
+body .profile-relationship-inbox,
+body .interaction-create-panel {
+  border: 1px solid var(--ui-line) !important;
+  border-radius: 10px !important;
+  background: var(--ui-panel) !important;
+  box-shadow: 0 18px 44px rgba(18, 52, 61, 0.08) !important;
+}
+
+body .panel-heading h2,
+body .chart-title-block h2 {
+  color: var(--ui-ink) !important;
+  letter-spacing: 0 !important;
+}
+
+body .panel-heading span,
+body .chart-title-block span,
+body .history-empty span,
+body .interaction-card small {
+  color: var(--ui-muted) !important;
+}
+
+body .primary-button,
+body .primary-link-button,
+body .product-account-button {
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: var(--ui-teal) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(7, 92, 97, 0.22) !important;
+  font-weight: 900 !important;
+}
+
+body .primary-button:hover,
+body .primary-link-button:hover,
+body .product-account-button:hover {
+  background: var(--ui-teal-2) !important;
+}
+
+body .secondary-button,
+body .product-account-button.secondary {
+  border: 1px solid #bfd4d8 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: var(--ui-teal) !important;
+  font-weight: 850 !important;
+}
+
+body input,
+body select {
+  border-color: #cbdde1 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+}
+
+body .chart-panel {
+  padding: 0 !important;
+}
+
+body .content-grid:has(.birth-panel.compact) .main-stack,
+body .content-grid:has(.birth-panel.compact) .chart-panel {
+  max-width: 1180px !important;
+}
+
+body .content-grid:has(.birth-panel.compact) .chart-panel {
+  justify-self: start !important;
+}
+
+body .chart-panel > .panel-heading,
+body .content-grid:has(.birth-panel.compact) .chart-panel > .panel-heading {
+  border-bottom: 1px solid var(--ui-line) !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+body .chart-box {
+  border-color: rgba(198, 138, 36, 0.78) !important;
+  background: #fffdf8 !important;
+}
+
+body .chart-side-table {
+  border-color: var(--ui-line) !important;
+}
+
+body .chart-side-table.empty {
+  min-height: 420px !important;
+  background:
+    linear-gradient(90deg, rgba(7, 92, 97, 0.07), rgba(198, 138, 36, 0.07)),
+    #ffffff !important;
+}
+
+body .chart-side-table.empty .chart-side-table-head {
+  min-height: 52px !important;
+}
+
+body .chart-side-table.empty .chart-side-table-grid {
+  opacity: 0.82 !important;
+}
+
+body .chart-side-table.empty .empty-row {
+  background: rgba(255, 255, 255, 0.64) !important;
+}
+
+body .chart-side-table-head,
+body .chart-side-table-header {
+  background: var(--ui-soft) !important;
+}
+
+body .chart-core-summary {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  border-bottom: 1px solid var(--ui-line) !important;
+  background: #fbfdfd !important;
+}
+
+body .chart-core-summary > div {
+  display: grid !important;
+  align-content: start !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  padding: 10px 12px !important;
+  border-right: 1px solid var(--ui-line) !important;
+}
+
+body .chart-core-summary > div:last-child {
+  border-right: 0 !important;
+}
+
+body .chart-core-summary span,
+body .chart-core-summary small {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  color: var(--ui-muted) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+body .chart-core-summary strong {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  color: var(--ui-ink) !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+body .chart-side-table-row:hover {
+  background: #fff8e9 !important;
+}
+
+body .chart-loading-status {
+  border: 1px solid #c8dce1 !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: var(--ui-teal) !important;
+  box-shadow: 0 18px 38px rgba(18, 52, 61, 0.14) !important;
+}
+
+body .chart-layout:has(.chart-loading-status),
+body .content-grid:has(.birth-panel.compact) .chart-layout:has(.chart-loading-status) {
+  grid-template-columns: minmax(0, 560px) !important;
+}
+
+body .chart-layout:has(.chart-loading-status) .chart-data-stack {
+  display: none !important;
+}
+
+body .chart-layout:has(.chart-loading-status) .chart-box {
+  border-color: rgba(198, 138, 36, 0.78) !important;
+}
+
+body .chart-layout:has(.chart-loading-status) .chart-svg * {
+  opacity: 1 !important;
+  stroke-opacity: 1 !important;
+}
+
+@media (min-width: 1201px) and (max-width: 1320px) {
+  body .chart-layout,
+  body .content-grid:has(.birth-panel.compact) .chart-layout {
+    grid-template-columns: minmax(390px, 0.7fr) minmax(560px, 1.3fr) !important;
+  }
+
+  body .chart-box,
+  body .content-grid:has(.birth-panel.compact) .chart-box {
+    max-width: 500px !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  body .chart-layout,
+  body .content-grid:has(.birth-panel.compact) .chart-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body .chart-box,
+  body .content-grid:has(.birth-panel.compact) .chart-box {
+    max-width: min(560px, 100%) !important;
+  }
+
+  body .chart-side-table {
+    width: 100% !important;
+  }
+}
+
+body .glossary-trigger {
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+body .interactive-placement,
+body .interactive-rashi {
+  cursor: pointer !important;
+  pointer-events: all !important;
+  text-decoration: underline dotted rgba(7, 92, 97, 0.45) !important;
+  text-underline-offset: 2px !important;
+}
+
+body .interactive-placement:hover,
+body .interactive-rashi:hover {
+  fill: var(--ui-teal) !important;
+  color: var(--ui-teal) !important;
+}
+
+body .selected-reader-text {
+  display: grid !important;
+  gap: 7px !important;
+}
+
+body .selected-reader-text p {
+  margin: 0 !important;
+  line-height: 1.45 !important;
+}
+
+body .quick-varga-switch {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  align-items: center !important;
+  padding: 0 12px 8px !important;
+  overflow: visible !important;
+}
+
+body .quick-varga-switch button {
+  min-width: 44px !important;
+  min-height: 32px !important;
+  padding: 6px 8px !important;
+  border: 1px solid #cfe0e4 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: var(--ui-teal) !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+body .quick-varga-switch button.active {
+  border-color: var(--ui-teal) !important;
+  background: var(--ui-teal) !important;
+  color: #ffffff !important;
+}
+
+body .quick-varga-switch button:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.42 !important;
+}
+
+body .birth-panel .account-block,
+body .birth-panel .profile-block {
+  display: none !important;
+}
+
+body .chart-help-toggle {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  body .product-sidebar,
+  body .sidebar {
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 16px 42px rgba(8, 38, 44, 0.22) !important;
+  }
+
+  body .topbar,
+  body .product-shell-topbar {
+    margin: 8px !important;
+    border-radius: 12px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body .quick-varga-switch {
+    gap: 5px !important;
+    padding: 0 8px 8px !important;
+  }
+
+  body .quick-varga-switch button {
+    min-width: 40px !important;
+    padding-inline: 6px !important;
+  }
+
+  body .compatibility-saved-role-context,
+  body .settings-choice-grid,
+  body .settings-choice-group,
+  body .settings-choice-row {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body .compatibility-saved-role-context {
+    box-sizing: border-box !important;
+    width: calc(100vw - 32px) !important;
+    overflow: hidden !important;
+  }
+
+  body .settings-choice-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body .settings-choice-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow: hidden !important;
+  }
+
+  body .settings-choice-row.three {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body .settings-choice-row.three button {
+    width: calc(100vw - 76px) !important;
+    max-width: calc(100vw - 76px) !important;
+  }
+
+  body .settings-choice-row button {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    padding-inline: 6px !important;
+  }
+
+  body .chart-panel,
+  body .chart-layout,
+  body .chart-visual-stack,
+  body .main-stack,
+  body .content-grid:has(.birth-panel.compact) .chart-panel,
+  body .content-grid:has(.birth-panel.compact) .chart-layout,
+  body .content-grid:has(.birth-panel.compact) .chart-visual-stack,
+  body .content-grid:has(.birth-panel.compact) .main-stack {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body .chart-box,
+  body .content-grid:has(.birth-panel.compact) .chart-box {
+    display: block !important;
+    box-sizing: border-box !important;
+    flex: 0 0 calc(100vw - 50px) !important;
+    width: calc(100vw - 50px) !important;
+    max-width: calc(100vw - 50px) !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+  }
+
+  body .chart-side-table.empty {
+    min-height: 260px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body .app-nav {
+    grid-auto-columns: minmax(48px, 1fr) !important;
+  }
+
+  body .app-nav a {
+    min-width: 48px !important;
+  }
+
+  body .app-nav-label,
+  body .product-sidebar .app-nav-label {
+    max-width: 48px !important;
+  }
+}
+
+body .birth-compact-strip {
+  grid-template-columns: minmax(0, 1.6fr) minmax(150px, 0.4fr) auto auto !important;
+}
+
+body .birth-panel.compact .birth-compact-strip {
+  gap: 8px !important;
+}
+
+body .birth-panel.compact .birth-compact-strip .current-chart-button {
+  min-width: 78px !important;
+}
+
+body .birth-panel.compact,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+  z-index: 70 !important;
+  pointer-events: auto !important;
+}
+
+body .content-grid:has(.birth-panel.compact) {
+  position: relative !important;
+  z-index: 80 !important;
+  overflow: visible !important;
+}
+
+body .birth-panel.compact .birth-compact-strip,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip,
+body .birth-panel.compact .birth-compact-strip button,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip button {
+  pointer-events: auto !important;
+}
+
+@media (min-width: 701px) {
+  body .birth-panel.compact .birth-compact-strip .current-chart-button,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip .current-chart-button {
+    width: auto !important;
+    min-width: 78px !important;
+    padding-inline: 12px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body .topbar-title {
+    max-width: calc(100vw - 170px) !important;
+  }
+
+  body .topbar-title span {
+    display: none !important;
+  }
+
+  body .birth-panel.compact,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+    position: absolute !important;
+    top: 18px !important;
+    right: 16px !important;
+    left: auto !important;
+    margin: 0 !important;
+    width: 122px !important;
+    max-width: 122px !important;
+    z-index: 120 !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip {
+    display: grid !important;
+    grid-template-columns: 76px 38px !important;
+    justify-content: end !important;
+    gap: 8px !important;
+    width: 122px !important;
+    max-width: 122px !important;
+    overflow: visible !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip > div,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip > div {
+    display: none !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip button,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip button {
+    width: auto !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip .current-chart-button,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip .current-chart-button {
+    width: 76px !important;
+    min-width: 76px !important;
+    padding-inline: 8px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body .birth-panel.compact,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+    position: fixed !important;
+    top: 16px !important;
+    right: 14px !important;
+    left: auto !important;
+    width: 114px !important;
+    max-width: 114px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    z-index: 1000 !important;
+  }
+
+  body .product-account-dock,
+  body .topbar-account {
+    display: none !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip {
+    display: grid !important;
+    grid-template-columns: 72px 34px !important;
+    gap: 8px !important;
+    width: 114px !important;
+    max-width: 114px !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip .current-chart-button,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip .current-chart-button {
+    position: fixed !important;
+    top: 17px !important;
+    right: auto !important;
+    left: min(calc(100vw - 128px), 260px) !important;
+    width: 72px !important;
+    min-width: 72px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 6px !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    z-index: 1100 !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip button:last-child,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip button:last-child {
+    position: fixed !important;
+    top: 17px !important;
+    right: auto !important;
+    left: min(calc(100vw - 48px), 338px) !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+    z-index: 1100 !important;
+  }
+
+  body .topbar,
+  body .product-shell-topbar {
+    min-height: 50px !important;
+    padding-right: 138px !important;
+  }
+
+  body .chart-box,
+  body .content-grid:has(.birth-panel.compact) .chart-box {
+    aspect-ratio: 1 / 1 !important;
+    flex-basis: min(calc(100vw - 56px), 320px) !important;
+    width: min(calc(100vw - 56px), 320px) !important;
+    max-width: min(calc(100vw - 56px), 320px) !important;
+    height: auto !important;
+    justify-self: start !important;
+    margin-inline: 0 !important;
+  }
+
+  body .chart-box svg,
+  body .chart-svg {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  body .workspace,
+  body .content-grid,
+  body .main-stack,
+  body .panel,
+  body .chart-panel {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  body .chart-panel > .panel-heading,
+  body .content-grid:has(.birth-panel.compact) .chart-panel > .panel-heading {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: calc(100vw - 34px) !important;
+  }
+
+  body .chart-heading-tools {
+    display: none !important;
+    justify-content: flex-end !important;
+    min-width: 0 !important;
+    max-width: 96px !important;
+  }
+
+  body .chart-help-toggle {
+    display: none !important;
+  }
+
+  body .chart-heading-select,
+  body .chart-display-controls {
+    max-width: 58px !important;
+    min-width: 0 !important;
+  }
+
+  body .chart-display-controls label span {
+    display: none !important;
+  }
+
+  body .chart-display-controls select {
+    width: 58px !important;
+    min-width: 58px !important;
+  }
+
+  body .workspace,
+  body .product-workspace,
+  body .product-main,
+  body .content-grid,
+  body .main-stack {
+    padding-bottom: 96px !important;
+  }
+
+  body .chart-panel {
+    margin-bottom: 88px !important;
+  }
+
+  body .chart-side-table {
+    margin-bottom: 18px !important;
+  }
+
+  body .chart-core-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body .chart-core-summary > div {
+    padding: 8px 10px !important;
+    border-bottom: 1px solid var(--ui-line) !important;
+  }
+
+  body .chart-core-summary > div:nth-child(2n) {
+    border-right: 0 !important;
+  }
+
+  body .chart-core-summary span,
+  body .chart-core-summary small {
+    font-size: 10px !important;
+  }
+
+  body .chart-core-summary strong {
+    font-size: 12px !important;
+  }
+
+  body .chart-side-table-grid {
+    overflow-x: hidden !important;
+  }
+
+  body .chart-side-table-row,
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    display: grid !important;
+    grid-template-columns: 68px 62px 116px 32px !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-inline: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  body .chart-side-table-row > :nth-child(2),
+  body .chart-side-table-row > :nth-child(6),
+  body .chart-side-table-header > :nth-child(2),
+  body .chart-side-table-header > :nth-child(6),
+  body .chart-side-table-header > :nth-child(7) {
+    display: none !important;
+  }
+
+  body .chart-side-table-row > :nth-child(5),
+  body .chart-side-table-header > :nth-child(5) {
+    display: inline-flex !important;
+  }
+
+  body .chart-side-table-row strong,
+  body .chart-side-table-row span,
+  body .chart-side-table-header span,
+  body .chart-side-table .glossary-trigger {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 10.5px !important;
+  }
+}
+
+body .page-action-strip {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  min-height: 0 !important;
+}
+
+body .page-action-strip .primary-link-button,
+body .page-action-strip .secondary-button {
+  min-height: 44px !important;
+  padding-inline: 22px !important;
+}
+
+body .history-empty.private-history-gate {
+  width: min(420px, 100%) !important;
+  max-width: 420px !important;
+  min-height: 0 !important;
+  margin: 10px 0 0 !important;
+  padding: 12px 14px !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+body .product-main:has(.private-history-gate) {
+  display: block !important;
+  align-items: initial !important;
+  justify-items: initial !important;
+  place-items: initial !important;
+}
+
+body .workflow-panel,
+body .workflow-plan-strip,
+body .workflow-table,
+body .workflow-chart-layout,
+body .workflow-mini-chart-card,
+body .pending-strip {
+  display: none !important;
+}
+
+body .chart-layout:has(.chart-side-table.empty) .chart-data-stack,
+body .chart-side-table.empty {
+  display: none !important;
+  min-height: 0 !important;
+}
+
+body .chart-side-table-grid {
+  overflow-x: auto !important;
+}
+
+@media (min-width: 1321px) {
+  body .chart-layout,
+  body .content-grid:has(.birth-panel.compact) .chart-layout {
+    grid-template-columns: minmax(360px, 0.62fr) minmax(760px, 1.38fr) !important;
+  }
+
+  body .chart-box,
+  body .content-grid:has(.birth-panel.compact) .chart-box {
+    max-width: 100% !important;
+  }
+}
+
+body .chart-side-table-row,
+body .chart-side-table-header,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+  display: grid !important;
+  grid-template-columns:
+    minmax(56px, 0.75fr)
+    minmax(46px, 0.55fr)
+    minmax(54px, 0.65fr)
+    minmax(74px, 0.92fr)
+    minmax(28px, 0.34fr)
+    minmax(48px, 0.56fr)
+    minmax(30px, 0.34fr)
+    minmax(42px, 0.46fr)
+    minmax(68px, 0.76fr)
+    minmax(34px, 0.38fr)
+    minmax(48px, 0.52fr)
+    minmax(44px, 0.48fr) !important;
+  min-width: 690px !important;
+}
+
+body .chart-side-table-row > *,
+body .chart-side-table-header > * {
+  display: inline-flex !important;
+}
+
+body .chart-side-table-row > :nth-child(2),
+body .chart-side-table-row > :nth-child(6),
+body .chart-side-table-row > :nth-child(7),
+body .chart-side-table-header > :nth-child(2),
+body .chart-side-table-header > :nth-child(6),
+body .chart-side-table-header > :nth-child(7) {
+  display: inline-flex !important;
+}
+
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(2),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(6),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(7),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(2),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(6),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(7) {
+  display: inline-flex !important;
+}
+
+body .chart-side-table-row strong,
+body .chart-side-table-row span,
+body .chart-side-table-header span,
+body .chart-side-table .glossary-trigger {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 700px) {
+  body .workspace,
+  body .product-workspace,
+  body .product-main,
+  body .content-grid,
+  body .main-stack {
+    padding-bottom: 132px !important;
+  }
+
+  body .chart-side-table-grid {
+    overflow-x: hidden !important;
+  }
+
+  body .chart-side-table-row,
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    grid-template-columns: minmax(82px, 1fr) minmax(76px, 0.9fr) 36px !important;
+    align-items: center !important;
+    min-height: 34px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    gap: 5px !important;
+    padding-inline: 8px !important;
+  }
+
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    display: none !important;
+  }
+
+  body .chart-side-table-row > *,
+  body .chart-side-table-header > *,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > *,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > * {
+    display: none !important;
+  }
+
+  body .chart-side-table-row > :nth-child(1),
+  body .chart-side-table-row > :nth-child(3),
+  body .chart-side-table-row > :nth-child(6),
+  body .chart-side-table-row > :nth-child(7),
+  body .chart-side-table-header > :nth-child(1),
+  body .chart-side-table-header > :nth-child(3),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(1),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(3),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(1),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(3),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(4) {
+    display: inline-flex !important;
+  }
+
+  body .chart-side-table-row strong,
+  body .chart-side-table-row span,
+  body .chart-side-table-header span,
+  body .chart-side-table .glossary-trigger,
+  body .chart-side-table .calculation-value-help {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 10.25px !important;
+    line-height: 1.15 !important;
+  }
+
+  body .chart-side-table-row > :nth-child(2),
+  body .chart-side-table-row > :nth-child(5),
+  body .chart-side-table-row > :nth-child(7),
+  body .chart-side-table-row > :nth-child(8),
+  body .chart-side-table-row > :nth-child(9),
+  body .chart-side-table-row > :nth-child(10),
+  body .chart-side-table-row > :nth-child(11),
+  body .chart-side-table-row > :nth-child(12),
+  body .chart-side-table-header > :nth-child(2),
+  body .chart-side-table-header > :nth-child(5),
+  body .chart-side-table-header > :nth-child(6),
+  body .chart-side-table-header > :nth-child(7),
+  body .chart-side-table-header > :nth-child(8),
+  body .chart-side-table-header > :nth-child(9),
+  body .chart-side-table-header > :nth-child(10),
+  body .chart-side-table-header > :nth-child(11),
+  body .chart-side-table-header > :nth-child(12),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(2),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(5),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(6),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(7),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(8),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(9),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(10),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(11),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(12),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(2),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(5),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(6),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(7),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(8),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(9),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(10),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(11),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(12) {
+    display: none !important;
+  }
+
+  body .chart-side-table-row > :nth-child(1),
+  body .chart-side-table-row > :nth-child(3),
+  body .chart-side-table-row > :nth-child(7),
+  body .chart-side-table-header > :nth-child(1),
+  body .chart-side-table-header > :nth-child(3),
+  body .chart-side-table-header > :nth-child(7),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(1),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(3),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(7),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(1),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(3),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(7) {
+    display: inline-flex !important;
+  }
+
+  body .chart-side-table-row > :nth-child(1),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(1) {
+    grid-column: 1 !important;
+  }
+
+  body .chart-side-table-row > :nth-child(3),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(3) {
+    grid-column: 2 !important;
+  }
+
+  body .chart-side-table-row > :nth-child(7),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(7) {
+    grid-column: 3 !important;
+    justify-content: center !important;
+  }
+}
+
+body .report-ai-billing-status,
+body .ai-billing-note,
+body .profile-ai-note,
+body .accuracy-panel,
+body .shastra-audit-panel,
+body .source-reader,
+body .source-search-panel,
+body .source-results,
+body .settings-note,
+body .calculation-settings legend,
+body .calculation-settings .settings-note {
+  display: none !important;
+}
+
+body .mobile-house-badge {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  body .mobile-house-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin-left: 6px !important;
+    border-radius: 999px !important;
+    background: #e8f6f3 !important;
+    color: #045c63 !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+  }
+}

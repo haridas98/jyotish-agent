@@ -1,0 +1,132 @@
+{
+  "frontend/src/app/accuracy/page.tsx": {
+    "mtime": 1781609297.7203164,
+    "ast_hash": "e2816f8aca27b4afa18cc07c5b63244a",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/analysis-history-ui.tsx": {
+    "mtime": 1781603160.5979657,
+    "ast_hash": "bc028117f36f9d02e7b855532a0855b7",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/app-navigation.tsx": {
+    "mtime": 1781587434.6831298,
+    "ast_hash": "45f375372f94a2da46533fb15cc486bf",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/calculations/page.tsx": {
+    "mtime": 1781609255.786733,
+    "ast_hash": "522e875317d067d1358715ec1f6d0748",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/compatibility/[slug]/page.tsx": {
+    "mtime": 1781616629.2656431,
+    "ast_hash": "9446de1bd900eef791536a2d3a952bba",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/compatibility/page.tsx": {
+    "mtime": 1781591133.3146207,
+    "ast_hash": "a198e55c9d6b28cd88fdc19297b2d670",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/compatibility/pair/[id]/page.tsx": {
+    "mtime": 1781613798.8149626,
+    "ast_hash": "0de6147a439608895c7c40fbd9c6a959",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/dashas/page.tsx": {
+    "mtime": 1781609296.574495,
+    "ast_hash": "4dd21165451c2bae0f802b354f2d7719",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/guidance/page.tsx": {
+    "mtime": 1781609297.3712056,
+    "ast_hash": "48ae8ca787922a7f3104ceee40f2b619",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/interactions/page.tsx": {
+    "mtime": 1781617974.1710901,
+    "ast_hash": "ca0715fa7039b9e93381b5847bebe8e9",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/interface-mode-switch.tsx": {
+    "mtime": 1781291054.2924283,
+    "ast_hash": "6dfc04068613b929b9437bfca68440af",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/layout.tsx": {
+    "mtime": 1781594686.2486207,
+    "ast_hash": "f246a4cc79f39796955e4d9dea415331",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/muhurta/page.tsx": {
+    "mtime": 1781609297.1117704,
+    "ast_hash": "fa92974b9507f39c2132343a1534f149",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/page.tsx": {
+    "mtime": 1781648202.1320157,
+    "ast_hash": "32aa56831958d80c175c7d561a146cf2",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/people/page.tsx": {
+    "mtime": 1781612866.0905647,
+    "ast_hash": "432e284fa267272a08d5bf76ae347d80",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/private-history-page.tsx": {
+    "mtime": 1781612688.1665876,
+    "ast_hash": "4dfdfb8e7863b6257621edf6d33c239f",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/product-shell.tsx": {
+    "mtime": 1781646886.6778255,
+    "ast_hash": "cb6ba2e5f9667c5eed79677ece92c28b",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/relationship-help.tsx": {
+    "mtime": 1781554688.5524535,
+    "ast_hash": "67f0760cdc58100175bfdb29869abbbd",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/reports/[slug]/page.tsx": {
+    "mtime": 1781616628.760959,
+    "ast_hash": "ed4a24b415887215d6100fb08e17935a",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/reports/page.tsx": {
+    "mtime": 1781591133.2219856,
+    "ast_hash": "6eb2f546b163fbfe6a11c6c388617d4c",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/settings/page.tsx": {
+    "mtime": 1781612806.472406,
+    "ast_hash": "7b5db70ab1f16d43fa4b687b9a9557df",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/sources/page.tsx": {
+    "mtime": 1781617973.9884214,
+    "ast_hash": "ba1b2cf190c88ab65628704a3ec61a85",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/transits/[slug]/page.tsx": {
+    "mtime": 1781616629.4118636,
+    "ast_hash": "c1031f97a9fe1d62c5683c9027f399e2",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/transits/page.tsx": {
+    "mtime": 1781591133.4052832,
+    "ast_hash": "8b3db92d0f438ab4a6b6fc9000664339",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/vargas/page.tsx": {
+    "mtime": 1781609296.3137906,
+    "ast_hash": "0e3e2e324e1095b5f3e2b092b879b864",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/yogas/page.tsx": {
+    "mtime": 1781609296.8373396,
+    "ast_hash": "37ddcd529602ecc4a788dcf0b434f010",
+    "semantic_hash": ""
+  }
+}

@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Веда Джйотиш - главная карта</title>
+  <style>
+    :root {
+      --bg: #eef5f4;
+      --surface: #ffffff;
+      --surface-2: #f8fbfa;
+      --ink: #132831;
+      --muted: #647985;
+      --line: #d5e2e4;
+      --teal: #07585f;
+      --teal-2: #0b737a;
+      --gold: #c78b24;
+      --gold-2: #f7e7c1;
+      --red: #c6352a;
+      --blue: #2262bc;
+      --green: #1f7b4d;
+      --purple: #9641a8;
+      --shadow: 0 18px 44px rgba(10, 45, 52, .10);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background:
+        radial-gradient(circle at 18% 0%, rgba(199, 139, 36, .10), transparent 34rem),
+        linear-gradient(180deg, #f8fbfa 0%, var(--bg) 100%);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    button, select {
+      font: inherit;
+      color: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+    }
+
+    .rail {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: linear-gradient(180deg, #063c42, #042d32);
+      color: white;
+      padding: 14px 10px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: grid;
+      place-items: center;
+      gap: 8px;
+      text-align: center;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(247, 199, 100, .55);
+      color: #f3c261;
+      font-size: 18px;
+      font-family: Georgia, serif;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .nav a {
+      width: 56px;
+      min-height: 50px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      text-decoration: none;
+      color: rgba(255,255,255,.82);
+      border: 1px solid transparent;
+      font-size: 10px;
+      font-weight: 850;
+    }
+
+    .nav a.active {
+      background: rgba(255,255,255,.14);
+      color: white;
+      border-color: rgba(247, 199, 100, .32);
+      box-shadow: inset 3px 0 var(--gold);
+    }
+
+    .mode {
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 12px;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 10px;
+      color: rgba(255,255,255,.78);
+    }
+
+    .main {
+      min-width: 0;
+      padding: 14px 16px 24px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .topbar {
+      min-height: 58px;
+      background: rgba(255,255,255,.88);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      backdrop-filter: blur(12px);
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    h1 {
+      font-size: 22px;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .title-line {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-weight: 780;
+      font-size: 13px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: end;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 11px;
+      min-height: 36px;
+      padding: 8px 12px;
+      font-weight: 850;
+      color: var(--teal);
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: white;
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: minmax(420px, .72fr) minmax(620px, 1.28fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .panel-head {
+      min-height: 48px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,.95);
+    }
+
+    .panel-head h2 {
+      font-size: 16px;
+      line-height: 1.15;
+    }
+
+    .panel-head small {
+      color: var(--muted);
+      font-weight: 760;
+      text-align: right;
+    }
+
+    .chart-card {
+      padding: 12px;
+    }
+
+    .chart-shell {
+      position: relative;
+      max-width: 630px;
+      margin: 0 auto;
+      aspect-ratio: 1;
+      border: 1.5px solid var(--gold);
+      border-radius: 10px;
+      background: #fffefa;
+      overflow: hidden;
+    }
+
+    .chart-lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .cell {
+      position: absolute;
+      z-index: 2;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      min-width: 92px;
+      max-width: 118px;
+      line-height: 1.12;
+      color: #80590d;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .cell button,
+    .planet {
+      border: 0;
+      background: transparent;
+      padding: 1px 2px;
+      cursor: pointer;
+      font-weight: 900;
+      border-radius: 4px;
+    }
+
+    .cell button:hover,
+    .planet:hover,
+    .linkish:hover {
+      background: #e9f6f4;
+      outline: 1px solid #b7d7d4;
+    }
+
+    .planet {
+      display: inline-block;
+      color: #18384c;
+      font-size: 12px;
+      text-decoration: underline dotted rgba(7, 88, 95, .45);
+      text-underline-offset: 2px;
+    }
+
+    .red { color: var(--red); }
+    .blue { color: var(--blue); }
+    .green { color: var(--green); }
+    .purple { color: var(--purple); }
+
+    .c1 { left: 50%; top: 25%; }
+    .c2 { left: 72%; top: 16%; }
+    .c3 { left: 88%; top: 31%; }
+    .c4 { left: 80%; top: 55%; }
+    .c5 { left: 68%; top: 82%; }
+    .c6 { left: 50%; top: 74%; }
+    .c7 { left: 32%; top: 82%; }
+    .c8 { left: 20%; top: 55%; }
+    .c9 { left: 12%; top: 31%; }
+    .c10 { left: 28%; top: 16%; }
+    .center { left: 50%; top: 50%; color: #906316; font-size: 20px; }
+
+    .varga-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding: 0 12px 12px;
+    }
+
+    .varga-bar button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--teal);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-weight: 900;
+      min-width: 42px;
+      cursor: pointer;
+    }
+
+    .varga-bar button.active {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #fff;
+    }
+
+    .status-strip {
+      border-top: 1px solid var(--line);
+      background: var(--surface-2);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .status-item {
+      border: 1px solid #dbe8e9;
+      background: #fff;
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .status-item b {
+      display: block;
+      color: var(--teal);
+      font-size: 12px;
+    }
+
+    .status-item span {
+      display: block;
+      color: var(--ink);
+      font-weight: 760;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .right {
+      display: grid;
+      gap: 12px;
+    }
+
+    .table-scroll {
+      overflow: auto;
+    }
+
+    .calc-table {
+      min-width: 960px;
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .calc-table th,
+    .calc-table td {
+      border-bottom: 1px solid #e1ebee;
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .calc-table th {
+      background: #f4faf9;
+      color: var(--muted);
+      font-weight: 900;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .calc-table tr:hover td {
+      background: #fbf7ed;
+    }
+
+    .linkish {
+      border: 0;
+      background: transparent;
+      padding: 1px 3px;
+      border-radius: 5px;
+      color: var(--teal);
+      font-weight: 900;
+      cursor: pointer;
+      text-decoration: underline dotted rgba(7, 88, 95, .45);
+      text-underline-offset: 2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 2px 7px;
+      background: #e8f6f3;
+      color: var(--teal);
+      font-weight: 900;
+    }
+
+    .badge.warn {
+      background: #fff0e5;
+      color: #a04d0b;
+    }
+
+    .badge.red {
+      background: #ffecea;
+      color: var(--red);
+    }
+
+    .below-table {
+      display: grid;
+      grid-template-columns: .82fr 1.18fr;
+      gap: 12px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .mini {
+      border: 1px solid #dbe8e9;
+      border-radius: 12px;
+      padding: 9px;
+      background: #fff;
+    }
+
+    .mini b {
+      color: var(--teal);
+      display: block;
+      font-size: 12px;
+    }
+
+    .mini span {
+      color: var(--ink);
+      font-weight: 760;
+    }
+
+    .explain {
+      background: #fff8e8;
+      border-color: #e8c985;
+    }
+
+    .explain-body {
+      padding: 12px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .explain-title {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .explain h2 {
+      color: #81590f;
+    }
+
+    .explain p {
+      color: #4e4537;
+      font-size: 13px;
+    }
+
+    .source {
+      border-top: 1px solid #ead7a6;
+      padding-top: 8px;
+      color: #7c642d;
+      font-weight: 820;
+      font-size: 12px;
+    }
+
+    .footer-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .jump {
+      background: rgba(255,255,255,.82);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 10px 26px rgba(10, 45, 52, .06);
+      min-width: 0;
+    }
+
+    .jump b {
+      display: block;
+      color: var(--teal);
+      margin-bottom: 3px;
+    }
+
+    .jump span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    @media (max-width: 1260px) {
+      .workbench,
+      .below-table {
+        grid-template-columns: 1fr;
+      }
+      .footer-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .rail {
+        height: auto;
+        position: sticky;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto;
+        align-items: center;
+        padding: 8px;
+      }
+
+      .brand {
+        grid-auto-flow: column;
+      }
+
+      .brand span {
+        display: none;
+      }
+
+      .nav {
+        grid-auto-flow: column;
+        overflow-x: auto;
+      }
+
+      .nav a {
+        width: auto;
+        min-width: 62px;
+        min-height: 40px;
+        padding: 6px 10px;
+      }
+
+      .mode {
+        display: none;
+      }
+
+      .main {
+        padding: 10px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        justify-content: start;
+      }
+
+      .workbench {
+        grid-template-columns: 1fr;
+      }
+
+      .status-strip,
+      .mini-grid,
+      .footer-strip {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .calc-table {
+        min-width: 720px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="rail" aria-label="Основная навигация">
+      <div class="brand">
+        <div class="mark">Om</div>
+        <span>Веда Джйотиш</span>
+      </div>
+      <nav class="nav">
+        <a class="active" href="#" title="Карта">Карта</a>
+        <a href="#" title="Люди">Люди</a>
+        <a href="#" title="Обзоры">Обзоры</a>
+        <a href="#" title="Совместимость">Пары</a>
+        <a href="#" title="Транзиты">Дни</a>
+        <a href="#" title="Источники">Тексты</a>
+        <a href="#" title="Настройки">Настр.</a>
+      </nav>
+      <div class="mode">Астролог</div>
+    </aside>
+
+    <section class="main">
+      <header class="topbar">
+        <div>
+          <div class="title-line">
+            <h1>Карта рождения</h1>
+            <span class="meta">30.04.1998 · 13:45 · Стерлитамак · UTC +06:00</span>
+          </div>
+          <span class="meta">Если данные не введены, этот же экран показывает карту на сейчас.</span>
+        </div>
+        <div class="actions">
+          <button class="btn">Сейчас</button>
+          <button class="btn">Изменить</button>
+          <button class="btn">Экспорт</button>
+          <button class="btn primary">AI-разбор</button>
+        </div>
+      </header>
+
+      <section class="workbench">
+        <article class="panel">
+          <div class="panel-head">
+            <h2><span id="chart-title">D1 Раши</span></h2>
+            <small>северный/южный стиль выбирается в настройках</small>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-shell">
+              <svg class="chart-lines" viewBox="0 0 100 100" aria-hidden="true">
+                <path d="M0 0 L100 100 M100 0 L0 100" stroke="#d59a35" stroke-width=".28" />
+                <path d="M50 0 L100 50 L50 100 L0 50 Z" fill="none" stroke="#d59a35" stroke-width=".28" />
+                <path d="M0 0 L50 50 L100 0 M0 100 L50 50 L100 100" fill="none" stroke="#d59a35" stroke-width=".22" opacity=".78" />
+              </svg>
+
+              <div class="cell c1"><button data-title="1 дом, Рак" data-text="Первый дом показывает тело, самость, способ входить в жизнь и силу лагны. Для чтения карты это опора: если лагна и её хозяин сильны, остальные показатели легче реализуются. Рак добавляет лунную природу: чувствительность, защиту, память, связь с домом и родом." data-source="Сверять с BPHS: значения лагны, домов и хозяина лагны.">1 Рак</button><br><button class="planet" data-title="Асцендент в Раке" data-text="Лагна в Раке делает Луну главным управителем карты. Поэтому состояние Луны, её дом, знак, накшатра и связи становятся первыми факторами чтения характера и жизненной устойчивости." data-source="Источник для вывода: классическая логика лагны и лагнеша.">As 25°25'</button></div>
+              <div class="cell c2"><button data-title="12 дом, Близнецы" data-text="Двенадцатый дом связан с расходами, уединением, сном, мокшей, дальними местами и тем, что уходит из видимой жизни. Близнецы делают тему более ментальной: переписка, обучение, перемещения, информационные связи." data-source="BPHS: двенадцатая бхава; значения знака уточняются по управителю Меркурию.">12 Близнецы</button><br><button class="planet blue" data-title="Луна в 12 доме" data-text="Луна показывает ум, восприятие, мать, питание и эмоциональную безопасность. В 12 доме ум часто ищет покой, уединение, тонкие впечатления, духовную среду или дальние места. Нужно смотреть силу Луны, накшатру Ardra, аспекты и состояние хозяина 12 дома." data-source="Сверять с BPHS: Чандра, 12 дом, результаты Луны по домам.">Mo 08°22'</button></div>
+              <div class="cell c3"><button data-title="11 дом, Телец" data-text="Одиннадцатый дом показывает доходы, круг поддержки, старших, исполнение желаний и результаты усилий. Телец добавляет материальность, устойчивость и венерианскую природу." data-source="BPHS: одиннадцатая бхава; знак читается через Венеру.">11 Телец</button></div>
+              <div class="cell c4"><button data-title="10 дом, Овен" data-text="Десятый дом - место кармы, профессии, статуса, действия, обязанностей и видимости в обществе. Овен делает этот дом активным, самостоятельным, марсианским. Здесь важно состояние Марса как хозяина дома." data-source="BPHS: десятая бхава, карма-бхава, хозяин 10 дома.">10 Овен</button><br><button class="planet red" data-title="Сурья в 10 доме, экзальтация" data-text="Сурья обозначает власть, отца, честь, атму, лидерство и способность освещать путь. В 10 доме Сурья получает сильную видимость в сфере действия и статуса. В Овне Сурья экзальтирован, поэтому тема авторитета выражена сильнее, но итог зависит от сожжения других грах, аспектов и силы хозяина дома." data-source="BPHS: Сурья, 10 дом, достоинства грах; сверять с классическими правилами экзальтации.">Su↑ 16°03'</button> <button class="planet red" data-title="Мангала в 10 доме" data-text="Мангала как хозяин Овна усиливает деятельный, технический, защитный или управленческий характер 10 дома. Для Рака он также связан с 5 и 10 домами, поэтому может давать йога-эффект при силе и хороших связях. Нужно проверить сожжение, аспекты и D10." data-source="BPHS: Марс, хозяева домов, раджа-йоги через кендру и трикону.">Ma 18°59'</button> <button class="planet blue" data-title="Шани в 10 доме, дебилитация" data-text="Шани показывает труд, задержки, дисциплину, служение, массы и долговременную ответственность. В 10 доме он важен для работы и статуса. В Овне Шани дебилитирован, поэтому тема карьеры требует зрелости, терпения и проверки компенсаций: нича-бханга, аспекты, сила в D10, шадбала." data-source="BPHS: Шани, результаты по домам, дебилитация и отмены слабости.">Sa↓ 01°38'</button></div>
+              <div class="cell c5"><button data-title="8 дом, Водолей" data-text="Восьмой дом связан с долговечностью, тайным, переломами, наследством, исследованиями, кризисами и глубокими изменениями. Водолей добавляет системность, сообщества и нестандартное мышление." data-source="BPHS: восьмая бхава; знак читается через Шани.">8 Водолей</button><br><button class="planet" data-title="Кету в 8 доме" data-text="Кету в 8 доме усиливает скрытую, исследовательскую и отрешённую природу восьмой бхавы. Может давать интерес к мистике, прошлым причинам, тонким процессам, но требует аккуратной проверки здоровья и рисков по D30/D60." data-source="Трактовать осторожно: классические источники по Кету различаются.">Ke 14°36'</button></div>
+              <div class="cell c6"><button data-title="7 дом, Козерог" data-text="Седьмой дом показывает партнёра, брак, договоры, публичные отношения и взаимодействие с другими. Козерог делает тему серьёзной, обязательной, сатурнианской. Смотреть Шани и D9." data-source="BPHS: седьмая бхава, брак, партнёрство.">7 Козерог</button></div>
+              <div class="cell c7"><button data-title="6 дом, Стрелец" data-text="Шестой дом связан с долгами, болезнями, служением, конфликтами, трудом и преодолением. Стрелец добавляет тему учения, принципов, наставников и закона." data-source="BPHS: шестая бхава.">6 Стрелец</button></div>
+              <div class="cell c8"><button data-title="4 дом, Весы" data-text="Четвёртый дом показывает мать, дом, недвижимость, внутренний покой, образование и сердце. Весы добавляют венерианскую тему гармонии, красоты, договорённости и равновесия." data-source="BPHS: четвёртая бхава.">4 Весы</button></div>
+              <div class="cell c9"><button data-title="3 дом, Дева" data-text="Третий дом показывает усилие, смелость, руки, письмо, младших, практический навык и самостоятельное действие. Дева делает проявление аналитичным и меркурианским." data-source="BPHS: третья бхава.">3 Дева</button></div>
+              <div class="cell c10"><button data-title="2 дом, Лев" data-text="Второй дом связан с речью, семьёй, накоплениями, питанием, лицом и ценностями. Лев добавляет солнечную тему достоинства, авторитета и выраженной речи." data-source="BPHS: вторая бхава.">2 Лев</button><br><button class="planet" data-title="Раху во 2 доме" data-text="Раху во 2 доме усиливает необычность речи, ценностей, семейных тем и способов накопления. Это положение требует аккуратной оценки хозяина 2 дома, аспектов, D2 и связи с марака-бхавой." data-source="Трактовать через классические правила Раху и силу хозяина дома.">Ra 14°36'</button></div>
+              <div class="cell center"><button data-title="Центр карты" data-text="Клик по дому, знаку или грахе открывает объяснение. Объяснения не висят постоянно и не перегружают экран." data-source="UX-правило: объяснение только по нажатию, не по hover.">D1</button></div>
+            </div>
+          </div>
+
+          <div class="varga-bar" aria-label="Выбор D-карты">
+            <button class="active" data-varga="D1 Раши">D1</button>
+            <button data-varga="D2 Хора">D2</button>
+            <button data-varga="D3 Дреккана">D3</button>
+            <button data-varga="D4 Чатуртхамша">D4</button>
+            <button data-varga="D7 Саптамша">D7</button>
+            <button data-varga="D9 Навамша">D9</button>
+            <button data-varga="D10 Дашамша">D10</button>
+            <button data-varga="D12 Двадашамша">D12</button>
+            <button data-varga="D16 Шодашамша">D16</button>
+            <button data-varga="D20 Вимшамша">D20</button>
+            <button data-varga="D24 Чатурвимшамша">D24</button>
+            <button data-varga="D27 Бхамша">D27</button>
+            <button data-varga="D30 Тримшамша">D30</button>
+            <button data-varga="D40 Кхаведамша">D40</button>
+            <button data-varga="D45 Акшаведамша">D45</button>
+            <button data-varga="D60 Шаштьямша">D60</button>
+          </div>
+
+          <div class="status-strip">
+            <div class="status-item"><b>Лагна</b><span>Рак, Ashlesha 3</span></div>
+            <div class="status-item"><b>Луна</b><span>Близнецы, Ardra 1</span></div>
+            <div class="status-item"><b>Панчанга</b><span>Shukla Panchami</span></div>
+            <div class="status-item"><b>Даша</b><span>Ju-Ma-Su</span></div>
+          </div>
+        </article>
+
+        <section class="right">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Расчётная таблица выбранной карты</h2>
+              <small>главные данные рядом с картой, не в отдельном разделе</small>
+            </div>
+            <div class="table-scroll">
+              <table class="calc-table">
+                <thead>
+                  <tr>
+                    <th>Граха</th>
+                    <th>Долгота</th>
+                    <th>Раши</th>
+                    <th>Градус</th>
+                    <th>Накшатра</th>
+                    <th>Пада</th>
+                    <th>Дом</th>
+                    <th>Хозяин</th>
+                    <th>Статус</th>
+                    <th>Аста</th>
+                    <th>D9</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><button class="linkish" data-title="Асцендент" data-text="Асцендент показывает точку восхода, тело, направление жизни и основу чтения домов. Через лагну строится вся бхава-система." data-source="BPHS: лагна и бхавы.">As</button></td>
+                    <td><button class="linkish" data-title="Долгота Асцендента" data-text="Точная долгота нужна для накшатры, пада, дробных карт и проверки чувствительных расчётов." data-source="Технически сверять с эфемеридами и IANA timezone.">115°25'23"</button></td>
+                    <td><button class="linkish" data-title="Рак" data-text="Рак - водный, подвижный знак Луны. В лагне он делает Луну ключевым управителем карты." data-source="Классические значения раши.">Рак</button></td>
+                    <td>25°25'</td>
+                    <td><button class="linkish" data-title="Ashlesha" data-text="Накшатра уточняет психологическую и кармическую окраску положения. Для Ashlesha важны темы связывания, защиты, скрытой силы и внимательности к мотивам." data-source="Накшатра-трактовки сверять отдельно по авторитетным источникам.">Ashlesha</button></td>
+                    <td>3</td>
+                    <td><button class="linkish" data-title="1 дом" data-text="Первый дом - основа тела, характера, жизненной силы и способа проявления." data-source="BPHS: первая бхава.">1</button></td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td><button class="linkish" data-title="D9: Рыбы" data-text="D9 показывает внутреннюю силу, дхарму и зрелость положения. Для лагны D9 важна как дополнительная опора чтения." data-source="Традиционная роль Навамши.">Рыбы</button></td>
+                  </tr>
+                  <tr>
+                    <td><button class="linkish red" data-title="Сурья" data-text="Сурья показывает атму, отца, власть, честь, лидерство, здоровье и способность быть источником света." data-source="BPHS: значения Сурьи.">Su</button></td>
+                    <td>16°03'22"</td>
+                    <td><button class="linkish" data-title="Овен" data-text="Овен - знак Марса, огненный и активный. Для Сурьи это знак экзальтации." data-source="Классические достоинства грах.">Овен</button></td>
+                    <td>16°03'</td>
+                    <td><button class="linkish" data-title="Bharani" data-text="Bharani добавляет тему удержания, ответственности, переходов и силы Ямы. Трактовка уточняется через паду и управителя Венеру." data-source="Накшатра-трактовки сверять по источникам.">Bharani</button></td>
+                    <td>1</td>
+                    <td><button class="linkish" data-title="Сурья в 10 доме" data-text="Сурья в 10 доме усиливает видимость, статус, руководство, связь с властью и потребность действовать открыто. Экзальтация в Овне делает показатель сильнее, но нужно проверить Марс, D10 и сожжение соседних грах." data-source="BPHS: Сурья, 10 дом, экзальтация.">10</button></td>
+                    <td>2</td>
+                    <td><span class="badge">↑ экз.</span></td>
+                    <td>-</td>
+                    <td><button class="linkish">Лев</button></td>
+                  </tr>
+                  <tr>
+                    <td><button class="linkish blue" data-title="Луна" data-text="Луна показывает ум, мать, эмоции, питание, общественную связь и способность адаптироваться." data-source="BPHS: значения Чандры.">Mo</button></td>
+                    <td>68°22'05"</td>
+                    <td><button class="linkish">Близнецы</button></td>
+                    <td>08°22'</td>
+                    <td><button class="linkish">Ardra</button></td>
+                    <td>1</td>
+                    <td><button class="linkish" data-title="Луна в 12 доме" data-text="Луна в 12 доме часто даёт внутреннюю чувствительность, тягу к уединению, снам, духовной среде, дальним местам или работе за кулисами. Важно смотреть силу Луны и состояние Меркурия." data-source="BPHS: Луна и 12 дом.">12</button></td>
+                    <td>1</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>Стрелец</td>
+                  </tr>
+                  <tr>
+                    <td><button class="linkish red" data-title="Мангала" data-text="Марс показывает энергию, смелость, защиту, огонь, братьев, техническую силу и способность действовать." data-source="BPHS: значения Марса.">Ma</button></td>
+                    <td>18°59'13"</td>
+                    <td>Овен</td>
+                    <td>18°59'</td>
+                    <td>Bharani</td>
+                    <td>2</td>
+                    <td><button class="linkish" data-title="Марс в 10 доме" data-text="Марс в своём знаке в 10 доме усиливает профессиональную активность, лидерство, самостоятельное действие и техническую/управленческую способность. Для Рака Марс владеет 5 и 10 домом, поэтому это ключевой йога-фактор при достаточной силе." data-source="BPHS: Марс, хозяин 5 и 10 для Рака, 10 дом.">10</button></td>
+                    <td>5,10</td>
+                    <td><span class="badge">св. знак</span></td>
+                    <td><span class="badge warn">3.0°</span></td>
+                    <td>Дева</td>
+                  </tr>
+                  <tr>
+                    <td><button class="linkish blue" data-title="Шани" data-text="Шани показывает труд, время, дисциплину, ограничения, долговременные результаты, служение и ответственность." data-source="BPHS: значения Шани.">Sa</button></td>
+                    <td>01°38'40"</td>
+                    <td>Овен</td>
+                    <td>01°38'</td>
+                    <td>Ashwini</td>
+                    <td>1</td>
+                    <td><button class="linkish" data-title="Шани в 10 доме" data-text="Шани в 10 доме делает работу, статус и ответственность долгой темой жизни. В Овне он дебилитирован, поэтому важно искать компенсации: нича-бханга, сила Марса, D10, аспекты, шадбала." data-source="BPHS: Шани, 10 дом, дебилитация.">10</button></td>
+                    <td>7,8</td>
+                    <td><span class="badge red">↓ деб.</span></td>
+                    <td>-</td>
+                    <td>Овен</td>
+                  </tr>
+                  <tr>
+                    <td><button class="linkish green">Me</button></td>
+                    <td>349°02'14"</td>
+                    <td>Рыбы</td>
+                    <td>19°02'</td>
+                    <td>Revati</td>
+                    <td>1</td>
+                    <td>9</td>
+                    <td>3,12</td>
+                    <td><span class="badge red">↓ деб.</span></td>
+                    <td><span class="badge warn">24.5°</span></td>
+                    <td>Стрелец</td>
+                  </tr>
+                  <tr>
+                    <td><button class="linkish purple">Ju</button></td>
+                    <td>325°35'23"</td>
+                    <td>Водолей</td>
+                    <td>25°35'</td>
+                    <td>P.Bhadra</td>
+                    <td>2</td>
+                    <td>8</td>
+                    <td>6,9</td>
+                    <td>друг</td>
+                    <td>-</td>
+                    <td>Телец</td>
+                  </tr>
+                  <tr>
+                    <td><button class="linkish green">Ve</button></td>
+                    <td>02°15'59"</td>
+                    <td>Рыбы</td>
+                    <td>02°15'</td>
+                    <td>P.Bhadra</td>
+                    <td>4</td>
+                    <td>9</td>
+                    <td>4,11</td>
+                    <td><span class="badge">↑ экз.</span></td>
+                    <td>-</td>
+                    <td>Рак</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <section class="below-table">
+            <article class="panel">
+              <div class="panel-head">
+                <h2>Минимум рядом с картой</h2>
+                <small>как у PL/JH, но без перегруза</small>
+              </div>
+              <div class="mini-grid">
+                <div class="mini"><b>Панчанга</b><span>Shukla Panchami</span></div>
+                <div class="mini"><b>Вара</b><span>Guruvara</span></div>
+                <div class="mini"><b>Йога</b><span>Sukarma</span></div>
+                <div class="mini"><b>Карана</b><span>Bava</span></div>
+                <div class="mini"><b>Шадбала max</b><span>Сурья 797</span></div>
+                <div class="mini"><b>Шадбала min</b><span>Шани 222.8</span></div>
+              </div>
+            </article>
+
+            <article class="panel explain">
+              <div class="panel-head">
+                <h2>Объяснение по нажатию</h2>
+                <small>не hover, не отдельный обучающий блок</small>
+              </div>
+              <div class="explain-body">
+                <div class="explain-title">
+                  <h2 id="explain-title">Сурья в 10 доме</h2>
+                  <span class="badge">пример выбранного элемента</span>
+                </div>
+                <p id="explain-text">Сурья в 10 доме усиливает видимость, статус, руководство и связь с властью. В Овне Сурья экзальтирован, поэтому показатель становится особенно сильным, но итог нужно читать вместе с Марсом, D10, сожжением соседних грах и общей силой карты.</p>
+                <p class="source" id="explain-source">Источник: BPHS - значения Сурьи, 10 дома и достоинств грах. Точный стих добавляется после выверки корпуса текстов.</p>
+              </div>
+            </article>
+          </section>
+        </section>
+      </section>
+
+      <section class="footer-strip" aria-label="Переходы во второй уровень">
+        <div class="jump"><b>D-карты</b><span>атлас D1-D60, сравнение карт</span></div>
+        <div class="jump"><b>Силы</b><span>шадбала, вимшопака, AV</span></div>
+        <div class="jump"><b>Даши</b><span>периоды и подпериоды</span></div>
+        <div class="jump"><b>Транзиты</b><span>карта дня и gochara</span></div>
+        <div class="jump"><b>Источники</b><span>шастры и цитаты</span></div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const titleEl = document.getElementById("explain-title");
+    const textEl = document.getElementById("explain-text");
+    const sourceEl = document.getElementById("explain-source");
+
+    document.querySelectorAll("[data-title][data-text]").forEach((node) => {
+      node.addEventListener("click", () => {
+        titleEl.textContent = node.dataset.title;
+        textEl.textContent = node.dataset.text;
+        sourceEl.textContent = "Источник: " + (node.dataset.source || "будет указан после сверки корпуса.");
+      });
+    });
+
+    const chartTitle = document.getElementById("chart-title");
+    document.querySelectorAll("[data-varga]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-varga]").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        chartTitle.textContent = button.dataset.varga;
+      });
+    });
+  </script>
+</body>
+</html>

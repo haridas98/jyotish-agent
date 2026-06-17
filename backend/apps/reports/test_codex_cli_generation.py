@@ -633,7 +633,7 @@ def test_generate_compatibility_codex_cli_analysis_saves_full_private_report():
 
 
 @pytest.mark.django_db
-@override_settings(VL_DATABASE_URL="")
+@override_settings(VL_DATABASE_URL="", CODEX_GENERATION_QUEUE_ENABLED=False)
 def test_compatibility_codex_analysis_api_returns_saved_draft(monkeypatch):
     user = get_user_model().objects.create_user(username="compat-generate-owner", password="strong-pass-108")
     captured = {}
@@ -710,7 +710,7 @@ def test_compatibility_codex_analysis_rejects_other_users_profile_id(monkeypatch
 
 
 @pytest.mark.django_db
-@override_settings(VL_DATABASE_URL="")
+@override_settings(VL_DATABASE_URL="", CODEX_GENERATION_QUEUE_ENABLED=False)
 def test_compatibility_codex_analysis_trusts_server_relationship_status(monkeypatch):
     user = get_user_model().objects.create_user(username="compat-relation-owner", password="strong-pass-108")
     profile_a = _codex_api_self_profile(user)
@@ -958,7 +958,7 @@ def test_compatibility_codex_analysis_chat_rejects_other_users_report(monkeypatc
 
 
 @pytest.mark.django_db
-@override_settings(VL_DATABASE_URL="")
+@override_settings(VL_DATABASE_URL="", CODEX_GENERATION_QUEUE_ENABLED=False)
 def test_birth_codex_analysis_api_returns_saved_draft(monkeypatch):
     user = get_user_model().objects.create_user(username="birth-generate-owner", password="strong-pass-108")
     profile = _codex_api_self_profile(user)
@@ -1105,6 +1105,40 @@ def test_birth_codex_analysis_api_queues_generation_when_queue_enabled(monkeypat
 
 
 @pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="", CODEX_GENERATION_QUEUE_ENABLED=True)
+def test_compatibility_codex_analysis_api_queues_generation_when_queue_enabled(monkeypatch):
+    user = get_user_model().objects.create_user(username="compat-queue-owner", password="strong-pass-108")
+    cache.clear()
+
+    monkeypatch.setattr(
+        "apps.reports.views.generate_compatibility_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("queued compatibility response must not run Codex inline"),
+    )
+
+    payload = {
+        "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+        "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur"},
+    }
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post("/api/reports/compatibility/codex-analysis", payload, format="json")
+
+    assert response.status_code == 202
+    assert response.data["queued"] is True
+    assert response.data["job"]["status"] == GeneratedAnalysisJob.Status.QUEUED
+    job = GeneratedAnalysisJob.objects.get(user=user, kind="compatibility_codex_cli")
+    assert job.status == GeneratedAnalysisJob.Status.QUEUED
+    assert job.request_snapshot["person_a"]["birth_date"] == "2000-01-01"
+    assert job.request_snapshot["person_b"]["birth_date"] == "2001-02-03"
+
+    second_response = client.post("/api/reports/compatibility/codex-analysis", payload, format="json")
+
+    assert second_response.status_code == 202
+    assert second_response.data["job"]["id"] == job.id
+    assert GeneratedAnalysisJob.objects.filter(user=user, kind="compatibility_codex_cli").count() == 1
+
+
+@pytest.mark.django_db
 def test_process_generation_jobs_completes_queued_birth_job(monkeypatch):
     user = get_user_model().objects.create_user(username="birth-worker-owner", password="strong-pass-108")
     job = GeneratedAnalysisJob.objects.create(
@@ -1144,7 +1178,53 @@ def test_process_generation_jobs_completes_queued_birth_job(monkeypatch):
 
 
 @pytest.mark.django_db
-@override_settings(VL_DATABASE_URL="")
+def test_process_generation_jobs_completes_queued_compatibility_job(monkeypatch):
+    user = get_user_model().objects.create_user(username="compat-worker-owner", password="strong-pass-108")
+    job = GeneratedAnalysisJob.objects.create(
+        user=user,
+        kind="compatibility_codex_cli",
+        status=GeneratedAnalysisJob.Status.QUEUED,
+        request_snapshot={
+            "person_a": {"birth_date": "2000-01-01", "birth_time": "15:30", "place_name": "Vrindavan"},
+            "person_b": {"birth_date": "2001-02-03", "birth_time": "09:10", "place_name": "Mayapur"},
+        },
+    )
+
+    def fake_generate(data, **kwargs):
+        draft = GeneratedAnalysisDraft.objects.create(
+            user=user,
+            kind="compatibility_codex_cli",
+            review_status="private_final",
+            source_policy="private_shastra_research_first",
+            provider="codex_cli",
+            model="test",
+            input_snapshot=data,
+            packet_snapshot={},
+            output_json={"sections": [{"title": "Ready", "body": "Done."}]},
+            prompt_markdown="",
+        )
+        return {
+            "id": draft.id,
+            "kind": "compatibility_codex_cli",
+            "sections": [{"title": "Ready", "body": "Done."}],
+        }
+
+    monkeypatch.setattr(
+        "apps.reports.management.commands.process_generation_jobs.generate_compatibility_codex_cli_analysis",
+        fake_generate,
+    )
+
+    call_command("process_generation_jobs", limit=1, skip_evidence_refresh=True)
+
+    job.refresh_from_db()
+    assert job.status == GeneratedAnalysisJob.Status.COMPLETE
+    assert job.started_at is not None
+    assert job.completed_at is not None
+    assert job.analysis_id is not None
+
+
+@pytest.mark.django_db
+@override_settings(VL_DATABASE_URL="", CODEX_GENERATION_QUEUE_ENABLED=False)
 def test_birth_codex_analysis_api_can_force_regenerate(monkeypatch):
     user = get_user_model().objects.create_user(username="birth-force-owner", password="strong-pass-108")
     profile = _codex_api_self_profile(user)
@@ -1259,7 +1339,12 @@ def test_birth_codex_analysis_api_rejects_second_running_user_generation(monkeyp
 
 
 @pytest.mark.django_db
-@override_settings(VL_DATABASE_URL="", CODEX_MAX_RUNNING_GENERATIONS_PER_USER=1, CODEX_RUNNING_GENERATION_STALE_SECONDS=300)
+@override_settings(
+    VL_DATABASE_URL="",
+    CODEX_GENERATION_QUEUE_ENABLED=False,
+    CODEX_MAX_RUNNING_GENERATIONS_PER_USER=1,
+    CODEX_RUNNING_GENERATION_STALE_SECONDS=300,
+)
 def test_birth_codex_analysis_api_ignores_stale_running_user_generation(monkeypatch):
     user = get_user_model().objects.create_user(username="birth-stale-limit", password="strong-pass-108")
     profile = _codex_api_self_profile(user)

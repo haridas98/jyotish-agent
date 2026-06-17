@@ -1,0 +1,381 @@
+.workbench-v2-page {
+  min-height: 100vh;
+  background: #eef5f4;
+  color: #132831;
+  padding: 14px;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+.workbench-v2-page button {
+  font: inherit;
+}
+
+.v2-topbar,
+.v2-header-card,
+.v2-card,
+.v2-inspector,
+.v2-block {
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid #d5e2e4;
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgba(10, 45, 52, .08);
+}
+
+.v2-topbar {
+  min-height: 58px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.v2-topbar strong,
+.v2-header-card h1,
+.v2-card h2,
+.v2-inspector h2 {
+  margin: 0;
+}
+
+.v2-topbar span,
+.v2-header-card p,
+.v2-card small,
+.v2-inspector p {
+  color: #647985;
+}
+
+.v2-mode-switch,
+.v2-toolbar,
+.v2-varga-selector,
+.v2-inspector-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.v2-mode-switch button,
+.v2-toolbar button,
+.v2-varga-selector button,
+.v2-inspector-tabs button,
+.v2-chip,
+.v2-table-card button,
+.entity-link {
+  border: 1px solid #d5e2e4;
+  background: #fff;
+  color: #07585f;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.v2-mode-switch button.active,
+.v2-varga-selector button:hover,
+.v2-table-card button:hover,
+.entity-link:hover {
+  background: #07585f;
+  border-color: #07585f;
+  color: #fff;
+}
+
+.v2-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) 360px;
+  grid-template-areas:
+    "header header"
+    "main inspector"
+    "bottom inspector";
+  gap: 12px;
+  align-items: start;
+}
+
+.v2-region-header {
+  grid-area: header;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.v2-region-main {
+  grid-area: main;
+  display: grid;
+  grid-template-columns: minmax(420px, .9fr) minmax(320px, .7fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.v2-region-bottom {
+  grid-area: bottom;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.v2-region-inspector {
+  grid-area: inspector;
+  position: sticky;
+  top: 14px;
+}
+
+.v2-header-card {
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.v2-header-card h1 {
+  font-size: 22px;
+}
+
+.v2-header-facts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: end;
+}
+
+.v2-header-facts span,
+.v2-chip {
+  background: #e8f6f3;
+}
+
+.v2-card {
+  overflow: hidden;
+}
+
+.v2-card-head {
+  min-height: 45px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #d5e2e4;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.v2-chart-card {
+  grid-row: span 2;
+}
+
+.v2-north-chart {
+  position: relative;
+  aspect-ratio: 1;
+  margin: 12px;
+  background: #fffefa;
+  border: 1.5px solid #c78b24;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.v2-north-chart svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.v2-north-chart path {
+  fill: none;
+  stroke: #d39a36;
+  stroke-width: .35;
+}
+
+.v2-chart-cell {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 94px;
+  text-align: center;
+  z-index: 2;
+  color: #80590d;
+  font-weight: 900;
+}
+
+.v2-chart-cell button {
+  border: 0;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: inherit;
+  font-weight: 900;
+}
+
+.v2-chart-cell button:hover {
+  background: #e8f6f3;
+}
+
+.v2-planet {
+  display: inline-block;
+  color: #18384c !important;
+  font-size: 12px;
+  text-decoration: underline dotted rgba(7, 88, 95, .45);
+  text-underline-offset: 2px;
+}
+
+.v2-summary-grid,
+.v2-layer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.v2-fact,
+.v2-layer-grid label {
+  border: 1px solid #dbe8e9;
+  background: #fff;
+  border-radius: 12px;
+  padding: 9px;
+  text-align: left;
+}
+
+.v2-fact span,
+.v2-dasha-list span {
+  display: block;
+  color: #647985;
+  font-size: 12px;
+}
+
+.v2-big-value {
+  padding: 12px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.v2-table-scroll {
+  overflow: auto;
+}
+
+.v2-table-card table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.v2-table-card th,
+.v2-table-card td {
+  border-bottom: 1px solid #e1ebee;
+  padding: 7px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.v2-table-card th {
+  background: #f4faf9;
+  color: #647985;
+}
+
+.v2-house-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.v2-house-grid button {
+  min-height: 62px;
+  text-align: left;
+}
+
+.v2-house-grid span {
+  display: block;
+  color: #647985;
+}
+
+.v2-dasha-list {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.v2-dasha-list div {
+  border: 1px solid #dbe8e9;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.v2-inspector {
+  padding: 12px;
+  min-height: 360px;
+}
+
+.v2-inspector-title span {
+  color: #c78b24;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.v2-inspector-tabs {
+  margin: 12px 0;
+}
+
+.v2-warning {
+  border: 1px solid #edc88c;
+  background: #fff7e8;
+  color: #7c5311 !important;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.v2-source-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.v2-source-list span {
+  border-radius: 999px;
+  background: #e8f6f3;
+  color: #07585f;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.v2-missing {
+  padding: 12px;
+  border-style: dashed;
+}
+
+@media (max-width: 1180px) {
+  .v2-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main"
+      "inspector"
+      "bottom";
+  }
+
+  .v2-region-main,
+  .v2-region-bottom,
+  .v2-region-header {
+    grid-template-columns: 1fr;
+  }
+
+  .v2-region-inspector {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .workbench-v2-page {
+    padding: 8px;
+  }
+
+  .v2-summary-grid,
+  .v2-layer-grid,
+  .v2-house-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .v2-table-card table {
+    min-width: 620px;
+  }
+}

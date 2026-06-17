@@ -1,0 +1,66 @@
+{
+  "birth": {
+    "date": "1998-04-30",
+    "time": "13:45",
+    "timezone": "Asia/Yekaterinburg",
+    "utc_offset": "+06:00",
+    "utc_datetime": "1998-04-30T07:45:00+00:00"
+  },
+  "ascendant": {
+    "rashi": "Karka",
+    "nakshatra": "Ashlesha",
+    "pada": 3,
+    "navamsa": "Kumbha"
+  },
+  "grahas": {
+    "Surya": ["Mesha", "Bharani", 1, "Simha"],
+    "Chandra": ["Mithuna", "Ardra", 1, "Dhanu"],
+    "Mangala": ["Mesha", "Bharani", 2, "Kanya"],
+    "Budha": ["Meena", "Revati", 1, "Dhanu"],
+    "Guru": ["Kumbha", "Purva Bhadrapada", 2, "Vrishabha"],
+    "Shukra": ["Meena", "Purva Bhadrapada", 4, "Karka"],
+    "Shani": ["Mesha", "Ashwini", 1, "Mesha"],
+    "Rahu": ["Simha", "Purva Phalguni", 1, "Simha"],
+    "Ketu": ["Kumbha", "Shatabhisha", 3, "Kumbha"]
+  },
+  "vargas": {
+    "D1": {
+      "Lagna": "Karka",
+      "Surya": "Mesha",
+      "Chandra": "Mithuna",
+      "Shani": "Mesha"
+    },
+    "D9": {
+      "Lagna": "Kumbha",
+      "Surya": "Simha",
+      "Chandra": "Dhanu",
+      "Shani": "Mesha"
+    },
+    "D10": {
+      "Lagna": "Vrischika",
+      "Surya": "Kanya",
+      "Chandra": "Simha",
+      "Shani": "Mesha"
+    },
+    "D12": {
+      "Lagna": "Vrishabha",
+      "Surya": "Tula",
+      "Chandra": "Kanya",
+      "Shani": "Mesha"
+    },
+    "D60": {
+      "Lagna": "Kanya",
+      "Surya": "Vrischika",
+      "Chandra": "Tula",
+      "Shani": "Karka"
+    }
+  },
+  "panchanga": {
+    "tithi": "Panchami",
+    "paksha": "Shukla",
+    "vara": "Guruvara",
+    "yoga": "Sukarma",
+    "karana": "Bava"
+  },
+  "vimshottari": ["Rahu", "Guru", "Shani"]
+}

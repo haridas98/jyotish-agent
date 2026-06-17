@@ -9,19 +9,19 @@ import { fetchAnalysisHistoryBySlug, type AnalysisHistoryDetail } from "@/lib/ap
 function friendlyTransitError(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
   if (/401|403|auth|credential|forbidden|permission/i.test(message)) {
-    return "Войдите в аккаунт, чтобы открыть личный обзор текущего дня.";
+    return "Войдите, чтобы открыть обзор.";
   }
   if (/404|not found/i.test(message)) {
-    return "Обзор текущего дня не найден или недоступен этому пользователю.";
+    return "Обзор не найден.";
   }
-  return message || "Ошибка загрузки обзора текущего дня";
+  return "Не удалось открыть обзор.";
 }
 
 export default function TransitDetailPage() {
   const params = useParams<{ slug: string }>();
   const slug = Array.isArray(params.slug) ? params.slug.join("/") : params.slug;
   const [detail, setDetail] = useState<AnalysisHistoryDetail | null>(null);
-  const [status, setStatus] = useState("Загружаю обзор текущего дня...");
+  const [status, setStatus] = useState("Загружаю обзор...");
 
   useEffect(() => {
     let mounted = true;
@@ -41,9 +41,11 @@ export default function TransitDetailPage() {
     };
   }, [slug]);
 
+  const showStatus = /ошиб|не удалось|войдите|не найден|недоступ/i.test(status);
+
   return (
     <ProductShell active="transits">
-      {status ? <div className="product-status">{status}</div> : null}
+      {showStatus ? <div className="product-status">{status}</div> : null}
       {detail ? <AnalysisReader detail={detail} chatMode="current-day" /> : null}
     </ProductShell>
   );

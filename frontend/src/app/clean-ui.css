@@ -1,0 +1,2723 @@
+:root {
+  --clean-bg: #eef5f7;
+  --clean-panel: #ffffff;
+  --clean-ink: #102832;
+  --clean-muted: #647783;
+  --clean-line: #c8d7de;
+  --clean-accent: #006d72;
+  --clean-gold: #bf7a18;
+}
+
+body {
+  background: var(--clean-bg) !important;
+  color: var(--clean-ink) !important;
+}
+
+.product-main,
+.workspace,
+.product-workspace .product-main {
+  padding: 12px !important;
+}
+
+.product-shell-context span,
+.sidebar-title p,
+.product-page-head p,
+.chart-title-block > span,
+.chart-mode-summary,
+.chart-reference-row,
+.chart-notation-legend,
+.calculation-result,
+.analysis-tab-shell,
+.analysis-workspace.analysis-workspace-idle,
+.start-chart-notice,
+.varga-atlas-status,
+.varga-atlas-head span,
+.varga-atlas-placeholder em,
+.varga-atlas-filter button strong,
+.workflow-table,
+.interaction-guide-grid,
+.interaction-role-copy,
+.compatibility-privacy-note,
+.private-history-gate span,
+.compatibility-saved-role-head strong,
+.compatibility-saved-role-head small,
+.product-page-head p,
+.profile-ai-note,
+.profile-role-focus,
+.profile-relationship-inbox,
+.ai-billing-status,
+.ai-billing-note,
+.source-corpus-summary,
+.source-table,
+.accuracy-subheading,
+.review-notes,
+.generation-jobs-panel {
+  display: none !important;
+}
+
+.history-row aside,
+.compatibility-saved-role-grid small,
+.compatibility-calculation-ledger,
+.compatibility-varga-list,
+.compatibility-context-score small,
+.compatibility-pair-focus,
+.interaction-focus-grid,
+.interaction-pair-preview,
+.compatibility-person-facts,
+.compatibility-mini-chart-board,
+.interaction-create-panel p,
+.draft-generation-strip,
+.generated-draft > div:first-child,
+.report-preview .ai-billing-status,
+.report-preview .ai-billing-note {
+  display: none !important;
+}
+
+.private-history-gate span {
+  display: block !important;
+  color: var(--clean-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+}
+
+.history-empty,
+.private-history-gate {
+  width: 100% !important;
+  max-width: none !important;
+  justify-self: stretch !important;
+}
+
+.history-row,
+.interaction-card,
+.compatibility-pair-card {
+  min-height: 56px !important;
+}
+
+.history-row > div,
+.interaction-card-head > div {
+  gap: 3px !important;
+}
+
+.history-row strong,
+.interaction-card strong {
+  color: var(--clean-ink) !important;
+}
+
+.history-row span,
+.interaction-card small {
+  color: var(--clean-muted) !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
+
+.history-row .history-row-meta {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  color: var(--clean-muted) !important;
+  font-size: 11px !important;
+  font-weight: 780 !important;
+  line-height: 1.2 !important;
+}
+
+.compatibility-saved-role-head small,
+.compatibility-saved-role-head strong {
+  display: none !important;
+}
+
+.compatibility-saved-role-head {
+  min-height: 42px !important;
+  align-items: center !important;
+}
+
+.compatibility-saved-role-head span {
+  color: var(--clean-ink) !important;
+  font-size: 16px !important;
+  font-weight: 850 !important;
+}
+
+.compatibility-person-core {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin-top: 8px !important;
+}
+
+.compatibility-person-core span {
+  border: 1px solid #d7e3e8 !important;
+  border-radius: 999px !important;
+  background: #f6fafb !important;
+  color: var(--clean-muted) !important;
+  padding: 5px 8px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+.interaction-create-panel {
+  padding: 10px !important;
+}
+
+.interaction-create-panel > div:first-child {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+
+.interaction-create-panel h2 {
+  margin: 0 !important;
+  color: var(--clean-ink) !important;
+  font-size: 18px !important;
+}
+
+.product-page-head {
+  justify-content: flex-end !important;
+  min-height: 52px !important;
+}
+
+.product-page-head > div {
+  display: none !important;
+}
+
+.product-page-head .primary-link-button,
+.product-page-head .secondary-button {
+  margin-left: auto !important;
+}
+
+.private-history-gate + .product-status,
+.product-status:has(+ .private-history-gate) {
+  display: none !important;
+}
+
+.product-auth-mode-switch {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 4px !important;
+  margin: 10px 0 !important;
+  padding: 4px !important;
+  border: 1px solid var(--clean-line) !important;
+  border-radius: 8px !important;
+  background: #f4f8fa !important;
+}
+
+.product-auth-mode-switch button {
+  min-height: 34px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: var(--clean-muted) !important;
+  font-weight: 800 !important;
+}
+
+.product-auth-mode-switch button.active {
+  background: #ffffff !important;
+  color: var(--clean-accent) !important;
+  box-shadow: 0 6px 18px rgba(16, 40, 50, 0.12) !important;
+}
+
+.product-shell-topbar,
+.topbar,
+.product-page-head,
+.chart-panel,
+.birth-panel:not(.compact),
+.history-row,
+.compatibility-saved-role-context,
+.compatibility-pair-card,
+.interaction-card,
+.chart-secondary-workspace {
+  background: var(--clean-panel) !important;
+  border: 1px solid var(--clean-line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 14px 34px rgba(16, 40, 50, 0.1) !important;
+}
+
+.product-shell-topbar,
+.topbar {
+  min-height: 56px !important;
+  padding: 10px 14px !important;
+}
+
+.product-page-head,
+.chart-panel > .panel-heading {
+  align-items: center !important;
+  min-height: 56px !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+}
+
+.product-page-head h1,
+.chart-title-block h2,
+.topbar-title strong,
+.product-shell-context strong {
+  color: var(--clean-ink) !important;
+  font-size: 22px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.1 !important;
+}
+
+.chart-layout,
+.content-grid:has(.birth-panel.compact) .chart-layout {
+  display: grid !important;
+  grid-template-columns: minmax(390px, 0.72fr) minmax(500px, 1.28fr) !important;
+  gap: 10px !important;
+  align-items: start !important;
+  padding: 10px !important;
+}
+
+.chart-visual-stack,
+.chart-data-stack {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.chart-box,
+.content-grid:has(.birth-panel.compact) .chart-box {
+  aspect-ratio: 1 !important;
+  width: 100% !important;
+  max-width: 560px !important;
+  border: 1px solid rgba(191, 122, 24, 0.72) !important;
+  border-radius: 8px !important;
+  background: #fffdfa !important;
+}
+
+.chart-side-table {
+  border: 1px solid #d7e3e8 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.chart-side-table-head span {
+  display: none !important;
+}
+
+.varga-atlas-title em,
+.varga-atlas-placeholder em,
+.varga-atlas-filter strong,
+.classical-status-grid,
+.classical-list small,
+.classical-list:first-child,
+.classical-list:nth-child(n + 3),
+.antardasha-panel > div:first-child > span,
+.antardasha-panel .workflow-note {
+  display: none !important;
+}
+
+.classical-panel > .panel-heading > span,
+.panel > .panel-heading > span {
+  display: none !important;
+}
+
+.classical-columns {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.classical-list {
+  min-width: 0 !important;
+}
+
+.varga-atlas-filter {
+  grid-template-columns: repeat(4, minmax(56px, 1fr)) !important;
+}
+
+.content-grid:has(.birth-panel.compact) .chart-layout:has(.chart-side-table.empty),
+.chart-layout:has(.chart-side-table.empty) {
+  grid-template-columns: minmax(390px, 0.72fr) minmax(360px, 1fr) !important;
+}
+
+.content-grid:has(.birth-panel.compact) .chart-layout:has(.chart-side-table.empty) .chart-data-stack,
+.chart-layout:has(.chart-side-table.empty) .chart-data-stack {
+  display: block !important;
+}
+
+.chart-empty-state {
+  display: grid !important;
+  gap: 10px !important;
+  padding: 11px 12px !important;
+  border-bottom: 1px solid #edf3f5 !important;
+}
+
+.chart-empty-state strong {
+  color: var(--clean-ink) !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+}
+
+.chart-empty-state span {
+  color: var(--clean-muted) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.chart-empty-state .secondary-button {
+  justify-self: start !important;
+  min-height: 34px !important;
+}
+
+.chart-side-table-row,
+.chart-side-table-header {
+  min-height: 31px !important;
+}
+
+.chart-side-table.empty {
+  min-height: 399px !important;
+}
+
+.chart-side-table-skeleton .chart-side-table-row {
+  color: var(--clean-muted) !important;
+}
+
+.chart-side-table-skeleton .empty-row strong {
+  color: var(--clean-ink) !important;
+  opacity: 0.72 !important;
+}
+
+.chart-side-table-skeleton .empty-row span {
+  color: #a7b7bf !important;
+}
+
+.chart-heading-tools {
+  align-items: center !important;
+}
+
+.chart-heading-select {
+  display: block !important;
+  min-width: 170px !important;
+}
+
+.chart-heading-select .chart-display-controls {
+  display: block !important;
+}
+
+.chart-heading-select .chart-display-controls label {
+  min-height: 38px !important;
+  border-color: #d7e3e8 !important;
+  background: #f8fbfc !important;
+}
+
+.chart-heading-select .chart-display-controls span {
+  display: none !important;
+}
+
+.chart-heading-select .chart-display-controls select {
+  min-height: 34px !important;
+  padding: 0 10px !important;
+  color: var(--clean-accent) !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+.chart-help-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  border: 1px solid #d7e3e8 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  color: var(--clean-muted) !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  box-shadow: 0 4px 12px rgba(24, 55, 64, 0.05) !important;
+}
+
+.chart-help-toggle.active {
+  border-color: rgba(8, 102, 108, 0.42) !important;
+  background: #e8f6f4 !important;
+  color: var(--clean-accent) !important;
+}
+
+.chart-action-secondary,
+.chart-action-group.file {
+  display: none !important;
+}
+
+.chart-action-strip {
+  display: none !important;
+}
+
+.chart-action-group.primary {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.chart-action-strip button {
+  border: 1px solid #d7e3e8 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+}
+
+.chart-secondary-workspace {
+  display: none !important;
+}
+
+.chart-secondary-workspace > summary {
+  cursor: pointer !important;
+  min-height: 40px !important;
+  padding: 9px 12px !important;
+  color: var(--clean-accent) !important;
+  font-weight: 850 !important;
+}
+
+.chart-secondary-workspace:not([open]) .chart-workspace-body {
+  display: none !important;
+}
+
+.varga-atlas-board {
+  margin-top: 0 !important;
+  border-radius: 0 0 8px 8px !important;
+  box-shadow: none !important;
+}
+
+.varga-atlas-head {
+  min-height: 38px !important;
+  padding: 8px 10px !important;
+}
+
+.varga-atlas-filter {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.varga-atlas-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+}
+
+.varga-atlas-card {
+  min-height: 170px !important;
+}
+
+.glossary-popover,
+.chart-house-popover {
+  box-shadow: 0 18px 42px rgba(16, 40, 50, 0.22) !important;
+}
+
+@media (max-width: 1180px) {
+  .chart-layout,
+  .content-grid:has(.birth-panel.compact) .chart-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .chart-box,
+  .content-grid:has(.birth-panel.compact) .chart-box {
+    max-width: min(560px, 100%) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .content-grid:has(.birth-panel.compact) .chart-layout:has(.chart-side-table.empty),
+  .chart-layout:has(.chart-side-table.empty) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .content-grid:has(.birth-panel.compact) .chart-layout:has(.chart-side-table.empty) .chart-data-stack,
+  .chart-layout:has(.chart-side-table.empty) .chart-data-stack {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .product-main,
+  .workspace,
+  .product-workspace .product-main {
+    padding: 8px !important;
+  }
+
+  .chart-panel > .panel-heading {
+    align-items: flex-start !important;
+    padding: 10px !important;
+  }
+
+  .chart-title-block h2,
+  .product-page-head h1 {
+    font-size: 20px !important;
+  }
+
+  .chart-layout,
+  .content-grid:has(.birth-panel.compact) .chart-layout {
+    padding: 8px !important;
+  }
+
+  .chart-box,
+  .north-chart-box,
+  .south-chart-box,
+  .content-grid:has(.birth-panel.compact) .chart-box {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .chart-visual-stack,
+  .chart-layout,
+  .content-grid:has(.birth-panel.compact) .chart-visual-stack,
+  .content-grid:has(.birth-panel.compact) .chart-layout {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .chart-box svg,
+  .north-chart-box svg,
+  .south-chart-box svg {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+  }
+
+  .chart-side-table {
+    overflow-x: auto !important;
+  }
+
+  .chart-side-table-row,
+  .chart-side-table-header {
+    min-width: 660px !important;
+  }
+}
+
+body .chart-notation-legend,
+body .chart-mode-summary,
+body .chart-reference-row,
+body .calculation-result,
+body .chart-secondary-workspace,
+body .start-chart-notice,
+body .chart-layout .start-chart-notice,
+body .chart-visual-stack .start-chart-notice {
+  display: none !important;
+}
+
+/* Mobile must never keep the desktop chart/form split. */
+@media (max-width: 700px) {
+  body .content-grid,
+  body .content-grid.chart-ready,
+  body .content-grid:has(.birth-panel.compact),
+  body .content-grid:not(:has(.birth-panel.compact)),
+  body .content-grid.chart-ready:not(:has(.birth-panel.compact)) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  body .content-grid:not(:has(.birth-panel.compact)) .main-stack,
+  body .content-grid:not(:has(.birth-panel.compact)) .birth-panel:not(.compact),
+  body .content-grid .chart-panel {
+    grid-area: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body .content-grid:not(:has(.birth-panel.compact)) .main-stack {
+    order: -2 !important;
+  }
+
+  body .content-grid:not(:has(.birth-panel.compact)) .birth-panel:not(.compact) {
+    order: 2 !important;
+  }
+
+  body .content-grid:not(:has(.birth-panel.compact)) .birth-panel:not(.compact) {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body .chart-panel,
+  body .chart-layout,
+  body .chart-visual-stack,
+  body .chart-data-stack,
+  body .chart-side-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body .chart-box,
+  body .content-grid:has(.birth-panel.compact) .chart-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+  }
+
+  body .chart-svg {
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+/* Final product skin: tighter, quieter, less prototype-like. */
+:root {
+  --clean-bg: #f4f7f6;
+  --clean-panel: #ffffff;
+  --clean-ink: #10242b;
+  --clean-muted: #60727b;
+  --clean-line: #d6e1e4;
+  --clean-accent: #08666c;
+  --clean-accent-2: #0c7a67;
+  --clean-gold: #b57617;
+  --clean-warm: #fffaf1;
+}
+
+body {
+  background:
+    linear-gradient(180deg, #f8fbfb 0%, #eef5f3 42%, #f5f7f6 100%) !important;
+}
+
+.sidebar,
+.product-sidebar {
+  width: 224px !important;
+  background:
+    linear-gradient(180deg, #073d42 0%, #063138 56%, #09272d 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 18px 0 42px rgba(9, 39, 45, 0.18) !important;
+}
+
+.mark {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 8px !important;
+  border-color: rgba(219, 168, 74, 0.74) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #efc15b !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+}
+
+.sidebar-brand-row {
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.sidebar-title h1 {
+  font-size: 18px !important;
+  letter-spacing: 0 !important;
+}
+
+.app-nav {
+  gap: 5px !important;
+}
+
+.app-nav a {
+  min-height: 42px !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-weight: 780 !important;
+}
+
+.app-nav a:hover,
+.app-nav a.active,
+.app-nav a[aria-current="page"] {
+  border-color: rgba(255, 255, 255, 0.13) !important;
+  background: rgba(255, 255, 255, 0.13) !important;
+  color: #ffffff !important;
+}
+
+.topbar,
+.product-shell-topbar,
+.product-page-head,
+.chart-panel,
+.birth-panel:not(.compact),
+.history-row,
+.compatibility-pair-card,
+.interaction-card,
+.compatibility-saved-role-context,
+.interaction-create-panel,
+.history-empty {
+  border: 1px solid rgba(190, 208, 215, 0.9) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 10px 28px rgba(24, 55, 64, 0.09) !important;
+}
+
+.topbar,
+.product-shell-topbar {
+  min-height: 56px !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.product-page-head,
+.chart-panel > .panel-heading {
+  border-bottom-color: rgba(214, 225, 228, 0.9) !important;
+}
+
+.primary-button,
+.primary-link-button {
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, #0b7b70, #075f66) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(8, 102, 108, 0.18) !important;
+  font-weight: 850 !important;
+}
+
+.secondary-button,
+.chart-action-strip button,
+.chart-heading-select .chart-display-controls label {
+  border-color: rgba(194, 211, 216, 0.96) !important;
+  background: #ffffff !important;
+  color: var(--clean-accent) !important;
+  box-shadow: 0 4px 12px rgba(24, 55, 64, 0.05) !important;
+  font-weight: 820 !important;
+}
+
+.chart-panel {
+  overflow: hidden !important;
+}
+
+.chart-title-block h2,
+.product-page-head h1,
+.topbar-title strong,
+.product-shell-context strong {
+  font-size: 23px !important;
+  font-weight: 900 !important;
+  color: var(--clean-ink) !important;
+}
+
+.chart-layout,
+.content-grid:has(.birth-panel.compact) .chart-layout {
+  gap: 12px !important;
+}
+
+.chart-box,
+.content-grid:has(.birth-panel.compact) .chart-box {
+  border-color: rgba(181, 118, 23, 0.62) !important;
+  background: #fffdf8 !important;
+  box-shadow: inset 0 0 0 1px rgba(181, 118, 23, 0.08) !important;
+}
+
+.chart-side-table {
+  border-color: rgba(203, 218, 223, 0.96) !important;
+}
+
+.chart-side-table-head {
+  background: linear-gradient(180deg, #ffffff, #f7fbfb) !important;
+  border-bottom: 1px solid rgba(214, 225, 228, 0.9) !important;
+}
+
+.chart-empty-state {
+  background: linear-gradient(180deg, #ffffff, #f8fbfa) !important;
+}
+
+.history-row,
+.interaction-card,
+.compatibility-pair-card {
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease !important;
+}
+
+.history-row:hover,
+.interaction-card:hover,
+.compatibility-pair-card:hover {
+  border-color: rgba(8, 102, 108, 0.26) !important;
+  box-shadow: 0 12px 30px rgba(24, 55, 64, 0.12) !important;
+  transform: translateY(-1px) !important;
+}
+
+@media (max-width: 900px) {
+  body .product-app .product-sidebar .app-nav,
+  body .product-app.sidebar-collapsed .product-sidebar .app-nav,
+  body .app-nav {
+    grid-auto-columns: minmax(43px, 1fr) !important;
+    gap: 2px !important;
+    overflow-x: hidden !important;
+  }
+
+  body .product-app .app-nav a,
+  body .product-app.sidebar-collapsed .app-nav a,
+  body .app-nav a {
+    min-width: 43px !important;
+    width: auto !important;
+    padding: 4px 2px !important;
+  }
+
+  body .product-app .app-nav-label,
+  body .product-app.sidebar-collapsed .app-nav-label,
+  body .app-nav-label {
+    max-width: 43px !important;
+    font-size: 0 !important;
+  }
+
+  body .product-app .app-nav-label::after,
+  body .product-app.sidebar-collapsed .app-nav-label::after,
+  body .app-nav-label::after {
+    content: attr(data-short-label) !important;
+    display: block !important;
+    color: #fff !important;
+    font-size: 8px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .product-app,
+  .app-shell {
+    display: block !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .product-sidebar,
+  .sidebar {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+    top: auto !important;
+    z-index: 60 !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    width: auto !important;
+    padding: 5px !important;
+    border-radius: 14px !important;
+    background: rgba(5, 60, 67, 0.96) !important;
+    box-shadow: 0 18px 44px rgba(5, 45, 53, 0.34) !important;
+    overflow: hidden !important;
+  }
+
+  .sidebar-brand-row,
+  .sidebar-title,
+  .product-sidebar-footer {
+    display: none !important;
+  }
+
+  .product-sidebar .app-nav,
+  .sidebar .app-nav,
+  .app-nav {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: minmax(44px, 1fr) !important;
+    grid-template-columns: none !important;
+    gap: 2px !important;
+    margin: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  .product-sidebar .app-nav a,
+  .sidebar .app-nav a,
+  .app-nav a,
+  .product-sidebar .app-nav a.active,
+  .product-sidebar .app-nav a[aria-current="page"] {
+    order: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    gap: 2px !important;
+    width: auto !important;
+    min-width: 44px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 4px 3px !important;
+    border-radius: 10px !important;
+  }
+
+  .product-sidebar .app-nav a.active,
+  .product-sidebar .app-nav a[aria-current="page"],
+  .app-nav a.active,
+  .app-nav a[aria-current="page"] {
+    background: rgba(255, 255, 255, 0.18) !important;
+  }
+
+  .app-nav-icon,
+  .product-sidebar .app-nav-icon {
+    width: 21px !important;
+    min-width: 21px !important;
+    height: 21px !important;
+  }
+
+  .app-nav-label,
+  .product-sidebar .app-nav-label {
+    max-width: 48px !important;
+    color: #ffffff !important;
+    font-size: 0 !important;
+    font-weight: 760 !important;
+    line-height: 1 !important;
+  }
+
+  .app-nav-label::after,
+  .product-sidebar .app-nav-label::after {
+    content: attr(data-short-label) !important;
+    display: block !important;
+    color: #ffffff !important;
+    font-size: 8.5px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  .product-workspace,
+  .workspace {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .product-shell-topbar,
+  .topbar {
+    border-radius: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-top: 0 !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(18px) !important;
+    box-shadow: 0 8px 24px rgba(18, 52, 64, 0.08) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body .content-grid:has(.birth-panel.compact) .chart-layout,
+  body .chart-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  body .chart-visual-stack,
+  body .content-grid:has(.birth-panel.compact) .chart-visual-stack {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body .chart-box,
+  body .content-grid:has(.birth-panel.compact) .chart-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 !important;
+    min-width: 0 !important;
+    justify-self: start !important;
+  }
+
+  body .chart-svg {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    transform: none !important;
+  }
+}
+
+body .chart-notation-legend,
+body .chart-mode-summary,
+body .chart-reference-row,
+body .calculation-result,
+body .chart-secondary-workspace,
+body .analysis-tab-shell {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  body .app-shell,
+  body .product-app,
+  body .product-app.sidebar-collapsed {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body .sidebar,
+  body .product-sidebar,
+  body .product-app.sidebar-collapsed .product-sidebar {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: max(7px, env(safe-area-inset-bottom)) !important;
+    padding: 5px !important;
+    border-radius: 14px !important;
+  }
+
+  body .sidebar nav.app-nav,
+  body .product-sidebar nav.app-nav,
+  body .product-app .product-sidebar nav.app-nav,
+  body .product-app.sidebar-collapsed .product-sidebar nav.app-nav,
+  body main.app-shell aside.sidebar nav.app-nav,
+  body .app-nav {
+    height: 48px !important;
+    gap: 2px !important;
+  }
+
+  body .sidebar nav.app-nav a,
+  body .product-sidebar nav.app-nav a,
+  body .product-app .app-nav a,
+  body .product-app.sidebar-collapsed .app-nav a,
+  body main.app-shell aside.sidebar nav.app-nav a,
+  body .app-nav a {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 4px 1px !important;
+    border-radius: 10px !important;
+  }
+
+  body .app-nav-icon,
+  body .product-sidebar .app-nav-icon,
+  body .app-nav-icon svg,
+  body .product-sidebar .app-nav-icon svg {
+    width: 20px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+  }
+
+  body .app-nav-label::after,
+  body .product-sidebar .app-nav-label::after {
+    font-size: 8px !important;
+    font-weight: 820 !important;
+  }
+
+  body .workspace,
+  body .product-workspace,
+  body .product-workspace .product-main,
+  body .product-main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (min-width: 701px) {
+  html body .app-shell.sidebar-collapsed .chart-panel .chart-side-table,
+  html body .product-app.sidebar-collapsed .chart-panel .chart-side-table {
+    min-height: 540px !important;
+    height: 540px !important;
+  }
+}
+
+@media (min-width: 701px) {
+  html body .app-shell.sidebar-collapsed .chart-panel .chart-side-table,
+  html body .product-app.sidebar-collapsed .chart-panel .chart-side-table {
+    min-height: 540px !important;
+    height: 540px !important;
+  }
+}
+
+@media (min-width: 701px) {
+  body .app-shell.sidebar-collapsed .chart-panel .chart-side-table,
+  body .product-app.sidebar-collapsed .chart-panel .chart-side-table {
+    min-height: 540px !important;
+  }
+}
+
+@media (min-width: 701px) {
+  body .app-shell.sidebar-collapsed .chart-panel .chart-side-table,
+  body .product-app.sidebar-collapsed .chart-panel .chart-side-table {
+    min-height: 540px !important;
+  }
+}
+
+/* Desktop shell: keep navigation present, but give the chart more room. */
+@media (min-width: 701px) {
+  body .app-shell,
+  body .product-app {
+    grid-template-columns: 210px minmax(0, 1fr) !important;
+  }
+
+  body .sidebar,
+  body .product-sidebar {
+    width: 210px !important;
+    padding-inline: 9px !important;
+  }
+
+  body .app-nav a,
+  body .product-sidebar .app-nav a {
+    min-height: 40px !important;
+    padding: 6px 8px !important;
+  }
+
+  body .app-shell.sidebar-collapsed,
+  body .product-app.sidebar-collapsed {
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+  }
+
+  body .app-shell.sidebar-collapsed .sidebar,
+  body .product-app.sidebar-collapsed .product-sidebar {
+    width: 72px !important;
+    padding: 10px 8px !important;
+    align-items: center !important;
+  }
+
+  body .app-shell.sidebar-collapsed .sidebar-title,
+  body .product-app.sidebar-collapsed .sidebar-title,
+  body .app-shell.sidebar-collapsed .app-nav-label,
+  body .product-app.sidebar-collapsed .app-nav-label {
+    display: none !important;
+  }
+
+  body .app-shell.sidebar-collapsed .sidebar-brand-row,
+  body .product-app.sidebar-collapsed .sidebar-brand-row {
+    justify-content: center !important;
+  }
+
+  body .app-shell.sidebar-collapsed .app-nav,
+  body .product-app.sidebar-collapsed .app-nav {
+    width: 100% !important;
+    gap: 6px !important;
+  }
+
+  body .app-shell.sidebar-collapsed .app-nav a,
+  body .product-app.sidebar-collapsed .app-nav a {
+    justify-content: center !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+  }
+
+  body .app-shell.sidebar-collapsed .app-nav-icon,
+  body .product-app.sidebar-collapsed .app-nav-icon {
+    margin: 0 !important;
+  }
+
+  body .app-shell.sidebar-collapsed .chart-side-table,
+  body .product-app.sidebar-collapsed .chart-side-table {
+    min-height: 540px !important;
+  }
+}
+
+/* Final mobile dock override: later than every legacy mobile nav rule. */
+@media (max-width: 700px) {
+  body .app-shell,
+  body .product-app,
+  body .product-app.sidebar-collapsed {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body .sidebar,
+  body .product-sidebar,
+  body .product-app.sidebar-collapsed .product-sidebar {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: max(7px, env(safe-area-inset-bottom)) !important;
+    padding: 5px !important;
+    border-radius: 14px !important;
+  }
+
+  body .sidebar nav.app-nav,
+  body .product-sidebar nav.app-nav,
+  body .product-app .product-sidebar nav.app-nav,
+  body .product-app.sidebar-collapsed .product-sidebar nav.app-nav,
+  body main.app-shell aside.sidebar nav.app-nav,
+  body .app-nav {
+    height: 48px !important;
+    gap: 2px !important;
+  }
+
+  body .sidebar nav.app-nav a,
+  body .product-sidebar nav.app-nav a,
+  body .product-app .app-nav a,
+  body .product-app.sidebar-collapsed .app-nav a,
+  body main.app-shell aside.sidebar nav.app-nav a,
+  body .app-nav a {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 4px 1px !important;
+    border-radius: 10px !important;
+  }
+
+  body .app-nav-icon,
+  body .product-sidebar .app-nav-icon,
+  body .app-nav-icon svg,
+  body .product-sidebar .app-nav-icon svg {
+    width: 20px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+  }
+
+  body .app-nav-label::after,
+  body .product-sidebar .app-nav-label::after {
+    font-size: 8px !important;
+    font-weight: 820 !important;
+  }
+
+  body .workspace,
+  body .product-workspace,
+  body .product-workspace .product-main,
+  body .product-main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Mobile: the birth edit button is a tool, not a separate content row. */
+@media (max-width: 700px) {
+  body .content-grid:has(.birth-panel.compact) {
+    position: relative !important;
+  }
+
+  body .birth-panel.compact,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+    position: absolute !important;
+    top: -42px !important;
+    right: 10px !important;
+    z-index: 35 !important;
+    width: 36px !important;
+    max-width: 36px !important;
+    height: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip {
+    display: block !important;
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip button,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip button {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+  }
+}
+
+/* Desktop first screen: make the chart itself the primary object. */
+@media (min-width: 1181px) {
+  body .chart-layout,
+  body .content-grid:has(.birth-panel.compact) .chart-layout {
+    grid-template-columns: minmax(500px, 0.92fr) minmax(520px, 1.08fr) !important;
+    align-items: start !important;
+  }
+
+  body .chart-box,
+  body .content-grid:has(.birth-panel.compact) .chart-box {
+    max-width: 540px !important;
+  }
+
+  body .chart-data-stack,
+  body .content-grid:has(.birth-panel.compact) .chart-data-stack {
+    align-self: stretch !important;
+  }
+
+  body .chart-side-table,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table {
+    min-height: 523px !important;
+  }
+
+  body .chart-side-table-row,
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    min-height: 39px !important;
+  }
+}
+
+/* Mobile nav final pass: keep all destinations, reduce chrome. */
+@media (max-width: 700px) {
+  body .app-shell,
+  body .product-app,
+  body .product-app.sidebar-collapsed {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body .sidebar,
+  body .product-sidebar,
+  body .product-app.sidebar-collapsed .product-sidebar {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: max(7px, env(safe-area-inset-bottom)) !important;
+    padding: 5px !important;
+    border-radius: 14px !important;
+  }
+
+  body .sidebar nav.app-nav,
+  body .product-sidebar nav.app-nav,
+  body .product-app .product-sidebar nav.app-nav,
+  body .product-app.sidebar-collapsed .product-sidebar nav.app-nav,
+  body main.app-shell aside.sidebar nav.app-nav,
+  body .app-nav {
+    height: 48px !important;
+    gap: 2px !important;
+  }
+
+  body .sidebar nav.app-nav a,
+  body .product-sidebar nav.app-nav a,
+  body .product-app .app-nav a,
+  body .product-app.sidebar-collapsed .app-nav a,
+  body main.app-shell aside.sidebar nav.app-nav a,
+  body .app-nav a {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 4px 1px !important;
+    border-radius: 10px !important;
+  }
+
+  body .app-nav-icon,
+  body .product-sidebar .app-nav-icon,
+  body .app-nav-icon svg,
+  body .product-sidebar .app-nav-icon svg {
+    width: 20px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+  }
+
+  body .app-nav-label::after,
+  body .product-sidebar .app-nav-label::after {
+    font-size: 8px !important;
+    font-weight: 820 !important;
+  }
+
+  body .workspace,
+  body .product-workspace,
+  body .product-workspace .product-main,
+  body .product-main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Empty private pages already have the section name in the topbar/nav.
+   Keep only the useful state message inside the page body. */
+body .private-history-gate strong {
+  display: none !important;
+}
+
+body .private-history-gate span {
+  display: inline-flex !important;
+  color: var(--clean-muted) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+body .private-history-gate {
+  min-height: 46px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px 14px !important;
+}
+
+body .product-page-head > div,
+body .product-page-head h1,
+body .product-page-head p {
+  display: none !important;
+}
+
+body .product-page-head {
+  justify-content: flex-end !important;
+}
+
+body .birth-panel.compact,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+  width: min(420px, calc(100vw - 280px)) !important;
+  max-width: 420px !important;
+}
+
+body .birth-panel.compact .birth-compact-strip {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+body .birth-panel.compact .birth-compact-strip > div:first-child,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip > div:first-child {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 2px !important;
+}
+
+body .birth-panel.compact .birth-compact-strip > div:nth-child(2),
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip > div:nth-child(2) {
+  display: none !important;
+}
+
+body .birth-panel.compact .birth-compact-strip span {
+  color: var(--clean-muted) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+}
+
+body .birth-panel.compact .birth-compact-strip strong {
+  color: var(--clean-ink) !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+}
+
+@media (max-width: 700px) {
+  body .birth-panel.compact,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+/* Keep the navigation shell readable after aggressive text cleanup. */
+body .product-shell-topbar .product-shell-context {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 2px !important;
+}
+
+body .product-shell-topbar .product-shell-context span {
+  display: none !important;
+}
+
+body .product-shell-topbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+body .product-account-dock {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+body .topbar-title span {
+  display: inline !important;
+  min-width: 0 !important;
+  color: var(--clean-muted) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+  font-weight: 760 !important;
+}
+
+/* The topbar already carries date/place; keep the compact birth panel as edit control only. */
+body .birth-panel.compact,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+  width: auto !important;
+  max-width: none !important;
+  justify-self: end !important;
+}
+
+body .birth-panel.compact .birth-compact-strip,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip {
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+body .birth-panel.compact .birth-compact-strip > div,
+body .birth-panel.compact .birth-compact-strip > div:first-child,
+body .birth-panel.compact .birth-compact-strip > div:nth-child(2),
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip > div,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip > div:first-child,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip > div:nth-child(2) {
+  display: none !important;
+}
+
+body .birth-panel.compact .birth-compact-strip button,
+body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip button {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 700px) {
+  body .birth-panel.compact,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+    width: auto !important;
+    max-width: 48px !important;
+    margin: 0 8px -4px auto !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip button,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip button {
+    width: 38px !important;
+  }
+}
+
+/* Final D1 side table contract: keep the readable facts near the chart.
+   Raw longitude and D9 stay available through row/value clicks, not as always-on noise. */
+body .chart-side-table-grid,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-grid {
+  overflow-x: hidden !important;
+}
+
+body .chart-side-table-row,
+body .chart-side-table-header,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+  display: grid !important;
+  grid-template-columns:
+    minmax(72px, 0.85fr)
+    minmax(78px, 0.85fr)
+    minmax(132px, 1.25fr)
+    minmax(42px, 0.42fr)
+    minmax(132px, 1.1fr) !important;
+  min-width: 0 !important;
+}
+
+body .chart-side-table-row > *,
+body .chart-side-table-header > *,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > *,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > * {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+}
+
+body .chart-side-table-row > :nth-child(2),
+body .chart-side-table-row > :nth-child(7),
+body .chart-side-table-header > :nth-child(2),
+body .chart-side-table-header > :nth-child(7),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(2),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(7),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(2),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(7) {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  body .chart-side-table,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table {
+    overflow-x: auto !important;
+  }
+
+  body .chart-side-table-row,
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    min-width: 0 !important;
+  }
+}
+
+/* Navigation reset: one product navbar, no mid-sidebar auth/forms, stable mobile bar. */
+body .product-app {
+  display: grid !important;
+  grid-template-columns: 224px minmax(0, 1fr) !important;
+  min-height: 100vh !important;
+  background: var(--clean-bg) !important;
+}
+
+body .product-app.sidebar-collapsed {
+  grid-template-columns: 68px minmax(0, 1fr) !important;
+}
+
+body .product-sidebar {
+  position: sticky !important;
+  top: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  height: 100vh !important;
+  padding: 14px 10px !important;
+  overflow: hidden auto !important;
+}
+
+body .sidebar-brand-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  min-height: 42px !important;
+}
+
+body .sidebar-collapse-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+body .product-app.sidebar-collapsed .sidebar-title,
+body .product-app.sidebar-collapsed .app-nav-label {
+  display: none !important;
+}
+
+body .product-app.sidebar-collapsed .product-sidebar {
+  align-items: center !important;
+  padding-inline: 8px !important;
+}
+
+body .product-app.sidebar-collapsed .sidebar-brand-row {
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+body .product-app.sidebar-collapsed .mark {
+  display: none !important;
+}
+
+body .product-app.sidebar-collapsed .app-nav {
+  width: 100% !important;
+}
+
+body .product-app.sidebar-collapsed .app-nav a {
+  justify-content: center !important;
+  width: 48px !important;
+  min-width: 48px !important;
+  padding: 0 !important;
+}
+
+body .product-workspace {
+  min-width: 0 !important;
+}
+
+body .product-shell-topbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+}
+
+body .product-account-name {
+  max-width: 160px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  color: var(--clean-muted) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+
+body .product-auth-popover-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 100 !important;
+  display: grid !important;
+  place-items: start end !important;
+  padding: 72px 18px 18px !important;
+  background: rgba(16, 36, 43, 0.12) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+body .product-auth-popover {
+  width: min(390px, calc(100vw - 32px)) !important;
+  border: 1px solid rgba(190, 208, 215, 0.95) !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 70px rgba(16, 36, 43, 0.2) !important;
+}
+
+body .workflow-plan-strip,
+body .workflow-panel > .panel-heading > span,
+body .workflow-panel > .pending-strip,
+body .workflow-note,
+body .shastra-audit-panel,
+body .shastra-evidence-panel,
+body .accuracy-panel,
+body .readiness-panel,
+body .readiness-note,
+body .evidence-review-list,
+body .dual-calculation-panel,
+body .source-search > span {
+  display: none !important;
+}
+
+body .analysis-tab-shell {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body .analysis-tabs {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+body .analysis-tabs button {
+  flex: 0 0 auto !important;
+  min-width: 112px !important;
+}
+
+body .analysis-more-tabs {
+  display: block !important;
+  flex: 0 0 150px !important;
+  min-width: 130px !important;
+}
+
+body .analysis-more-tabs > span {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  body .product-app,
+  body .product-app.sidebar-collapsed {
+    display: block !important;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body .product-sidebar,
+  body .product-app.sidebar-collapsed .product-sidebar {
+    position: fixed !important;
+    inset: auto 8px calc(8px + env(safe-area-inset-bottom)) 8px !important;
+    z-index: 90 !important;
+    display: block !important;
+    width: auto !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    padding: 6px !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+  }
+
+  body .product-sidebar .sidebar-brand-row,
+  body .product-sidebar .sidebar-title,
+  body .product-app.sidebar-collapsed .sidebar-brand-row,
+  body .product-app.sidebar-collapsed .sidebar-title {
+    display: none !important;
+  }
+
+  body .product-sidebar .app-nav,
+  body .product-app.sidebar-collapsed .product-sidebar .app-nav {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: minmax(46px, 1fr) !important;
+    grid-template-columns: none !important;
+    gap: 3px !important;
+    width: 100% !important;
+    height: 46px !important;
+    margin: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  body .product-sidebar .app-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body .product-sidebar .app-nav a,
+  body .product-app.sidebar-collapsed .product-sidebar .app-nav a {
+    display: grid !important;
+    place-items: center !important;
+    gap: 2px !important;
+    width: auto !important;
+    min-width: 46px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 4px 3px !important;
+    border-radius: 11px !important;
+  }
+
+  body .product-sidebar .app-nav-label,
+  body .product-app.sidebar-collapsed .product-sidebar .app-nav-label {
+    display: block !important;
+    max-width: 48px !important;
+    color: #ffffff !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+  }
+
+  body .product-sidebar .app-nav-label::after,
+  body .product-app.sidebar-collapsed .product-sidebar .app-nav-label::after {
+    content: attr(data-short-label) !important;
+    display: block !important;
+    color: #ffffff !important;
+    font-size: 8.5px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body .product-shell-topbar {
+    min-height: 52px !important;
+    padding: 8px 10px !important;
+  }
+
+  body .product-auth-popover-backdrop {
+    place-items: end stretch !important;
+    padding: 12px !important;
+  }
+
+  body .product-auth-popover {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body .product-sidebar .app-nav,
+  body .sidebar .app-nav,
+  body .product-app .product-sidebar .app-nav,
+  body .product-app.sidebar-collapsed .product-sidebar .app-nav,
+  body main.app-shell aside.sidebar nav.app-nav {
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    grid-auto-flow: initial !important;
+    grid-auto-columns: initial !important;
+    gap: 2px !important;
+    overflow: hidden !important;
+  }
+
+  body .product-sidebar .app-nav a,
+  body .sidebar .app-nav a,
+  body .product-app .app-nav a,
+  body .product-app.sidebar-collapsed .app-nav a,
+  body main.app-shell aside.sidebar nav.app-nav a {
+    min-width: 0 !important;
+    width: auto !important;
+    padding-inline: 2px !important;
+  }
+
+  body .product-sidebar .app-nav-label::after,
+  body .sidebar .app-nav-label::after,
+  body .app-nav-label::after {
+    font-size: 7.8px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body .chart-side-table {
+    overflow-x: hidden !important;
+  }
+
+  body .chart-side-table-grid,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-grid {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+
+  body .chart-side-table-row,
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    grid-template-columns: minmax(52px, 0.76fr) minmax(62px, 0.92fr) minmax(84px, 1.2fr) 30px !important;
+    gap: 4px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-inline: 6px !important;
+  }
+
+  body .chart-side-table-row > :nth-child(2),
+  body .chart-side-table-row > :nth-child(6),
+  body .chart-side-table-row > :nth-child(7),
+  body .chart-side-table-header > :nth-child(2),
+  body .chart-side-table-header > :nth-child(6),
+  body .chart-side-table-header > :nth-child(7),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(2),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(6),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(7),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(2),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(6),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(7) {
+    display: none !important;
+  }
+
+  body .chart-side-table-row > *,
+  body .chart-side-table-header > *,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > *,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > * {
+    min-width: 0 !important;
+  }
+}
+
+@media (min-width: 701px) {
+  body .chart-side-table-grid,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-grid {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+
+  body .chart-side-table-row,
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    grid-template-columns:
+      minmax(68px, 0.72fr)
+      minmax(74px, 0.78fr)
+      minmax(118px, 1.18fr)
+      minmax(36px, 0.38fr)
+      minmax(118px, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body .chart-side-table-row > *,
+  body .chart-side-table-header > *,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > *,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > * {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 900px) {
+  body main.app-shell aside.sidebar .sidebar-brand-row,
+  body main.app-shell aside.sidebar .sidebar-title,
+  body main.app-shell aside.sidebar .mark,
+  body main.app-shell aside.sidebar .sidebar-collapse-button {
+    display: none !important;
+  }
+
+  body main.app-shell aside.sidebar nav.app-nav {
+    height: 46px !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body .chart-panel > .panel-heading,
+  body .content-grid:has(.birth-panel.compact) .chart-panel > .panel-heading {
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 58px !important;
+  }
+
+  body .chart-title-block {
+    min-width: 72px !important;
+  }
+
+  body .chart-heading-tools {
+    flex: 0 1 auto !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  body .chart-heading-select {
+    width: 132px !important;
+    min-width: 0 !important;
+  }
+
+  body .chart-display-controls {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body .chart-display-controls label {
+    min-height: 38px !important;
+  }
+}
+
+body .chart-secondary-workspace,
+body .varga-atlas-board,
+body .varga-task-matrix,
+body .varga-scheme-matrix,
+body .practitioner-varga-rail,
+body .varga-coverage-summary,
+body .jaimini-pending-strip,
+body .key-varga-comparison {
+  display: none !important;
+}
+
+body .product-shell-context,
+body .product-shell-topbar .product-shell-context {
+  display: flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+}
+
+body .product-shell-context strong {
+  display: inline !important;
+  color: var(--clean-ink) !important;
+  font-size: 18px !important;
+  font-weight: 850 !important;
+  line-height: 1.1 !important;
+}
+
+body .product-page-head > div {
+  display: block !important;
+}
+
+body .product-page-head p {
+  display: none !important;
+}
+
+body .product-shell-topbar {
+  justify-content: space-between !important;
+  min-height: 50px !important;
+  padding: 8px 12px !important;
+  background: #ffffffeb !important;
+  border: 1px solid #bfd2dbc2 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 12px 28px rgba(16, 40, 50, 0.1) !important;
+}
+
+body .product-account-dock {
+  margin-left: auto !important;
+}
+
+body .product-account-button {
+  min-height: 34px !important;
+  border-radius: 8px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+body .product-page-head {
+  width: 100% !important;
+}
+
+body .product-page-head > div {
+  min-width: 0 !important;
+}
+
+@media (max-width: 700px) {
+  body .product-shell-topbar {
+    min-height: 46px !important;
+    padding: 7px 10px !important;
+  }
+
+  body .product-shell-context strong {
+    max-width: 180px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 16px !important;
+  }
+
+  body .product-page-head {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    min-height: 58px !important;
+    padding: 10px 12px !important;
+  }
+
+  body .product-page-head > div {
+    width: auto !important;
+    flex: 1 1 auto !important;
+  }
+
+  body .product-page-head h1 {
+    font-size: 19px !important;
+    line-height: 1.05 !important;
+  }
+
+  body .product-page-head .primary-link-button,
+  body .product-page-head .secondary-button {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  body .product-page-head a[aria-label="Добавить связь"] {
+    width: 38px !important;
+    min-width: 38px !important;
+    padding: 0 !important;
+    font-size: 18px !important;
+  }
+}
+/* Final product-shell cleanup: keep the working chart area flush after the sidebar. */
+@media (min-width: 1440px) {
+  body .workspace,
+  body .product-main {
+    max-width: none !important;
+  }
+
+  body .content-grid,
+  body .content-grid.chart-ready {
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+  }
+}
+
+body .content-grid:has(.birth-panel.compact) {
+  position: relative !important;
+}
+
+body .content-grid:has(.birth-panel.compact) .main-stack {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+body .birth-panel .settings-note {
+  display: none !important;
+}
+
+body .chart-side-table.empty,
+body .chart-side-table.empty + *,
+body .content-grid:has(.birth-panel.compact) .chart-side-table.empty {
+  display: none !important;
+}
+
+body .chart-layout:has(.chart-side-table.empty),
+body .content-grid:has(.birth-panel.compact) .chart-layout:has(.chart-side-table.empty) {
+  grid-template-columns: minmax(0, 560px) !important;
+  justify-content: start !important;
+}
+
+body .chart-visual-stack {
+  position: relative !important;
+}
+
+body .chart-loading-status {
+  position: absolute !important;
+  inset: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  pointer-events: none !important;
+}
+
+body .chart-loading-status strong {
+  color: #0c5962 !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1px solid rgba(184, 205, 215, 0.9) !important;
+  border-radius: 999px !important;
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 12px 30px rgba(15, 41, 55, 0.12) !important;
+}
+
+/* Mobile product navigation: one compact dock, no sidebar-like content. */
+@media (max-width: 700px) {
+  body .app-shell,
+  body .product-app,
+  body .product-app.sidebar-collapsed {
+    display: block !important;
+    min-height: 100dvh !important;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body .sidebar,
+  body .product-sidebar,
+  body .product-app.sidebar-collapsed .product-sidebar {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    z-index: 100 !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 6px !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: 16px !important;
+    background: rgba(5, 57, 65, 0.94) !important;
+    box-shadow: 0 20px 48px rgba(7, 35, 43, 0.28) !important;
+    backdrop-filter: blur(18px) !important;
+  }
+
+  body .sidebar-brand-row,
+  body .sidebar-title,
+  body .sidebar .mark,
+  body .sidebar-collapse-button,
+  body .product-sidebar .sidebar-brand-row,
+  body .product-sidebar .sidebar-title,
+  body .product-sidebar .mark,
+  body .product-sidebar .sidebar-collapse-button,
+  body .product-mode-switch,
+  body .product-sidebar-note,
+  body .product-sidebar-footer,
+  body .operator,
+  body .nav-group-label {
+    display: none !important;
+  }
+
+  body .sidebar nav.app-nav,
+  body .product-sidebar nav.app-nav,
+  body .product-app .product-sidebar nav.app-nav,
+  body .product-app.sidebar-collapsed .product-sidebar nav.app-nav,
+  body main.app-shell aside.sidebar nav.app-nav,
+  body .app-nav {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    grid-auto-columns: auto !important;
+    grid-auto-flow: column !important;
+    gap: 3px !important;
+    width: 100% !important;
+    height: 56px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  body .sidebar nav.app-nav a,
+  body .product-sidebar nav.app-nav a,
+  body .product-app .app-nav a,
+  body .product-app.sidebar-collapsed .app-nav a,
+  body main.app-shell aside.sidebar nav.app-nav a,
+  body .app-nav a {
+    order: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    gap: 2px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    padding: 5px 2px !important;
+    overflow: hidden !important;
+    color: rgba(255, 255, 255, 0.72) !important;
+    text-decoration: none !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  body .app-nav a.active,
+  body .app-nav a[aria-current="page"],
+  body .product-sidebar .app-nav a.active,
+  body .product-sidebar .app-nav a[aria-current="page"] {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.14) !important;
+  }
+
+  body .app-nav-icon,
+  body .product-sidebar .app-nav-icon {
+    width: 23px !important;
+    min-width: 23px !important;
+    height: 23px !important;
+  }
+
+  body .app-nav-icon svg,
+  body .product-sidebar .app-nav-icon svg {
+    display: block !important;
+    width: 23px !important;
+    height: 23px !important;
+    stroke: currentColor !important;
+  }
+
+  body .app-nav-label,
+  body .product-sidebar .app-nav-label {
+    display: block !important;
+    max-width: 100% !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body .app-nav-label::after,
+  body .product-sidebar .app-nav-label::after {
+    content: attr(data-short-label) !important;
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    color: inherit !important;
+    font-size: 8.5px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body .workspace,
+  body .product-workspace,
+  body .product-workspace .product-main,
+  body .product-main {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Internal pages already show the section title in the topbar. Keep page heads for actions only. */
+body .product-page-head > div,
+body .product-page-head h1,
+body .product-page-head p {
+  display: none !important;
+}
+
+body .product-page-head {
+  justify-content: flex-end !important;
+}
+
+body .settings-choice-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding: 12px !important;
+}
+
+body .settings-choice-group {
+  display: grid !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+body .settings-choice-group > strong {
+  color: var(--clean-ink) !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1.15 !important;
+}
+
+body .settings-choice-row {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  padding: 4px !important;
+  border: 1px solid var(--clean-line) !important;
+  border-radius: 10px !important;
+  background: #f4f8fa !important;
+}
+
+body .settings-choice-row.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+body .settings-choice-row button {
+  min-width: 0 !important;
+  min-height: 36px !important;
+  padding: 0 10px !important;
+  overflow: hidden !important;
+  color: var(--clean-muted) !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+body .settings-choice-row button.active {
+  color: #ffffff !important;
+  background: linear-gradient(180deg, #08747a, #045b62) !important;
+  box-shadow: 0 8px 18px rgba(4, 91, 98, 0.18) !important;
+}
+
+@media (max-width: 700px) {
+  body .settings-choice-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  body .settings-choice-row button {
+    min-height: 38px !important;
+  }
+}
+
+/* Last-mile chart table override: the primary view must be compact and factual.
+   Desktop: graha, rashi, nakshatra, house, status. Mobile: graha, rashi, nakshatra, house. */
+body .chart-side-table-grid,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-grid {
+  overflow-x: hidden !important;
+}
+
+body .chart-side-table-row,
+body .chart-side-table-header,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+  display: grid !important;
+  grid-template-columns:
+    minmax(68px, 0.78fr)
+    minmax(76px, 0.85fr)
+    minmax(124px, 1.22fr)
+    minmax(38px, 0.42fr)
+    minmax(124px, 1fr) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+body .chart-side-table-row > :nth-child(2),
+body .chart-side-table-row > :nth-child(7),
+body .chart-side-table-header > :nth-child(2),
+body .chart-side-table-header > :nth-child(7),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(2),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(7),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(2),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(7) {
+  display: none !important;
+}
+
+body .chart-side-table-row > :nth-child(6),
+body .chart-side-table-header > :nth-child(6),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(6),
+body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(6) {
+  display: inline-flex !important;
+}
+
+@media (max-width: 700px) {
+  body .chart-side-table-row,
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    grid-template-columns: minmax(52px, 0.76fr) minmax(62px, 0.92fr) minmax(84px, 1.2fr) 30px !important;
+  }
+
+  body .chart-side-table-row > :nth-child(6),
+  body .chart-side-table-header > :nth-child(6),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > :nth-child(6),
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > :nth-child(6) {
+    display: none !important;
+  }
+}
+
+/* Mobile first viewport: keep the working chart above the fold. */
+@media (max-width: 700px) {
+  body .topbar,
+  body .product-shell-topbar {
+    min-height: 50px !important;
+    padding: 7px 10px !important;
+  }
+
+  body .topbar-title,
+  body .product-shell-context {
+    gap: 4px !important;
+  }
+
+  body .topbar-title strong,
+  body .product-shell-context strong {
+    max-width: 220px !important;
+    overflow: hidden !important;
+    font-size: 18px !important;
+    line-height: 1.05 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body .topbar-title span {
+    display: none !important;
+  }
+
+  body .topbar-account,
+  body .product-account-dock {
+    min-width: auto !important;
+  }
+
+  body .topbar-account button,
+  body .product-account-dock button {
+    min-height: 32px !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+
+  body .birth-panel.compact,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact {
+    margin-top: -4px !important;
+  }
+
+  body .birth-panel.compact .birth-compact-strip button,
+  body .content-grid:has(.birth-panel.compact) .birth-panel.compact .birth-compact-strip button {
+    min-height: 32px !important;
+    height: 32px !important;
+  }
+
+  body .chart-panel > .panel-heading,
+  body .content-grid:has(.birth-panel.compact) .chart-panel > .panel-heading {
+    min-height: 50px !important;
+    padding: 8px 10px !important;
+  }
+
+  body .chart-title-block h2,
+  body .content-grid:has(.birth-panel.compact) .chart-title-block h2 {
+    font-size: 18px !important;
+  }
+
+  body .chart-heading-tools {
+    gap: 6px !important;
+  }
+
+  body .chart-heading-select {
+    width: 112px !important;
+  }
+
+  body .chart-display-controls label,
+  body .chart-help-toggle {
+    min-height: 34px !important;
+    height: 34px !important;
+  }
+
+  body .chart-display-controls label {
+    padding: 3px 5px !important;
+  }
+
+  body .chart-layout,
+  body .content-grid:has(.birth-panel.compact) .chart-layout {
+    padding-top: 6px !important;
+  }
+
+  body .chart-side-table-head {
+    min-height: 34px !important;
+    padding: 7px 9px !important;
+  }
+
+  body .chart-side-table-row,
+  body .chart-side-table-header,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header {
+    min-height: 32px !important;
+    padding-block: 4px !important;
+  }
+
+  body .chart-side-table-row > *,
+  body .chart-side-table-header > *,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row > *,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header > * {
+    align-items: center !important;
+    align-self: center !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  body .chart-side-table-row strong,
+  body .chart-side-table-row span,
+  body .chart-side-table-header span,
+  body .chart-side-table .glossary-trigger,
+  body .chart-side-table .calculation-value-help,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row strong,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-row span,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table-header span,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table .glossary-trigger,
+  body .content-grid:has(.birth-panel.compact) .chart-side-table .calculation-value-help {
+    min-height: 0 !important;
+    height: auto !important;
+    font-size: 10.5px !important;
+    line-height: 1.1 !important;
+  }
+}
+
+/* Brand/nav polish: replace the placeholder wordmark tile with a compact Jyotish seal. */
+body .mark.jyotish-mark,
+body .product-sidebar .mark.jyotish-mark {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 42px !important;
+  height: 42px !important;
+  border: 1px solid rgba(232, 176, 67, 0.58) !important;
+  border-radius: 12px !important;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 214, 129, 0.24), transparent 58%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.03)) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 14px 28px rgba(0, 0, 0, 0.18) !important;
+  color: #e4aa34 !important;
+  font-size: 0 !important;
+}
+
+body .mark.jyotish-mark svg,
+body .product-sidebar .mark.jyotish-mark svg {
+  display: block !important;
+  width: 30px !important;
+  height: 30px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+body .mark.jyotish-mark svg path:last-child,
+body .product-sidebar .mark.jyotish-mark svg path:last-child {
+  fill: rgba(228, 170, 52, 0.18) !important;
+}
+
+body .product-sidebar,
+body .sidebar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 28%),
+    linear-gradient(180deg, #053f47 0%, #052f37 52%, #03252d 100%) !important;
+}
+
+body .app-nav,
+body .product-sidebar .app-nav {
+  gap: 5px !important;
+}
+
+body .app-nav a,
+body .product-sidebar .app-nav a {
+  border: 1px solid transparent !important;
+  color: rgba(246, 252, 253, 0.76) !important;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease !important;
+}
+
+body .app-nav a:hover,
+body .product-sidebar .app-nav a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body .app-nav a.active,
+body .app-nav a[aria-current="page"],
+body .product-sidebar .app-nav a.active,
+body .product-sidebar .app-nav a[aria-current="page"] {
+  color: #ffffff !important;
+  background: linear-gradient(180deg, rgba(7, 123, 133, 0.9), rgba(5, 101, 110, 0.9)) !important;
+  border-color: rgba(255, 255, 255, 0.13) !important;
+  box-shadow: inset 3px 0 0 #e2a73b, 0 12px 24px rgba(0, 0, 0, 0.13) !important;
+}
+
+body .analysis-tab-shell {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  body .app-shell,
+  body .product-app,
+  body .product-app.sidebar-collapsed {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body .sidebar,
+  body .product-sidebar,
+  body .product-app.sidebar-collapsed .product-sidebar {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: max(7px, env(safe-area-inset-bottom)) !important;
+    padding: 5px !important;
+    border-radius: 14px !important;
+  }
+
+  body .sidebar nav.app-nav,
+  body .product-sidebar nav.app-nav,
+  body .product-app .product-sidebar nav.app-nav,
+  body .product-app.sidebar-collapsed .product-sidebar nav.app-nav,
+  body main.app-shell aside.sidebar nav.app-nav,
+  body .app-nav {
+    height: 48px !important;
+    gap: 2px !important;
+  }
+
+  body .sidebar nav.app-nav a,
+  body .product-sidebar nav.app-nav a,
+  body .product-app .app-nav a,
+  body .product-app.sidebar-collapsed .app-nav a,
+  body main.app-shell aside.sidebar nav.app-nav a,
+  body .app-nav a {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 4px 1px !important;
+    border-radius: 10px !important;
+  }
+
+  body .app-nav-icon,
+  body .product-sidebar .app-nav-icon,
+  body .app-nav-icon svg,
+  body .product-sidebar .app-nav-icon svg {
+    width: 20px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+  }
+
+  body .app-nav-label::after,
+  body .product-sidebar .app-nav-label::after {
+    font-size: 8px !important;
+    font-weight: 820 !important;
+  }
+
+  body .workspace,
+  body .product-workspace,
+  body .product-workspace .product-main,
+  body .product-main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  }
+}

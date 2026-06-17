@@ -60,7 +60,7 @@ const readerHelp = {
   },
   house_7: {
     title: "7 дом",
-    text: "Партнерство, брак, договоры и открытое взаимодействие. В совместимости это первая ось проверки.",
+    text: "Партнерство, брак, договоры, открытое взаимодействие и способность строить союз.",
   },
   house_8: {
     title: "8 дом",
@@ -128,7 +128,7 @@ const readerHelp = {
   },
   shadbala: {
     title: "Шадбала",
-    text: "Шесть групп расчётной силы грахи. Это слой проверки, а не самостоятельный окончательный вывод.",
+    text: "Шесть групп силы грахи: насколько устойчиво планета способна проявлять свои качества.",
   },
   combustion: {
     title: "Аста / сожжение",
@@ -175,12 +175,12 @@ export function HistoryList({ items, basePath, emptyText }: HistoryListProps) {
           <div>
             <strong>{formatHistoryTitle(item)}</strong>
             <span>{formatSnapshot(item.input_snapshot)}</span>
-            {item.excerpt ? <p>{item.excerpt}</p> : null}
+            <small className="history-row-meta">
+              {formatDate(item.created_at)}
+              {item.section_count ? ` · ${item.section_count} раздела` : ""}
+              {item.chat_count ? ` · ${item.chat_count} сообщений` : ""}
+            </small>
           </div>
-          <aside>
-            <span>{formatDate(item.created_at)}</span>
-            <small>{item.section_count} разд. · {item.chat_count} диал.</small>
-          </aside>
         </Link>
       ))}
     </div>
@@ -206,14 +206,6 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
           <div>
             <dt>Дата</dt>
             <dd>{formatDate(detail.analysis.created_at)}</dd>
-          </div>
-          <div>
-            <dt>Slug</dt>
-            <dd>{detail.analysis.slug}</dd>
-          </div>
-          <div>
-            <dt>Статус</dt>
-            <dd>{detail.analysis.review_status}</dd>
           </div>
         </dl>
       </header>
@@ -245,7 +237,7 @@ export function AnalysisReader({ detail, chatMode }: AnalysisReaderProps) {
             </article>
           ))
         ) : (
-          <div className="history-empty">В записи нет разделов отчёта.</div>
+          <div className="history-empty">В этом обзоре пока нет текста.</div>
         )}
       </section>
 
@@ -281,10 +273,6 @@ function ReaderHelp({ termKey, children }: { termKey: ReaderHelpKey; children: R
       ref={wrapRef}
       className={`reader-help${open ? " open" : ""}`}
       data-open={open ? "true" : "false"}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => setOpen(true)}
-      onBlur={() => setOpen(false)}
     >
       <button
         type="button"
@@ -362,11 +350,6 @@ function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail })
       <div className="compatibility-context-head">
         <div>
           <h2>Данные пары</h2>
-          <p>
-            {hasSavedPacket
-              ? "Сохранённый пакет расчёта: D1, ключевые варги, 7 дом и факторы совместимости."
-              : "Старый обзор без сохранённого расчётного пакета: показываю входные данные и обязательные слои проверки."}
-          </p>
         </div>
         <div className="compatibility-context-score">
           <span><ReaderHelp termKey="ashta_kuta">Ашта-кута</ReaderHelp></span>
@@ -383,7 +366,7 @@ function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail })
           </div>
           <small><ReaderHelp termKey="consent">{consentPolicy || "личная заметка или подтверждённая связь профилей"}</ReaderHelp></small>
         </div>
-        {rolePrompt ? <p>{rolePrompt}</p> : null}
+        {rolePrompt ? <p className="detail-muted-note">{rolePrompt}</p> : null}
         <div className="compatibility-saved-role-grid">
           <div>
             <span>Фокусные дома</span>
@@ -435,7 +418,7 @@ function CompatibilityPairContext({ detail }: { detail: AnalysisHistoryDetail })
             <div key={asText(row.key) || asText(row.name)}>
               <strong>{asText(row.name) || asText(row.key)}</strong>
               <span>{asText(row.score)}/{asText(row.max_score)}</span>
-              <small>{asText(row.details) || asText(row.status)}</small>
+              {asText(row.details) ? <small>{asText(row.details)}</small> : null}
             </div>
           ))}
         </div>
@@ -488,10 +471,12 @@ function BirthChartContext({ detail }: { detail: AnalysisHistoryDetail }) {
           </div>
         ))}
       </div>
-      <div className="birth-context-strip">
-        <span>{asText(facts.panchanga) || "Panchanga и варги сохранены в расчётном пакете обзора."}</span>
-        <span>{asText(facts.vimshopaka) || "D9/D10/D12/D30/D60 вынесены отдельно, чтобы не искать их в тексте."}</span>
-      </div>
+      {asText(facts.panchanga) || asText(facts.vimshopaka) ? (
+        <div className="birth-context-strip">
+          {asText(facts.panchanga) ? <span>{asText(facts.panchanga)}</span> : null}
+          {asText(facts.vimshopaka) ? <span>{asText(facts.vimshopaka)}</span> : null}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -549,7 +534,7 @@ function CurrentDayContext({ detail }: { detail: AnalysisHistoryDetail }) {
       )}
       {relatedProfiles.length ? (
         <div className="birth-context-strip">
-          <span>AI-вопросы по этому обзору получают контекст связанных карт из профиля.</span>
+          <span>Вопросы по этому обзору учитывают связанные карты профиля.</span>
           <span>{relatedProfiles.map((profile) => asText(profile.display_name || profile.profile_id)).filter(Boolean).slice(0, 4).join(" · ")}</span>
         </div>
       ) : null}
@@ -828,7 +813,7 @@ function AnalysisChatBox({
   const [messages, setMessages] = useState<CodexAnalysisChatMessage[]>(initialMessages);
   const [question, setQuestion] = useState("");
   const [status, setStatus] = useState(
-    mode === "disabled" ? "Диалог пока доступен только для Codex-обзоров." : "Можно задать вопрос по сохранённому обзору.",
+    mode === "disabled" ? "Диалог пока недоступен для этого обзора." : "Можно задать вопрос по сохранённому обзору.",
   );
   const [busy, setBusy] = useState(false);
 
@@ -848,7 +833,7 @@ function AnalysisChatBox({
     } catch (error) {
       setMessages([
         ...nextMessages,
-        { role: "assistant", content: error instanceof Error ? error.message : "Ошибка ответа" },
+        { role: "assistant", content: "Не удалось получить ответ. Попробуйте ещё раз." },
       ]);
       setStatus(isAnalysisInProgressError(error) ? "Ответ уже формируется." : "Не удалось получить ответ.");
     } finally {
@@ -861,16 +846,11 @@ function AnalysisChatBox({
       <div className="analysis-chat-head">
         <h2>Диалог</h2>
         <div className="analysis-chat-tools">
-          <strong>Codex CLI</strong>
+          <strong>Разбор</strong>
           <span>{status}</span>
         </div>
       </div>
       <div className="analysis-chat-thread">
-        {initialTruncated ? (
-          <div className="history-empty">
-            Показаны последние {initialLimit ?? Math.ceil(initialMessages.length / 2)} диалогов из {initialTotal ?? "всей истории"}.
-          </div>
-        ) : null}
         {messages.length ? (
           messages.map((message, index) => (
             <div className={`chat-message ${message.role}`} key={`${message.role}-${index}`}>
@@ -898,7 +878,14 @@ function AnalysisChatBox({
 }
 
 function formatHistoryTitle(item: AnalysisHistoryItem) {
-  return item.engine_label || item.first_section_title || `Обзор #${item.id}`;
+  const kind = item.kind.toLowerCase();
+  if (kind.includes("compatibility")) return "Совместимость";
+  if (kind.includes("current") || kind.includes("transit")) return "Текущий день";
+  if (kind.includes("birth") || kind.includes("personal")) return "Личный обзор";
+
+  const title = item.first_section_title?.trim();
+  if (title && !/codex|cli|qwen|deepseek|provider|engine/i.test(title)) return title;
+  return "Сохранённый обзор";
 }
 
 function formatDate(value: string) {

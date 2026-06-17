@@ -9,12 +9,12 @@ import { fetchAnalysisHistoryBySlug, type AnalysisHistoryDetail } from "@/lib/ap
 function friendlyReportError(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
   if (/401|403|auth|credential|forbidden|permission/i.test(message)) {
-    return "Войдите в аккаунт, чтобы открыть личный обзор.";
+    return "Войдите, чтобы открыть обзор.";
   }
   if (/404|not found/i.test(message)) {
-    return "Обзор не найден или недоступен этому пользователю.";
+    return "Обзор не найден.";
   }
-  return message || "Ошибка загрузки обзора";
+  return "Не удалось открыть обзор.";
 }
 
 export default function ReportDetailPage() {
@@ -46,10 +46,11 @@ export default function ReportDetailPage() {
       ? "current-day"
       : "birth"
     : "disabled";
+  const showStatus = /ошиб|не удалось|войдите|не найден|недоступ/i.test(status);
 
   return (
     <ProductShell active="reports">
-      {status ? <div className="product-status">{status}</div> : null}
+      {showStatus ? <div className="product-status">{status}</div> : null}
       {detail ? <AnalysisReader detail={detail} chatMode={chatMode} /> : null}
     </ProductShell>
   );

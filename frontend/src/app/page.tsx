@@ -4,8 +4,8 @@ import { FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState, ty
 import {
   askBirthCodexAnalysis,
   askCompatibilityCodexAnalysis,
+  calculateBirthChart,
   calculateCompatibility,
-  calculateDualCalculation,
   calculateSavedProfile,
   calculateMuhurta,
   calculateMundane,
@@ -17,7 +17,6 @@ import {
   fetchCurrentUser,
   fetchJHoraAccuracyReport,
   fetchParasharaLightPacketReport,
-  fetchShastraEvidence,
   fetchSourcePassages,
   fetchSourceWorks,
   fetchWitnessSummary,
@@ -49,7 +48,6 @@ import {
   type CompatibilityReport,
   type DayPeriod,
   type DashaPeriod,
-  type DualCalculationReport,
   type GrahaPosition,
   type GeneratedDraftAnalysis,
   type JHoraAccuracyReport,
@@ -60,7 +58,6 @@ import {
   type PlaceCandidate,
   type PrashnaReport,
   type ResearchSearchResult,
-  type ShastraEvidencePayload,
   type SourceInventory,
   type SourcePassageResult,
   type SourceWorkSummary,
@@ -71,7 +68,6 @@ import {
   type User,
   type VargaPlacement,
   type WitnessSummary,
-  type WorkflowInterpretationPlan,
   type VLSearchResult,
 } from "@/lib/api";
 import {
@@ -80,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { InterfaceModeSwitch, INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
+import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
 import { relationshipRoleDefinitions } from "@/lib/relationshipRoles";
@@ -127,6 +123,7 @@ type BirthFormDraft = {
   relatedProfileIds?: number[];
   showBirthEditor?: boolean;
   showAdvancedSettings?: boolean;
+  currentChartDefault?: boolean;
 };
 
 function readBirthFormDraft(): BirthFormDraft | null {
@@ -157,11 +154,87 @@ function browserStorageAvailable() {
   }
 }
 
-const sourceRows = [
-  ["Айанамша", "Lahiri", "Рабочий профиль; JHora diff подключён", "ready"],
-  ["Система карты", "Drik Siddhanta / Swiss-JPL", "Профиль JHora-сравнения подключён", "ready"],
-  ["Корпус VL", "База Шрилы Прабхупады", "Поиск подключён", "ready"],
-];
+function requestedAnalysisFromLocation(): AnalysisTab | null {
+  if (typeof window === "undefined") return null;
+  const requested = new URLSearchParams(window.location.search).get("analysis");
+  if (!requested || requested === "calculations" || requested === "accuracy") return null;
+  return analysisTabs.some((tab) => tab.key === requested) ? (requested as AnalysisTab) : null;
+}
+
+function localDateInputValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function localTimeInputValue(date = new Date()) {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function currentMayapurPayload(date: string, time: string, draft?: BirthFormDraft | null): BirthChartRequest {
+  return {
+    birth_date: date,
+    birth_time: time,
+    gender: "unknown",
+    place_name: "Маяпур",
+    zodiac: draft?.zodiac ?? "sidereal",
+    calculation_model: draft?.calculationModel ?? "drik_siddhanta",
+    ayanamsa: draft?.ayanamsa ?? "lahiri",
+    node_type: draft?.nodeType ?? "true",
+    ephemeris: draft?.ephemeris ?? "swiss",
+    house_system: draft?.houseSystem ?? "whole_sign",
+    bhava_system: draft?.bhavaSystem ?? "whole_sign",
+    varga_scheme: draft?.vargaScheme ?? "parashara",
+    sunrise_source: draft?.sunriseSource ?? "noaa",
+    timezone_source: draft?.timezoneSource ?? "iana",
+    shadbala_profile: draft?.shadbalaProfile ?? "bphs_classical",
+    timezone: "Asia/Kolkata",
+    latitude: 23.4241,
+    longitude: 88.3883,
+  };
+}
+
+function birthPayloadFromDraft(draft: BirthFormDraft): BirthChartRequest | null {
+  const manualLat = Number(String(draft.manualLatitude ?? "").replace(",", "."));
+  const manualLon = Number(String(draft.manualLongitude ?? "").replace(",", "."));
+  const hasManualPlace = Boolean(draft.manualTimezone?.trim() && draft.manualLatitude?.trim() && draft.manualLongitude?.trim());
+  if (hasManualPlace && (!Number.isFinite(manualLat) || !Number.isFinite(manualLon))) return null;
+  const selectedPlace = draft.selectedPlace;
+  return {
+    birth_date: draft.birthDate || localDateInputValue(),
+    birth_time: draft.birthTime || "",
+    gender: draft.gender ?? "unknown",
+    place_name: selectedPlace?.label ?? draft.placeName ?? "Маяпур",
+    ...(Array.isArray(draft.relatedProfileIds) && draft.relatedProfileIds.length ? { related_profile_ids: draft.relatedProfileIds } : {}),
+    zodiac: draft.zodiac ?? "sidereal",
+    calculation_model: draft.calculationModel ?? "drik_siddhanta",
+    ayanamsa: draft.ayanamsa ?? "lahiri",
+    node_type: draft.nodeType ?? "true",
+    ephemeris: draft.ephemeris ?? "swiss",
+    house_system: draft.houseSystem ?? "whole_sign",
+    bhava_system: draft.bhavaSystem ?? "whole_sign",
+    varga_scheme: draft.vargaScheme ?? "parashara",
+    sunrise_source: draft.sunriseSource ?? "noaa",
+    timezone_source: draft.timezoneSource ?? "iana",
+    shadbala_profile: draft.shadbalaProfile ?? "bphs_classical",
+    ...(selectedPlace
+      ? {
+          place_id: selectedPlace.id,
+          country_code: selectedPlace.country_code,
+          timezone: selectedPlace.timezone,
+          latitude: selectedPlace.latitude,
+          longitude: selectedPlace.longitude,
+        }
+      : hasManualPlace
+        ? {
+            timezone: draft.manualTimezone?.trim(),
+            latitude: manualLat,
+            longitude: manualLon,
+          }
+        : {}),
+  };
+}
 
 const analysisTabs = [
   { key: "overview", label: "Обзор", hint: "контекст" },
@@ -175,35 +248,24 @@ const analysisTabs = [
   { key: "prashna", label: "Прашна", hint: "вопрос" },
   { key: "mundane", label: "Мирские", hint: "событие" },
   { key: "muhurta", label: "Мухурта", hint: "выбор времени" },
-  { key: "accuracy", label: "Точность", hint: "JHora diff" },
+  { key: "accuracy", label: "Точность", hint: "сверка" },
   { key: "guidance", label: "Разбор", hint: "цитаты" },
-  { key: "sources", label: "Источники", hint: "VL" },
+  { key: "sources", label: "Источники", hint: "шастры" },
 ] as const;
 
 type AnalysisTab = (typeof analysisTabs)[number]["key"];
 type ChartWorkspaceTab = "essentials" | "references" | "vargas";
 
-function analysisTabFromLocation(): AnalysisTab {
-  if (typeof window === "undefined") return "overview";
-  const requestedAnalysis = new URLSearchParams(window.location.search).get("analysis");
-  return requestedAnalysis && analysisTabs.some((tab) => tab.key === requestedAnalysis)
-    ? (requestedAnalysis as AnalysisTab)
-    : "overview";
-}
-
 const primaryAnalysisTabKeys = new Set<AnalysisTab>([
   "overview",
-  "calculations",
   "yogas",
   "timeline",
   "transits",
   "guidance",
-  "sources",
 ]);
 const primaryAnalysisTabs = analysisTabs.filter((tab) => primaryAnalysisTabKeys.has(tab.key));
-const secondaryAnalysisTabs = analysisTabs.filter((tab) => !primaryAnalysisTabKeys.has(tab.key));
+const secondaryAnalysisTabs: Array<(typeof analysisTabs)[number]> = [];
 const chartWorkspaceTabs: Array<{ key: ChartWorkspaceTab; label: string; hint: string }> = [
-  { key: "essentials", label: "Главные карты", hint: "D1, D9, D10" },
   { key: "vargas", label: "Атлас варг", hint: "D1-D60" },
   { key: "references", label: "Отсчёты", hint: "Луна, 7/12" },
 ];
@@ -216,36 +278,36 @@ const stateLabels: Record<string, string> = {
 const calculationStatusLabelsRu: Record<string, string> = {
   calculated: "рассчитано",
   partial: "частично",
-  draft_needs_citation: "рабочий текст",
-  draft_needs_jhora_audit: "рабочий расчёт",
+  draft_needs_citation: "готовится",
+  draft_needs_jhora_audit: "готовится",
   calculated_needs_citation: "расчёт готов",
   calculated_needs_jhora_audit: "расчёт готов",
   calculated_needs_jhora_component_audit: "расчёт готов",
-  calculated_source_backed_needs_jhora_profile_audit: "рассчитано по шастре, открыт JHora profile diff",
+  calculated_source_backed_needs_jhora_profile_audit: "расчёт готов",
   calculated_with_tradition_profile_needs_jhora_audit: "расчёт готов",
-  calculated_bphs_varga_viswa_single_jhora_profile_audited: "BPHS Varga Viswa, сверено на JHora profile",
-  calculated_bphs_varga_viswa_weights_fixed_profile_diff_open: "BPHS веса исправлены, открыт JHora profile diff",
-  calculated_bphs_varga_viswa_jhora_fixture_matched: "BPHS Varga Viswa, сверено с JHora fixture",
-  calculated_jhora_fixture_matched: "сверено с JHora fixture",
-  calculated_single_jhora_fixture_matched_partial_catalog: "проверенные точки сверены с JHora",
-  calculated_single_jhora_fixture_matched_core_catalog: "core-точки сверены с JHora",
-  calculated_needs_jhora_split_profile: "рассчитано, нужен JHora split-профиль",
-  baseline_calculated_needs_jhora_tajaka_audit: "базово рассчитано, нужен Tajaka/JHora audit",
-  baseline_calculated_needs_full_tajaka_audit: "базово рассчитано, нужен полный Tajaka audit",
-  baseline_calculated_needs_prashna_tradition_review: "рабочий расчёт",
-  baseline_event_chart_needs_mundane_rules_review: "рабочий расчёт",
+  calculated_bphs_varga_viswa_single_jhora_profile_audited: "сверено",
+  calculated_bphs_varga_viswa_weights_fixed_profile_diff_open: "расчёт готов",
+  calculated_bphs_varga_viswa_jhora_fixture_matched: "сверено",
+  calculated_jhora_fixture_matched: "сверено",
+  calculated_single_jhora_fixture_matched_partial_catalog: "сверено",
+  calculated_single_jhora_fixture_matched_core_catalog: "сверено",
+  calculated_needs_jhora_split_profile: "расчёт готов",
+  baseline_calculated_needs_jhora_tajaka_audit: "готово",
+  baseline_calculated_needs_full_tajaka_audit: "готово",
+  baseline_calculated_needs_prashna_tradition_review: "готово",
+  baseline_event_chart_needs_mundane_rules_review: "готово",
   partial_extra_dasha_catalog: "частичный каталог даш",
   calculated_needs_tradition_review: "расчёт готов",
   calculated_needs_task_review: "расчёт готов",
-  partial_calculated_needs_citation: "рабочий слой",
-  partial_calculated_needs_jhora_audit: "рабочий слой",
-  partial_calculated_needs_jhora_profile_audit: "частично рассчитано, открыт JHora profile diff",
-  calculated_needs_source_audit: "рассчитано, нужен аудит источника",
+  partial_calculated_needs_citation: "частично",
+  partial_calculated_needs_jhora_audit: "частично",
+  partial_calculated_needs_jhora_profile_audit: "частично рассчитано",
+  calculated_needs_source_audit: "расчёт готов",
   pending_source_mapping: "источники подключаются",
-  pending_jhora_audit: "ждёт сверку JHora",
-  pending_endpoint: "ждёт API",
-  api_available: "API готов",
-  complete_baseline_needs_jhora_audit: "рабочий расчёт",
+  pending_jhora_audit: "ожидает",
+  pending_endpoint: "ожидает",
+  api_available: "готово",
+  complete_baseline_needs_jhora_audit: "готово",
   multi_factor_needs_shastra_citation_review: "многофакторный расчёт",
   pending_separate_chart_pair: "ожидает вторую карту",
   pending_separate_workflow: "отдельный режим",
@@ -258,17 +320,17 @@ const auditStatusLabelsRu: Record<string, string> = {
   calculated_needs_fixture_audit: "расчёт готов",
   calculated_needs_text_rule_review: "расчёт готов",
   calculated_needs_jhora_component_audit: "расчёт готов",
-  calculated_jhora_profile_diff_open: "открыт JHora diff",
-  calculated_single_jhora_fixture_matched_partial_catalog: "частичный каталог сверен с JHora",
-  calculated_single_jhora_fixture_matched_core_catalog: "core-каталог сверен с JHora",
-  calculated_bphs_varga_viswa_weights_fixed_profile_diff_open: "BPHS веса исправлены, открыт JHora diff",
-  calculated_bphs_varga_viswa_jhora_fixture_matched: "BPHS Varga Viswa сверена с JHora",
-  calculated_needs_jhora_split_profile: "нужен JHora split-профиль",
+  calculated_jhora_profile_diff_open: "нужна сверка",
+  calculated_single_jhora_fixture_matched_partial_catalog: "сверено",
+  calculated_single_jhora_fixture_matched_core_catalog: "сверено",
+  calculated_bphs_varga_viswa_weights_fixed_profile_diff_open: "расчёт готов",
+  calculated_bphs_varga_viswa_jhora_fixture_matched: "сверено",
+  calculated_needs_jhora_split_profile: "расчёт готов",
   partial: "частично",
   temporary_proxy: "временная формула",
-  partial_detection_needs_citations: "рабочий слой",
+  partial_detection_needs_citations: "частично",
   partial_gulika_only: "только Гулика",
-  baseline_api_ready: "API готов, правила не финальны",
+  baseline_api_ready: "готово",
   baseline_ashtakuta: "базовая аштакута",
   baseline_scoring: "базовая оценка",
   multi_factor_calculated_needs_shastra_review: "многофакторный расчёт",
@@ -276,7 +338,7 @@ const auditStatusLabelsRu: Record<string, string> = {
   source_backed_with_bphs_caution: "есть шастра, BPHS осторожно",
   source_backed_but_tradition_sensitive: "по шастрам",
   source_backed_but_pastoral_review_required: "по шастрам",
-  needs_tradition_decision: "рабочий слой",
+  needs_tradition_decision: "нужна проверка",
   needs_source_mapping: "источники подключаются",
   research_only: "только исследование",
 };
@@ -301,18 +363,18 @@ const auditLayerLabelsRu: Record<string, string> = {
 
 const auditSourceBasisRu: Record<string, string> = {
   rashi_nakshatra_navamsa: "Сиддхантическая математика координат и классические деления.",
-  vargas_d2_d60: "Правила варг требуют сверки вариантов, особенно если правило взято из modern BPHS.",
+  vargas_d2_d60: "Правила варг сверяются по классическим вариантам.",
   panchanga: "Угловые деления Солнце-Луна и правила панчанги/мухурты.",
   vimshottari: "Уду-даша от накшатры Луны, 120-летний цикл и классическая последовательность грах.",
   avasthas: "Авастхи по градусным диапазонам с учётом нечётных/чётных знаков.",
   ashtakavarga: "Brhat Jataka IX и стандартная сумма SAV 337 бинду.",
   shadbala: "Шесть групп шадбалы рассчитаны по компонентам и готовы для личного разбора.",
-  vimshopaka: "BPHS веса shadvarga/sapta/dasha/shodasha рассчитаны; Sterlitamak JHora fixture 36/36.",
+  vimshopaka: "BPHS веса shadvarga/sapta/dasha/shodasha рассчитаны; сверка 36/36.",
   yogas: "Показываются условия йог, но не окончательное предсказание.",
-  argala: "Структурная аргала рассчитана как рабочий слой анализа.",
-  upagrahas: "Гулика, Маанди и солнечные упаграхи сверены на Sterlitamak JHora fixture.",
-  special_points: "Indu/Bhava/Hora/Ghati и upagraha core-точки сверены на Sterlitamak JHora fixture.",
-  transits: "API готов, правила интерпретации транзитов ещё не финальны.",
+  argala: "Аргала рассчитана как дополнительный слой чтения карты.",
+  upagrahas: "Гулика, Маанди и солнечные упаграхи сверены.",
+  special_points: "Indu/Bhava/Hora/Ghati и upagraha core-точки сверены.",
+  transits: "Транзиты рассчитаны как дополнительный слой чтения карты.",
   compatibility: "Аштакута плюс многофакторный анализ двух карт.",
   muhurta: "Базовая оценка окна, не финальная элекция.",
 };
@@ -323,8 +385,8 @@ auditSourceBasisRu.shadbala =
 const authorityOrderRu: Record<string, string> = {
   "older shastra and reviewed parampara instruction": "старшие шастры и проверенное наставление парампары",
   "astronomical ephemeris and timezone audit": "астрономическая точность, эфемериды и часовой пояс",
-  "JHora and external services as black-box witnesses": "JHora и сервисы только как свидетели",
-  "internal regression fixtures": "внутренние regression fixtures",
+  "JHora and external services as black-box witnesses": "сверка точности",
+  "internal regression fixtures": "контроль точности",
 };
 
 const compatibilityLevelLabelsRu: Record<string, string> = {
@@ -386,20 +448,6 @@ function relationshipStatusLabel(status: string | null | undefined) {
   if (status === "blocked") return "заблокировано";
   return "личная пометка";
 }
-
-const settingsLabelsRu: Record<string, string> = {
-  zodiac: "Зодиак",
-  calculation_model: "Модель",
-  ayanamsa: "Айанамша",
-  node_type: "Узлы",
-  ephemeris: "Эфемериды",
-  house_system: "Дома",
-  bhava_system: "Бхава",
-  varga_scheme: "Варги",
-  sunrise_source: "Восход",
-  timezone_source: "Часовой пояс",
-  shadbala_profile: "Шадбала",
-};
 
 const bodyLabelsRu: Record<string, string> = {
   Ascendant: "Асцендент",
@@ -561,9 +609,9 @@ function auditStatusRu(value: string | null | undefined) {
 }
 
 function auditAuthorityRu(value: string | null | undefined) {
-  if (!value) return "рабочий слой";
+  if (!value) return "частично";
   if (value.startsWith("source_backed")) return "по шастрам";
-  if (value.startsWith("needs")) return "рабочий слой";
+  if (value.startsWith("needs")) return "нужна проверка";
   return auditStatusRu(value);
 }
 
@@ -577,20 +625,20 @@ function auditNoteRu(key: string, fallback: string) {
 
 function auditCalculationReadyRu(status: string) {
   if (status.startsWith("calculated")) return "расчёт готов";
-  if (status.startsWith("partial")) return "рабочий слой";
-  if (status.startsWith("baseline") || status === "api_available") return "рабочий расчёт";
-  if (status === "api_ready") return "API готов";
+  if (status.startsWith("partial")) return "частично";
+  if (status.startsWith("baseline") || status === "api_available") return "готово";
+  if (status === "api_ready") return "готово";
   return auditStatusRu(status);
 }
 
 function auditInterpretationReadyRu(ready: boolean) {
-  return ready ? "готово" : "в работе";
+  return ready ? "готово" : "готовится";
 }
 
 function generatedStatusRu(status: string | null | undefined) {
   if (status === "private_final") return "готовый личный разбор";
   if (status === "private_partial") return "неполный личный разбор";
-  if (status === "draft") return "личный рабочий разбор";
+  if (status === "draft") return "личный разбор";
   if (status === "approved") return "утверждено";
   return status || "ожидает";
 }
@@ -598,21 +646,21 @@ function generatedStatusRu(status: string | null | undefined) {
 function generatedTitleRu(status: string | null | undefined) {
   if (status === "private_final" || status === "approved") return "Готовый личный разбор";
   if (status === "private_partial") return "Неполный личный разбор";
-  return "Рабочий личный разбор";
+  return "Личный разбор";
 }
 
 function workflowStatusRu(status: string | null | undefined) {
   if (!status) return "готово";
   if (status.includes("pending") || status.includes("missing")) return "ожидает данных";
   if (status.includes("calculated") || status.includes("ready") || status.includes("approved")) return "готово";
-  return "рабочий слой";
+  return "частично";
 }
 
 function reportSectionStatusRu(status: string | null | undefined) {
   if (!status) return "готово";
   if (status === "calculation_only") return "расчёт";
   if (status === "private_final" || status === "approved") return "готово";
-  return "рабочий текст";
+  return "готовится";
 }
 
 function compatibilityFindingRu(value: string) {
@@ -977,7 +1025,7 @@ const jyotishGlossary = {
   },
   d6: {
     label: "D6",
-    text: "Рабочий слой для болезней, долгов, врагов, споров и конфликтного напряжения.",
+    text: "Дробная карта болезней, долгов, врагов, споров и конфликтного напряжения.",
   },
   d7: {
     label: "D7 / Saptamsa",
@@ -1033,15 +1081,15 @@ const jyotishGlossary = {
   },
   self_profile: {
     label: "Моя карта",
-    text: "Основная карта владельца аккаунта. Первый личный AI-разбор даётся именно для этой карты; чужие карты можно хранить отдельно.",
+    text: "Основная карта владельца аккаунта. Первый личный разбор даётся именно для этой карты; чужие карты можно хранить отдельно.",
   },
   free_personal_ai: {
-    label: "Первый AI-разбор",
+    label: "Первый разбор",
     text: "Бесплатный личный разбор относится к вашей собственной карте. Если разбор уже создан, повторное открытие показывает сохранённую историю.",
   },
   relationship_role: {
     label: "Роль человека",
-    text: "Ракурс чтения второй карты: партнёр, отец, мать, брат, руководитель, оппонент и т.д. От роли зависят дома и D-карты, которые AI должен учитывать.",
+    text: "Ракурс чтения второй карты: партнёр, отец, мать, брат, руководитель, оппонент и т.д. От роли зависят дома и D-карты, которые ассистент должен учитывать.",
   },
   relationship_status: {
     label: "Статус связи",
@@ -1049,19 +1097,15 @@ const jyotishGlossary = {
   },
   saved_other_chart: {
     label: "Чужая сохранённая карта",
-    text: "Карту другого человека можно сохранить и просматривать. Ограничение относится к AI-разбору, а не к самому хранению карты.",
+    text: "Карту другого человека можно сохранить и просматривать. Ограничение относится к разбору, а не к самому хранению карты.",
   },
   paid_other_ai: {
-    label: "AI-разбор чужой карты",
-    text: "После запуска оплаты AI-разбор чужой карты будет платным. Сейчас бесплатный личный разбор предназначен только для собственной карты аккаунта.",
-  },
-  mvp_readiness: {
-    label: "Готовность MVP",
-    text: "Показывает, какие функции уже можно проверять астрологам, а какие остаются следующим этапом разработки.",
+    label: "Разбор чужой карты",
+    text: "После запуска оплаты разбор чужой карты будет платным. Сейчас бесплатный личный разбор предназначен только для собственной карты аккаунта.",
   },
   ai_context: {
-    label: "Контекст AI",
-    text: "Отмеченные карты и их сохранённые обзоры можно передавать AI как дополнительный контекст при личном разборе.",
+    label: "Связанные карты",
+    text: "Отмеченные карты можно учитывать как семейный или личный контекст при разборе.",
   },
 } as const;
 
@@ -1155,6 +1199,7 @@ type ChartTextLine = {
   kind: "rashi" | "graha";
   dignity?: GrahaDignity | null;
   retrograde?: boolean;
+  placement?: ChartPlacement;
 };
 
 function normalizeRashiIndex(value: number | null | undefined) {
@@ -1435,10 +1480,66 @@ function readerExplanationForHouse({
   const placements = houseItem?.placements ?? [];
   const placementText = placements.length ? placements.map((placement) => chartPlacementLabel(placement, termLanguage)).join(", ") : "нет грах";
   const referenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
+  const houseMeaning = houseShastraMeanings[house];
   return {
     title: item.label,
     context: `Карта: отсчёт ${referenceLabel}`,
-    text: `${item.text} Знак: ${rashiLabel}. Хозяин: ${lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}. Грахи в доме: ${placementText}.`,
+    text: [
+      `${houseMeaning?.theme ?? item.text}`,
+      `В шастрическом чтении дом сначала показывает сферу жизни, затем знак показывает форму проявления, а хозяин знака показывает канал, через который дом реально даёт результат.`,
+      `В этой карте: знак ${rashiLabel}, хозяин ${lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}. Грахи в доме: ${placementText}.`,
+      placements.length
+        ? "Грахи в доме прямо окрашивают бхаву своей каракатвой; дальше нужно смотреть их силу, достоинство, управляемые дома, накшатру, аспекты и дашу."
+        : "Пустой дом не считается пустым по результату: его читают через хозяина, аспекты, силу диспозитора, связь с караками и дашу.",
+      houseMeaning?.caution ?? "",
+    ].filter(Boolean).join("\n\n"),
+  };
+}
+
+function readerExplanationForRashi({
+  chart,
+  varga,
+  chartReference,
+  house,
+  rashiIndex,
+  rashiName,
+  termLanguage,
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  chartReference: ChartReference;
+  house: number | null;
+  rashiIndex: number | null;
+  rashiName: string | null | undefined;
+  termLanguage: TermLanguage;
+}): ReaderExplanationDetail {
+  const normalizedRashiIndex = normalizeRashiIndex(rashiIndex) ?? rashiIndexFromName(rashiName);
+  const fallbackName = normalizedRashiIndex === null ? rashiName : rashiNames[normalizedRashiIndex];
+  const rashiLabel = rashiTermLabel(normalizedRashiIndex, fallbackName, termLanguage);
+  const glossary = jyotishGlossary[rashiGlossaryKey(normalizedRashiIndex, fallbackName)];
+  const houseItem = house ? northIndianHouseItems(chart, varga, chartReference).find((row) => row.house === house) : null;
+  const placements = houseItem?.placements ?? [];
+  const lordBody = normalizedRashiIndex === null ? null : rashiLordBodies[normalizedRashiIndex];
+  const placementsText = placements.length
+    ? placements.map((placement) => chartPlacementLabel(placement, termLanguage)).join(", ")
+    : "нет грах";
+  const lagnaIndex = normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
+  const lordGraha = lordBody && chart ? chart.grahas.find((graha) => canonicalBody(graha.body) === canonicalBody(lordBody)) : null;
+  const lordHouse = lordGraha
+    ? houseFromRashiIndex(normalizeRashiIndex(lordGraha.rashi_index) ?? rashiIndexFromName(lordGraha.rashi), lagnaIndex)
+    : null;
+  const houseText = house ? `${house} дом` : "дом не определён";
+  return {
+    title: rashiLabel,
+    context: house ? `${houseText} карты` : "Знак",
+    text: [
+      glossary?.text ?? "Раши показывает среду, стиль проявления и качество, через которое действует дом или граха.",
+      `В этой карте ${rashiLabel} стоит как ${houseText}. Хозяин знака: ${lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}. Грахи в знаке: ${placementsText}.`,
+      lordGraha
+        ? `Хозяин знака находится в ${rashiTermFromName(lordGraha.rashi, termLanguage)}${lordHouse ? `, ${lordHouse} дом` : ""}. Поэтому результат знака нужно читать через положение, силу, накшатру и достоинство его хозяина.`
+        : "Если хозяин знака не показан в данных, знак читается через свою природу, грахи внутри него, аспекты и общий контекст карты.",
+      "По классическому чтению знак сам по себе не заменяет дом: дом показывает сферу, знак даёт способ проявления, а хозяин знака показывает канал результата.",
+    ].join("\n\n"),
   };
 }
 
@@ -1467,6 +1568,7 @@ function ChartHouseHintPopover({
   const placements = houseItem?.placements ?? [];
   const placementText = placements.length ? placements.map((placement) => chartPlacementLabel(placement, termLanguage)).join(", ") : "нет грах";
   const referenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
+  const detail = readerExplanationForHouse({ chart, varga, chartReference, house, termLanguage });
   return (
     <div
       className="chart-house-popover"
@@ -1482,7 +1584,11 @@ function ChartHouseHintPopover({
         <strong>{item.label}</strong>
         <button type="button" onClick={onClose} aria-label="Закрыть подсказку">×</button>
       </div>
-      <span>{item.text}</span>
+      <div className="selected-reader-text">
+        {detail.text.split("\n\n").slice(0, 3).map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+      </div>
       <dl>
         <div><dt>Знак</dt><dd>{rashiLabel}</dd></div>
         <div><dt>Хозяин</dt><dd>{lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}</dd></div>
@@ -1495,11 +1601,11 @@ function ChartHouseHintPopover({
         onClick={() =>
           requestAiExplanation({
             title: `${item.label} в карте`,
-            text: `Ракурс: ${referenceLabel}. Знак: ${rashiLabel}. Хозяин: ${lordBody ? grahaTermLabel(lordBody, termLanguage) : "-"}. Грахи: ${placementText}.`,
+            text: detail.text,
           })
         }
       >
-        Спросить AI
+        Спросить
       </button>
     </div>
   );
@@ -1508,260 +1614,9 @@ function ChartHouseHintPopover({
 function StartChartNotice() {
   return (
     <div className="start-chart-notice" aria-label="Карта ещё не рассчитана">
-      <strong>Карта не запускается автоматически</strong>
-      <span>Это снижает нагрузку на сервер. Проверьте данные рождения и нажмите «Рассчитать карту».</span>
+      <strong>Карта на сейчас</strong>
+      <span>Если своих данных ещё нет, используется текущий день. Для личной карты введите дату, время и место рождения.</span>
       <a href="#birth-form">Перейти к данным рождения</a>
-    </div>
-  );
-}
-
-function CoreVargaMiniRail({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  termLanguage,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  termLanguage: TermLanguage;
-  onSelect: (code: string) => void;
-}) {
-  const comparisonCode = activeCode === "D1" || activeCode === "D9" ? "D10" : activeCode;
-  const items = Array.from(new Set(["D1", "D9", comparisonCode])).slice(0, 3).map((code) => {
-    const varga = code === "D1" ? null : chart?.vargas?.[code] ?? null;
-    return {
-      code,
-      available: code === "D1" ? Boolean(chart) : Boolean(varga),
-      title: code === "D1" ? "Раши" : priorityVargaContexts[code]?.scope ?? "Варга",
-      hint: priorityVargaContexts[code]?.detail ?? "ключевая карта",
-      varga,
-    };
-  });
-
-  return (
-    <div className="core-varga-mini-rail" aria-label="Быстрый визуальный контекст D1 D9 D10">
-      {items.map((item) => (
-        <button
-          type="button"
-          className={`${activeCode === item.code ? "active" : ""}${item.available ? " ready" : ""}`}
-          disabled={!item.available}
-          key={item.code}
-          onClick={() => onSelect(item.code)}
-        >
-          <div>
-            <strong>{item.code}</strong>
-            <span>{item.title}</span>
-          </div>
-          <div className="core-varga-mini-preview">
-            {item.available ? (
-              chartStyle === "south" ? (
-                <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact termLanguage={termLanguage} />
-              ) : (
-                <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact termLanguage={termLanguage} />
-              )
-            ) : (
-              <em>{item.hint}</em>
-            )}
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function PractitionerVargaRail({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-}) {
-  const items = practitionerVargaCodes.map((code) => {
-    const varga = code === "D1" ? null : chart?.vargas?.[code] ?? null;
-    return {
-      code,
-      available: code === "D1" ? Boolean(chart) : Boolean(varga),
-      varga,
-      scope: priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга",
-      detail: priorityVargaContexts[code]?.detail ?? "ключевая D-карта",
-    };
-  });
-
-  return (
-    <div className="practitioner-varga-rail" aria-label="Ключевые D-карты для быстрого чтения">
-      <div className="practitioner-varga-rail-head">
-        <strong>D-карты рядом</strong>
-        <span>D1, D9, D10, D12, D30 и D60 видны без перехода в отдельное окно</span>
-      </div>
-      <div className="practitioner-varga-rail-list">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={activeCode === item.code ? "active" : ""}
-            disabled={!item.available}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <div>
-              <strong>{item.code}</strong>
-              <span>{item.scope}</span>
-              <small>{item.available ? item.detail : unavailableVargaLabel(item.code)}</small>
-            </div>
-            <div className="practitioner-varga-preview">
-              {item.available ? (
-                chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                )
-              ) : (
-                <em>{unavailableVargaLabel(item.code)}</em>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ShodashaMiniAtlas({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-}) {
-  const readyCount = shodashaVargaCodes.filter((code) => code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])).length;
-  const items = shodashaVargaCodes.map((code) => {
-    const varga = code === "D1" ? null : chart?.vargas?.[code] ?? null;
-    return {
-      code,
-      varga,
-      available: code === "D1" ? Boolean(chart) : Boolean(varga),
-      scope: priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга",
-    };
-  });
-
-  return (
-    <div className="shodasha-mini-atlas" aria-label="Shodasha Varga: 16 основных D-карт">
-      <div className="shodasha-mini-head">
-        <div>
-          <strong>Shodasha Varga</strong>
-          <span>16 основных карт: D1-D60</span>
-        </div>
-        <em>{readyCount}/16 готово</em>
-      </div>
-      <div className="shodasha-mini-grid">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={`${activeCode === item.code ? "active" : ""}${item.available ? " ready" : ""}`}
-            disabled={!item.available}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <div>
-              <strong>{item.code}</strong>
-              <span>{item.scope}</span>
-            </div>
-            <div className="shodasha-mini-preview">
-              {item.available ? (
-                chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                )
-              ) : (
-                <em>нет расчёта</em>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function KeyVargaComparisonPanel({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  termLanguage,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  termLanguage: TermLanguage;
-  onSelect: (code: string) => void;
-}) {
-  const fallbackCode = activeCode === "D1" || activeCode === "D9" ? "D10" : activeCode;
-  const codes = Array.from(new Set(["D1", "D9", fallbackCode])).slice(0, 3);
-  const items = codes.map((code) => {
-    const varga = code === "D1" ? null : chart?.vargas?.[code] ?? null;
-    const available = code === "D1" ? Boolean(chart) : Boolean(varga);
-    return {
-      code,
-      varga,
-      available,
-      scope: priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга",
-      detail: priorityVargaContexts[code]?.detail ?? "дополнительный слой чтения",
-    };
-  });
-
-  return (
-    <div className="key-varga-comparison" aria-label="Сравнение D1 D9 и рабочей варги">
-      <div className="key-varga-comparison-head">
-        <strong>Три опоры чтения</strong>
-        <span>D1 показывает основу, D9 силу грах, третья карта раскрывает выбранную сферу</span>
-      </div>
-      <div className="key-varga-comparison-grid">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={`${activeCode === item.code ? "active" : ""}${item.available ? " ready" : ""}`}
-            disabled={!item.available}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <div className="key-varga-copy">
-              <strong>{item.code}</strong>
-              <span>{item.scope}</span>
-              <small>{item.available ? item.detail : unavailableVargaLabel(item.code)}</small>
-            </div>
-            <div className="key-varga-preview">
-              {item.available ? (
-                chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact termLanguage={termLanguage} />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact termLanguage={termLanguage} />
-                )
-              ) : (
-                <em>нет расчёта</em>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
@@ -1811,7 +1666,6 @@ function ChartReferenceToggle({
             className={value === option.key ? "active" : ""}
             disabled={!chart}
             key={option.key}
-            title={glossaryItem?.text}
             onClick={() => {
               onChange(option.key);
               setOpenKey((current) => (current === option.key ? null : option.key));
@@ -1832,7 +1686,7 @@ function ChartReferenceToggle({
   );
 }
 
-function ChartDisplayControls({
+function QuickVargaSwitch({
   chart,
   chartMode,
   vargaOptions,
@@ -1843,20 +1697,23 @@ function ChartDisplayControls({
   vargaOptions: string[];
   onChartModeChange: (value: string) => void;
 }) {
-  const options = vargaOptions.length ? vargaOptions : ["D1"];
-
+  const available = new Set(vargaOptions.length ? vargaOptions : ["D1"]);
   return (
-    <div className="chart-display-controls" aria-label="Быстрые настройки отображения карты">
-      <label>
-        <span>Карта</span>
-        <select value={chartMode} disabled={!chart} onChange={(event) => onChartModeChange(event.target.value)}>
-          {options.map((code) => (
-            <option value={code} key={`chart-display-${code}`}>
-              {code}{vargaPurposeLabels[code] ? ` · ${vargaPurposeLabels[code]}` : ""}
-            </option>
-          ))}
-        </select>
-      </label>
+    <div className="quick-varga-switch" aria-label="Быстрый выбор D-карты">
+      {primaryVargaTabCodes.map((code) => {
+        const enabled = Boolean(chart) && available.has(code);
+        return (
+          <button
+            type="button"
+            key={`quick-varga-${code}`}
+            className={chartMode === code ? "active" : ""}
+            disabled={!enabled}
+            onClick={() => onChartModeChange(code)}
+          >
+            {code}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1964,15 +1821,13 @@ function NorthIndianChartPreview({
   termLanguage?: TermLanguage;
   houseHintsEnabled?: boolean;
 }) {
-  const [hoveredHouse, setHoveredHouse] = useState<number | null>(null);
   const [pinnedHouse, setPinnedHouse] = useState<number | null>(null);
   useEffect(() => {
     if (!houseHintsEnabled) {
-      setHoveredHouse(null);
       setPinnedHouse(null);
     }
   }, [houseHintsEnabled]);
-  const activeHouse = houseHintsEnabled ? pinnedHouse ?? hoveredHouse : null;
+  const activeHouse = houseHintsEnabled ? pinnedHouse : null;
   const activeCell = activeHouse ? northIndianHouseCells[activeHouse] : null;
   function selectHouse(house: number) {
     setPinnedHouse((current) => (current === house ? null : house));
@@ -1986,8 +1841,6 @@ function NorthIndianChartPreview({
           chartReference={chartReference}
           termLanguage={termLanguage}
           onHouseSelect={houseHintsEnabled ? selectHouse : undefined}
-          onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
-          onHouseLeave={houseHintsEnabled ? () => setHoveredHouse(null) : undefined}
           selectedHouse={activeHouse}
         />
         {houseHintsEnabled && activeHouse && activeCell ? (
@@ -2000,7 +1853,6 @@ function NorthIndianChartPreview({
             position={{ x: (activeCell.centerX / 400) * 100, y: (activeCell.centerY / 400) * 100 }}
             onClose={() => {
               setPinnedHouse(null);
-              setHoveredHouse(null);
             }}
           />
         ) : null}
@@ -2016,8 +1868,6 @@ function NorthIndianChartSvg({
   compact = false,
   termLanguage = "sanskrit",
   onHouseSelect,
-  onHouseHover,
-  onHouseLeave,
   selectedHouse,
 }: {
   chart: BirthChart | null;
@@ -2026,8 +1876,6 @@ function NorthIndianChartSvg({
   compact?: boolean;
   termLanguage?: TermLanguage;
   onHouseSelect?: (house: number) => void;
-  onHouseHover?: (house: number) => void;
-  onHouseLeave?: () => void;
   selectedHouse?: number | null;
 }) {
   const houses = northIndianHouseItems(chart, varga, chartReference);
@@ -2053,9 +1901,6 @@ function NorthIndianChartSvg({
               aria-label={onHouseSelect ? `${house.house} дом` : undefined}
               tabIndex={onHouseSelect ? 0 : undefined}
               onClick={onHouseSelect ? () => onHouseSelect(house.house) : undefined}
-              onMouseEnter={onHouseHover ? () => onHouseHover(house.house) : undefined}
-              onMouseLeave={onHouseLeave}
-              onFocus={onHouseHover ? () => onHouseHover(house.house) : undefined}
               onKeyDown={
                 onHouseSelect
                   ? (event) => {
@@ -2067,7 +1912,6 @@ function NorthIndianChartSvg({
                   : undefined
               }
             >
-              <title>{`${house.house} дом. Знак ${signLabel}: ${house.placements.map((placement) => fullPlacementTitle(placement, termLanguage)).join("; ") || "пусто"}`}</title>
               {onHouseSelect && hitPolygon ? (
                 <polygon
                   className="chart-house-hit-zone"
@@ -2089,25 +1933,86 @@ function NorthIndianChartSvg({
                 y={firstLineY}
                 textAnchor="middle"
               >
-                {textLines.map((line, index) => (
-                  <tspan
-                    className={`${line.kind === "rashi" ? "chart-rashi-label" : "chart-graha-detail"}${line.dignity ? ` dignity-${line.dignity}` : ""}${line.retrograde ? " retrograde" : ""}`}
-                    key={`${house.house}-${line.text}-${index}`}
-                    x={cell.centerX}
-                    dy={index === 0 ? 0 : lineGap}
-                  >
-                    {line.text}
-                  </tspan>
-                ))}
+                {textLines.map((line, index) => {
+                  if (line.kind === "rashi") {
+                    return (
+                      <tspan
+                        className="chart-rashi-label interactive-rashi"
+                        key={`${house.house}-${line.text}-${index}`}
+                        x={cell.centerX}
+                        dy={index === 0 ? 0 : lineGap}
+                        role="button"
+                        tabIndex={0}
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          publishReaderExplanation(readerExplanationForRashi({
+                            chart,
+                            varga,
+                            chartReference,
+                            house: house.house,
+                            rashiIndex: house.rashiIndex,
+                            rashiName: house.rashi,
+                            termLanguage,
+                          }));
+                        }}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            publishReaderExplanation(readerExplanationForRashi({
+                              chart,
+                              varga,
+                              chartReference,
+                              house: house.house,
+                              rashiIndex: house.rashiIndex,
+                              rashiName: house.rashi,
+                              termLanguage,
+                            }));
+                          }
+                        }}
+                      >
+                        {line.text}
+                      </tspan>
+                    );
+                  }
+                  return (
+                    <tspan
+                      className={`chart-graha-detail${line.placement ? " interactive-placement" : ""}${line.dignity ? ` dignity-${line.dignity}` : ""}${line.retrograde ? " retrograde" : ""}`}
+                      key={`${house.house}-${line.text}-${index}`}
+                      x={cell.centerX}
+                      dy={index === 0 ? 0 : lineGap}
+                      role={line.placement ? "button" : undefined}
+                      tabIndex={line.placement ? 0 : undefined}
+                      onPointerDown={line.placement ? (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        publishReaderExplanation(readerExplanationForPlacement({ chart, varga, placement: line.placement!, house: house.house, termLanguage }));
+                      } : undefined}
+                      onClick={line.placement ? (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                      } : undefined}
+                      onKeyDown={line.placement ? (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          publishReaderExplanation(readerExplanationForPlacement({ chart, varga, placement: line.placement!, house: house.house, termLanguage }));
+                        }
+                      } : undefined}
+                    >
+                      {line.text}
+                    </tspan>
+                  );
+                })}
               </text>
             </g>
           );
         })}
-        {!chart ? (
-          <text className="chart-empty-label" x="200" y="206" textAnchor="middle">
-            ожидает расчёта
-          </text>
-        ) : null}
       </svg>
   );
 }
@@ -2155,15 +2060,13 @@ function SouthIndianChartPreview({
   termLanguage?: TermLanguage;
   houseHintsEnabled?: boolean;
 }) {
-  const [hoveredHouse, setHoveredHouse] = useState<number | null>(null);
   const [pinnedHouse, setPinnedHouse] = useState<number | null>(null);
   useEffect(() => {
     if (!houseHintsEnabled) {
-      setHoveredHouse(null);
       setPinnedHouse(null);
     }
   }, [houseHintsEnabled]);
-  const activeHouse = houseHintsEnabled ? pinnedHouse ?? hoveredHouse : null;
+  const activeHouse = houseHintsEnabled ? pinnedHouse : null;
   const activePosition = activeHouse ? southIndianHouseTooltipPosition(chart, varga, chartReference, activeHouse) : null;
   function selectHouse(house: number) {
     setPinnedHouse((current) => (current === house ? null : house));
@@ -2177,8 +2080,6 @@ function SouthIndianChartPreview({
           chartReference={chartReference}
           termLanguage={termLanguage}
           onHouseSelect={houseHintsEnabled ? selectHouse : undefined}
-          onHouseHover={houseHintsEnabled ? setHoveredHouse : undefined}
-          onHouseLeave={houseHintsEnabled ? () => setHoveredHouse(null) : undefined}
           selectedHouse={activeHouse}
         />
         {houseHintsEnabled && activeHouse && activePosition ? (
@@ -2191,7 +2092,6 @@ function SouthIndianChartPreview({
             position={activePosition}
             onClose={() => {
               setPinnedHouse(null);
-              setHoveredHouse(null);
             }}
           />
         ) : null}
@@ -2207,8 +2107,6 @@ function SouthIndianChartGrid({
   compact = false,
   termLanguage = "sanskrit",
   onHouseSelect,
-  onHouseHover,
-  onHouseLeave,
   selectedHouse,
 }: {
   chart: BirthChart | null;
@@ -2217,8 +2115,6 @@ function SouthIndianChartGrid({
   compact?: boolean;
   termLanguage?: TermLanguage;
   onHouseSelect?: (house: number) => void;
-  onHouseHover?: (house: number) => void;
-  onHouseLeave?: () => void;
   selectedHouse?: number | null;
 }) {
   const placements = activeChartPlacements(chart, varga);
@@ -2243,7 +2139,6 @@ function SouthIndianChartGrid({
             role={interactive ? "button" : undefined}
             aria-label={interactive && house ? `${house} дом` : undefined}
             tabIndex={interactive ? 0 : undefined}
-            title={house ? `${house} дом` : undefined}
             onPointerDown={interactive && house ? (event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -2253,9 +2148,6 @@ function SouthIndianChartGrid({
               event.preventDefault();
               event.stopPropagation();
             } : undefined}
-            onMouseEnter={interactive && house ? () => onHouseHover?.(house) : undefined}
-            onMouseLeave={onHouseLeave}
-            onFocus={interactive && house ? () => onHouseHover?.(house) : undefined}
             onKeyDown={
               interactive && house
                 ? (event) => {
@@ -2269,7 +2161,28 @@ function SouthIndianChartGrid({
           >
             <strong>{house ? `${house} ` : ""}{rashiChartLabel(rashiIndex, rashiNames[rashiIndex], termLanguage, compact)}</strong>
             {cellPlacements.slice(0, compact ? 4 : 7).map((placement) => (
-              <span className={`${placement.dignity ? `dignity-${placement.dignity}` : ""}${placement.retrograde ? " retrograde" : ""}`} key={`${rashiIndex}-${placement.body}`}>
+              <span
+                className={`interactive-placement${placement.dignity ? ` dignity-${placement.dignity}` : ""}${placement.retrograde ? " retrograde" : ""}`}
+                key={`${rashiIndex}-${placement.body}`}
+                role="button"
+                tabIndex={0}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  publishReaderExplanation(readerExplanationForPlacement({ chart, varga, placement, house, termLanguage }));
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    publishReaderExplanation(readerExplanationForPlacement({ chart, varga, placement, house, termLanguage }));
+                  }
+                }}
+              >
                 {chartPlacementLabel(placement, termLanguage)}
               </span>
             ))}
@@ -2277,18 +2190,21 @@ function SouthIndianChartGrid({
           </div>
         );
       })}
-      {!chart ? <span className="south-chart-empty">ожидает расчёта</span> : null}
     </div>
   );
 }
 
 function northIndianCellLines(house: NorthIndianHouseItem, compact = false, termLanguage: TermLanguage = "sanskrit"): ChartTextLine[] {
+  if (house.rashiIndex === null && !house.placements.length) {
+    return [];
+  }
   if (compact) {
     const placements = house.placements.map((placement) => ({
       text: chartPlacementLabel(placement, termLanguage),
       kind: "graha" as const,
       dignity: placement.dignity,
       retrograde: placement.retrograde,
+      placement,
     }));
     return [
       { text: `${house.house} ${rashiChartLabel(house.rashiIndex, house.rashi, termLanguage, true)}`, kind: "rashi" },
@@ -2309,6 +2225,7 @@ function compactPlacementLine(placement: ChartPlacement, termLanguage: TermLangu
     kind: "graha",
     dignity: placement.dignity,
     retrograde: placement.retrograde,
+    placement,
   };
 }
 
@@ -2400,110 +2317,6 @@ const vargaPurposeLabels: Record<string, string> = {
   D60: "Карма",
 };
 
-const vargaPriorityLabels: Record<string, string> = {
-  D1: "основа",
-  D5: "джайм.",
-  D6: "джайм.",
-  D7: "семья",
-  D8: "джайм.",
-  D9: "must",
-  D10: "дело",
-  D11: "джайм.",
-  D12: "род",
-  D20: "дух",
-  D24: "учёба",
-  D30: "риск",
-  D40: "мать",
-  D45: "отец",
-  D60: "тонко",
-};
-
-const vargaFocusGroups: Array<{
-  key: string;
-  label: string;
-  hint: string;
-  title: string;
-  description: string;
-  codes: readonly string[];
-}> = [
-  {
-    key: "core",
-    label: "База",
-    hint: "D1, D9, D10, D12, D30, D60",
-    title: "Главные карты для чтения",
-    description: "D1 и D9 держат основу, D10 показывает дело, D12 род, D30 риски, D60 тонкий кармический слой.",
-    codes: ["D1", "D9", "D10", "D12", "D30", "D60"],
-  },
-  {
-    key: "marriage",
-    label: "Брак",
-    hint: "D9, D1, D7",
-    title: "Отношения и брак",
-    description: "Проверяются 7 дом D1, Навамша D9, дети/потомство через D7 и общая сила Шукра/Гуру.",
-    codes: ["D9", "D1", "D7"],
-  },
-  {
-    key: "career",
-    label: "Дело",
-    hint: "D10, D1, D24",
-    title: "Работа и призвание",
-    description: "D10 показывает карму профессии, D24 поддерживает обучение и квалификацию, D1 держит контекст.",
-    codes: ["D10", "D1", "D24"],
-  },
-  {
-    key: "wealth",
-    label: "Деньги",
-    hint: "D2, D11, D1",
-    title: "Ресурсы и доход",
-    description: "D2 показывает накопление и питание ресурсов, D11 — доходы и прибыли после сверки, D1 держит общий контекст.",
-    codes: ["D2", "D11", "D1"],
-  },
-  {
-    key: "health",
-    label: "Здоровье",
-    hint: "D6, D30, D1",
-    title: "Здоровье, долги и препятствия",
-    description: "D6 нужен для болезней, долгов и врагов после сверки правил; D30 показывает повреждения и риски.",
-    codes: ["D6", "D30", "D1"],
-  },
-  {
-    key: "parents",
-    label: "Род",
-    hint: "D12, D40, D45",
-    title: "Родители и род",
-    description: "D12 даёт родителей, D40 материнскую линию, D45 отцовскую линию.",
-    codes: ["D12", "D40", "D45"],
-  },
-  {
-    key: "sadhana",
-    label: "Дух",
-    hint: "D20, D9, D1",
-    title: "Садхана и духовная опора",
-    description: "D20 показывает духовную практику, D9 — дхармическую зрелость, D1 — общий носитель жизни.",
-    codes: ["D20", "D9", "D1"],
-  },
-  {
-    key: "jaimini",
-    label: "Дж.",
-    hint: "D5, D6, D8, D11",
-    title: "Дополнительные карты Джаимини",
-    description: "D5, D6, D8 и D11 выделены отдельным набором; откроются после добавления проверенных правил расчёта.",
-    codes: ["D5", "D6", "D8", "D11"],
-  },
-  {
-    key: "karma",
-    label: "Карма",
-    hint: "D30, D60",
-    title: "Риски и карма",
-    description: "D30 показывает трудности и повреждения, D60 — тонкий кармический слой при точном времени.",
-    codes: ["D30", "D60"],
-  },
-];
-
-function availableCodeForVargaGroup(chart: BirthChart | null, group: (typeof vargaFocusGroups)[number]) {
-  return availableCodeForVargaCodes(chart, group.codes);
-}
-
 function availableCodeForVargaCodes(chart: BirthChart | null, codes: readonly string[]) {
   return codes.find((code) => (code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code])));
 }
@@ -2529,600 +2342,13 @@ function vargaCoverage(chart: BirthChart | null) {
 }
 
 function unavailableVargaLabel(code: string) {
-  return jaiminiVargaCodeSet.has(code) ? "нужна сверка" : "нет расчёта";
+  return jaiminiVargaCodeSet.has(code) ? "позже" : "не открыто";
 }
 
 const chartQuickSwitchCodes = vargaSnapshotCodes;
 const primaryVargaTabCodes = ["D1", "D9", "D10", "D12", "D30", "D60"] as const;
 const secondaryVargaQuickCodes = ["D2", "D3", "D4", "D7", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"] as const;
 const practitionerVargaCodes = ["D1", "D9", "D10", "D7", "D12", "D20", "D24", "D30", "D60"] as const;
-
-const priorityVargaContexts: Record<string, { scope: string; detail: string }> = {
-  D1: { scope: "Основа", detail: "тело, характер, дома" },
-  D2: { scope: "Ресурс", detail: "деньги, питание, опора" },
-  D3: { scope: "Смелость", detail: "братья, усилие, воля" },
-  D4: { scope: "Дом", detail: "недвижимость, счастье" },
-  D5: { scope: "Власть", detail: "слава, полномочия" },
-  D6: { scope: "Здоровье", detail: "болезни, долги, враги" },
-  D7: { scope: "Дети", detail: "потомство, творчество" },
-  D8: { scope: "Внезапное", detail: "скрытые переломы и риски" },
-  D9: { scope: "Дхарма", detail: "брак, сила грах" },
-  D10: { scope: "Карьера", detail: "дело, статус, работа" },
-  D11: { scope: "Рудра", detail: "разрушение, предельные события" },
-  D12: { scope: "Род", detail: "отец, мать, наследие" },
-  D16: { scope: "Комфорт", detail: "транспорт, удобства" },
-  D20: { scope: "Дух", detail: "садхана, вера" },
-  D24: { scope: "Учёба", detail: "знание, образование" },
-  D27: { scope: "Сила", detail: "выносливость, слабости" },
-  D30: { scope: "Риски", detail: "трудности, повреждения" },
-  D40: { scope: "Мат. род", detail: "линия матери" },
-  D45: { scope: "Отц. род", detail: "линия отца" },
-  D60: { scope: "Карма", detail: "тонкий итог при точном времени" },
-};
-
-function VargaTaskMatrix({
-  chart,
-  activeGroupKey,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeGroupKey: string;
-  onSelect: (groupKey: string, code: string) => void;
-}) {
-  return (
-    <div className="varga-task-matrix" aria-label="D-карты по жизненным задачам">
-      {vargaFocusGroups.map((group) => {
-        const selectedCode = availableCodeForVargaGroup(chart, group);
-        return (
-          <button
-            type="button"
-            className={activeGroupKey === group.key ? "active" : ""}
-            disabled={!selectedCode}
-            key={group.key}
-            onClick={() => {
-              if (!selectedCode) return;
-              onSelect(group.key, selectedCode);
-            }}
-          >
-            <strong>{group.title}</strong>
-            <span>{group.hint}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function VargaSchemeMatrix({
-  chart,
-  activeSchemeKey,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeSchemeKey: VargaSchemeKey;
-  onSelect: (schemeKey: VargaSchemeKey, code: string) => void;
-}) {
-  return (
-    <div className="varga-scheme-matrix" aria-label="Classical varga schemes">
-      {vargaSchemeGroups.map((scheme) => {
-        const selectedCode = availableCodeForVargaCodes(chart, scheme.codes);
-        return (
-          <button
-            type="button"
-            className={activeSchemeKey === scheme.key ? "active" : ""}
-            disabled={!selectedCode}
-            key={scheme.key}
-            onClick={() => {
-              if (!selectedCode) return;
-              onSelect(scheme.key, selectedCode);
-            }}
-          >
-            <span>{scheme.label}</span>
-            <strong>{scheme.title}</strong>
-            <small>{scheme.hint}</small>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function VargaStudyBoard({
-  chart,
-  activeGroupKey,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeGroupKey: string;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-}) {
-  const group = vargaFocusGroups.find((item) => item.key === activeGroupKey) ?? vargaFocusGroups[0];
-  const items = group.codes.map((code) => {
-    if (code === "D1") {
-      return { code, name: "Раши", available: Boolean(chart), varga: null };
-    }
-    const varga = chart?.vargas?.[code];
-    return { code, name: varga?.name ?? "Варга", available: Boolean(varga), varga: varga ?? null };
-  });
-
-  return (
-    <div className="varga-study-board" aria-label="Фокусный набор варга-карт">
-      <div className="varga-study-head">
-        <div>
-          <strong>{group.title}</strong>
-          <span>{group.description}</span>
-        </div>
-        <small>{group.hint}</small>
-      </div>
-      <div className="varga-study-grid">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={`varga-study-card${activeCode === item.code ? " active" : ""}`}
-            disabled={!item.available}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <div className="varga-study-card-head">
-              <div>
-                <strong>{item.code}</strong>
-                {vargaPriorityLabels[item.code] ? <em>{vargaPriorityLabels[item.code]}</em> : null}
-              </div>
-              <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
-            </div>
-            <div className="varga-study-preview">
-              {item.available ? (
-                chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                )
-              ) : (
-                <em>{unavailableVargaLabel(item.code)}</em>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function EssentialChartPairBoard({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-  onOpenAtlas,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-  onOpenAtlas: () => void;
-}) {
-  const items = primaryVargaTabCodes.map((code) => {
-    if (code === "D1") return { code, title: "D1 Раши", hint: "основа карты", available: Boolean(chart), varga: null };
-    const varga = chart?.vargas?.[code] ?? null;
-    return {
-      code,
-      title: `${code} ${vargaPurposeLabels[code] ?? varga?.name ?? "варга"}`,
-      hint: priorityVargaContexts[code]?.detail ?? "ключевая D-карта",
-      available: Boolean(varga),
-      varga,
-    };
-  });
-
-  return (
-    <div className="essential-chart-board" aria-label="Главные рабочие D-карты">
-      <div className="essential-chart-head">
-        <div>
-          <strong>Главные D-карты</strong>
-          <span>D1, D9, D10 и ключевые дополнительные слои</span>
-        </div>
-        <button type="button" onClick={onOpenAtlas}>
-          Открыть атлас D1-D60
-        </button>
-      </div>
-      <div className="essential-chart-pair">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={`essential-chart-card${["D1", "D9", "D10"].includes(item.code) ? " primary" : ""}${activeCode === item.code ? " active" : ""}`}
-            disabled={!item.available}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <div className="essential-chart-title">
-              <strong>{item.title}</strong>
-              <span>{item.hint}</span>
-            </div>
-            <div className="essential-chart-preview">
-              {item.available ? (
-                chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                )
-              ) : (
-                <em>{unavailableVargaLabel(item.code)}</em>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PrimaryVargaTabs({
-  chart,
-  activeCode,
-  activeGroupKey,
-  workspaceTab,
-  onSelect,
-  onFocusGroupSelect,
-  onWorkspaceTabChange,
-  onCoverageSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  activeGroupKey: string;
-  workspaceTab: ChartWorkspaceTab;
-  onSelect: (code: string) => void;
-  onFocusGroupSelect: (groupKey: string, code: string) => void;
-  onWorkspaceTabChange: (tab: ChartWorkspaceTab) => void;
-  onCoverageSelect: () => void;
-}) {
-  const coverage = vargaCoverage(chart);
-  const focusGroups = vargaFocusGroups.filter((group) => ["core", "marriage", "career", "parents", "sadhana", "karma"].includes(group.key));
-  const allItems = vargaSnapshotCodes.map((code) => ({
-    code,
-    available: code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]),
-    label: `${code} · ${priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Варга"}`,
-  }));
-  const activeAvailable = activeCode === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[activeCode]);
-  const activeStatus = !chart
-    ? "ожидает расчёт"
-    : activeAvailable
-      ? "рассчитана"
-      : unavailableVargaLabel(activeCode);
-  const activeContext = priorityVargaContexts[activeCode] ?? { scope: vargaPurposeLabels[activeCode] ?? "Варга", detail: "дополнительный слой чтения" };
-  const activeFocusGroup = focusGroups.find((group) => group.key === activeGroupKey) ?? focusGroups.find((group) => group.codes.includes(activeCode)) ?? focusGroups[0];
-
-  return (
-    <div className="primary-varga-tabs" aria-label="Быстрый выбор главных D-карт">
-      <label className="primary-varga-picker">
-        <span>Все D-карты</span>
-        <select value={activeCode} onChange={(event) => onSelect(event.target.value)} disabled={!chart}>
-          {allItems.map((item) => (
-            <option value={item.code} disabled={!item.available} key={item.code}>
-              {item.label}{item.available ? "" : ` (${unavailableVargaLabel(item.code)})`}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
-        type="button"
-        className="primary-varga-coverage"
-        onClick={onCoverageSelect}
-        aria-label="Открыть атлас всех D-карт"
-      >
-        <span>{coverage.ready.length}/{coverage.total}</span>
-        <strong>{coverage.pendingJaimini.length ? "Jaimini ждёт сверки" : "D-карты"}</strong>
-      </button>
-      <div className={`primary-varga-status${activeAvailable ? " ready" : ""}`}>
-        <span>{activeCode}</span>
-        <strong>{activeStatus}</strong>
-      </div>
-      <div className="primary-varga-purpose">
-        <strong>{activeContext.scope}</strong>
-        <span>{activeContext.detail}</span>
-      </div>
-      <div className="primary-focus-tabs" aria-label="Рабочий ракурс чтения карты">
-        {focusGroups.map((group) => {
-          const selectedCode = availableCodeForVargaGroup(chart, group);
-          return (
-            <button
-              type="button"
-              className={activeFocusGroup.key === group.key ? "active" : ""}
-              disabled={!selectedCode}
-              key={group.key}
-              onClick={() => {
-                if (!selectedCode) return;
-                onFocusGroupSelect(group.key, selectedCode);
-              }}
-            >
-              <strong>{group.label}</strong>
-              <span>{group.hint}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="primary-focus-summary">
-        <strong>{activeFocusGroup.title}</strong>
-        <span>{activeFocusGroup.description}</span>
-        <em>{activeFocusGroup.codes.join(" · ")}</em>
-      </div>
-      <div className="primary-workspace-shortcuts" aria-label="Быстрый переход по рабочим блокам карты">
-        {chartWorkspaceTabs.map((tab) => (
-          <button
-            type="button"
-            className={workspaceTab === tab.key ? "active" : ""}
-            key={tab.key}
-            onClick={() => onWorkspaceTabChange(tab.key)}
-          >
-            <strong>{tab.label}</strong>
-            <span>{tab.hint}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function VargaCoverageSummary({
-  chart,
-  open,
-  onOpenChange,
-  onOpenAtlas,
-  detailsRef,
-}: {
-  chart: BirthChart | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onOpenAtlas: () => void;
-  detailsRef?: RefObject<HTMLDetailsElement | null>;
-}) {
-  const coverage = vargaCoverage(chart);
-  const readyText = coverage.ready.length ? coverage.ready.slice(0, 8).join(", ") : "после расчёта";
-  const pendingText = coverage.pendingJaimini.length
-    ? coverage.pendingJaimini.join(", ")
-    : coverage.missing.length
-      ? coverage.missing.slice(0, 5).join(", ")
-      : "нет";
-  const items = [
-    {
-      label: "Готово",
-      value: `${coverage.ready.length}/${coverage.total}`,
-      detail: readyText,
-    },
-    {
-      label: "Ключевые",
-      value: "D1 D9 D10",
-      detail: "основа, дхарма, карьера",
-    },
-    {
-      label: "Семья/род",
-      value: "D7 D12",
-      detail: "дети, родители, наследие",
-    },
-    {
-      label: coverage.pendingJaimini.length ? "Ждёт сверки" : "Ожидает",
-      value: pendingText,
-      detail: coverage.pendingJaimini.length ? "Джаимини и редкие варги" : "нет полной сетки",
-    },
-  ];
-
-  return (
-    <details
-      className="varga-coverage-summary"
-      ref={detailsRef}
-      open={open}
-      onToggle={(event) => onOpenChange(event.currentTarget.open)}
-      aria-label="Покрытие D-карт"
-    >
-      <summary className="varga-coverage-summary-head">
-        <strong>Покрытие варг</strong>
-        <span>{coverage.ready.length}/{coverage.total} готово · D1-D60</span>
-      </summary>
-      <div className="varga-coverage-summary-grid">
-        {items.map((item) => (
-          <div key={item.label}>
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-            <small>{item.detail}</small>
-          </div>
-        ))}
-      </div>
-      <button type="button" className="varga-coverage-atlas-button" onClick={onOpenAtlas}>Атлас D1-D60</button>
-    </details>
-  );
-}
-
-function JaiminiPendingStrip({ onOpenAtlas }: { onOpenAtlas: () => void }) {
-  const items = jaiminiVargaCodes.map((code) => ({
-    code,
-    scope: priorityVargaContexts[code]?.scope ?? vargaPurposeLabels[code] ?? "Jaimini",
-    detail: priorityVargaContexts[code]?.detail ?? "ждёт сверки правила",
-  }));
-
-  return (
-    <details className="jaimini-pending-strip" aria-label="D-карты Джаимини ждут сверки">
-      <summary>
-        <strong>Джаимини ждёт сверки</strong>
-        <span>D5, D6, D8 и D11 не выдаются как расчёт, пока правило не подтверждено.</span>
-      </summary>
-      <div className="jaimini-pending-list">
-        {items.map((item) => (
-          <button type="button" disabled key={item.code} title={item.detail}>
-            <strong>{item.code}</strong>
-            <span>{item.scope}</span>
-          </button>
-        ))}
-      </div>
-      <button type="button" onClick={onOpenAtlas}>Открыть атлас</button>
-    </details>
-  );
-}
-
-function PriorityVargaRibbon({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-}) {
-  const items = practitionerVargaCodes.map((code) => {
-    if (code === "D1") return { code, name: "Rashi", available: Boolean(chart), varga: null };
-    const varga = chart?.vargas?.[code];
-    return { code, name: varga?.name ?? "Varga", available: Boolean(varga), varga: varga ?? null };
-  });
-  const coverage = vargaCoverage(chart);
-  const activeContext = priorityVargaContexts[activeCode] ?? { scope: "Варга", detail: "дополнительная карта" };
-
-  return (
-    <div className="priority-varga-ribbon" aria-label="Главные D-карты">
-      <div className="priority-varga-ribbon-head">
-        <div>
-          <strong>D-карты</strong>
-          <span>Быстрый набор астролога: D1, D9, D10 и ключевые варги</span>
-        </div>
-        <div className="varga-coverage-pill">
-          <span>{coverage.ready.length}/{coverage.total}</span>
-          <strong>{activeCode} · {activeContext.scope}</strong>
-          <small>
-            {coverage.pendingJaimini.length
-              ? `Jaimini ждёт сверки: ${coverage.pendingJaimini.join(", ")}`
-              : coverage.missing.length
-                ? `полный атлас: ${coverage.ready.length}/${coverage.total}`
-                : "все основные варги рассчитаны"}
-          </small>
-        </div>
-      </div>
-      <div className="priority-varga-ribbon-grid">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={`priority-varga-card${activeCode === item.code ? " active" : ""}`}
-            disabled={!item.available}
-            key={item.code}
-            onClick={() => onSelect(item.code)}
-          >
-            <div className="priority-varga-title">
-              <div>
-                <strong>{item.code}</strong>
-                <em>{priorityVargaContexts[item.code].scope}</em>
-              </div>
-              <span>{vargaPurposeLabels[item.code] ?? item.name}</span>
-              <small>{priorityVargaContexts[item.code].detail}</small>
-            </div>
-            <div className="priority-varga-preview">
-              {item.available ? (
-                chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-                )
-              ) : (
-                <em>{unavailableVargaLabel(item.code)}</em>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function VargaReadingStrip({
-  chart,
-  activeCode,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  onSelect: (code: string) => void;
-}) {
-  const context = priorityVargaContexts[activeCode] ?? { scope: "Варга", detail: "дополнительный слой чтения" };
-  const relatedGroup = vargaFocusGroups.find((group) => group.codes.includes(activeCode)) ?? vargaFocusGroups[0];
-  const relatedCodes = relatedGroup.codes.filter((code) => code !== activeCode).slice(0, 5);
-  const available = (code: string) => code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]);
-
-  return (
-    <div className="varga-reading-strip" aria-label="Контекст чтения выбранной D-карты">
-      <div>
-        <span><GlossaryTerm termKey="varga">{activeCode}</GlossaryTerm> · {context.scope}</span>
-        <strong>{vargaPurposeLabels[activeCode] ?? "Дробная карта"}</strong>
-        <small>{context.detail}</small>
-      </div>
-      <div className="varga-reading-links">
-        <span>читать вместе</span>
-        {relatedCodes.map((code) => (
-          <button type="button" disabled={!available(code)} onClick={() => onSelect(code)} key={code}>
-            {code}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function VargaCompareStrip({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-}) {
-  const codes = Array.from(new Set(["D1", "D9", activeCode])).filter((code) => code === "D1" || Boolean(chart?.vargas?.[code]));
-  if (!chart || codes.length < 2) return null;
-
-  return (
-    <div className="varga-compare-strip" aria-label="Быстрое сравнение D1, D9 и активной варги">
-      <div className="varga-compare-head">
-        <strong>Сравнить</strong>
-        <span>D1 / D9 / активная</span>
-      </div>
-      <div className="varga-compare-list">
-        {codes.map((code) => {
-          const varga = code === "D1" ? null : chart.vargas?.[code] ?? null;
-          const context = priorityVargaContexts[code] ?? { scope: "Варга", detail: "дробная карта" };
-          return (
-            <button
-              type="button"
-              className={`varga-compare-card${activeCode === code ? " active" : ""}`}
-              onClick={() => onSelect(code)}
-              key={code}
-            >
-              <div>
-                <strong>{code}</strong>
-                <span>{context.scope}</span>
-              </div>
-              <div className="varga-compare-preview">
-                {chartStyle === "south" ? (
-                  <SouthIndianChartGrid chart={chart} varga={varga} chartReference={chartReference} compact />
-                ) : (
-                  <NorthIndianChartSvg chart={chart} varga={varga} chartReference={chartReference} compact />
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 function VargaAtlasBoard({
   chart,
@@ -3137,10 +2363,10 @@ function VargaAtlasBoard({
   chartReference: ChartReference;
   onSelect: (code: string) => void;
 }) {
-  const [atlasFilter, setAtlasFilter] = useState<"all" | "ready" | "pending" | "jaimini">("all");
+  const [atlasFilter, setAtlasFilter] = useState<"all" | "готово" | "ожидает" | "jaimini">("готово");
   const items = vargaSnapshotCodes.map((code) => {
     if (code === "D1") {
-      return { code, name: "Раши", available: Boolean(chart), varga: null, status: chart ? "рассчитана" : "нет расчёта", previewStatus: "после расчёта" };
+      return { code, name: "Раши", available: Boolean(chart), varga: null, status: chart ? "рассчитана" : "не открыто", previewStatus: "после построения" };
     }
     const varga = chart?.vargas?.[code];
     const available = Boolean(varga);
@@ -3150,22 +2376,21 @@ function VargaAtlasBoard({
       available,
       varga: varga ?? null,
       status: available ? "рассчитана" : unavailableVargaLabel(code),
-      previewStatus: jaiminiVargaCodeSet.has(code) ? "после сверки" : "после расчёта",
+      previewStatus: jaiminiVargaCodeSet.has(code) ? "после проверки" : "после построения",
     };
   });
   const coverage = vargaCoverage(chart);
-  const missingText = coverage.missing.length ? coverage.missing.slice(0, 6).join(", ") : "нет";
-  const jaiminiText = coverage.pendingJaimini.length ? coverage.pendingJaimini.join(", ") : "нет";
   const filteredItems = items.filter((item) => {
-    if (atlasFilter === "ready") return item.available;
-    if (atlasFilter === "pending") return !item.available && !jaiminiVargaCodeSet.has(item.code);
+    if (item.code === activeCode) return false;
+    if (atlasFilter === "готово") return item.available;
+    if (atlasFilter === "ожидает") return !item.available && !jaiminiVargaCodeSet.has(item.code);
     if (atlasFilter === "jaimini") return jaiminiVargaCodeSet.has(item.code);
     return true;
   });
   const atlasFilters = [
     { key: "all", label: "Все", count: items.length },
-    { key: "ready", label: "Готовые", count: coverage.ready.length },
-    { key: "pending", label: "Ожидают", count: coverage.missing.length - coverage.pendingJaimini.length },
+    { key: "готово", label: "Готовые", count: coverage.ready.length },
+    { key: "ожидает", label: "Ожидают", count: coverage.missing.length - coverage.pendingJaimini.length },
     { key: "jaimini", label: "Джаимини", count: coverage.pendingJaimini.length },
   ] as const;
 
@@ -3173,13 +2398,7 @@ function VargaAtlasBoard({
     <div className="varga-atlas-board" aria-label="Атлас D-карт">
       <div className="varga-atlas-head">
         <div>
-          <strong>Атлас D-карт</strong>
-          <span>20 слоёв одним взглядом</span>
-        </div>
-        <div className="varga-atlas-status" aria-label="Покрытие атласа D-карт">
-          <span><b>{coverage.ready.length}/{coverage.total}</b> рассчитано</span>
-          <span><b>{missingText}</b> ожидает</span>
-          <span><b>{jaiminiText}</b> Джаимини</span>
+          <strong>Другие D-карты</strong>
         </div>
       </div>
       <div className="varga-atlas-filter" aria-label="Фильтр атласа D-карт">
@@ -3234,73 +2453,11 @@ function VargaAtlasBoard({
           ))
         ) : (
           <div className="varga-atlas-empty">
-            <strong>В этом фильтре пока нет D-карт</strong>
-            <span>Откройте все карты или запустите расчёт, чтобы появились готовые варги.</span>
+            <strong>Других D-карт в этом фильтре нет</strong>
             <button type="button" onClick={() => setAtlasFilter("all")}>Показать все</button>
           </div>
         )}
       </div>
-      <VargaSummaryTable chart={chart} activeCode={activeCode} onSelect={onSelect} />
-    </div>
-  );
-}
-
-function VargaSummaryTable({
-  chart,
-  activeCode,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  onSelect: (code: string) => void;
-}) {
-  const rows = vargaSnapshotCodes.map((code) => {
-    const placements = code === "D1"
-      ? [
-          ...(chart?.ascendant ? [{ body: "Lagna", rashi: chart.ascendant.rashi }] : []),
-          ...(chart?.grahas ?? []).map((graha) => ({ body: graha.body, rashi: graha.rashi })),
-        ]
-      : chart?.vargas?.[code]?.placements ?? [];
-    const findRashi = (body: string) => placements.find((placement) => canonicalBody(placement.body) === canonicalBody(body))?.rashi ?? "";
-    const available = code === "D1" ? Boolean(chart) : Boolean(chart?.vargas?.[code]);
-    return {
-      code,
-      available,
-      purpose: vargaPurposeLabels[code] ?? "Варга",
-      lagna: findRashi("Lagna"),
-      moon: findRashi("Chandra"),
-      sun: findRashi("Surya"),
-    };
-  });
-
-  return (
-    <div className="varga-summary-table" aria-label="Сводная таблица Shodashvarga">
-      <div className="varga-summary-head">
-        <strong>Shodashvarga таблица</strong>
-        <span>Lagna, Chandra и Surya по D-картам</span>
-      </div>
-      <div className="varga-summary-row table-head">
-        <span>D</span>
-        <span>Сфера</span>
-        <span>Lagna</span>
-        <span>Chandra</span>
-        <span>Surya</span>
-      </div>
-      {rows.map((row) => (
-        <button
-          type="button"
-          className={`varga-summary-row${activeCode === row.code ? " active" : ""}${row.available ? " ready" : ""}`}
-          disabled={!row.available}
-          key={row.code}
-          onClick={() => onSelect(row.code)}
-        >
-          <strong>{row.code}</strong>
-          <span>{row.purpose}</span>
-          <span>{row.lagna || "-"}</span>
-          <span>{row.moon || "-"}</span>
-          <span>{row.sun || "-"}</span>
-        </button>
-      ))}
     </div>
   );
 }
@@ -3311,34 +2468,49 @@ function BirthCompactStrip({
   placeName,
   selectedPlace,
   chart,
+  currentChartDefault,
   collapsed,
   onToggle,
+  onUseCurrent,
 }: {
   birthDate: string;
   birthTime: string;
   placeName: string;
   selectedPlace: PlaceCandidate | null;
   chart: BirthChart | null;
+  currentChartDefault: boolean;
   collapsed: boolean;
   onToggle: () => void;
+  onUseCurrent: () => void;
 }) {
   const placeLabel = selectedPlace?.label ?? chart?.place.label ?? chart?.place.name ?? placeName;
-  const utcLabel = chart?.birth.utc_offset ?? selectedPlace?.timezone ?? "timezone";
+  const utcLabel = chart?.birth.utc_offset ?? selectedPlace?.timezone ?? "ожидает";
 
   return (
     <div className="birth-compact-strip">
       <div>
-        <span>Карта рождения</span>
+        <span>{currentChartDefault ? "Карта на сейчас" : "Карта рождения"}</span>
         <strong>
           {birthDate} · {birthTime} · {placeLabel}
         </strong>
       </div>
       <div>
-        <span>UTC / TZ</span>
+        <span>Часовой пояс</span>
         <strong>{utcLabel}</strong>
       </div>
+      <button
+        type="button"
+        className="secondary-button current-chart-button"
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          onUseCurrent();
+        }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        Сейчас
+      </button>
       <button type="button" className="secondary-button" onClick={onToggle}>
-        {collapsed ? "Изменить данные" : "Свернуть"}
+        {collapsed ? "✎" : "Свернуть"}
       </button>
     </div>
   );
@@ -3374,10 +2546,6 @@ function formatPeriodRange(period: DayPeriod) {
   return `${period.name} ${formatIsoTime(period.starts_at)}-${formatIsoTime(period.ends_at)}`;
 }
 
-function supportsHoverTooltips() {
-  return typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-}
-
 const READER_EXPLANATION_EVENT = "jyotish:reader-explanation";
 
 type ReaderExplanationDetail = {
@@ -3391,98 +2559,66 @@ function publishReaderExplanation(detail: ReaderExplanationDetail) {
   window.dispatchEvent(new CustomEvent<ReaderExplanationDetail>(READER_EXPLANATION_EVENT, { detail }));
 }
 
+function readerExplanationForPlacement({
+  chart,
+  varga,
+  placement,
+  house,
+  termLanguage,
+}: {
+  chart: BirthChart | null;
+  varga: ActiveVargaChart | null;
+  placement: ChartPlacement;
+  house: number | null;
+  termLanguage: TermLanguage;
+}): ReaderExplanationDetail {
+  const label = placement.isLagna ? grahaTermLabel("Lagna", termLanguage) : grahaTermLabel(placement.body, termLanguage);
+  const rashiLabel = rashiTermFromName(placement.rashi, termLanguage);
+  const houseText = house ? `${house} дом` : "дом не определён";
+  if (placement.isLagna && chart) {
+    return {
+      title: `${label}: ${rashiLabel}`,
+      context: "Карта",
+      text: readerExplanationForHouse({ chart, varga, chartReference: "lagna", house: house ?? 1, termLanguage }).text,
+    };
+  }
+  const natalGraha = chart?.grahas.find((graha) => canonicalBody(graha.body) === canonicalBody(placement.body));
+  if (!varga && chart && natalGraha) {
+    return {
+      title: `${label}: ${rashiLabel}${house ? `, ${house} дом` : ""}`,
+      context: "Карта D1",
+      text: placementExplanationText({ graha: natalGraha, chart, house, termLanguage }),
+    };
+  }
+  const nakshatra = placement.nakshatra ? `${placement.nakshatra}${placement.pada ? `, пада ${placement.pada}` : ""}` : "накшатра не указана";
+  const dignity = dignityText(placement.dignity);
+  const retrograde = placement.retrograde ? " Ретроградность усиливает возврат к теме и требует повторной проверки результата." : "";
+  return {
+    title: `${label}: ${rashiLabel}${house ? `, ${house} дом` : ""}`,
+    context: varga ? `${varga.name ?? "D-карта"}` : "Карта",
+    text: [
+      `${label} расположен в ${rashiLabel}, ${houseText}. Накшатра: ${nakshatra}. ${dignity ? `Состояние: ${dignity}.` : ""}`.trim(),
+      "В D-карте это уточняет плод, обещанный D1: природа грахи и её D1-управления остаются корнем, знак и диспозитор показывают канал, а дом варги показывает область проявления.",
+      retrograde.trim(),
+    ].filter(Boolean).join("\n\n"),
+  };
+}
+
 function GlossaryTerm({ termKey, children }: { termKey: GlossaryKey; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const wrapRef = useRef<HTMLSpanElement | null>(null);
-  const popoverId = useId();
   const item = jyotishGlossary[termKey];
 
-  useEffect(() => {
-    if (!open) return;
-
-    function handlePointerDown(event: PointerEvent) {
-      if (wrapRef.current?.contains(event.target as Node)) return;
-      setOpen(false);
-      setPinned(false);
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        setPinned(false);
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open]);
-
   return (
-    <span
-      className="glossary-wrap"
-      data-open={open ? "true" : "false"}
-      ref={wrapRef}
-      onPointerEnter={() => {
-        if (supportsHoverTooltips() && !pinned) setOpen(true);
-      }}
-      onPointerLeave={() => {
-        if (supportsHoverTooltips() && !pinned) setOpen(false);
-      }}
-    >
+    <span className="glossary-wrap">
       <button
         type="button"
         className="glossary-trigger"
-        aria-controls={popoverId}
-        aria-expanded={open}
-        title={item.text}
-        onFocus={() => {
-          if (!pinned) setOpen(true);
-        }}
         onClick={(event) => {
           event.stopPropagation();
           publishReaderExplanation({ title: item.label, text: item.text, context: "Справочник терминов" });
-          const nextOpen = !open || !pinned;
-          setPinned(nextOpen);
-          setOpen(nextOpen);
         }}
       >
         {children}
       </button>
-      <span className="glossary-popover" id={popoverId} role="note">
-          <span className="glossary-popover-head">
-            <strong>{item.label}</strong>
-            <button
-              type="button"
-              className="glossary-close"
-              aria-label="Закрыть объяснение"
-              onClick={(event) => {
-                event.stopPropagation();
-                setOpen(false);
-                setPinned(false);
-              }}
-            >
-              ×
-            </button>
-          </span>
-          <span>{item.text}</span>
-          <button
-            type="button"
-            className="help-ai-action"
-            onClick={(event) => {
-              event.stopPropagation();
-              requestAiExplanation({ title: item.label, text: item.text });
-              setOpen(false);
-              setPinned(false);
-            }}
-          >
-            Спросить AI
-          </button>
-      </span>
     </span>
   );
 }
@@ -3490,101 +2626,26 @@ function GlossaryTerm({ termKey, children }: { termKey: GlossaryKey; children: R
 function CalculationValueHelp({
   title,
   text,
+  context = "Расчёт карты",
   children,
 }: {
   title: string;
   text: string;
+  context?: string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const wrapRef = useRef<HTMLSpanElement | null>(null);
-  const popoverId = useId();
-
-  useEffect(() => {
-    if (!open) return;
-
-    function handlePointerDown(event: PointerEvent) {
-      if (wrapRef.current?.contains(event.target as Node)) return;
-      setOpen(false);
-      setPinned(false);
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      setOpen(false);
-      setPinned(false);
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open]);
-
   return (
-    <span
-      className="glossary-wrap calculation-value-help"
-      data-open={open ? "true" : "false"}
-      ref={wrapRef}
-      onPointerEnter={() => {
-        if (supportsHoverTooltips() && !pinned) setOpen(true);
-      }}
-      onPointerLeave={() => {
-        if (supportsHoverTooltips() && !pinned) setOpen(false);
-      }}
-    >
+    <span className="glossary-wrap calculation-value-help">
       <button
         type="button"
         className="glossary-trigger"
-        aria-controls={popoverId}
-        aria-expanded={open}
-        title={text}
-        onFocus={() => {
-          if (!pinned) setOpen(true);
-        }}
         onClick={(event) => {
           event.stopPropagation();
-          publishReaderExplanation({ title, text, context: "Расчёт карты" });
-          const nextOpen = !open || !pinned;
-          setPinned(nextOpen);
-          setOpen(nextOpen);
+          publishReaderExplanation({ title, text, context });
         }}
       >
         {children}
       </button>
-      <span className="glossary-popover" id={popoverId} role="note">
-        <span className="glossary-popover-head">
-          <strong>{title}</strong>
-          <button
-            type="button"
-            className="glossary-close"
-            aria-label="Закрыть объяснение"
-            onClick={(event) => {
-              event.stopPropagation();
-              setOpen(false);
-              setPinned(false);
-            }}
-          >
-            ×
-          </button>
-        </span>
-        <span>{text}</span>
-        <button
-          type="button"
-          className="help-ai-action"
-          onClick={(event) => {
-            event.stopPropagation();
-            requestAiExplanation({ title, text });
-            setOpen(false);
-            setPinned(false);
-          }}
-        >
-          Спросить AI
-        </button>
-      </span>
     </span>
   );
 }
@@ -3606,6 +2667,69 @@ function dignityText(dignity: GrahaDignity | null | undefined) {
   if (dignity === "moolatrikona") return "мулатрикона";
   return null;
 }
+
+const grahaShastraMeanings: Record<string, { nature: string; strong: string; caution: string }> = {
+  Surya: {
+    nature: "Сурья показывает атму, власть, отца, честь, способность вести и принимать ответственность.",
+    strong: "В сильном положении даёт ясность цели, признание, самостоятельность и поддержку от старших или власти.",
+    caution: "При слабости или поражении может давать гордость, сухость, конфликт с авторитетами и перегрев темы дома.",
+  },
+  Chandra: {
+    nature: "Чандра показывает ум, мать, питание, общественную связь, восприимчивость и ежедневный ритм.",
+    strong: "Сильная Луна поддерживает популярность, мягкость, заботу, память и устойчивую психику.",
+    caution: "При слабости или поражении даёт переменчивость, тревожность и зависимость результата от настроения.",
+  },
+  Mangala: {
+    nature: "Мангала показывает силу, мужество, спор, защиту, братьев, землю, технику и способность действовать.",
+    strong: "Сильный Марс даёт решительность, победу в борьбе, инженерность, дисциплину и защиту своих интересов.",
+    caution: "При поражении может давать резкость, травмы, конфликты, поспешность и разрушение темы дома.",
+  },
+  Budha: {
+    nature: "Будха показывает разум, речь, счёт, обучение, торговлю, письма, анализ и способность адаптироваться.",
+    strong: "Сильный Меркурий даёт ясную речь, гибкий интеллект, коммерческий навык и точность в деталях.",
+    caution: "При слабости или поражении даёт нервозность, хитрость, сомнения и рассеивание внимания.",
+  },
+  Guru: {
+    nature: "Гуру показывает дхарму, знание, наставников, детей, благословение, расширение и защиту.",
+    strong: "Сильный Юпитер даёт мудрость, поддержку учителей, благочестие, рост и способность видеть смысл.",
+    caution: "При слабости может давать чрезмерную доверчивость, догматизм или потерю правильного совета.",
+  },
+  Shukra: {
+    nature: "Шукра показывает любовь, брак, комфорт, красоту, наслаждение, искусство, семя и способность к союзу.",
+    strong: "Сильная Венера даёт привлекательность, гармонию, вкус, договороспособность и материальный комфорт.",
+    caution: "При поражении может давать привязанность к удовольствиям, слабость в отношениях и растрату.",
+  },
+  Shani: {
+    nature: "Шани показывает время, труд, ограничения, служение, старших, бедных, выносливость и карму задержек.",
+    strong: "Сильный Сатурн даёт терпение, устойчивость, практичность, способность выдерживать долгий путь.",
+    caution: "При слабости или поражении даёт страх, холодность, задержки, тяжесть и чувство нехватки.",
+  },
+  Rahu: {
+    nature: "Раху показывает необычное, иностранное, усиление желаний, нарушение привычных границ и материальную одержимость. Раху не владеет домами как классические грахи; его плод читается через занятый дом, знак, диспозитора, накшатра-управителя, соединения и аспекты.",
+    strong: "В конструктивном положении даёт нестандартный прорыв, работу с массами, техникой, чужими культурами.",
+    caution: "При поражении даёт иллюзию, зависимость, чрезмерную амбицию и искажение темы дома.",
+  },
+  Ketu: {
+    nature: "Кету показывает отсечение, мокшу, прошлый опыт, скрытую проницательность, аскезу и внутреннее отстранение. Кету не владеет домами как классические грахи; его плод читается через занятый дом, знак, диспозитора, накшатра-управителя, соединения и аспекты.",
+    strong: "В конструктивном положении даёт интуицию, духовную проницательность, способность отсечь лишнее.",
+    caution: "При поражении даёт разрыв, безразличие, внезапные потери или неполное проживание темы дома.",
+  },
+};
+
+const houseShastraMeanings: Record<number, { theme: string; result: string; caution: string }> = {
+  1: { theme: "1 дом — лагна: тело, характер, жизненная сила, направление судьбы.", result: "Граха здесь прямо окрашивает личность и способ действовать.", caution: "Поражения здесь отражаются на здоровье, уверенности и общем тоне жизни." },
+  2: { theme: "2 дом — речь, семья, накопления, питание, ценности и поддерживающая среда.", result: "Граха показывает, как человек говорит, хранит ресурс и опирается на род.", caution: "Поражения дают резкость речи, траты или напряжение в семье." },
+  3: { theme: "3 дом — усилие, смелость, навыки, руки, младшие родственники и личная инициатива.", result: "Граха здесь раскрывается через собственное действие и практику.", caution: "Поражения дают споры, суету или неверное применение силы." },
+  4: { theme: "4 дом — мать, сердце, дом, недвижимость, внутренняя опора, образование и счастье.", result: "Граха показывает качество покоя, дома и эмоциональной основы.", caution: "Поражения тревожат сердце, жильё, мать или чувство защищённости." },
+  5: { theme: "5 дом — интеллект, мантра, дети, пурва-пунья, творчество и способность давать совет.", result: "Граха здесь показывает плод прошлой заслуги и качество разумного выбора.", caution: "Поражения дают ошибки в суждении, тревоги за детей или нестабильность обучения." },
+  6: { theme: "6 дом — болезни, долги, враги, служение, конкуренция и преодоление.", result: "Граха здесь показывает, чем человек борется и как побеждает препятствия.", caution: "Поражения усиливают конфликты, хронические темы и долговую нагрузку." },
+  7: { theme: "7 дом — брак, партнёрство, договоры, публика и открытые отношения.", result: "Граха здесь показывает стиль союза и то, что человек встречает через других.", caution: "Поражения дают напряжение в браке, договорах и публичном взаимодействии." },
+  8: { theme: "8 дом — долголетие, тайны, кризисы, наследство, трансформация и скрытая карма.", result: "Граха здесь действует глубоко, через переломы, исследование и невидимые процессы.", caution: "Поражения дают резкие перемены, страх, потери или скрытые болезни." },
+  9: { theme: "9 дом — дхарма, отец, гуру, удача, паломничества, шастры и благословение.", result: "Граха здесь показывает веру, высший смысл и поддержку судьбы.", caution: "Поражения дают конфликт с учителями, отцом, традицией или законом." },
+  10: { theme: "10 дом — карма, профессия, статус, власть, действие в мире и видимый результат.", result: "Граха здесь становится публичной: её природа проявляется в работе, репутации и обязанностях.", caution: "Поражения дают давление статуса, ошибки перед начальством или потерю направления в деле." },
+  11: { theme: "11 дом — доходы, друзья, сети, старшие родственники, исполнение желаний и рост результатов.", result: "Граха здесь показывает, через что приходят плоды и поддержка сообщества.", caution: "Поражения дают жадность, неправильные связи или нестабильные доходы." },
+  12: { theme: "12 дом — расходы, сон, уединение, дальние места, освобождение, потери и скрытая жизнь.", result: "Граха здесь уводит свою тему внутрь, за границу, в служение, аскезу или расходы.", caution: "Поражения дают утечки, изоляцию, тайные привязанности и неосознанные потери." },
+};
 
 function grahaStatusText(graha: GrahaPosition) {
   const dignity = dignityText(grahaDignity(graha));
@@ -3751,431 +2875,6 @@ function PanchangaDigest({ chart }: { chart: BirthChart | null }) {
   );
 }
 
-function BeginnerLearningPanel() {
-  const items: Array<{ key: string; title: ReactNode; text: string }> = [
-    {
-      key: "self",
-      title: <GlossaryTerm termKey="lagna">Лагна</GlossaryTerm>,
-      text: "старт карты: тело, характер, общий способ действовать",
-    },
-    {
-      key: "mind",
-      title: <GlossaryTerm termKey="chandra_lagna">Луна</GlossaryTerm>,
-      text: "ум, реакция, эмоциональный комфорт и даши",
-    },
-    {
-      key: "relationship",
-      title: <GlossaryTerm termKey="house_7">7 дом</GlossaryTerm>,
-      text: "партнёрство, договорённости и открытое взаимодействие",
-    },
-    {
-      key: "inner",
-      title: <GlossaryTerm termKey="house_12">12 дом</GlossaryTerm>,
-      text: "сон, расходы, уединение, близость и скрытая сторона связи",
-    },
-    {
-      key: "strength",
-      title: <GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm>,
-      text: "расчётная сила грахи; полезна как слой проверки, а не приговор",
-    },
-    {
-      key: "navamsa",
-      title: <GlossaryTerm termKey="d9">D9</GlossaryTerm>,
-      text: "зрелость положения, дхарма, брак и тонкая сила грах",
-    },
-  ];
-
-  return (
-    <div className="beginner-learning-panel" aria-label="Базовый порядок чтения карты">
-      <div>
-        <strong>Базовый порядок чтения</strong>
-        <span>D1 сначала даёт основу, D9 и силы уточняют картину.</span>
-      </div>
-      <div className="beginner-learning-grid">
-        {items.map((item) => (
-          <div key={item.key}>
-            <strong>{item.title}</strong>
-            <span>{item.text}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function BeginnerGuidedCourse() {
-  const steps: Array<{ key: string; title: ReactNode; text: ReactNode; href: string }> = [
-    {
-      key: "map",
-      title: <>1. Найдите <GlossaryTerm termKey="lagna">лагну</GlossaryTerm></>,
-      text: <>Это старт карты: тело, характер и базовый способ действовать.</>,
-      href: "#varga-charts",
-    },
-    {
-      key: "houses",
-      title: <>2. Откройте <GlossaryTerm termKey="house">дома</GlossaryTerm></>,
-      text: <>Номера 1-12 под картой объясняют сферы жизни простым языком.</>,
-      href: "#varga-charts",
-    },
-    {
-      key: "moon",
-      title: <>3. Смотрите <GlossaryTerm termKey="chandra_lagna">Луну</GlossaryTerm></>,
-      text: <>Луна показывает ум, реакцию, комфорт и основу даш.</>,
-      href: "#varga-charts",
-    },
-    {
-      key: "table",
-      title: <>4. Проверьте <GlossaryTerm termKey="calculation_table">таблицу</GlossaryTerm></>,
-      text: <>Там видны градусы, раши, дома, накшатры, D9, сожжение и шадбала.</>,
-      href: "/?analysis=calculations#reports",
-    },
-    {
-      key: "ai",
-      title: <>5. Спросите <GlossaryTerm termKey="ai_context">AI</GlossaryTerm></>,
-      text: <>После расчёта можно задавать вопросы по карте и связанным людям.</>,
-      href: "/?analysis=guidance#reports",
-    },
-  ];
-
-  return (
-    <section className="beginner-guided-course" aria-label="Обучение основам карты">
-      <div className="beginner-guided-head">
-        <strong>Режим новичка</strong>
-        <span>Пять шагов, чтобы человек без подготовки не потерялся в карте.</span>
-      </div>
-      <div className="beginner-guided-steps">
-        {steps.map((step) => (
-          <a href={step.href} key={step.key}>
-            <strong>{step.title}</strong>
-            <span>{step.text}</span>
-          </a>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function BeginnerAskAiPanel() {
-  const questions = [
-    {
-      key: "rashi",
-      title: "Что такое раши?",
-      text: "Объясни простыми словами, что такое знак/раши в этой карте и почему он важен.",
-    },
-    {
-      key: "house12",
-      title: "Что значит 12 дом?",
-      text: "Объясни 12 дом в этой карте: расходы, сон, уединение, близость, скрытые темы и мокша.",
-    },
-    {
-      key: "combustion",
-      title: "Что такое сожжение?",
-      text: "Объясни, как сожжение планеты рядом с Солнцем влияет на проявление грахи в этой карте.",
-    },
-    {
-      key: "shadbala",
-      title: "Как читать шадбалу?",
-      text: "Объясни шадбалу простыми словами и покажи, как не делать вывод только по одному числу.",
-    },
-  ];
-
-  return (
-    <section className="beginner-ask-ai-panel" aria-label="Вопросы AI по базовым понятиям">
-      <div>
-        <strong><GlossaryTerm termKey="ai_context">Спросить AI по карте</GlossaryTerm></strong>
-        <span>Эти вопросы открывают разбор и передают формулировку как контекст.</span>
-      </div>
-      <div>
-        {questions.map((question) => (
-          <button type="button" key={question.key} onClick={() => requestAiExplanation(question)}>
-            {question.title}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function BeginnerCalculationGuide() {
-  const items: Array<{ key: string; title: ReactNode; text: string }> = [
-    {
-      key: "graha",
-      title: <GlossaryTerm termKey="graha">Граха</GlossaryTerm>,
-      text: "какая планета или лагна сейчас читается в строке",
-    },
-    {
-      key: "rashi",
-      title: <GlossaryTerm termKey="rashi">Раши</GlossaryTerm>,
-      text: "в каком знаке стоит граха; это показывает стиль проявления",
-    },
-    {
-      key: "house",
-      title: <GlossaryTerm termKey="house">Дом</GlossaryTerm>,
-      text: "в какой сфере жизни проявится положение грахи",
-    },
-    {
-      key: "ruled",
-      title: <GlossaryTerm termKey="ruled_houses">Упр.</GlossaryTerm>,
-      text: "какие дома граха приносит с собой как хозяин знаков",
-    },
-    {
-      key: "nakshatra",
-      title: <GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm>,
-      text: "тонкая лунная стоянка; уточняет мотивацию и оттенок положения",
-    },
-    {
-      key: "d9",
-      title: <GlossaryTerm termKey="navamsa">D9</GlossaryTerm>,
-      text: "навамша показывает зрелость и внутреннюю силу положения",
-    },
-  ];
-
-  return (
-    <div className="beginner-calculation-guide" aria-label="Как читать таблицу расчётов">
-      <div>
-        <strong>Как читать таблицу расчётов</strong>
-        <span>Читайте строку слева направо: кто действует, где стоит, каким домом управляет и как это уточняется.</span>
-      </div>
-      <div>
-        {items.map((item) => (
-          <section key={item.key}>
-            <strong>{item.title}</strong>
-            <span>{item.text}</span>
-          </section>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function BeginnerNextSteps() {
-  return (
-    <div className="beginner-next-steps" aria-label="Что делать новичку">
-      <div>
-        <strong>Что делать дальше</strong>
-        <span>Для первого знакомства достаточно трёх действий: рассчитать карту, открыть объяснения и задать вопрос.</span>
-      </div>
-      <div>
-        <a href="#birth-form">1. Данные рождения</a>
-        <a href="#varga-charts">2. Карта и дома</a>
-        <a href="#reports">3. AI-разбор</a>
-        <a href="/interactions">4. Люди рядом</a>
-      </div>
-    </div>
-  );
-}
-
-function AiAccessPolicyPanel() {
-  return (
-    <section className="ai-access-policy-panel" aria-label="Правила AI-разбора">
-      <div>
-        <strong><GlossaryTerm termKey="free_personal_ai">AI-разбор карты</GlossaryTerm></strong>
-        <span>Правило MVP: первый бесплатный разбор относится к вашей собственной карте.</span>
-      </div>
-      <div className="ai-access-policy-grid">
-        <section>
-          <strong><GlossaryTerm termKey="self_profile">Моя карта</GlossaryTerm></strong>
-          <span>можно сохранить как основную и открыть бесплатный личный AI-разбор</span>
-        </section>
-        <section>
-          <strong><GlossaryTerm termKey="saved_other_chart">Карта другого</GlossaryTerm></strong>
-          <span>можно сохранить, смотреть расчёты и использовать в совместимости/взаимодействиях</span>
-        </section>
-        <section>
-          <strong><GlossaryTerm termKey="paid_other_ai">AI по чужой карте</GlossaryTerm></strong>
-          <span>будет платным сценарием; без согласия это остаётся личной заметкой владельца аккаунта</span>
-        </section>
-      </div>
-    </section>
-  );
-}
-
-function AiRelatedContextPanel({ relationships }: { relationships: ChartProfileRelationship[] }) {
-  const visible = relationships.filter((relationship) => !["declined", "blocked"].includes(relationship.link_status)).slice(0, 4);
-  return (
-    <section className="ai-related-context-panel" aria-label="Связанные карты для AI-контекста">
-      <div className="ai-related-context-head">
-        <div>
-          <strong><GlossaryTerm termKey="ai_context">Контекст связанных карт</GlossaryTerm></strong>
-          <span>AI может учитывать выбранные карты родителей, партнёра, руководителя или другого человека вместе с ролью и сохранёнными обзорами.</span>
-        </div>
-        <a href="/interactions">Настроить</a>
-      </div>
-      {visible.length ? (
-        <div className="ai-related-context-list">
-          {visible.map((relationship) => {
-            const role = relationshipRoleDefinitions.find((item) => item.key === relationship.role);
-            return (
-              <section key={`ai-context-relationship-${relationship.id}`}>
-                <span>{role?.label ?? relationship.role}</span>
-                <strong>
-                  {relationship.profile?.display_name ?? "Карта A"} → {relationship.related_profile?.display_name ?? "Карта B"}
-                </strong>
-                <small>
-                  <GlossaryTerm termKey="relationship_status">{relationshipStatusLabel(relationship.link_status)}</GlossaryTerm>
-                  {" · "}
-                  <GlossaryTerm termKey="ai_context">карта + обзоры</GlossaryTerm>
-                </small>
-              </section>
-            );
-          })}
-        </div>
-      ) : (
-        <p>
-          Связанные карты ещё не выбраны. Добавьте человека в разделе “Взаимодействия”, укажите роль и, если он зарегистрирован, отправьте запрос на подтверждение. В будущем AI будет подтягивать и сохранённые обзоры этих карт.
-        </p>
-      )}
-    </section>
-  );
-}
-
-function MvpReadinessPanel() {
-  const items = [
-    { key: "ready-calc", state: "готово", title: "Расчёты и таблицы", text: "D1, первичная таблица астролога, варги, шадбала, аста, накшатры." },
-    { key: "ready-help", state: "готово", title: "Объяснения", text: "Дома, раши, термины, шадбала, сожжение и beginner-вопросы к AI." },
-    { key: "ready-links", state: "готово", title: "Люди и роли", text: "Личные связи, запрос зарегистрированному пользователю, согласие и статусы." },
-    { key: "next-pay", state: "дальше", title: "Оплата", text: "Платный AI-разбор чужих карт оставлен как следующий этап." },
-  ];
-  return (
-    <section className="mvp-readiness-panel" aria-label="Готовность MVP">
-      <div className="mvp-readiness-head">
-        <strong><GlossaryTerm termKey="mvp_readiness">Что можно проверять сейчас</GlossaryTerm></strong>
-        <span>Короткая карта готовности, чтобы не смешивать рабочий MVP и будущую коммерческую логику.</span>
-      </div>
-      <div className="mvp-readiness-grid">
-        {items.map((item) => (
-          <section className={item.state === "готово" ? "ready" : "next"} key={item.key}>
-            <span>{item.state}</span>
-            <strong>{item.title}</strong>
-            <small>{item.text}</small>
-          </section>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CalculationReadingOrder({ isD1, chartMode }: { isD1: boolean; chartMode: string }) {
-  const items: Array<{ key: string; title: ReactNode; text: ReactNode }> = isD1
-    ? [
-        {
-          key: "placement",
-          title: <GlossaryTerm termKey="graha">1. Граха</GlossaryTerm>,
-          text: (
-            <>
-              кто действует, в каком <GlossaryTerm termKey="rashi">раши</GlossaryTerm> и <GlossaryTerm termKey="house">доме</GlossaryTerm>
-            </>
-          ),
-        },
-        {
-          key: "ownership",
-          title: <GlossaryTerm termKey="ruled_houses">2. Управление</GlossaryTerm>,
-          text: <>какие дома граха приносит в место своего положения</>,
-        },
-        {
-          key: "subtle",
-          title: <GlossaryTerm termKey="nakshatra">3. Накшатра</GlossaryTerm>,
-          text: (
-            <>
-              уточнение через <GlossaryTerm termKey="pada">паду</GlossaryTerm> и <GlossaryTerm termKey="navamsa">D9</GlossaryTerm>
-            </>
-          ),
-        },
-        {
-          key: "condition",
-          title: <GlossaryTerm termKey="dignity">4. Состояние</GlossaryTerm>,
-          text: (
-            <>
-              достоинство, <GlossaryTerm termKey="combustion">аста</GlossaryTerm> и <GlossaryTerm termKey="shadbala">шадбала</GlossaryTerm>
-            </>
-          ),
-        },
-      ]
-    : [
-        {
-          key: "varga-point",
-          title: <GlossaryTerm termKey="varga">1. Варга {chartMode}</GlossaryTerm>,
-          text: <>сначала проверяется, в какой знак попала каждая точка</>,
-        },
-        {
-          key: "d1-anchor",
-          title: <GlossaryTerm termKey="d1">2. Сравнение с D1</GlossaryTerm>,
-          text: <>дробная карта читается вместе с основной картой, а не отдельно</>,
-        },
-        {
-          key: "condition",
-          title: <GlossaryTerm termKey="dignity">3. Состояние</GlossaryTerm>,
-          text: <>сила положения уточняется через достоинство и поддержку D1</>,
-        },
-      ];
-
-  return (
-    <div className="calculation-reading-order" aria-label="Порядок чтения таблицы расчётов">
-      <strong>Что смотреть первым</strong>
-      <div>
-        {items.map((item) => (
-          <section key={item.key}>
-            <span>{item.title}</span>
-            <small>{item.text}</small>
-          </section>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CalculationTableHelp({ isD1 }: { isD1: boolean }) {
-  if (!isD1) {
-    return (
-      <div className="calculation-table-help" aria-label="Подсказка к таблице варги">
-        <section>
-          <strong><GlossaryTerm termKey="varga">Варга</GlossaryTerm></strong>
-          <span>Сначала сравните знак точки в этой варге с её положением в D1.</span>
-        </section>
-        <section>
-          <strong><GlossaryTerm termKey="dignity">Статус</GlossaryTerm></strong>
-          <span>Достоинство в варге уточняет качество проявления темы, но не заменяет D1.</span>
-        </section>
-      </div>
-    );
-  }
-
-  const items: Array<{ key: string; title: ReactNode; text: ReactNode }> = [
-    {
-      key: "where",
-      title: <GlossaryTerm termKey="house">Дом</GlossaryTerm>,
-      text: <>сфера жизни, где граха проявляет себя</>,
-    },
-    {
-      key: "owner",
-      title: <GlossaryTerm termKey="ruled_houses">Упр.</GlossaryTerm>,
-      text: <>какие темы граха приносит в этот дом</>,
-    },
-    {
-      key: "condition",
-      title: <GlossaryTerm termKey="graha_condition">Статус</GlossaryTerm>,
-      text: <>ретроградность, достоинство, аста и сила</>,
-    },
-    {
-      key: "strength",
-      title: <GlossaryTerm termKey="shadbala_score">Шадбала</GlossaryTerm>,
-      text: <>вирупы: сравнивайте относительно других грах</>,
-    },
-  ];
-
-  return (
-    <div className="calculation-table-help" aria-label="Подсказка к таблице D1">
-      <strong><GlossaryTerm termKey="calculation_table">Ключ к таблице</GlossaryTerm></strong>
-      {items.map((item) => (
-        <section key={item.key}>
-          <strong>{item.title}</strong>
-          <span>{item.text}</span>
-        </section>
-      ))}
-    </div>
-  );
-}
-
 function RashiValue({
   name,
   index,
@@ -4191,6 +2890,60 @@ function RashiValue({
     <GlossaryTerm termKey={rashiGlossaryKey(normalizeRashiIndex(index), name)}>
       {rashiTermLabel(normalizeRashiIndex(index), name, termLanguage, compact)}
     </GlossaryTerm>
+  );
+}
+
+function PlacementRashiValue({
+  graha,
+  chart,
+  house,
+  termLanguage,
+  compact = false,
+}: {
+  graha: GrahaPosition;
+  chart: BirthChart;
+  house: number | null;
+  termLanguage: TermLanguage;
+  compact?: boolean;
+}) {
+  const label = grahaTermLabel(graha.body, termLanguage);
+  const rashiLabel = rashiTermFromName(graha.rashi, termLanguage);
+  return (
+    <CalculationValueHelp
+      title={`${label} в ${rashiLabel}`}
+      text={placementExplanationText({ graha, chart, house, termLanguage })}
+      context="Таблица D1"
+    >
+      {rashiTermLabel(normalizeRashiIndex(graha.rashi_index), graha.rashi, termLanguage, compact)}
+    </CalculationValueHelp>
+  );
+}
+
+function NavamsaValue({
+  graha,
+  chart,
+  termLanguage,
+  compact = false,
+}: {
+  graha: GrahaPosition;
+  chart: BirthChart;
+  termLanguage: TermLanguage;
+  compact?: boolean;
+}) {
+  const label = grahaTermLabel(graha.body, termLanguage);
+  const d9 = rashiTermFromName(graha.navamsa, termLanguage);
+  return (
+    <CalculationValueHelp
+      title={`D9: ${label} в ${d9}`}
+      context="Таблица D1"
+      text={[
+        `${label} в D9 попадает в ${d9}. Навамша уточняет внутреннюю силу положения, дхарму грахи и зрелость результата, особенно для брака, обещаний D1 и устойчивости достоинства.`,
+        "D9 не отменяет D1: сначала читается раши-карта, затем навамша показывает тонкий слой и способность положения удержать результат.",
+        placementExplanationText({ graha, chart, house: houseFromRashiIndex(normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi), normalizeRashiIndex(chart.ascendant?.rashi_index) ?? rashiIndexFromName(chart.ascendant?.rashi)), termLanguage }).split("\n\n")[0],
+      ].filter(Boolean).join("\n\n")}
+    >
+      {rashiTermLabel(normalizeRashiIndex(graha.navamsa_index), graha.navamsa, termLanguage, compact)}
+    </CalculationValueHelp>
   );
 }
 
@@ -4241,16 +2994,50 @@ function NakshatraLordValue({
   );
 }
 
-function GrahaStatusValue({ graha }: { graha: GrahaPosition }) {
+function grahaStatusExplanationText(graha: GrahaPosition, house: number | null, termLanguage: TermLanguage) {
+  const label = grahaTermLabel(graha.body, termLanguage);
+  const dignity = grahaDignity(graha);
+  const retrograde = isRetrogradeGraha(graha);
+  const houseText = house ? `${house} дом` : "дом не определён";
+  const dignityLine = dignity
+    ? dignity === "exaltation"
+      ? `${label} в экзальтации: граха получает сильную способность проявить свою каракатву, но результат всё равно зависит от дома, управлений и поражений.`
+      : dignity === "debilitation"
+        ? `${label} в дебилитации: плод приходит через напряжение, компенсацию, обучение и поддержку диспозитора.`
+        : `${label} в мулатриконе: положение даёт естественную, устойчивую силу грахи.`
+    : `${label}: особого статуса экзальтации, дебилитации или мулатриконы здесь не видно.`;
+  const retroLine = retrograde
+    ? "Ретроградность делает тему более внутренней и повторяющейся: результат часто приходит через возврат, пересмотр и старые незавершённые задачи."
+    : "";
+  return [
+    `${label}, ${houseText}. Статус читается не отдельно, а вместе с бхавой, знаком, диспозитором, управляемыми домами и дашей.`,
+    dignityLine,
+    retroLine,
+  ].filter(Boolean).join("\n\n");
+}
+
+function GrahaStatusValue({
+  graha,
+  house = null,
+  termLanguage = "sanskrit",
+}: {
+  graha: GrahaPosition;
+  house?: number | null;
+  termLanguage?: TermLanguage;
+}) {
   const dignity = grahaDignity(graha);
   const retrograde = isRetrogradeGraha(graha);
   if (!retrograde && !dignity) return <>-</>;
+  const label = grahaTermLabel(graha.body, termLanguage);
+  const statusLabel = [retrograde ? "ретроградная" : "", dignity ? dignityText(dignity) : ""].filter(Boolean).join(", ");
   return (
-    <>
-      {retrograde ? <GlossaryTerm termKey="retrograde">ретроградная</GlossaryTerm> : null}
-      {retrograde && dignity ? ", " : null}
-      {dignity ? <GlossaryTerm termKey={dignity}>{dignityText(dignity)}</GlossaryTerm> : null}
-    </>
+    <CalculationValueHelp
+      title={`Статус: ${label}`}
+      text={grahaStatusExplanationText(graha, house, termLanguage)}
+      context="Таблица D1"
+    >
+      {statusLabel}
+    </CalculationValueHelp>
   );
 }
 
@@ -4270,13 +3057,46 @@ function placementExplanationText({
   const rashiLabel = rashiTermFromName(graha.rashi, termLanguage);
   const houseText = house ? `${house} дом` : "дом не определён";
   const lagnaIndex = normalizeRashiIndex(chart.ascendant?.rashi_index) ?? rashiIndexFromName(chart.ascendant?.rashi);
-  const ruledHouses = HouseGlossaryListText(ruledHousesForGraha(graha.body, lagnaIndex));
+  const ruledHouseList = ruledHousesForGraha(graha.body, lagnaIndex);
+  const ruledHouses = HouseGlossaryListText(ruledHouseList);
   const nakshatra = graha.nakshatra ? `${graha.nakshatra}${graha.pada ? `, пада ${graha.pada}` : ""}` : "накшатра не определена";
-  const dignity = dignityText(grahaDignity(graha));
+  const dignityKind = grahaDignity(graha);
+  const dignity = dignityText(dignityKind);
   const status = [isRetrogradeGraha(graha) ? "ретроградная" : "", dignity].filter(Boolean).join(", ") || "без особого статуса";
   const shadbala = shadbalaValueForGraha(chart, graha.body);
   const rashiLord = rashiIndex === null ? null : rashiLordBodies[rashiIndex];
-  return `${label} находится в ${rashiLabel}, ${houseText}. Управляет домами: ${ruledHouses || "-"}. Накшатра: ${nakshatra}. Статус: ${status}. Шадбала: ${shadbala}. Хозяин знака: ${rashiLord ? grahaTermLabel(rashiLord, termLanguage) : "-"}.`;
+  const rashiLordGraha = rashiLord ? chart.grahas.find((item) => canonicalBody(item.body) === canonicalBody(rashiLord)) : null;
+  const rashiLordHouse = rashiLordGraha
+    ? houseFromRashiIndex(normalizeRashiIndex(rashiLordGraha.rashi_index) ?? rashiIndexFromName(rashiLordGraha.rashi), lagnaIndex)
+    : null;
+  const grahaMeaning = grahaShastraMeanings[canonicalBody(graha.body)];
+  const houseMeaning = house ? houseShastraMeanings[house] : null;
+  const shadbalaRow = shadbalaRowForGraha(chart, graha.body);
+  const strengthLine = shadbalaRow
+    ? `Шадбала ${shadbala}: сила показывает способность грахи реализовать свою каракатву и управляемые дома. Сильная вредоносная или поражённая граха может сильнее дать трудный плод, а не просто “лучше”.`
+    : "Шадбала пока не найдена, поэтому силу положения нельзя читать отдельно от знака, дома и управителя.";
+  const dignityLine = dignity
+    ? `Состояние: ${status}. ${dignityKind === "exaltation" ? "Экзальтация усиливает способность грахи давать свой чистый плод." : dignityKind === "debilitation" ? "Дебилитация показывает, что плод приходит с напряжением, компенсацией или зависимостью от поддержки." : "Мулатрикона даёт естественную, устойчивую силу грахи."}`
+    : `Состояние: ${status}. Особых знаков экзальтации, дебилитации или мулатриконы здесь не видно.`;
+  const retroLine = isRetrogradeGraha(graha)
+    ? "Ретроградность делает тему более внутренней и повторяющейся: результат часто приходит через возврат, пересмотр и незавершённые кармические задачи."
+    : "";
+  const lordLine = rashiLord
+    ? `Хозяин знака: ${grahaTermLabel(rashiLord, termLanguage)}${rashiLordHouse ? `, расположен в ${rashiLordHouse} доме` : ""}. В шастрическом чтении диспозитор показывает канал, через который положение реально отдаёт результат.`
+    : "Хозяин знака не определён.";
+  const lordshipLine = ruledHouseList.length
+    ? `${label} управляет домами ${ruledHouses}; поэтому темы этих домов переносятся в ${houseText}.`
+    : `${label} не владеет домами напрямую; результат идёт через занятый дом, диспозитора ${rashiLord ? grahaTermLabel(rashiLord, termLanguage) : ""}, накшатра-управителя, соединения и аспекты.`;
+
+  return [
+    `${label} несёт свою каракатву в ${houseText}; знак задаёт форму, диспозитор — канал отдачи результата, управляемые дома — источник тем, накшатра — тон проявления, сила — степень способности дать плод.`,
+    `${label} в ${houseText}${rashiLabel ? `, знак ${rashiLabel}` : ""}. ${grahaMeaning?.nature ?? "Граха показывает свою естественную каракатву."} ${houseMeaning?.theme ?? ""}`,
+    `${houseMeaning?.result ?? "Результат читается по связи грахи с домом."} ${lordshipLine}`,
+    lordLine,
+    `Накшатра: ${nakshatra}. Накшатра уточняет способ проявления: мотивацию, тон действия и более тонкий слой результата.`,
+    `${dignityLine} ${strengthLine} ${grahaMeaning?.strong ?? ""}`,
+    `${houseMeaning?.caution ?? ""} ${grahaMeaning?.caution ?? ""} ${retroLine}`.trim(),
+  ].filter(Boolean).join("\n\n");
 }
 
 function HouseGlossaryListText(houses: number[]) {
@@ -4322,6 +3142,41 @@ function HouseValueHelp({
   );
 }
 
+function RuledHousesValue({
+  graha,
+  houses,
+  chart,
+  currentHouse,
+  termLanguage,
+}: {
+  graha: GrahaPosition;
+  houses: readonly number[];
+  chart: BirthChart;
+  currentHouse: number | null;
+  termLanguage: TermLanguage;
+}) {
+  if (!houses.length) return <>-</>;
+  const label = grahaTermLabel(graha.body, termLanguage);
+  const houseLabels = houses.join(", ");
+  const currentHouseText = currentHouse ? `${currentHouse} дом` : "текущий дом";
+  const houseDetails = houses
+    .map((house) => readerExplanationForHouse({ chart, varga: null, chartReference: "lagna", house, termLanguage }).text.split("\n\n")[0])
+    .join("\n\n");
+  return (
+    <CalculationValueHelp
+      title={`Управления: ${label}`}
+      context="Таблица D1"
+      text={[
+        `${label} управляет домами ${houseLabels}. Поэтому в положении ${label} темы этих домов переносятся в ${currentHouseText}.`,
+        "В классическом чтении это один из главных слоёв: граха показывает не только свою каракатву, но и приносит в дом темы домов, которыми владеет.",
+        houseDetails,
+      ].filter(Boolean).join("\n\n")}
+    >
+      {houseLabels}
+    </CalculationValueHelp>
+  );
+}
+
 function shadbalaRowForGraha(chart: BirthChart, body: string) {
   return chart.classical?.shadbala?.items?.find((item) => canonicalBody(item.body) === canonicalBody(body));
 }
@@ -4333,12 +3188,14 @@ function shadbalaValueForGraha(chart: BirthChart, body: string) {
 }
 
 function LongitudeValue({ label, longitude }: { label: string; longitude: number }) {
+  const signDegrees = formatSignDegrees(longitude);
+  const absoluteDegrees = formatDegrees(longitude);
   return (
     <CalculationValueHelp
       title={`Долгота: ${label}`}
-      text={`${label}: ${formatDegrees(longitude)} абсолютной сидерической долготы. По этому числу считаются знак, накшатра, пада, D9 и остальные варги.`}
+      text={`${label}: ${signDegrees} внутри знака, ${absoluteDegrees} абсолютной сидерической долготы. По этому числу считаются знак, накшатра, пада, D9 и остальные варги.`}
     >
-      {formatDegrees(longitude)}
+      {signDegrees}
     </CalculationValueHelp>
   );
 }
@@ -4347,10 +3204,10 @@ function ShadbalaValue({ chart, body, label }: { chart: BirthChart; body: string
   const row = shadbalaRowForGraha(chart, body);
   const value = row ? `${row.known_total.toFixed(1)}` : "-";
   const detail = row
-    ? `Шадбала ${label}: ${value} вируп. Компоненты: Sthana ${row.components.sthana ?? 0}, Dig ${row.components.dig}, Kala ${row.components.kala ?? 0}, Chesta ${row.components.chesta ?? 0}, Naisargika ${row.components.naisargika}, Drik ${row.components.drik ?? 0}.`
+    ? `Шадбала ${label}: ${value} вируп. Это не “хорошо/плохо” само по себе: сила показывает способность грахи реализовать свою каракатву и управляемые дома. Сильная поражённая или вредоносная граха может сильнее дать трудный плод. Компоненты: Sthana ${row.components.sthana ?? 0}, Dig ${row.components.dig}, Kala ${row.components.kala ?? 0}, Chesta ${row.components.chesta ?? 0}, Naisargika ${row.components.naisargika}, Drik ${row.components.drik ?? 0}.`
     : `Для ${label} шадбала в текущем расчёте ещё не найдена.`;
   return (
-    <CalculationValueHelp title={`Шадбала: ${label}`} text={detail}>
+    <CalculationValueHelp title={`Шадбала: ${label}`} text={detail} context="Таблица D1">
       {value}
     </CalculationValueHelp>
   );
@@ -4364,7 +3221,7 @@ function GrahaTable({ chart, termLanguage }: { chart: BirthChart | null; termLan
     return (
       <div className="readiness-panel">
         <strong>Грахи ещё не рассчитаны</strong>
-        <p>Карта заполнится после ответа бэкенда с эфемеридными позициями.</p>
+        <p>Карта заполнится после расчёта эфемеридных положений.</p>
       </div>
     );
   }
@@ -4391,7 +3248,7 @@ function GrahaTable({ chart, termLanguage }: { chart: BirthChart | null; termLan
           <span>
             <RashiValue name={chart.ascendant.rashi} index={chart.ascendant.rashi_index} termLanguage={termLanguage} />
           </span>
-          <span><GlossaryTerm termKey="house_1">1</GlossaryTerm></span>
+          <span><HouseValueHelp chart={chart} house={1} termLanguage={termLanguage} /></span>
           <span>-</span>
           <span>
             <NakshatraValue name={chart.ascendant.nakshatra} pada={chart.ascendant.pada} subject={grahaTermLabel("Lagna", termLanguage)} />
@@ -4423,17 +3280,19 @@ function GrahaTable({ chart, termLanguage }: { chart: BirthChart | null; termLan
             <strong><GlossaryTerm termKey="graha">{grahaLabel}</GlossaryTerm></strong>
             <span><LongitudeValue label={grahaLabel} longitude={graha.longitude} /></span>
             <span>
-              <RashiValue name={graha.rashi} index={graha.rashi_index} termLanguage={termLanguage} />
+              <PlacementRashiValue graha={graha} chart={chart} house={house} termLanguage={termLanguage} />
             </span>
-            <span>{house ? <GlossaryTerm termKey={houseGlossaryKey(house)}>{house}</GlossaryTerm> : "-"}</span>
-            <span>{ruledHouses.length ? <HouseGlossaryList houses={ruledHouses} /> : "-"}</span>
+            <span>{house ? <HouseValueHelp chart={chart} house={house} termLanguage={termLanguage} /> : "-"}</span>
+            <span>
+              <RuledHousesValue graha={graha} houses={ruledHouses} chart={chart} currentHouse={house} termLanguage={termLanguage} />
+            </span>
             <span>
               <NakshatraValue name={graha.nakshatra} pada={graha.pada} subject={grahaLabel} />
             </span>
             <span>
               <NakshatraLordValue index={graha.nakshatra_index} name={graha.nakshatra} subject={grahaLabel} termLanguage={termLanguage} />
             </span>
-            <span className="graha-status-text"><GrahaStatusValue graha={graha} /></span>
+            <span className="graha-status-text"><GrahaStatusValue graha={graha} house={house} termLanguage={termLanguage} /></span>
             <span className={combustion.combust ? "combustion-badge active" : "combustion-badge"}>
               <CalculationValueHelp
                 title={`Аста: ${grahaLabel}`}
@@ -4450,7 +3309,7 @@ function GrahaTable({ chart, termLanguage }: { chart: BirthChart | null; termLan
               <ShadbalaValue chart={chart} body={graha.body} label={grahaLabel} />
             </span>
             <span>
-              <RashiValue name={graha.navamsa} index={graha.navamsa_index} termLanguage={termLanguage} />
+              <NavamsaValue graha={graha} chart={chart} termLanguage={termLanguage} />
             </span>
           </div>
         );
@@ -4473,10 +3332,14 @@ function SelectedReaderExplanationPanel({
         <span>{explanation.context ?? "Объяснение"}</span>
         <strong>{explanation.title}</strong>
       </div>
-      <p>{explanation.text}</p>
+      <div className="selected-reader-text">
+        {explanation.text.split("\n\n").map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+      </div>
       <div className="selected-reader-actions">
         <button type="button" className="help-ai-action" onClick={() => requestAiExplanation(explanation)}>
-          Спросить AI
+          Спросить
         </button>
         <button type="button" className="secondary-button compact" onClick={onClear} aria-label="Скрыть объяснение">
           Скрыть
@@ -4489,13 +3352,21 @@ function SelectedReaderExplanationPanel({
 function ChartSideCalculationTable({
   chart,
   termLanguage,
+  status,
+  currentChartDefault,
   selectedExplanation,
   onClearExplanation,
+  onRetryCurrentChart,
+  onStartBirthCalculation,
 }: {
   chart: BirthChart | null;
   termLanguage: TermLanguage;
+  status: string;
+  currentChartDefault: boolean;
   selectedExplanation: ReaderExplanationDetail | null;
   onClearExplanation: () => void;
+  onRetryCurrentChart?: () => void;
+  onStartBirthCalculation?: () => void;
 }) {
   const grahas = chart?.grahas ?? [];
   const sun = grahas.find((graha) => graha.body === "Surya");
@@ -4511,11 +3382,68 @@ function ChartSideCalculationTable({
   }
 
   if (!chart || grahas.length === 0) {
+    const emptyTitle = "Планеты";
+    const emptyStatus =
+      currentChartDefault
+        ? status.includes("недоступ")
+          ? "Расчёт временно недоступен."
+          : "Запускается автоматически."
+        : /счит|рассчит/i.test(status)
+          ? status
+          : /недоступ|ошиб|не удалось|числами|API|сервис|server|500/i.test(status)
+            ? status
+          : "Расчёт ещё не построен.";
+    const emptyRows = ["As", "Su", "Mo", "Ma", "Me", "Ju", "Ve", "Sa", "Ra", "Ke"];
+    const canRetryCurrentChart = currentChartDefault && !chart && status.toLowerCase().includes("недоступ");
+    const canStartBirthCalculation = !currentChartDefault && !chart && onStartBirthCalculation;
+
     return (
       <section className="chart-side-table empty">
         <div className="chart-side-table-head">
-          <strong>Расчёты D1</strong>
-          <span>появятся после расчёта карты</span>
+          <strong>{emptyTitle}</strong>
+        </div>
+        <div className="chart-empty-state">
+          <strong>{emptyStatus}</strong>
+          {canRetryCurrentChart && onRetryCurrentChart ? (
+            <button type="button" className="secondary-button compact" onClick={onRetryCurrentChart}>
+              Повторить
+            </button>
+          ) : null}
+          {canStartBirthCalculation ? (
+            <button type="button" className="secondary-button compact" onClick={onStartBirthCalculation}>
+              Рассчитать
+            </button>
+          ) : null}
+        </div>
+        <div className="chart-side-table-grid chart-side-table-skeleton" aria-hidden="true">
+          <div className="chart-side-table-row chart-side-table-header">
+            <span>Граха</span>
+            <span>Градус</span>
+            <span>Раши</span>
+            <span>Накшатра</span>
+            <span>Пада</span>
+            <span>Дом</span>
+            <span>Упр.</span>
+            <span>Статус</span>
+            <span>Аста</span>
+            <span>Шадбала</span>
+            <span>D9</span>
+          </div>
+          {emptyRows.map((label) => (
+            <div className="chart-side-table-row empty-row" key={`empty-${label}`}>
+              <strong>{label}</strong>
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+            </div>
+          ))}
         </div>
         <SelectedReaderExplanationPanel explanation={selectedExplanation} onClear={onClearExplanation} />
       </section>
@@ -4532,10 +3460,6 @@ function ChartSideCalculationTable({
 
   return (
     <section className="chart-side-table" aria-label="Краткая таблица расчётов рядом с картой">
-      <div className="chart-side-table-head">
-        <strong>Расчёты D1</strong>
-        <span>нажмите строку или термин, чтобы открыть объяснение</span>
-      </div>
       <SelectedReaderExplanationPanel explanation={selectedExplanation} onClear={onClearExplanation} />
       <div className="chart-side-table-grid">
         <div className="chart-side-table-row chart-side-table-header">
@@ -4543,8 +3467,13 @@ function ChartSideCalculationTable({
           <span>Градус</span>
           <span>Раши</span>
           <span>Накшатра</span>
+          <span>Пада</span>
+          <span>Упр. накш.</span>
           <span>Дом</span>
+          <span><GlossaryTerm termKey="ruled_houses">Упр.</GlossaryTerm></span>
           <span>Статус</span>
+          <span>Аста</span>
+          <span>Шад</span>
           <span>D9</span>
         </div>
         {chart.ascendant ? (
@@ -4555,18 +3484,31 @@ function ChartSideCalculationTable({
             onClick={() => lagnaExplanation ? openRowExplanation(lagnaExplanation) : undefined}
             onKeyDown={(event) => lagnaExplanation ? handleRowKeyDown(event, lagnaExplanation) : undefined}
           >
-            <strong>
-              <CalculationValueHelp
-                title={`${grahaTermLabel("Lagna", termLanguage)}: ${rashiTermFromName(chart.ascendant.rashi, termLanguage)}`}
-                text={readerExplanationForHouse({ chart, varga: null, chartReference: "lagna", house: 1, termLanguage }).text}
-              >
-                {grahaTermLabel("Lagna", termLanguage)}
-              </CalculationValueHelp>
-            </strong>
+              <strong>
+                <CalculationValueHelp
+                  title={`${grahaTermLabel("Lagna", termLanguage)}: ${rashiTermFromName(chart.ascendant.rashi, termLanguage)}`}
+                  text={readerExplanationForHouse({ chart, varga: null, chartReference: "lagna", house: 1, termLanguage }).text}
+                >
+                  {grahaTermLabel("Lagna", termLanguage)}
+                </CalculationValueHelp>
+                <span className="mobile-house-badge">1</span>
+              </strong>
             <span><LongitudeValue label={grahaTermLabel("Lagna", termLanguage)} longitude={chart.ascendant.longitude} /></span>
             <span><RashiValue name={chart.ascendant.rashi} index={chart.ascendant.rashi_index} termLanguage={termLanguage} compact /></span>
-            <span><NakshatraValue name={chart.ascendant.nakshatra} pada={chart.ascendant.pada} subject={grahaTermLabel("Lagna", termLanguage)} /></span>
+            <span><NakshatraValue name={chart.ascendant.nakshatra} subject={grahaTermLabel("Lagna", termLanguage)} /></span>
+            <span>{chart.ascendant.pada ? <GlossaryTerm termKey="pada">{chart.ascendant.pada}</GlossaryTerm> : "-"}</span>
+            <span>
+              <NakshatraLordValue
+                index={chart.ascendant.nakshatra_index}
+                name={chart.ascendant.nakshatra}
+                subject={grahaTermLabel("Lagna", termLanguage)}
+                termLanguage={termLanguage}
+              />
+            </span>
             <span><HouseValueHelp chart={chart} house={1} termLanguage={termLanguage} /></span>
+            <span>-</span>
+            <span>-</span>
+            <span>-</span>
             <span>-</span>
             <span><RashiValue name={chart.ascendant.navamsa} termLanguage={termLanguage} compact /></span>
           </div>
@@ -4574,6 +3516,7 @@ function ChartSideCalculationTable({
         {grahas.map((graha) => {
           const rashiIndex = normalizeRashiIndex(graha.rashi_index) ?? rashiIndexFromName(graha.rashi);
           const house = houseFromRashiIndex(rashiIndex, lagnaIndex);
+          const ruledHouses = ruledHousesForGraha(graha.body, lagnaIndex);
           const combustion = combustionStatus(graha, sun);
           const grahaLabel = grahaTermLabel(graha.body, termLanguage);
           const rowExplanation: ReaderExplanationDetail = {
@@ -4590,26 +3533,30 @@ function ChartSideCalculationTable({
               onClick={() => openRowExplanation(rowExplanation)}
               onKeyDown={(event) => handleRowKeyDown(event, rowExplanation)}
             >
-              <strong><PlacementNameHelp graha={graha} chart={chart} house={house} termLanguage={termLanguage} /></strong>
+              <strong>
+                <PlacementNameHelp graha={graha} chart={chart} house={house} termLanguage={termLanguage} />
+                {house ? <span className="mobile-house-badge">{house}</span> : null}
+              </strong>
               <span><LongitudeValue label={grahaLabel} longitude={graha.longitude} /></span>
-              <span><RashiValue name={graha.rashi} index={graha.rashi_index} termLanguage={termLanguage} compact /></span>
-              <span><NakshatraValue name={graha.nakshatra} pada={graha.pada} subject={grahaLabel} /></span>
+              <span><PlacementRashiValue graha={graha} chart={chart} house={house} termLanguage={termLanguage} compact /></span>
+              <span><NakshatraValue name={graha.nakshatra} subject={grahaLabel} /></span>
+              <span>{graha.pada ? <GlossaryTerm termKey="pada">{graha.pada}</GlossaryTerm> : "-"}</span>
+              <span><NakshatraLordValue index={graha.nakshatra_index} name={graha.nakshatra} subject={grahaLabel} termLanguage={termLanguage} /></span>
               <span><HouseValueHelp chart={chart} house={house} termLanguage={termLanguage} /></span>
-              <span className="chart-side-status">
-                <GrahaStatusValue graha={graha} />
-                {combustion.combust ? (
-                  <>
-                    {" · "}
-                    <CalculationValueHelp
-                      title={`Аста: ${grahaLabel}`}
-                      text={combustion.distance === null ? `${grahaLabel}: нет данных для проверки сожжения.` : `${grahaLabel}: расстояние от Солнца ${combustion.distance.toFixed(1)}°. Порог: ${combustion.threshold ?? "-"}°.`}
-                    >
-                      {combustion.label}
-                    </CalculationValueHelp>
-                  </>
-                ) : null}
+              <span>
+                <RuledHousesValue graha={graha} houses={ruledHouses} chart={chart} currentHouse={house} termLanguage={termLanguage} />
               </span>
-              <span><RashiValue name={graha.navamsa} index={graha.navamsa_index} termLanguage={termLanguage} compact /></span>
+              <span className="chart-side-status"><GrahaStatusValue graha={graha} house={house} termLanguage={termLanguage} /></span>
+              <span className={combustion.combust ? "combustion-badge active" : "combustion-badge"}>
+                <CalculationValueHelp
+                  title={`Аста: ${grahaLabel}`}
+                  text={combustion.distance === null ? `${grahaLabel}: сожжение не применяется или нет данных для сравнения с Солнцем.` : `${grahaLabel}: расстояние от Солнца ${combustion.distance.toFixed(1)}°. Порог сожжения: ${combustion.threshold ?? "-"}°.`}
+                >
+                  {combustion.label}
+                </CalculationValueHelp>
+              </span>
+              <span className="shadbala-cell"><ShadbalaValue chart={chart} body={graha.body} label={grahaLabel} /></span>
+              <span><NavamsaValue graha={graha} chart={chart} termLanguage={termLanguage} compact /></span>
             </div>
           );
         })}
@@ -4618,368 +3565,35 @@ function ChartSideCalculationTable({
   );
 }
 
-function FirstReadCalculationPanel({
-  chart,
-  termLanguage,
-  onOpenCalculations,
-}: {
-  chart: BirthChart | null;
-  termLanguage: TermLanguage;
-  onOpenCalculations: () => void;
-}) {
-  const moon = chart?.grahas.find((graha) => graha.body === "Chandra");
-  const sun = chart?.grahas.find((graha) => graha.body === "Surya");
-  const lagnaIndex = normalizeRashiIndex(chart?.ascendant?.rashi_index) ?? rashiIndexFromName(chart?.ascendant?.rashi);
-  const shadbalaRows = [...(chart?.classical?.shadbala?.items ?? [])].sort((left, right) => right.known_total - left.known_total);
-  const combust = combustGrahaLabels(chart);
-  const keyRows = [
-    {
-      key: "lagna",
-      label: <GlossaryTerm termKey="lagna">Лагна</GlossaryTerm>,
-      rashi: chart?.ascendant ? <RashiValue name={chart.ascendant.rashi} index={chart.ascendant.rashi_index} termLanguage={termLanguage} compact /> : "-",
-      degree: chart?.ascendant ? formatSignDegrees(chart.ascendant.longitude) : "-",
-      nakshatra: chart?.ascendant ? <NakshatraValue name={chart.ascendant.nakshatra} pada={chart.ascendant.pada} subject="Лагна" /> : "-",
-      house: <GlossaryTerm termKey="house_1">1</GlossaryTerm>,
-      note: "старт чтения",
-    },
-    {
-      key: "moon",
-      label: <GlossaryTerm termKey="chandra_lagna">{grahaTermLabel("Chandra", termLanguage)}</GlossaryTerm>,
-      rashi: moon ? <RashiValue name={moon.rashi} index={moon.rashi_index} termLanguage={termLanguage} compact /> : "-",
-      degree: moon ? formatSignDegrees(moon.longitude) : "-",
-      nakshatra: moon ? <NakshatraValue name={moon.nakshatra} pada={moon.pada} subject={grahaTermLabel("Chandra", termLanguage)} /> : "-",
-      house: moon ? <GlossaryTerm termKey={houseGlossaryKey(houseFromRashiIndex(normalizeRashiIndex(moon.rashi_index) ?? rashiIndexFromName(moon.rashi), lagnaIndex))}>{houseFromRashiIndex(normalizeRashiIndex(moon.rashi_index) ?? rashiIndexFromName(moon.rashi), lagnaIndex) ?? "-"}</GlossaryTerm> : "-",
-      note: "ум и даши",
-    },
-    {
-      key: "sun",
-      label: <GlossaryTerm termKey="surya_lagna">{grahaTermLabel("Surya", termLanguage)}</GlossaryTerm>,
-      rashi: sun ? <RashiValue name={sun.rashi} index={sun.rashi_index} termLanguage={termLanguage} compact /> : "-",
-      degree: sun ? formatSignDegrees(sun.longitude) : "-",
-      nakshatra: sun ? <NakshatraValue name={sun.nakshatra} pada={sun.pada} subject={grahaTermLabel("Surya", termLanguage)} /> : "-",
-      house: sun ? <GlossaryTerm termKey={houseGlossaryKey(houseFromRashiIndex(normalizeRashiIndex(sun.rashi_index) ?? rashiIndexFromName(sun.rashi), lagnaIndex))}>{houseFromRashiIndex(normalizeRashiIndex(sun.rashi_index) ?? rashiIndexFromName(sun.rashi), lagnaIndex) ?? "-"}</GlossaryTerm> : "-",
-      note: "атма и власть",
-    },
-  ];
-  const summaryRows = [
-    {
-      key: "panchanga",
-      label: <GlossaryTerm termKey="panchanga">Панчанга</GlossaryTerm>,
-      value: chart?.panchanga.tithi ? `${chart.panchanga.tithi.paksha} ${chart.panchanga.tithi.name}` : "-",
-      detail: chart?.panchanga.nakshatra ? `${chart.panchanga.nakshatra.name}${chart.panchanga.nakshatra.pada ? ` ${chart.panchanga.nakshatra.pada}` : ""}` : "накшатра ожидает",
-    },
-    {
-      key: "dasha",
-      label: <GlossaryTerm termKey="dasha">Даша сейчас</GlossaryTerm>,
-      value: currentDashaLabel(chart),
-      detail: "первый слой времени",
-    },
-    {
-      key: "combustion",
-      label: <GlossaryTerm termKey="combustion">Сожжение</GlossaryTerm>,
-      value: combust.length ? combust.join(", ") : "нет",
-      detail: "проверка аста",
-    },
-    {
-      key: "shadbala",
-      label: <GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm>,
-      value: shadbalaRows[0] ? `${grahaTermLabel(shadbalaRows[0].body, termLanguage, "short")} ${shadbalaRows[0].known_total.toFixed(1)}` : "-",
-      detail: shadbalaRows.at(-1)
-        ? `min ${grahaTermLabel(shadbalaRows.at(-1)?.body ?? "", termLanguage, "short")} ${shadbalaRows.at(-1)?.known_total.toFixed(1)}`
-        : "ожидает силу",
-    },
-  ];
+function ChartSideCoreSummary({ chart, termLanguage }: { chart: BirthChart; termLanguage: TermLanguage }) {
+  const moon = chart.grahas.find((graha) => graha.body === "Chandra");
+  const sun = chart.grahas.find((graha) => graha.body === "Surya");
+  const panchanga = chart.panchanga;
+  const panchangaValue = panchanga?.tithi ? `${panchanga.tithi.paksha} ${panchanga.tithi.name}` : "-";
+  const panchangaNote = panchanga?.nakshatra ? `${panchanga.nakshatra.name}${panchanga.nakshatra.pada ? ` ${panchanga.nakshatra.pada}` : ""}` : "";
 
   return (
-    <section className="first-read-calculation-panel" aria-label="Первичная таблица расчётов">
-      <div className="first-read-head">
-        <div>
-          <strong><GlossaryTerm termKey="calculation_table">Первый взгляд астролога</GlossaryTerm></strong>
-          <span>Лагна, Луна, Солнце, панчанга, сила и состояния до длинного текста.</span>
-        </div>
-        <a
-          href="/?analysis=calculations#reports"
-          onClick={(event) => {
-            event.preventDefault();
-            window.history.pushState(null, "", "/?analysis=calculations#reports");
-            onOpenCalculations();
-            document.getElementById("reports")?.scrollIntoView({ block: "start" });
-          }}
-        >
-          вся таблица
-        </a>
+    <div className="chart-core-summary" aria-label="Основные данные D1">
+      <div>
+        <span><GlossaryTerm termKey="lagna">Лагна</GlossaryTerm></span>
+        <strong>{chart.ascendant ? <RashiValue name={chart.ascendant.rashi} index={chart.ascendant.rashi_index} termLanguage={termLanguage} compact /> : "-"}</strong>
+        <small>{chart.ascendant ? formatSignDegrees(chart.ascendant.longitude) : ""}</small>
       </div>
-      <div className="first-read-grid">
-        <div className="first-read-key-table">
-          <div className="first-read-row table-head">
-            <span>Точка</span>
-            <span><GlossaryTerm termKey="rashi">Раши</GlossaryTerm></span>
-            <span><GlossaryTerm termKey="longitude">Градус</GlossaryTerm></span>
-            <span><GlossaryTerm termKey="nakshatra">Накшатра</GlossaryTerm></span>
-            <span><GlossaryTerm termKey="house">Дом</GlossaryTerm></span>
-            <span>Зачем</span>
-          </div>
-          {keyRows.map((row) => (
-            <div className="first-read-row" key={row.key}>
-              <strong>{row.label}</strong>
-              <span>{row.rashi}</span>
-              <span>{row.degree}</span>
-              <span>{row.nakshatra}</span>
-              <span>{row.house}</span>
-              <small>{row.note}</small>
-            </div>
-          ))}
-        </div>
-        <div className="first-read-summary">
-          {summaryRows.map((row) => (
-            <div key={row.key}>
-              <span>{row.label}</span>
-              <strong>{row.value}</strong>
-              <small>{row.detail}</small>
-            </div>
-          ))}
-        </div>
+      <div>
+        <span><GlossaryTerm termKey="chandra_lagna">Луна</GlossaryTerm></span>
+        <strong>{moon ? <RashiValue name={moon.rashi} index={moon.rashi_index} termLanguage={termLanguage} compact /> : "-"}</strong>
+        <small>{moon ? `${moon.nakshatra ?? ""}${moon.pada ? ` ${moon.pada}` : ""}` : ""}</small>
       </div>
-    </section>
-  );
-}
-
-function CoreInfoStrip({ chart, termLanguage }: { chart: BirthChart | null; termLanguage: TermLanguage }) {
-  const moon = chart?.grahas.find((graha) => graha.body === "Chandra");
-  const sun = chart?.grahas.find((graha) => graha.body === "Surya");
-  const items = [
-    ["Лагна", chart?.ascendant ? `${rashiTermFromName(chart.ascendant.rashi, termLanguage)}, ${chart.ascendant.nakshatra} ${chart.ascendant.pada}` : "ожидает"],
-    [grahaTermLabel("Chandra", termLanguage), moon ? `${rashiTermFromName(moon.rashi, termLanguage)}, ${moon.nakshatra} ${moon.pada}` : "ожидает"],
-    [grahaTermLabel("Surya", termLanguage), sun ? `${rashiTermFromName(sun.rashi, termLanguage)}, ${formatSignDegrees(sun.longitude)}` : "ожидает"],
-    ["Панчанга", chart?.panchanga.tithi?.name ?? chart?.panchanga.nakshatra?.name ?? "ожидает"],
-    ["Место", chart?.place.label ?? chart?.place.name ?? "ожидает"],
-    ["UTC", chart?.birth.utc_offset ?? chart?.birth.timezone ?? "ожидает"],
-  ];
-
-  return (
-    <div className="core-info-strip" aria-label="Основная информация карты">
-      {items.map(([label, value]) => (
-        <div key={label}>
-          <span>{label}</span>
-          <strong>{value}</strong>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PlanetStrengthDigest({ chart }: { chart: BirthChart | null }) {
-  const sun = chart?.grahas.find((graha) => graha.body === "Surya");
-  const combust = chart?.grahas
-    .map((graha) => ({ graha, status: combustionStatus(graha, sun) }))
-    .filter((item) => item.status.combust) ?? [];
-  const shadbala = [...(chart?.classical?.shadbala?.items ?? [])].sort((left, right) => right.known_total - left.known_total);
-  const vimshopaka = [...(chart?.classical?.vimshopaka_bala?.items ?? [])].sort((left, right) => right.score - left.score);
-  const sav = chart?.classical?.ashtakavarga?.sarva.total;
-  const rows = [
-    {
-      label: "Сожжение",
-      value: combust.length ? combust.map((item) => labelRu(item.graha.body)).join(", ") : "нет",
-      detail: combust[0]?.status.label ?? "астангата по дистанции от Солнца",
-      warn: combust.length > 0,
-    },
-    {
-      label: "Шадбала max",
-      value: shadbala[0] ? `${labelRu(shadbala[0].body)} ${shadbala[0].known_total.toFixed(1)}` : "-",
-      detail: shadbala[0] ? "вирупы, полный компонентный слой" : "ожидает расчёт",
-    },
-    {
-      label: "Шадбала min",
-      value: shadbala.at(-1) ? `${labelRu(shadbala.at(-1)?.body ?? "")} ${shadbala.at(-1)?.known_total.toFixed(1)}` : "-",
-      detail: "быстрая проверка слабого места",
-      warn: Boolean(shadbala.at(-1)),
-    },
-    {
-      label: "Вимшопака",
-      value: vimshopaka[0] ? `${labelRu(vimshopaka[0].body)} ${vimshopaka[0].score.toFixed(1)}/20` : "-",
-      detail: vimshopaka[0]?.primary_scheme ?? "шодаша-варга",
-    },
-    {
-      label: "SAV",
-      value: sav ? String(sav) : "-",
-      detail: "сарва-аштакаварга",
-    },
-  ];
-
-  return (
-    <div className="planet-strength-digest" aria-label="Сила и состояния планет">
-      {rows.map((row, index) => {
-        const glossaryKeys: Array<GlossaryKey> = ["combustion", "shadbala", "shadbala", "vimshopaka", "sav"];
-        const glossaryKey = glossaryKeys[index];
-        return (
-          <div className={row.warn ? "warn" : ""} key={row.label}>
-            <span>{glossaryKey ? <GlossaryTerm termKey={glossaryKey}>{row.label}</GlossaryTerm> : row.label}</span>
-            <strong>{row.value}</strong>
-            <small>{row.detail}</small>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function AstrologerWorkflowPanel({
-  chart,
-  activeTab,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeTab: AnalysisTab;
-  onSelect: (tab: AnalysisTab) => void;
-}) {
-  const items: Array<{
-    tab: AnalysisTab;
-    label: string;
-    value: string;
-    hint: string;
-    ready: boolean;
-  }> = [
-    {
-      tab: "calculations",
-      label: "Планеты",
-      value: chart ? `${chart.grahas.length} грах` : "нет карты",
-      hint: "градусы, раши, накшатры, D9",
-      ready: Boolean(chart),
-    },
-    {
-      tab: "yogas",
-      label: "Силы",
-      value: chart?.classical?.shadbala?.items?.length ? "шадбала" : "ожидает",
-      hint: "шадбала, аштакаварга, йоги",
-      ready: Boolean(chart?.classical),
-    },
-    {
-      tab: "timeline",
-      label: "Даши",
-      value: chart?.dashas?.vimshottari?.mahadashas?.length ? "Vimshottari" : "ожидает",
-      hint: "периоды и подпериоды",
-      ready: Boolean(chart?.dashas?.vimshottari?.mahadashas?.length),
-    },
-    {
-      tab: "transits",
-      label: "Сейчас",
-      value: chart ? "гочара" : "нет карты",
-      hint: "транзиты текущих дней",
-      ready: Boolean(chart),
-    },
-    {
-      tab: "accuracy",
-      label: "Точность",
-      value: "JHora / PL",
-      hint: "сверка расчётов",
-      ready: Boolean(chart),
-    },
-    {
-      tab: "guidance",
-      label: "AI-разбор",
-      value: "Codex CLI",
-      hint: "история и вопросы",
-      ready: Boolean(chart),
-    },
-  ];
-
-  return (
-    <div className="astrologer-workflow-panel" aria-label="Рабочие разделы астролога">
-      <div className="astrologer-workflow-head">
-        <strong>Рабочий порядок</strong>
-        <span>как в Jyotish-сервисах: карта → силы → периоды → текущие дни → разбор</span>
+      <div>
+        <span><GlossaryTerm termKey="surya_lagna">Солнце</GlossaryTerm></span>
+        <strong>{sun ? <RashiValue name={sun.rashi} index={sun.rashi_index} termLanguage={termLanguage} compact /> : "-"}</strong>
+        <small>{sun ? formatSignDegrees(sun.longitude) : ""}</small>
       </div>
-      <div className="astrologer-workflow-grid">
-        {items.map((item) => (
-          <button
-            type="button"
-            className={`${activeTab === item.tab ? "active" : ""}${item.ready ? " ready" : ""}`}
-            disabled={!item.ready}
-            key={item.tab}
-            onClick={() => onSelect(item.tab)}
-          >
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-            <small>{item.hint}</small>
-          </button>
-        ))}
+      <div>
+        <span><GlossaryTerm termKey="panchanga">Панчанга</GlossaryTerm></span>
+        <strong>{panchangaValue}</strong>
+        <small>{panchangaNote}</small>
       </div>
-    </div>
-  );
-}
-
-function ReadingFlowStrip({
-  chart,
-  chartMode,
-  workspaceTab,
-  activeAnalysisTab,
-  onOpenEssentials,
-  onOpenVargas,
-  onOpenCalculations,
-  onOpenGuidance,
-}: {
-  chart: BirthChart | null;
-  chartMode: string;
-  workspaceTab: ChartWorkspaceTab;
-  activeAnalysisTab: AnalysisTab;
-  onOpenEssentials: () => void;
-  onOpenVargas: () => void;
-  onOpenCalculations: () => void;
-  onOpenGuidance: () => void;
-}) {
-  const items = [
-    {
-      label: "Карта",
-      value: chart ? `${chartMode} открыт` : "нужен расчёт",
-      hint: "основная схема",
-      active: workspaceTab === "essentials",
-      ready: Boolean(chart),
-      action: onOpenEssentials,
-    },
-    {
-      label: "D-карты",
-      value: chart ? `${vargaCoverage(chart).ready.length}/${vargaSnapshotCodes.length}` : "после расчёта",
-      hint: "D1-D60 и фокусы",
-      active: workspaceTab === "vargas",
-      ready: Boolean(chart),
-      action: onOpenVargas,
-    },
-    {
-      label: "Расчёты",
-      value: chart ? "таблицы готовы" : "ожидает",
-      hint: "грахи, дома, накшатры",
-      active: activeAnalysisTab === "calculations",
-      ready: Boolean(chart),
-      action: onOpenCalculations,
-    },
-    {
-      label: "AI",
-      value: chart ? "разбор и вопросы" : "после карты",
-      hint: "Codex CLI",
-      active: activeAnalysisTab === "guidance",
-      ready: Boolean(chart),
-      action: onOpenGuidance,
-    },
-  ];
-
-  return (
-    <div className="reading-flow-strip" aria-label="Порядок работы с картой">
-      {items.map((item, index) => (
-        <button
-          type="button"
-          className={`${item.active ? "active" : ""}${item.ready ? " ready" : ""}`}
-          disabled={!item.ready && index > 0}
-          key={item.label}
-          onClick={item.action}
-        >
-          <span>{index + 1}</span>
-          <div>
-            <strong>{item.label}</strong>
-            <em>{item.value}</em>
-            <small>{item.hint}</small>
-          </div>
-        </button>
-      ))}
     </div>
   );
 }
@@ -5054,111 +3668,11 @@ function VargaTable({ chart, placements, code, termLanguage }: { chart: BirthCha
   );
 }
 
-function ActiveCalculationTable({
-  chart,
-  chartMode,
-  selectedVarga,
-  selectedVargaPlacements,
-  termLanguage,
-}: {
-  chart: BirthChart | null;
-  chartMode: string;
-  selectedVarga: ActiveVargaChart | null;
-  selectedVargaPlacements: VargaPlacement[];
-  termLanguage: TermLanguage;
-}) {
-  const isD1 = chartMode === "D1";
-  const title = isD1 ? "Расчеты D1 Rashi" : `Расчеты ${chartMode} ${selectedVarga?.name ?? ""}`.trim();
-  const hint = isD1 ? "Граха, градус, раши, накшатра, статус, сожжение, D9" : "Положение каждой точки в выбранной варге";
-
-  return (
-    <div className="active-calculation-table">
-      <div className="active-calculation-head">
-        <div>
-          <strong>{title}</strong>
-          <span>{hint}</span>
-        </div>
-        <div className="active-calculation-tags">
-          <GlossaryTerm termKey="shadbala">Shadbala</GlossaryTerm>
-          <GlossaryTerm termKey="combustion">Asta</GlossaryTerm>
-        </div>
-      </div>
-      {!isD1 && selectedVarga?.method ? (
-        <div className="active-varga-method">
-          <strong>
-            <GlossaryTerm termKey="varga_method">Метод</GlossaryTerm>
-          </strong>
-          <span>{selectedVarga.method}</span>
-        </div>
-      ) : null}
-      <CalculationReadingOrder isD1={isD1} chartMode={chartMode} />
-      {!isD1 ? <CalculationTableHelp isD1={isD1} /> : null}
-      {isD1 ? <AstrologerPrioritySummary chart={chart} termLanguage={termLanguage} /> : null}
-      {isD1 ? <PanchangaDigest chart={chart} /> : null}
-      {isD1 ? (
-        <GrahaTable chart={chart} termLanguage={termLanguage} />
-      ) : (
-        <VargaTable chart={chart} placements={selectedVargaPlacements} code={chartMode} termLanguage={termLanguage} />
-      )}
-    </div>
-  );
-}
-
-function VargaSnapshotGrid({
-  chart,
-  activeCode,
-  chartStyle,
-  chartReference,
-  onSelect,
-}: {
-  chart: BirthChart | null;
-  activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
-  onSelect: (code: string) => void;
-}) {
-  const items = vargaSnapshotCodes.map((code) => {
-    if (code === "D1") return { code, available: Boolean(chart), varga: null };
-    const varga = chart?.vargas?.[code];
-    return { code, available: Boolean(varga), varga: varga ?? null };
-  });
-
-  return (
-    <div className="varga-snapshot-grid" aria-label="Сводка варга-карт D1-D60">
-      {items.map((item) => (
-        <button
-          type="button"
-          className={`varga-snapshot-card${activeCode === item.code ? " active" : ""}`}
-          disabled={!item.available}
-          key={item.code}
-          onClick={() => onSelect(item.code)}
-        >
-          <div className="varga-snapshot-head">
-            <strong>{item.code}</strong>
-            <span>{vargaPurposeLabels[item.code] ?? "Варга"}</span>
-          </div>
-          <div className="varga-snapshot-body">
-            {item.available ? (
-              chartStyle === "south" ? (
-                <SouthIndianChartGrid chart={chart} varga={item.varga} chartReference={chartReference} compact />
-              ) : (
-                <NorthIndianChartSvg chart={chart} varga={item.varga} chartReference={chartReference} compact />
-              )
-            ) : (
-              <em>{unavailableVargaLabel(item.code)}</em>
-            )}
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
   if (periods.length === 0) {
     return (
       <div className="pending-strip">
-        Периоды даш появятся здесь после расчёта долготы Луны и движка Вимшоттари.
+        Даши появятся после расчёта Луны.
       </div>
     );
   }
@@ -5179,23 +3693,12 @@ function DashaTimeline({ periods }: { periods: DashaPeriod[] }) {
 }
 
 function PersonSummaryPanel({ summary }: { summary: PersonSummary | null }) {
-  if (!summary) {
-    return (
-      <section className="panel person-summary-panel">
-        <div className="panel-heading">
-          <h2>Сводка по человеку</h2>
-          <span>Ожидает расчёт</span>
-        </div>
-        <div className="pending-strip">Основные факты рождения появятся после расчёта.</div>
-      </section>
-    );
-  }
+  if (!summary) return null;
 
   return (
     <section className="panel person-summary-panel">
       <div className="panel-heading">
         <h2>Сводка по человеку</h2>
-        <span>Пока только расчётные факты</span>
       </div>
       <div className="summary-content">
         <div className="summary-grid">
@@ -5256,38 +3759,24 @@ function DetailedCalculationsPanel({
   summary,
   chart,
   activeCode,
-  chartStyle,
-  chartReference,
   termLanguage,
-  onSelectVarga,
 }: {
   summary: PersonSummary | null;
   chart: BirthChart | null;
   activeCode: string;
-  chartStyle: "north" | "south";
-  chartReference: ChartReference;
   termLanguage: TermLanguage;
-  onSelectVarga: (code: string) => void;
 }) {
   const detailedPositions = summary?.detailed_positions ?? [];
-  const houses = summary?.houses ?? [];
   const isD1 = activeCode === "D1";
 
   return (
     <section className="panel calculation-detail-panel">
       <div className="panel-heading">
-        <h2>Расчёты карты</h2>
+        <h2>Ключевые данные</h2>
         <span>D1, D9, накшатры, дома</span>
       </div>
       <div className="summary-content">
         {!summary ? <div className="pending-strip">Подробные расчёты появятся после построения карты.</div> : null}
-        <VargaSnapshotGrid
-          chart={chart}
-          activeCode={activeCode}
-          chartStyle={chartStyle}
-          chartReference={chartReference}
-          onSelect={onSelectVarga}
-        />
         {isD1 ? (
           <div className="calculation-d1-ledger" aria-label="Главная таблица расчётов D1">
             <div className="calculation-d1-ledger-head">
@@ -5303,8 +3792,6 @@ function DetailedCalculationsPanel({
             </div>
             <AstrologerPrioritySummary chart={chart} termLanguage={termLanguage} />
             <PanchangaDigest chart={chart} />
-            <CalculationReadingOrder isD1 chartMode="D1" />
-            <CalculationTableHelp isD1 />
             <GrahaTable chart={chart} termLanguage={termLanguage} />
           </div>
         ) : null}
@@ -5326,42 +3813,34 @@ function DetailedCalculationsPanel({
                 <span><GlossaryTerm termKey="ruled_houses">Упр.</GlossaryTerm></span>
                 <span><GlossaryTerm termKey="dignity">Сила</GlossaryTerm></span>
               </div>
-              {detailedPositions.map((row) => (
-                <div className="detailed-row" key={row.body}>
-                  <strong>{labelRu(row.body)}</strong>
-                  <span>{row.chara_karaka ?? "-"}</span>
-                  <span>{row.sign_degrees_dms}</span>
-                  <span>{row.rashi}</span>
-                  <span>{row.navamsa}</span>
-                  <span>
-                    {row.nakshatra} {row.pada ?? ""}
-                  </span>
-                  <span>
-                    {row.house ? <GlossaryTerm termKey={houseGlossaryKey(row.house)}>{row.house}</GlossaryTerm> : "-"}
-                  </span>
-                  <span>
-                    <HouseGlossaryList houses={row.ruled_houses} />
-                  </span>
-                  <span>{[row.dignity, row.retrograde ? "ретроградная" : ""].filter(Boolean).join(", ") || "-"}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-        {houses.length ? (
-          <div className="house-overview">
-            <div>
-              <h3>Обзор домов</h3>
-              <span>Цельнознаковые дома</span>
-            </div>
-            <div className="house-grid">
-              {houses.map((house) => (
-                <div className="house-card" key={house.house}>
-                  <span><GlossaryTerm termKey={houseGlossaryKey(house.house)}>Дом {house.house}</GlossaryTerm></span>
-                  <strong>{house.rashi}</strong>
-                  <small>{house.grahas.length ? house.grahas.map(labelRu).join(", ") : "Пусто"}</small>
-                </div>
-              ))}
+              {detailedPositions.map((row) => {
+                const graha = chart?.grahas.find((item) => canonicalBody(item.body) === canonicalBody(row.body));
+                return (
+                  <div className="detailed-row" key={row.body}>
+                    <strong>{labelRu(row.body)}</strong>
+                    <span>{row.chara_karaka ?? "-"}</span>
+                    <span>{row.sign_degrees_dms}</span>
+                    <span>{row.rashi}</span>
+                    <span>{row.navamsa}</span>
+                    <span>
+                      {row.nakshatra} {row.pada ?? ""}
+                    </span>
+                    <span>
+                      {row.house ? <HouseValueHelp chart={chart} house={row.house} termLanguage={termLanguage} /> : "-"}
+                    </span>
+                    <span>
+                      {graha && chart ? (
+                        <RuledHousesValue graha={graha} houses={row.ruled_houses} chart={chart} currentHouse={row.house} termLanguage={termLanguage} />
+                      ) : (
+                        <HouseGlossaryList houses={row.ruled_houses} />
+                      )}
+                    </span>
+                    <span>
+                      {graha ? <GrahaStatusValue graha={graha} house={row.house} termLanguage={termLanguage} /> : [row.dignity, row.retrograde ? "ретроградная" : ""].filter(Boolean).join(", ") || "-"}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : null}
@@ -5426,101 +3905,21 @@ function DashaWorkspacePanel({
               </div>
             ))}
           </div>
-          <p className="workflow-note">
-            Ashtottari: {extra.ashtottari?.status ?? "ожидает"}; применимость и стартовое правило требуют JHora/шастра-сверки.
-          </p>
+          <p className="workflow-note">Аштоттари: {extra.ashtottari?.status ?? "ожидает"}.</p>
         </div>
       ) : null}
     </section>
   );
 }
 
-function GeneratedAnalysisDetails({
-  analysis,
-  assistantLabel,
-  chatSlot,
-}: {
-  analysis: GeneratedDraftAnalysis;
-  assistantLabel: string;
-  chatSlot?: ReactNode;
-}) {
-  const traceCount = analysis.sections.reduce((total, section) => total + (section.source_traces?.length ?? 0), 0);
-  return (
-    <div className="generated-draft">
-      <div className="block-heading">
-        <h3>{analysis.engine_label ?? generatedTitleRu(analysis.review_status)}</h3>
-        <span>
-          #{analysis.id} · {assistantLabel} · {generatedStatusRu(analysis.review_status)} · {traceCount} источников
-        </span>
-      </div>
-      {chatSlot}
-      {analysis.sections.map((section) => (
-        <article className="report-section" key={`${analysis.id}-${section.title}`}>
-          <div>
-            <strong>{section.title}</strong>
-            <em>{generatedStatusRu(analysis.review_status)}</em>
-          </div>
-          <p>{section.body}</p>
-          {section.key_points?.length ? (
-            <div className="human-points">
-              {section.key_points.map((point) => (
-                <span key={`${section.title}-point-${point}`}>{point}</span>
-              ))}
-            </div>
-          ) : null}
-          {section.practical_steps?.length ? (
-            <div className="practical-steps">
-              <strong>Что делать</strong>
-              <ul>
-                {section.practical_steps.map((step) => (
-                  <li key={`${section.title}-step-${step}`}>{step}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {section.citation_titles?.length ? (
-            <div className="report-citations">
-              {section.citation_titles.map((title) => (
-                <span key={`${section.title}-${title}`}>{title}</span>
-              ))}
-            </div>
-          ) : null}
-          {section.evidence_references?.length ? (
-            <div className="report-citations evidence-citations">
-              {section.evidence_references.map((reference) => (
-                <span key={`${section.title}-${reference}`}>{reference}</span>
-              ))}
-            </div>
-          ) : null}
-          {section.source_traces?.length ? (
-            <details className="source-trace-list">
-              <summary>Источники и логика</summary>
-              <div>
-                {section.source_traces.map((trace) => (
-                  <div key={`${section.title}-${trace.condition_key}-${trace.reference}`}>
-                    <strong>{trace.condition_key}</strong>
-                    <span>
-                      {trace.work_title}
-                      {trace.reference ? `, ${trace.reference}` : ""}
-                    </span>
-                    {trace.short_excerpt ? <p>{trace.short_excerpt}</p> : null}
-                    <small>{trace.source_status}: {trace.interpretation}</small>
-                  </div>
-                ))}
-              </div>
-            </details>
-          ) : null}
-          {section.review_notes?.length ? (
-            <ul className="review-notes">
-              {section.review_notes.map((note) => (
-                <li key={`${section.title}-${note}`}>{note}</li>
-              ))}
-            </ul>
-          ) : null}
-        </article>
-      ))}
-    </div>
-  );
+function publicReportText(value: string) {
+  return value
+    .replaceAll("Расчётная сводка", "Ключевые данные")
+    .replaceAll("Расчетная сводка", "Ключевые данные")
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) => !/JHora|Parashara Light|паритет|чернов/i.test(sentence))
+    .join(" ")
+    .trim();
 }
 
 function ReportPreviewPanel({
@@ -5550,7 +3949,6 @@ function ReportPreviewPanel({
   onAskDraftQuestion: (question: string) => void;
   chatDisabled: boolean;
 }) {
-  const traceCount = draftAnalysis?.sections.reduce((total, section) => total + (section.source_traces?.length ?? 0), 0) ?? 0;
   const [chatQuestion, setChatQuestion] = useState("");
 
   useEffect(() => {
@@ -5569,7 +3967,6 @@ function ReportPreviewPanel({
     <section className="panel report-preview">
       <div className="panel-heading">
         <h2>Разбор карты</h2>
-        <span>{draftAnalysis ? generatedStatusRu(draftAnalysis.review_status) : birthReport ? "готов к личному разбору" : "Отчёт ожидает расчёт"}</span>
       </div>
       <div className={`ai-billing-status report-ai-billing-status ${aiBillingStatus.tone}`}>
         <strong>{aiBillingStatus.label}</strong>
@@ -5579,7 +3976,7 @@ function ReportPreviewPanel({
         <div className="report-sections">
           <div className="draft-generation-strip">
             <div>
-              <strong>Codex CLI разбор по шастра-связям</strong>
+              <strong>Разбор по карте</strong>
               <span>{draftStatus}</span>
             </div>
             <div className="draft-generation-actions">
@@ -5591,7 +3988,7 @@ function ReportPreviewPanel({
               </button>
             </div>
             <p className="ai-billing-note">
-              Первый AI-разбор доступен бесплатно для карты, отмеченной как «моя карта». Чужие сохранённые карты можно хранить и смотреть бесплатно; AI-разбор чужой карты будет отдельным платным действием.
+              Первый разбор доступен бесплатно для карты, отмеченной как «моя карта». Чужие сохранённые карты можно хранить и смотреть бесплатно; разбор чужой карты будет отдельным действием.
             </p>
             {draftAnalysis?.billing_message ? <p className="ai-billing-note">{draftAnalysis.billing_message}</p> : null}
           </div>
@@ -5599,20 +3996,17 @@ function ReportPreviewPanel({
             <div className="generated-draft">
               <div className="block-heading">
                 <h3>{generatedTitleRu(draftAnalysis.review_status)}</h3>
-                <span>
-                  #{draftAnalysis.id} · {generatedStatusRu(draftAnalysis.review_status)} · {traceCount} источников
-                </span>
               </div>
               <div className="codex-analysis-chat">
                 <div className="chat-heading">
-                  <strong>Вопросы к Codex CLI по этому разбору</strong>
+                  <strong>Вопросы по этому разбору</strong>
                   <span>{chatStatus}</span>
                 </div>
                 {chatMessages.length ? (
                   <div className="chat-thread">
                     {chatMessages.map((message, index) => (
                       <div className={`chat-message ${message.role}`} key={`${message.role}-${index}-${message.content.slice(0, 24)}`}>
-                        <strong>{message.role === "user" ? "Вы" : "Codex CLI"}</strong>
+                        <strong>{message.role === "user" ? "Вы" : "Ответ"}</strong>
                         <p>{message.content}</p>
                       </div>
                     ))}
@@ -5635,9 +4029,8 @@ function ReportPreviewPanel({
                 <article className="report-section" key={`${draftAnalysis.id}-${section.title}`}>
                   <div>
                     <strong>{section.title}</strong>
-                    <em>{generatedStatusRu(draftAnalysis.review_status)}</em>
                   </div>
-                  <p>{section.body}</p>
+                  <p>{publicReportText(section.body)}</p>
                   {section.key_points?.length ? (
                     <div className="human-points">
                       {section.key_points.map((point) => (
@@ -5669,42 +4062,16 @@ function ReportPreviewPanel({
                       ))}
                     </div>
                   ) : null}
-                  {section.source_traces?.length ? (
-                    <details className="source-trace-list">
-                      <summary>Источники и логика</summary>
-                      <div>
-                        {section.source_traces.map((trace) => (
-                          <div key={`${section.title}-${trace.condition_key}-${trace.reference}`}>
-                            <strong>{trace.condition_key}</strong>
-                            <span>
-                              {trace.work_title}
-                              {trace.reference ? `, ${trace.reference}` : ""}
-                            </span>
-                            {trace.short_excerpt ? <p>{trace.short_excerpt}</p> : null}
-                            <small>{trace.source_status}: {trace.interpretation}</small>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  ) : null}
-                  {section.review_notes?.length ? (
-                    <ul className="review-notes">
-                      {section.review_notes.map((note) => (
-                        <li key={`${section.title}-${note}`}>{note}</li>
-                      ))}
-                    </ul>
-                  ) : null}
                 </article>
               ))}
             </div>
           ) : null}
-          {birthReport.sections.map((section) => (
+          {!draftAnalysis ? birthReport.sections.map((section) => (
             <article className="report-section" key={section.key}>
               <div>
                 <strong>{section.title}</strong>
-                    <em>{reportSectionStatusRu(section.review_status)}</em>
               </div>
-              <p>{section.body}</p>
+              <p>{publicReportText(section.body)}</p>
               {section.citations.length ? (
                 <div className="report-citations">
                   {section.citations.map((citation) => (
@@ -5715,7 +4082,7 @@ function ReportPreviewPanel({
                 </div>
               ) : null}
             </article>
-          ))}
+          )) : null}
         </div>
       ) : (
         <div className="pending-strip">Отчёт появится после расчёта карты.</div>
@@ -5726,15 +4093,7 @@ function ReportPreviewPanel({
 
 function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | undefined }) {
   if (!classical) {
-    return (
-      <section className="panel classical-panel">
-        <div className="panel-heading">
-          <h2>Дополнительные расчёты</h2>
-          <span>Ожидает карту</span>
-        </div>
-        <div className="pending-strip">Авастхи, варга-сила, йоги и статусы сложных модулей появятся после расчёта.</div>
-      </section>
-    );
+    return null;
   }
 
   const statusItems: Array<[string, string | null | undefined]> = [
@@ -5748,12 +4107,6 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
   ];
   const baladi = classical.avasthas?.baladi ?? [];
   const yogas = classical.yogas?.items ?? [];
-  const yogaCoverage = classical.yogas?.coverage ?? [];
-  const yogaSummary = classical.yogas?.summary;
-  const yogaCatalogTotal = yogaSummary?.catalog_total ?? (yogaCoverage.length || yogas.length);
-  const pendingYogaRows = yogaCoverage
-    .filter((item) => item.status === "formula_pending" || item.status === "calculation_pending")
-    .slice(0, 8);
   const lots = classical.special_points?.arabic_lots ?? [];
   const upagrahas = classical.special_points?.upagrahas.items ?? [];
   const vedicPoints = classical.special_points?.vedic_points.items ?? [];
@@ -5770,8 +4123,7 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
   return (
     <section className="panel classical-panel">
       <div className="panel-heading">
-        <h2>Дополнительные расчёты</h2>
-        <span>Расчётные слои готовы</span>
+        <h2>Йоги и силы</h2>
       </div>
       <div className="classical-content">
         <div className="classical-status-grid">
@@ -5795,16 +4147,6 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
           </div>
           <div className="classical-list">
             <h3>Йоги</h3>
-            <div>
-              <span>Каталог</span>
-              <strong>{yogaCatalogTotal}</strong>
-              <small>
-                найдено {yogaSummary?.detected_count ?? yogas.length}
-                {yogaSummary ? ` · проверено ${yogaSummary.signature_checked_count}` : ""}
-                {yogaSummary ? ` · без формулы ${yogaSummary.formula_pending_count}` : ""}
-                {yogaSummary?.calculation_pending_count ? ` · ждут кода ${yogaSummary.calculation_pending_count}` : ""}
-              </small>
-            </div>
             {yogas.length ? (
               yogas.map((item) => (
                 <div key={item.key}>
@@ -5822,13 +4164,6 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
                 <strong>0</strong>
               </div>
             )}
-            {pendingYogaRows.length ? (
-              <div>
-                <span>Ещё в каталоге</span>
-                <strong>{pendingYogaRows.map((item) => item.name).join(", ")}</strong>
-                <small>{pendingYogaRows[0]?.formula?.description ?? "условия видны, точные формулы ещё привязываются к шастрам"}</small>
-              </div>
-            ) : null}
           </div>
           <div className="classical-list">
             <h3><GlossaryTerm termKey="argala">Аргала</GlossaryTerm></h3>
@@ -5924,176 +4259,9 @@ function ClassicalPanel({ classical }: { classical: BirthChart["classical"] | un
   );
 }
 
-function ShastraAuditPanel({ audit }: { audit: BirthChart["shastra_audit"] | undefined }) {
-  const items = audit?.items ?? [];
-
-  return (
-    <section className="shastra-audit-panel">
-      <div className="block-heading">
-        <h3>Проверка расчётов по шастрам</h3>
-        <span>{audit ? `${audit.summary.source_backed}/${audit.summary.total} с опорой на шастру` : "ожидает карту"}</span>
-      </div>
-      {!audit ? (
-        <div className="pending-strip">Аудит появится после расчёта карты.</div>
-      ) : (
-        <>
-          <div className="shastra-policy">
-            <strong>Порядок авторитета</strong>
-            <span>{auditOrderRu(audit.authority_order)}</span>
-            <small>
-              Modern BPHS используем осторожно: если старшие источники или замечания Шьямасундары Прабху
-              показывают конфликт, правило остаётся на аудите.
-            </small>
-          </div>
-          <div className="audit-summary-grid">
-            <div>
-              <span>Всего слоёв</span>
-              <strong>{audit.summary.total}</strong>
-            </div>
-            <div>
-              <span>Есть опора на шастру</span>
-              <strong>{audit.summary.source_backed}</strong>
-            </div>
-            <div>
-              <span>Готово лично</span>
-              <strong>{audit.summary.client_interpretation_allowed}</strong>
-            </div>
-            <div>
-              <span>Служебный контроль</span>
-              <strong>{audit.summary.partial_or_audit}</strong>
-            </div>
-          </div>
-          <div className="readiness-note">
-            Расчёт и найденные фрагменты шастр используются вместе для личного разбора. Служебная сверка хранится отдельно и не блокирует работу с картой.
-          </div>
-          <div className="audit-table">
-            {items.map((item) => (
-              <div className="audit-row" key={item.key}>
-                <div>
-                  <strong>{auditLayerLabelsRu[item.key] ?? item.label}</strong>
-                  <span>{item.source_priority.join(", ")}</span>
-                </div>
-                <span>{auditCalculationReadyRu(item.implementation_status)}</span>
-                <span>{auditAuthorityRu(item.authority_status)}</span>
-                <em className={item.can_generate_client_interpretation ? "ready" : "draft"}>
-                  {auditInterpretationReadyRu(item.can_generate_client_interpretation)}
-                </em>
-                <small>
-                  Основа: {auditNoteRu(item.key, item.source_basis)}
-                </small>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
-
-function ShastraEvidenceReviewPanel({
-  evidence,
-  status,
-}: {
-  evidence: ShastraEvidencePayload | null;
-  status: string;
-}) {
-  const approvedRows = evidence?.conditions.filter((row) => row.approved_citations.length).slice(0, 5) ?? [];
-  const queueRows =
-    evidence?.conditions
-      .filter((row) => !row.approved_citations.length && row.evidence.length)
-      .slice(0, 5) ?? [];
-
-  return (
-    <section className="shastra-evidence-panel">
-      <div className="block-heading">
-        <h3>Шастра-фрагменты</h3>
-        <span>{status}</span>
-      </div>
-      {evidence ? (
-        <>
-          <div className="audit-summary-grid">
-            <div>
-              <span>Условий</span>
-              <strong>{evidence.summary.conditions}</strong>
-            </div>
-            <div>
-              <span>Есть фрагменты</span>
-              <strong>{evidence.summary.conditions_with_evidence}</strong>
-            </div>
-            <div>
-              <span>Публично утверждено</span>
-              <strong>{evidence.summary.approved_evidence_items}</strong>
-            </div>
-            <div>
-              <span>Рабочие фрагменты</span>
-              <strong>{evidence.summary.review_queue_items}</strong>
-            </div>
-          </div>
-          {approvedRows.length ? (
-            <div className="evidence-review-list">
-              <h4>Публично готовые цитаты</h4>
-              {approvedRows.map((row) => (
-                <div key={row.condition_key}>
-                  <strong>{row.condition_title}</strong>
-                  <span>
-                    {row.approved_citations[0].work_title}, {row.approved_citations[0].reference}
-                  </span>
-                  <small>{row.approved_citations[0].public_quote_policy}</small>
-                </div>
-              ))}
-            </div>
-          ) : null}
-          <div className="evidence-review-list">
-            <h4>Рабочие фрагменты для личного разбора</h4>
-            {queueRows.length ? (
-              queueRows.map((row) => (
-                <div key={row.condition_key}>
-                  <strong>{row.condition_title}</strong>
-                  <span>
-                    {row.evidence[0].work_title}, {row.evidence[0].inferred_reference || row.evidence[0].passage_reference}
-                  </span>
-                  <small>{row.evidence[0].reference_status}</small>
-                </div>
-              ))
-            ) : (
-              <p>Рабочие фрагменты ещё не найдены.</p>
-            )}
-          </div>
-        </>
-      ) : (
-        <div className="pending-strip">Статус evidence загрузится при открытии источников.</div>
-      )}
-    </section>
-  );
-}
-
 function formatArgalaRows(rows: { house: number; bodies: string[] }[]) {
   if (!rows.length) return "-";
   return rows.map((row) => `дом ${row.house}: ${row.bodies.map(labelRu).join(", ")}`).join("; ");
-}
-
-function WorkflowPlanStrip({ plan }: { plan?: WorkflowInterpretationPlan }) {
-  if (!plan) return null;
-  return (
-    <div className="workflow-plan-strip">
-      <div>
-        <span>Слой</span>
-        <strong>{plan.kind}</strong>
-      </div>
-      <div>
-        <span>Факторы</span>
-        <strong>{plan.required_factors.slice(0, 4).join(", ")}</strong>
-      </div>
-      <div>
-        <span>Источники</span>
-        <strong>{plan.source_anchors.slice(0, 3).join(", ")}</strong>
-      </div>
-      <div>
-        <span>Правило текста</span>
-        <strong>{plan.citation_rule}</strong>
-      </div>
-    </div>
-  );
 }
 
 function TransitPanel({
@@ -6164,7 +4332,6 @@ function TransitPanel({
           </div>
         </div>
       ) : null}
-      <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {rows.length ? (
         <div className="workflow-table">
           <div className="workflow-row workflow-head">
@@ -6182,9 +4349,7 @@ function TransitPanel({
             </div>
           ))}
         </div>
-      ) : (
-        <div className="pending-strip">Транзиты появятся после расчёта карты.</div>
-      )}
+      ) : null}
     </section>
   );
 }
@@ -6323,7 +4488,6 @@ function TithiPraveshaPanel({ report, status }: { report: TithiPraveshaReport | 
         <h2>Tithi Pravesha</h2>
         <span>{status}</span>
       </div>
-      <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {annualReturn ? (
         <div className="workflow-chart-layout">
           <WorkflowMiniChart chart={annualReturn.chart} title="Годовая карта" hint="Tithi Pravesha" />
@@ -6367,7 +4531,7 @@ function TithiPraveshaPanel({ report, status }: { report: TithiPraveshaReport | 
           </div>
         </div>
       ) : (
-        <div className="pending-strip">Tithi Pravesha появится после расчёта карты.</div>
+        <div className="pending-strip">Годовой разбор появится после расчёта карты.</div>
       )}
     </section>
   );
@@ -6380,7 +4544,6 @@ function TajakaPanel({ report, status }: { report: TajakaReport | null; status: 
         <h2>Tajaka</h2>
         <span>{status}</span>
       </div>
-      <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {report ? (
         <div className="workflow-table">
           <div className="workflow-row workflow-head">
@@ -6409,7 +4572,7 @@ function TajakaPanel({ report, status }: { report: TajakaReport | null; status: 
           </div>
         </div>
       ) : (
-        <div className="pending-strip">Tajaka появится после расчёта карты.</div>
+        <div className="pending-strip">Таджака появится после расчёта карты.</div>
       )}
     </section>
   );
@@ -6422,7 +4585,6 @@ function PrashnaPanel({ report, status }: { report: PrashnaReport | null; status
         <h2>Prashna</h2>
         <span>{status}</span>
       </div>
-      <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {report ? (
         <div className="workflow-chart-layout">
           <WorkflowMiniChart chart={report.chart} title="Prashna" hint="карта вопроса" />
@@ -6454,7 +4616,7 @@ function PrashnaPanel({ report, status }: { report: PrashnaReport | null; status
           </div>
         </div>
       ) : (
-        <div className="pending-strip">Prashna chart появится после расчёта карты.</div>
+        <div className="pending-strip">Прашна появится после расчёта карты.</div>
       )}
     </section>
   );
@@ -6467,7 +4629,6 @@ function MundanePanel({ report, status }: { report: MundaneReport | null; status
         <h2>Mundane</h2>
         <span>{status}</span>
       </div>
-      <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {report ? (
         <div className="workflow-chart-layout">
           <WorkflowMiniChart chart={report.chart} title="Mundane" hint="event chart" />
@@ -6501,7 +4662,7 @@ function MundanePanel({ report, status }: { report: MundaneReport | null; status
           </div>
         </div>
       ) : (
-        <div className="pending-strip">Mundane/event chart появится после расчёта карты.</div>
+        <div className="pending-strip">Карта события появится после расчёта.</div>
       )}
     </section>
   );
@@ -6515,7 +4676,6 @@ function MuhurtaPanel({ report, status }: { report: MuhurtaReport | null; status
         <h2>Мухурта</h2>
         <span>{status}</span>
       </div>
-      <WorkflowPlanStrip plan={report?.interpretation_plan} />
       {rows.length ? (
         <div className="muhurta-list">
           {rows.map((candidate) => (
@@ -6774,7 +4934,7 @@ function CompatibilityPanel({
               </GlossaryTerm>
             </small>
             <a className="secondary-button compatibility-pair-passport-link" href={`/compatibility/pair/${selectedRelationship.id}`}>
-              Паспорт пары
+              Открыть пару
             </a>
           </div>
         ) : null}
@@ -6871,9 +5031,6 @@ function CompatibilityPanel({
             Сохранить карту B
           </button>
         </div>
-        <button className="secondary-button compatibility-button" type="submit" disabled={disabled}>
-          Рассчитать совместимость
-        </button>
       </form>
       <div className="compatibility-actions">
         <button
@@ -6882,7 +5039,7 @@ function CompatibilityPanel({
           onClick={onGeneratePacket}
           disabled={packetDisabled}
         >
-          Codex-пакет
+          Подготовить разбор
         </button>
         <button
           className="secondary-button compatibility-button primary-compare-button"
@@ -6893,9 +5050,8 @@ function CompatibilityPanel({
           Полный разбор совместимости
         </button>
       </div>
-      <p className="compatibility-packet-status">{packetStatus}</p>
-      <p className="compatibility-packet-status">{codexStatus}</p>
-      <WorkflowPlanStrip plan={report?.interpretation_plan} />
+      {packetStatus ? <p className="compatibility-packet-status">{packetStatus}</p> : null}
+      {codexStatus ? <p className="compatibility-packet-status">{codexStatus}</p> : null}
 
       {report ? (
         <div className="compatibility-result">
@@ -6904,7 +5060,7 @@ function CompatibilityPanel({
               <div>
                 <span>Ракурс разбора</span>
                 <strong>{resultContext.label || resultContext.role}</strong>
-                <small>{resultContext.prompt_hint || "роль передана в расчёт и AI-пакет"}</small>
+                <small>{resultContext.prompt_hint || "роль учтена в разборе"}</small>
               </div>
               <div>
                 <span>Фокусные дома</span>
@@ -6916,7 +5072,7 @@ function CompatibilityPanel({
               <div>
                 <span>D-карты</span>
                 <strong><VargaGlossaryList vargas={resultContext.focus_vargas} /></strong>
-                <small>{resultContext.required_factors?.slice(0, 4).join(" · ") || "добавлены в interpretation plan"}</small>
+                <small>{resultContext.required_factors?.slice(0, 4).join(" · ") || "учтены в разборе"}</small>
               </div>
               <div>
                 <span><GlossaryTerm termKey="relationship_status">Статус связи</GlossaryTerm></span>
@@ -6950,7 +5106,7 @@ function CompatibilityPanel({
               <small>{report.moon.person_a.rashi} / {report.moon.person_b.rashi}</small>
             </div>
             <div>
-              <span>Покрытие</span>
+              <span>Расчёт</span>
               <strong>{report.coverage.calculated_kutas}/{report.coverage.total_kutas}</strong>
               <small>
                 {statusRu(report.coverage.status)}
@@ -7021,13 +5177,13 @@ function CompatibilityPanel({
           <p className="workflow-note">{report.assessment.note}</p>
         </div>
       ) : (
-        <div className="pending-strip">Сначала рассчитай основную карту, затем добавь данные второго человека.</div>
+        <div className="pending-strip">Сначала рассчитайте основную карту, затем добавьте второго человека.</div>
       )}
       {codexAnalysis ? (
         <div className="compatibility-saved-analysis-card">
           <div>
-            <span>Сохранённый AI-разбор</span>
-            <strong>#{codexAnalysis.id} · {generatedStatusRu(codexAnalysis.review_status)}</strong>
+            <span>Сохранённый разбор</span>
+            <strong>{generatedStatusRu(codexAnalysis.review_status)}</strong>
             <small>
               Разбор, чат и данные пары открываются отдельной страницей. Там сохраняется история вопросов и показываются D1, 7/12 дома и ключевые варги.
             </small>
@@ -7039,165 +5195,6 @@ function CompatibilityPanel({
       ) : null}
     </section>
   );
-}
-
-function DualCalculationPanel({
-  report,
-  status,
-}: {
-  report: DualCalculationReport | null;
-  status: string;
-}) {
-  const settingDiffs = report?.settings_diff.filter((row) => !row.matches) ?? [];
-  const grahaDiffs = report?.delta.grahas
-    .filter((row) => row.delta_arcseconds > 0 || !row.rashi_matches || !row.nakshatra_matches || !row.pada_matches)
-    .slice(0, 8) ?? [];
-  const vargaDiffs = report?.delta.vargas.rows.filter((row) => row.mismatches || row.missing).slice(0, 6) ?? [];
-  const dashaDiffs = report?.delta.dashas.rows.filter((row) => row.status === "missing" || row.matches === false).slice(0, 6) ?? [];
-  const shadbalaDiffs = report?.delta.shadbala.rows
-    .filter((row) => row.status === "missing" || (row.delta ?? 0) !== 0)
-    .slice(0, 6) ?? [];
-
-  return (
-    <section className="panel dual-calculation-panel">
-      <div className="panel-heading">
-        <h2>Сверка с JHora-профилем</h2>
-        <span>{status}</span>
-      </div>
-      {!report ? (
-        <div className="pending-strip">После расчёта карты здесь появится witness-сверка: наш расчёт, JHora-профиль, delta и решение по авторитету.</div>
-      ) : (
-        <div className="dual-content">
-          <div className="dual-summary-grid">
-            <div>
-              <span>Макс. дельта грах</span>
-              <strong>{report.delta.summary.max_graha_delta_arcseconds.toFixed(2)}"</strong>
-            </div>
-            <div>
-              <span>Варги</span>
-              <strong>{report.delta.summary.varga_mismatches}</strong>
-            </div>
-            <div>
-              <span><GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm></span>
-              <strong>{report.delta.summary.shadbala_mismatches}</strong>
-            </div>
-            <div>
-              <span>Даши</span>
-              <strong>{report.delta.summary.dasha_mismatches}</strong>
-            </div>
-            <div>
-              <span>Решение</span>
-              <strong>{report.authority_decision.needs_review ? "контроль" : "совпало"}</strong>
-            </div>
-          </div>
-          <div className="dual-note">
-            <strong>{report.authority_decision.accepted_track === "primary_calculation" ? "Оставляем наш расчёт" : report.authority_decision.accepted_track}</strong>
-            <span>{report.authority_decision.reason}</span>
-          </div>
-          <div className="dual-columns">
-            <div className="dual-list">
-              <h3>Настройки</h3>
-              {settingDiffs.length ? (
-                settingDiffs.map((row) => (
-                  <div key={row.key}>
-                    <span>{settingsLabelsRu[row.key] ?? row.key}</span>
-                    <strong>{String(row.primary)} → {String(row.jhora_profile)}</strong>
-                  </div>
-                ))
-              ) : (
-                <div>
-                  <span>Профиль</span>
-                  <strong>настройки совпадают</strong>
-                </div>
-              )}
-            </div>
-            <div className="dual-list">
-              <h3>Грахи</h3>
-              {report.delta.lagna ? (
-                <div>
-                  <span>Лагна</span>
-                  <strong>{report.delta.lagna.delta_arcseconds.toFixed(2)}"</strong>
-                </div>
-              ) : null}
-              {grahaDiffs.length ? (
-                grahaDiffs.map((row) => (
-                  <div key={row.body}>
-                    <span>{labelRu(row.body)}</span>
-                    <strong>{row.signed_delta_arcseconds.toFixed(2)}"</strong>
-                    <small>{row.primary_rashi} → {row.jhora_profile_rashi}</small>
-                  </div>
-                ))
-              ) : (
-                <div>
-                  <span>Долготы</span>
-                  <strong>без различий</strong>
-                </div>
-              )}
-            </div>
-            <div className="dual-list">
-              <h3>Варги</h3>
-              {vargaDiffs.length ? (
-                vargaDiffs.map((row) => (
-                  <div key={row.code}>
-                    <span>{row.code}</span>
-                    <strong>{row.mismatches} diff, {row.missing} missing</strong>
-                    {row.samples.length ? <small>{row.samples.map((sample) => `${labelRu(sample.body)} ${sample.primary}→${sample.jhora_profile}`).join("; ")}</small> : null}
-                  </div>
-                ))
-              ) : (
-                <div>
-                  <span>D1-D60</span>
-                  <strong>без различий</strong>
-                </div>
-              )}
-            </div>
-            <div className="dual-list">
-              <h3>Даши</h3>
-              {dashaDiffs.length ? (
-                dashaDiffs.map((row) => (
-                  <div key={row.index}>
-                    <span>MD {row.index + 1}</span>
-                    <strong>{row.status === "missing" ? "missing" : `${labelRu(row.primary_lord ?? "")} → ${labelRu(row.jhora_profile_lord ?? "")}`}</strong>
-                    {row.primary_starts_at || row.jhora_profile_starts_at ? <small>{formatIsoTime(row.primary_starts_at)} → {formatIsoTime(row.jhora_profile_starts_at)}</small> : null}
-                  </div>
-                ))
-              ) : (
-                <div>
-                  <span>Вимшоттари</span>
-                  <strong>без различий</strong>
-                </div>
-              )}
-            </div>
-            <div className="dual-list">
-              <h3><GlossaryTerm termKey="shadbala">Шадбала</GlossaryTerm></h3>
-              {shadbalaDiffs.length ? (
-                shadbalaDiffs.map((row) => (
-                  <div key={row.body}>
-                    <span>{labelRu(row.body)}</span>
-                    <strong>{row.status === "missing" ? "missing" : `${row.delta?.toFixed(2)} virupa`}</strong>
-                  </div>
-                ))
-              ) : (
-                <div>
-                  <span>Итоги</span>
-                  <strong>без различий</strong>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function shortHash(value?: string) {
-  return value ? value.slice(0, 12) : "missing";
-}
-
-function formatWitnessDiffValue(value: string | number | null | undefined) {
-  if (typeof value === "number") return Number.isInteger(value) ? String(value) : value.toFixed(6);
-  return value === null || value === undefined || value === "" ? "n/a" : String(value);
 }
 
 function AccuracyReportPanel({
@@ -7215,855 +5212,110 @@ function AccuracyReportPanel({
   plReport: ParasharaLightPacketReport | null;
   plStatus: string;
 }) {
-  const longitude = report?.summary.longitude;
-  const groups = report?.summary.exact_groups ?? [];
-  const layers = report ? Object.entries(report.summary.jhora_layers) : [];
-  const plSummary = plReport?.summary ?? null;
-  const manualComparison = plReport?.manual_witness_comparison ?? null;
-  const screenshotFingerprint = plSummary?.fingerprints.screenshots?.[0];
-  const birthTimezoneAudit = witnessSummary?.birth_timezone_audit ?? null;
-  const jhoraBirthExport = witnessSummary?.jhora.birth_export ?? null;
-  const plProfile = witnessSummary?.parashara_light.profile ?? null;
-  const plProfileFlags = Array.isArray(plProfile?.data_quality_flags) ? plProfile.data_quality_flags : [];
-  const plProfileComparison = plProfile?.packet_comparison ?? {};
-  const plProfileNormalization = plProfile?.candidate_normalization ?? {};
-  const plProfileRawBirth = plProfile?.raw_birth_info ?? {};
-  const plForensic = witnessSummary?.parashara_light.forensic ?? null;
-  const plForensicMaxDeviation =
-    typeof plForensic?.pl_swiss_max_abs_arcsec === "number" ? plForensic.pl_swiss_max_abs_arcsec : null;
-  const plForensicRowHealth = plForensic?.row_health ?? { total: 0, matched: 0, diff_open: 0 };
-  const plSettingsEvidence = witnessSummary?.parashara_light.settings_evidence ?? null;
-  const plVisibleSettingsCapture = witnessSummary?.parashara_light.visible_settings_capture ?? null;
-  const plCalculationOptions = witnessSummary?.parashara_light.calculation_options ?? null;
-  const plSettingsAwareForensic = witnessSummary?.parashara_light.settings_aware_forensic ?? null;
-  const plPreferencesInventory = witnessSummary?.parashara_light.preferences_inventory ?? null;
-  const plHiddenOptionStore = witnessSummary?.parashara_light.hidden_option_store ?? null;
-  const plOptionStoreDiff = witnessSummary?.parashara_light.option_store_diff ?? null;
-  const plInternalSettingsAudit = witnessSummary?.parashara_light.internal_settings_audit ?? null;
-  const witnessReview = witnessSummary?.witness_review ?? null;
-  const witnessReviewBatch = witnessSummary?.witness_review_batch ?? null;
-  const witnessReviewBatchSummary = witnessReviewBatch?.summary ?? null;
-  const witnessReviewBatchMetadata = witnessReviewBatch?.metadata ?? null;
-  const witnessReviewBatchWritten = witnessReviewBatch?.written ?? [];
-  const witnessReviewBatchNextActions = witnessReviewBatch?.next_actions ?? [];
-  const witnessReviewBatchSkippedReasons = witnessReviewBatch?.skipped_reason_counts ?? {};
-  const witnessCaptureQueue = witnessSummary?.witness_capture_queue ?? null;
-  const witnessCaptureQueueSummary = witnessCaptureQueue?.summary ?? null;
-  const witnessCaptureQueueMetadata = witnessCaptureQueue?.metadata ?? null;
-  const witnessCaptureQueueItems = witnessCaptureQueue?.items ?? [];
-  const witnessCaptureQueueNext = witnessCaptureQueue?.next_item ?? witnessCaptureQueueItems[0] ?? null;
-  const witnessCaptureQueueNextStepLabel =
-    witnessCaptureQueue?.next_step_label || witnessCaptureQueueNext?.next_step_label || "Next step";
-  const witnessCaptureQueueNextCommand =
-    witnessCaptureQueue?.next_command ||
-    witnessCaptureQueue?.manual_review_command ||
-    witnessCaptureQueueNext?.next_command ||
-    witnessCaptureQueueNext?.manual_review_command ||
-    "manual capture/review";
-  const witnessCaptureQueueNextAction =
-    witnessCaptureQueue?.next_action_label ||
-    witnessCaptureQueueNext?.next_action_label ||
-    witnessCaptureQueue?.next_action_key ||
-    witnessCaptureQueueNext?.next_action_key ||
-    witnessCaptureQueueNext?.status ||
-    witnessCaptureQueue?.next_command_kind ||
-    "review";
-  const witnessOpenDiffs = witnessReview?.open_diffs ?? null;
-  const witnessOpenDiffRows = [
-    ...(witnessOpenDiffs?.jhora.sample ?? []).map((row) => ({ source: "JHora", row })),
-    ...(witnessOpenDiffs?.parashara_light.sample ?? []).map((row) => ({ source: "PL", row })),
-  ].slice(0, 6);
-  const witnessReviewChecklist = witnessReview?.review_checklist ?? [];
-  const hasWitnessCaptureQueueNext =
-    Boolean(witnessCaptureQueueNext) ||
-    Boolean(witnessCaptureQueue?.next_step_label) ||
-    Boolean(witnessCaptureQueue?.next_command) ||
-    Boolean(witnessCaptureQueue?.manual_review_command);
+  const witnessState = witnessSummary
+    ? witnessSummary.open_items.length
+      ? "есть вопросы"
+      : "сверено"
+    : "ожидает";
+  const jhoraState = witnessSummary?.jhora.available
+    ? witnessSummary.jhora.failed_checks
+      ? "есть расхождения"
+      : "сверено"
+    : "ожидает";
+  const plState = witnessSummary?.parashara_light.available
+    ? witnessSummary.parashara_light.manual_failed_count
+      ? "есть расхождения"
+      : "сверено"
+    : plReport
+      ? "загружено"
+      : "ожидает";
+  const timezoneState = witnessSummary?.birth_timezone_audit?.available
+    ? witnessSummary.birth_timezone_audit.resolved_utc_offset ||
+      witnessSummary.birth_timezone_audit.local_datetime_utc_offset ||
+      "сверено"
+    : "ожидает";
+  const jhoraDelta = report?.summary.longitude?.max_delta_arcseconds;
+  const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
+  const hasOpenAccuracyItems =
+    Boolean(witnessSummary?.open_items.length) ||
+    (typeof plFailedCount === "number" && plFailedCount > 0) ||
+    Boolean(report && !report.passed);
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
       <div className="panel-heading">
-        <h2>Witness summary</h2>
-        <span>{witnessStatus}</span>
+        <h2>Точность расчёта</h2>
+        <span>{witnessState}</span>
       </div>
-      {witnessSummary ? (
-        <div className="accuracy-content">
-          <div className="accuracy-summary-grid witness-summary-grid">
-            <div>
-              <span>Overall</span>
-              <strong>{witnessSummary.overall_status}</strong>
-            </div>
-            <div>
-              <span>JHora</span>
-              <strong>{witnessSummary.jhora.available ? witnessSummary.jhora.status : "missing"}</strong>
-              {witnessSummary.jhora.available ? (
-                <small>
-                  {jhoraBirthExport?.parsed_utc_offset
-                    ? `${jhoraBirthExport.parsed_utc_offset}, ${witnessSummary.jhora.failed_checks} failed`
-                    : `${witnessSummary.jhora.failed_checks} failed`}
-                </small>
-              ) : null}
-            </div>
-            <div>
-              <span>PL</span>
-              <strong>{witnessSummary.parashara_light.available ? witnessSummary.parashara_light.status : "missing"}</strong>
-              {witnessSummary.parashara_light.available ? (
-                <small>{witnessSummary.parashara_light.manual_completion_percent}% filled</small>
-              ) : null}
-            </div>
-            <div>
-              <span>PL profile</span>
-              <strong>{plProfile?.available ? plProfile.status : "missing"}</strong>
-              {plProfile?.available ? (
-                <small>
-                  {plProfileFlags.length} flags, authoritative: {plProfile.authoritative ? "yes" : "no"}
-                </small>
-              ) : null}
-            </div>
-            <div>
-              <span>Birth timezone</span>
-              <strong>{birthTimezoneAudit?.available ? birthTimezoneAudit.resolved_utc_offset || "resolved" : "missing"}</strong>
-              {birthTimezoneAudit?.available ? (
-                <small>DST {birthTimezoneAudit.dst_observed ? "yes" : "no"}</small>
-              ) : null}
-            </div>
-            <div>
-              <span>Open items</span>
-              <strong>{witnessSummary.open_items.length}</strong>
-            </div>
+      <div className="accuracy-content">
+        <div className="accuracy-summary-grid witness-summary-grid">
+          <div>
+            <span>JHora</span>
+            <strong>{jhoraState}</strong>
+            {typeof jhoraDelta === "number" ? <small>до {jhoraDelta.toFixed(2)}"</small> : null}
           </div>
-          {witnessReview ? (
-            <div className="accuracy-list witness-open-items witness-seal-gate">
-              <h3>Witness seal gate</h3>
-              <div>
-                <span>Status</span>
-                <strong>{witnessReview.available ? (witnessReview.overall.reviewable ? "reviewable" : witnessReview.status) : "missing"}</strong>
-                <small>
-                  ACK {witnessReview.overall.ack_required ? "required" : "not required"}, blocked{" "}
-                  {witnessReview.overall.blocked ? "yes" : "no"}
-                </small>
-              </div>
-              <div>
-                <span>Safe next step</span>
-                <strong>{witnessReview.safe_next_step || "review preflight first"}</strong>
-                <small>mutating review commands hidden from summary API</small>
-              </div>
-              <div>
-                <span>JHora / PL</span>
-                <strong>
-                  {witnessReview.jhora.status ?? "missing"} / {witnessReview.parashara_light.status ?? "missing"}
-                </strong>
-                <small>
-                  {witnessReview.jhora.id ?? "JHora missing"} · {witnessReview.parashara_light.id ?? "PL missing"}
-                </small>
-              </div>
-              {witnessOpenDiffs ? (
-                <div>
-                  <span>Open diffs</span>
-                  <strong>
-                    JHora {witnessOpenDiffs.jhora.failed_count}, PL {witnessOpenDiffs.parashara_light.failed_count}
-                  </strong>
-                  <small>{witnessOpenDiffs.status}</small>
-                </div>
-              ) : null}
-              {witnessReviewChecklist.slice(0, 4).map((item) => (
-                <div key={item.key}>
-                  <span>{item.label}</span>
-                  <strong>{item.status}</strong>
-                  <small>{item.next_step ? `${item.detail}; next: ${item.next_step}` : item.detail}</small>
-                </div>
-              ))}
-              {witnessOpenDiffRows.map(({ source, row }, index) => (
-                <div key={`${source}-${row.field}-${index}`}>
-                  <span>
-                    {source} {row.field}
-                  </span>
-                  <strong>
-                    {formatWitnessDiffValue(row.witness)} / {formatWitnessDiffValue(row.calculated)}
-                  </strong>
-                  <small>
-                    {typeof row.delta_arcseconds === "number"
-                      ? `${row.delta_arcseconds.toFixed(2)} arcsec`
-                      : "exact diff"}
-                  </small>
-                </div>
-              ))}
-            </div>
-          ) : null}
-          {witnessReviewBatch ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>Witness batch review</h3>
-              <div>
-                <span>Packets</span>
-                <strong>
-                  {witnessReviewBatch.available
-                    ? `${witnessReviewBatchSummary?.written_count ?? 0} written`
-                    : witnessReviewBatch.status}
-                </strong>
-                <small>
-                  skipped {witnessReviewBatchSummary?.skipped_count ?? 0}, errors{" "}
-                  {witnessReviewBatchSummary?.error_count ?? 0}
-                </small>
-              </div>
-              <div>
-                <span>Progress</span>
-                <strong>
-                  {witnessReviewBatchSummary?.batch_review_ready_count ?? 0} /{" "}
-                  {witnessReviewBatchSummary?.target_reviewed_count ?? 0} ready
-                </strong>
-                <small>
-                  remaining {witnessReviewBatchSummary?.remaining_to_target_count ?? 0}, reviewable{" "}
-                  {witnessReviewBatchSummary?.reviewable_count ?? 0}, blocked{" "}
-                  {witnessReviewBatchSummary?.blocked_count ?? 0}, ACK{" "}
-                  {witnessReviewBatchSummary?.ack_required_count ?? 0}
-                </small>
-              </div>
-              <div>
-                <span>Index</span>
-                <strong>{witnessReviewBatchSummary?.index_path || witnessReviewBatch.source_index || "missing"}</strong>
-                <small>{witnessReviewBatchSummary?.index_json_path || "JSON index missing"}</small>
-              </div>
-              <div>
-                <span>Generated</span>
-                <strong>{witnessReviewBatchMetadata?.generated_at || "unknown"}</strong>
-                <small>
-                  reviewer {witnessReviewBatchMetadata?.reviewer || "n/a"}, reviewed at{" "}
-                  {witnessReviewBatchMetadata?.reviewed_at || "n/a"}
-                </small>
-              </div>
-              <div>
-                <span>Next review</span>
-                <strong>{witnessReviewBatchSummary?.next_review_case_id || "none"}</strong>
-                <small>{witnessReviewBatchSummary?.next_review_step || "none"}</small>
-              </div>
-              {witnessReviewBatchWritten.slice(0, 3).map((row) => (
-                <div key={row.id}>
-                  <span>{row.id}</span>
-                  <strong>
-                    {row.reviewable ? "reviewable" : "not reviewable"} / ACK {row.ack_required ? "yes" : "no"}
-                  </strong>
-                  <small>
-                    {row.safe_next_step};{" "}
-                    {row.review_checklist_next_steps_summary !== "none"
-                      ? row.review_checklist_next_steps_summary
-                      : row.review_checklist_summary !== "none"
-                        ? row.review_checklist_summary
-                        : row.output_path}
-                  </small>
-                </div>
-              ))}
-              {witnessReviewBatchSummary?.next_case_ids?.length ? (
-                <div>
-                  <span>Next cases</span>
-                  <strong>{witnessReviewBatchSummary.next_case_ids.slice(0, 4).join(", ")}</strong>
-                </div>
-              ) : null}
-              {witnessReviewBatchNextActions.slice(0, 3).map((row) => (
-                <div key={`next-${row.id}`}>
-                  <span>{row.label || row.id}</span>
-                  <strong>{row.suggested_action_labels.slice(0, 3).join(", ") || row.status || "review"}</strong>
-                  <small>
-                    JHora {row.missing_for_authoritative_review.join(", ") || "ok"}; PL{" "}
-                    {row.missing_secondary_witness.join(", ") || "ok"}
-                  </small>
-                </div>
-              ))}
-              {Object.keys(witnessReviewBatchSkippedReasons).length ? (
-                <div>
-                  <span>Skipped reasons</span>
-                  <strong>
-                    {Object.entries(witnessReviewBatchSkippedReasons)
-                      .map(([reason, count]) => `${reason}: ${count}`)
-                      .join(", ")}
-                  </strong>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          {witnessCaptureQueue ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>Witness capture queue</h3>
-              <div>
-                <span>Queue</span>
-                <strong>
-                  {witnessCaptureQueue.available
-                    ? `${witnessCaptureQueueSummary?.queue_count ?? 0} cases`
-                    : witnessCaptureQueue.status}
-                </strong>
-                <small>
-                  remaining {witnessCaptureQueueSummary?.remaining_to_target_count ?? 0}, ready{" "}
-                  {witnessCaptureQueueSummary?.batch_review_ready_count ?? 0}
-                </small>
-              </div>
-              <div>
-                <span>Coverage</span>
-                <strong>{witnessCaptureQueueSummary?.capture_started_count ?? 0} capture-started</strong>
-                <small>
-                  PL witnesses {witnessCaptureQueueSummary?.pl_witness_count ?? 0}, target{" "}
-                  {witnessCaptureQueueMetadata?.target_reviewed_count ?? 0}
-                </small>
-              </div>
-              <div>
-                <span>Markdown</span>
-                <strong>{witnessCaptureQueueSummary?.markdown_output || "missing"}</strong>
-                <small>{witnessCaptureQueue.source_queue || witnessCaptureQueueSummary?.output || "queue missing"}</small>
-              </div>
-              {hasWitnessCaptureQueueNext ? (
-                <div>
-                  <span>{witnessCaptureQueueNextStepLabel}</span>
-                  <strong>{witnessCaptureQueueNextAction}</strong>
-                  <small>{witnessCaptureQueueNextCommand}</small>
-                </div>
-              ) : null}
-              {witnessCaptureQueueItems.slice(0, 3).map((row) => (
-                <div key={`capture-${row.id}`}>
-                  <span>
-                    {row.priority}. {row.label || row.id}
-                  </span>
-                  <strong>{row.suggested_action_labels.slice(0, 3).join(", ") || row.status || "review"}</strong>
-                  <small>
-                    JHora {row.capture_targets.jhora.join(", ") || "ok"}; PL{" "}
-                    {row.capture_targets.parashara_light.join(", ") || "ok"}
-                  </small>
-                </div>
-              ))}
-            </div>
-          ) : null}
-          {birthTimezoneAudit?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>Birth timezone audit</h3>
-              <div>
-                <span>Status</span>
-                <strong>{birthTimezoneAudit.status}</strong>
-                <small>{birthTimezoneAudit.timezone_source || "timezone source unknown"}</small>
-              </div>
-              <div>
-                <span>Offset</span>
-                <strong>
-                  {birthTimezoneAudit.resolved_utc_offset || "n/a"}
-                  {birthTimezoneAudit.expected_utc_offset
-                    ? ` expected ${birthTimezoneAudit.expected_utc_offset}`
-                    : ""}
-                </strong>
-                <small>
-                  local {birthTimezoneAudit.local_datetime_utc_offset || "n/a"}, DST{" "}
-                  {birthTimezoneAudit.dst_observed ? "observed" : "not observed"}
-                </small>
-              </div>
-              <div>
-                <span>UTC</span>
-                <strong>{birthTimezoneAudit.utc_datetime || "not captured"}</strong>
-                <small>{birthTimezoneAudit.local_datetime || "local time missing"}</small>
-              </div>
-            </div>
-          ) : null}
-          {jhoraBirthExport?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>JHora birth export</h3>
-              <div>
-                <span>Birth time</span>
-                <strong>{jhoraBirthExport.time || "not captured"}</strong>
-                <small>{jhoraBirthExport.date || "date missing"}</small>
-              </div>
-              <div>
-                <span>Timezone</span>
-                <strong>{jhoraBirthExport.parsed_utc_offset || "not parsed"}</strong>
-                <small>{jhoraBirthExport.timezone_line || "Time Zone line missing"}</small>
-              </div>
-              <div>
-                <span>Place</span>
-                <strong>{jhoraBirthExport.place || "not captured"}</strong>
-                <small>{jhoraBirthExport.source_export || "export missing"}</small>
-              </div>
-            </div>
-          ) : null}
-          {plForensic?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL forensic dump</h3>
-              <div>
-                <span>Conclusion</span>
-                <strong>{plForensic.conclusion || "not set"}</strong>
-                <small>{plForensic.pl_diff_count} PL diffs</small>
-              </div>
-              <div>
-                <span>Hypotheses</span>
-                <strong>
-                  offset {plForensic.uniform_offset_status || "n/a"}, time {plForensic.time_shift_status || "n/a"}
-                </strong>
-                <small>max {plForensicMaxDeviation !== null ? plForensicMaxDeviation.toFixed(2) : "n/a"}"</small>
-              </div>
-              <div>
-                <span>Next action</span>
-                <strong>{plForensic.next_action || "none"}</strong>
-                <small>
-                  rows {plForensicRowHealth.matched}/{plForensicRowHealth.total} matched
-                </small>
-              </div>
-            </div>
-          ) : null}
-          {plSettingsEvidence?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL settings evidence</h3>
-              <div>
-                <span>Runtime</span>
-                <strong>{plSettingsEvidence.runtime_build || "captured"}</strong>
-                <small>{plSettingsEvidence.proprietary_binary_policy || "hash-only"}</small>
-              </div>
-              <div>
-                <span>Manifests</span>
-                <strong>{plSettingsEvidence.options_files_count} option files</strong>
-                <small>
-                  {plSettingsEvidence.session_tokens_count} sessions, {plSettingsEvidence.text_artifacts_count} text artifacts
-                </small>
-              </div>
-              <div>
-                <span>Next action</span>
-                <strong>{plSettingsEvidence.next_action || "capture_visible_pl_profile_settings"}</strong>
-                <small>{plSettingsEvidence.artifact_policy || "private audit"}</small>
-              </div>
-            </div>
-          ) : null}
-          {plVisibleSettingsCapture?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL visible settings capture</h3>
-              <div>
-                <span>Status</span>
-                <strong>{plVisibleSettingsCapture.status || "captured"}</strong>
-                <small>
-                  dialog {plVisibleSettingsCapture.settings_dialog_captured ? "yes" : "pending"}, menu{" "}
-                  {plVisibleSettingsCapture.options_menu_captured ? "yes" : "no"}
-                </small>
-              </div>
-              <div>
-                <span>Artifacts</span>
-                <strong>{plVisibleSettingsCapture.screenshots_count} screenshots</strong>
-                <small>{plVisibleSettingsCapture.surfaces_count} UI states</small>
-              </div>
-              <div>
-                <span>Next action</span>
-                <strong>{plVisibleSettingsCapture.next_action || "capture_calculation_options_dialog_or_native_export"}</strong>
-              </div>
-            </div>
-          ) : null}
-          {plCalculationOptions?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL calculation options</h3>
-              <div>
-                <span>Ayanamsha</span>
-                <strong>{plCalculationOptions.selected_ayanamsha_label || "not captured"}</strong>
-                <small>{plCalculationOptions.status || "captured"}</small>
-              </div>
-              <div>
-                <span>Method</span>
-                <strong>{plCalculationOptions.selected_calculation_method_label || "not captured"}</strong>
-                <small>pixel-probed from PL7 dialog</small>
-              </div>
-              <div>
-                <span>Controls</span>
-                <strong>{plCalculationOptions.offset_value || "offset missing"}</strong>
-                <small>{plCalculationOptions.selected_miscellaneous_item_label || "misc selection missing"}</small>
-              </div>
-            </div>
-          ) : null}
-          {plSettingsAwareForensic?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL settings-aware forensic</h3>
-              <div>
-                <span>Status</span>
-                <strong>{plSettingsAwareForensic.status || "captured"}</strong>
-                <small>{plSettingsAwareForensic.next_action || "review"}</small>
-              </div>
-              <div>
-                <span>Visible settings</span>
-                <strong>{plSettingsAwareForensic.ayanamsha_status || "unknown"}</strong>
-                <small>{plSettingsAwareForensic.offset_status || "offset unknown"}</small>
-              </div>
-              <div>
-                <span>Forensic gates</span>
-                <strong>{plSettingsAwareForensic.engine_swiss_status || "unknown"}</strong>
-                <small>
-                  offset {plSettingsAwareForensic.uniform_offset_status || "n/a"}, time{" "}
-                  {plSettingsAwareForensic.time_shift_status || "n/a"}
-                </small>
-              </div>
-            </div>
-          ) : null}
-          {plPreferencesInventory?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL preferences inventory</h3>
-              <div>
-                <span>Status</span>
-                <strong>{plPreferencesInventory.status || "captured"}</strong>
-                <small>{plPreferencesInventory.next_action || "review"}</small>
-              </div>
-              <div>
-                <span>Visible controls</span>
-                <strong>{plPreferencesInventory.visible_ayanamsha_controls ? "ayanamsha visible" : "ayanamsha missing"}</strong>
-                <small>{plPreferencesInventory.visible_system_paths ? "system paths visible" : "system paths missing"}</small>
-              </div>
-              <div>
-                <span>Ephemeris mode</span>
-                <strong>{plPreferencesInventory.internal_ephemeris_mode_visible ? "visible" : "not visible"}</strong>
-                <small>{plPreferencesInventory.tabs_count} tabs/states reviewed</small>
-              </div>
-            </div>
-          ) : null}
-          {plHiddenOptionStore?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL hidden option store</h3>
-              <div>
-                <span>Status</span>
-                <strong>{plHiddenOptionStore.status || "captured"}</strong>
-                <small>{plHiddenOptionStore.proprietary_binary_policy || "hash-only"}</small>
-              </div>
-              <div>
-                <span>Primary</span>
-                <strong>{plHiddenOptionStore.primary_candidate || "not identified"}</strong>
-                <small>
-                  {plHiddenOptionStore.option_store_candidates_count} option candidates,{" "}
-                  {plHiddenOptionStore.session_token_candidates_count} sessions
-                </small>
-              </div>
-              <div>
-                <span>Next action</span>
-                <strong>{plHiddenOptionStore.next_action || "review"}</strong>
-              </div>
-            </div>
-          ) : null}
-          {plOptionStoreDiff?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL option store diff</h3>
-              <div>
-                <span>Status</span>
-                <strong>{plOptionStoreDiff.status || "captured"}</strong>
-                <small>{plOptionStoreDiff.proprietary_binary_policy || "hash-only"}</small>
-              </div>
-              <div>
-                <span>Changed</span>
-                <strong>{plOptionStoreDiff.primary_candidate || "none"}</strong>
-                <small>
-                  {plOptionStoreDiff.changed_candidates_count} candidates, restore{" "}
-                  {plOptionStoreDiff.restore_verified ? "verified" : "not verified"}
-                </small>
-              </div>
-              <div>
-                <span>Setting</span>
-                <strong>{plOptionStoreDiff.visible_setting || "not captured"}</strong>
-                <small>{plOptionStoreDiff.next_action || "review"}</small>
-              </div>
-            </div>
-          ) : null}
-          {plInternalSettingsAudit?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL internal settings audit</h3>
-              <div>
-                <span>Status</span>
-                <strong>{plInternalSettingsAudit.status || "captured"}</strong>
-                <small>{plInternalSettingsAudit.visible_settings_status || "visible settings reviewed"}</small>
-              </div>
-              <div>
-                <span>Gates</span>
-                <strong>{plInternalSettingsAudit.option_store_diff_status || "option store pending"}</strong>
-                <small>
-                  ephemeris mode {plInternalSettingsAudit.internal_ephemeris_mode_visible ? "visible" : "not visible"}
-                </small>
-              </div>
-              <div>
-                <span>Next action</span>
-                <strong>{plInternalSettingsAudit.next_action || "review"}</strong>
-                <small>{plInternalSettingsAudit.ruled_out_count} ruled out</small>
-              </div>
-            </div>
-          ) : null}
-          {plProfile?.available ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>PL birth XML profile</h3>
-              <div>
-                <span>PL XML timezone</span>
-                <strong>
-                  TimeZone {String(plProfileRawBirth.timezone ?? "n/a")}, DST{" "}
-                  {String(plProfileRawBirth.dst ?? "n/a")}
-                </strong>
-                <small>
-                  {String(plProfileNormalization.timezone_formula ?? "formula missing")}
-                  {typeof plProfileNormalization.timezone_offset_hours_candidate === "number"
-                    ? ` => ${plProfileNormalization.timezone_offset_hours_candidate.toFixed(2)}h`
-                    : ""}
-                </small>
-              </div>
-              <div>
-                <span>Coordinates</span>
-                <strong>
-                  {typeof plProfileComparison.longitude_delta_degrees === "number"
-                    ? `${plProfileComparison.longitude_delta_degrees.toFixed(6)}°`
-                    : "not compared"}
-                </strong>
-                <small>
-                  lat{" "}
-                  {typeof plProfileComparison.latitude_delta_degrees === "number"
-                    ? plProfileComparison.latitude_delta_degrees.toFixed(6)
-                    : "n/a"}
-                </small>
-              </div>
-              <div>
-                <span>Timezone</span>
-                <strong>
-                  {typeof plProfileComparison.timezone_delta_hours === "number"
-                    ? `${plProfileComparison.timezone_delta_hours.toFixed(2)}h delta`
-                    : "not compared"}
-                </strong>
-                <small>candidate, not authoritative</small>
-              </div>
-              {plProfileFlags.length ? (
-                <div>
-                  <span>Flags</span>
-                  <strong>{plProfileFlags.slice(0, 2).join(", ")}</strong>
-                  {plProfileFlags.length > 2 ? (
-                    <small>+{plProfileFlags.length - 2} more</small>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          {witnessSummary.open_items.length ? (
-            <div className="accuracy-list witness-open-items">
-              <h3>Open witness work</h3>
-              {witnessSummary.open_items.map((item) => (
-                <div key={`${item.source}-${item.status}-${item.label}`}>
-                  <span>{item.source}</span>
-                  <strong>{item.label}</strong>
-                  <small>
-                    {item.next_action
-                      ? `${item.next_action}${item.failed_checks !== undefined ? `, ${item.failed_checks} failed` : ""}`
-                      : item.failed_checks !== undefined
-                        ? `${item.failed_checks} failed`
-                        : `${item.completion_percent ?? 0}% filled`}
-                  </small>
-                </div>
-              ))}
-            </div>
-          ) : null}
+          <div>
+            <span>Parashara Light</span>
+            <strong>{plState}</strong>
+            {typeof plFailedCount === "number" ? <small>{plFailedCount ? `${plFailedCount} расх.` : "без расхождений"}</small> : null}
+          </div>
+          <div>
+            <span>Часовой пояс</span>
+            <strong>{timezoneState}</strong>
+            {witnessSummary?.birth_timezone_audit?.dst_observed !== undefined ? (
+              <small>DST {witnessSummary.birth_timezone_audit.dst_observed ? "учтено" : "не найдено"}</small>
+            ) : null}
+          </div>
+          <div>
+            <span>Итог</span>
+            <strong>{hasOpenAccuracyItems ? "проверить расхождения" : "можно читать карту"}</strong>
+          </div>
         </div>
-      ) : (
-        <div className="pending-strip">Witness summary ещё не загружен.</div>
-      )}
-      <div className="panel-heading">
-        <h2>JHora export accuracy</h2>
-        <span>{status}</span>
+        {hasOpenAccuracyItems ? (
+          <div className="accuracy-list witness-open-items">
+            <h3>Что требует внимания</h3>
+            {report && !report.passed ? (
+              <div>
+                <span>Долготы грах</span>
+                <strong>есть расхождения</strong>
+                {typeof jhoraDelta === "number" ? <small>макс. {jhoraDelta.toFixed(2)}"</small> : null}
+              </div>
+            ) : null}
+            {typeof plFailedCount === "number" && plFailedCount > 0 ? (
+              <div>
+                <span>Parashara Light</span>
+                <strong>{plFailedCount} несовп.</strong>
+                <small>нужна ручная сверка исходных данных</small>
+              </div>
+            ) : null}
+            {witnessSummary?.open_items.slice(0, 4).map((item) => (
+              <div key={`${item.source}-${item.label}`}>
+                <span>{item.source}</span>
+                <strong>{item.label}</strong>
+                {item.next_action ? <small>{item.next_action}</small> : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
-      {!report || !longitude ? (
-        <div className="pending-strip">JHora export report ещё не загружен.</div>
-      ) : (
-        <div className="accuracy-content">
-          <div className="accuracy-summary-grid">
-            <div>
-              <span>Fixture</span>
-              <strong>{report.fixture_id}</strong>
-            </div>
-            <div>
-              <span>Статус</span>
-              <strong>{report.passed ? "passed" : "diff open"}</strong>
-            </div>
-            <div>
-              <span>Макс. долгота</span>
-              <strong>{longitude.max_delta_arcseconds.toFixed(2)}"</strong>
-            </div>
-            <div>
-              <span>После ayanamsa</span>
-              <strong>{longitude.corrected_max_delta_arcseconds.toFixed(2)}"</strong>
-            </div>
-            <div>
-              <span>Ayanamsa delta</span>
-              <strong>{longitude.ayanamsa_delta_arcseconds.toFixed(2)}"</strong>
-            </div>
-          </div>
-          <div className="accuracy-columns">
-            <div className="accuracy-list">
-              <h3>Longitudes</h3>
-              {longitude.failed_samples.length ? (
-                longitude.failed_samples.map((row) => (
-                  <div key={row.body}>
-                    <span>{labelRu(row.body)}</span>
-                    <strong>{row.signed_delta_arcseconds.toFixed(2)}"</strong>
-                  </div>
-                ))
-              ) : (
-                <div>
-                  <span>Grahas</span>
-                  <strong>без расхождений</strong>
-                </div>
-              )}
-            </div>
-            <div className="accuracy-list">
-              <h3>Groups</h3>
-              {groups.map((group) => (
-                <div key={group.key}>
-                  <span>{group.key}</span>
-                  <strong>{group.passed}/{group.total}</strong>
-                  {group.failed ? <small>{group.failed_samples.slice(0, 3).join(", ")}</small> : null}
-                </div>
-              ))}
-            </div>
-            <div className="accuracy-list">
-              <h3>JHora layers</h3>
-              {layers.map(([key, layer]) => (
-                <div key={key}>
-                  <span>{key}</span>
-                  <strong>{String(layer.matched ?? 0)}/{String(layer.checked ?? 0)}</strong>
-                  {layer.max_abs_delta ? <small>max {String(layer.max_abs_delta)}</small> : null}
-                </div>
-              ))}
-            </div>
-          </div>
-          <p className="accuracy-footnote">{report.source_export}</p>
-        </div>
-      )}
-      <div className="panel-heading accuracy-subheading">
-        <h2>Parashara Light witness packet</h2>
-        <span>{plStatus}</span>
-      </div>
-      {!plReport || !plSummary ? (
-        <div className="pending-strip">Parashara Light packet ещё не загружен.</div>
-      ) : (
-        <div className="accuracy-content">
-          <div className="accuracy-summary-grid">
-            <div>
-              <span>Packet</span>
-              <strong>{plReport.id}</strong>
-            </div>
-            <div>
-              <span>Status</span>
-              <strong>{plReport.status}</strong>
-            </div>
-            <div>
-              <span>Review</span>
-              <strong>{plSummary.review_status || "unknown"}</strong>
-            </div>
-            <div>
-              <span>PL version</span>
-              <strong>{plSummary.version_required || "unknown"}</strong>
-            </div>
-            <div>
-              <span>Controls</span>
-              <strong>{plSummary.control_count ?? "unknown"}</strong>
-            </div>
-            <div>
-              <span>Screenshots</span>
-              <strong>{plSummary.screenshots_count}</strong>
-            </div>
-            <div>
-              <span>Blank shot</span>
-              <strong>{plSummary.screenshot_blank ? "yes" : "no"}</strong>
-            </div>
-            <div>
-              <span>Lagna</span>
-              <strong>{plSummary.jyotish_agent_lagna || "unknown"}</strong>
-            </div>
-            <div>
-              <span>Manual values</span>
-              <strong>{manualComparison?.summary.manual_values_count ?? 0}</strong>
-            </div>
-            <div>
-              <span>Manual diff</span>
-              <strong>{manualComparison?.summary.failed_count ?? 0}</strong>
-            </div>
-            <div>
-              <span>Manual filled</span>
-              <strong>{manualComparison ? `${manualComparison.completion.completion_percent}%` : "0%"}</strong>
-            </div>
-          </div>
-          <div className="accuracy-columns">
-            <div className="accuracy-list">
-              <h3>Capture</h3>
-              <div>
-                <span>Window</span>
-                <strong>{plSummary.window_title || "unknown"}</strong>
-              </div>
-              <div>
-                <span>Capture status</span>
-                <strong>{plSummary.capture_status || "unknown"}</strong>
-              </div>
-              {plSummary.screenshot_error ? (
-                <div>
-                  <span>Screenshot error</span>
-                  <strong>{plSummary.screenshot_error}</strong>
-                </div>
-              ) : null}
-            </div>
-            <div className="accuracy-list">
-              <h3>Fingerprints</h3>
-              <div>
-                <span>UI state</span>
-                <strong>{shortHash(plSummary.fingerprints.ui_state?.sha256)}</strong>
-                {plSummary.fingerprints.ui_state?.bytes ? <small>{plSummary.fingerprints.ui_state.bytes} bytes</small> : null}
-              </div>
-              <div>
-                <span>Screenshot</span>
-                <strong>{shortHash(screenshotFingerprint?.sha256)}</strong>
-                {screenshotFingerprint?.bytes ? <small>{screenshotFingerprint.bytes} bytes</small> : null}
-              </div>
-            </div>
-            <div className="accuracy-list">
-              <h3>Manual witness</h3>
-              <div>
-                <span>Status</span>
-                <strong>{manualComparison?.status ?? "no_manual_values"}</strong>
-              </div>
-              <div>
-                <span>Source</span>
-                <strong>{plReport.manual_witness_source || "none"}</strong>
-              </div>
-              <div>
-                <span>Filled / empty</span>
-                <strong>
-                  {manualComparison?.completion.filled_fields_count ?? 0} / {manualComparison?.completion.empty_fields_count ?? 0}
-                </strong>
-              </div>
-              {manualComparison?.completion.empty_field_sample.length ? (
-                <div>
-                  <span>Missing sample</span>
-                  <strong>{manualComparison.completion.empty_field_sample.slice(0, 4).join(", ")}</strong>
-                </div>
-              ) : null}
-              {manualComparison?.diffs.slice(0, 4).map((diff) => (
-                <div key={`${diff.source}-${diff.body}-${diff.field}`}>
-                  <span>{diff.body}.{diff.field}</span>
-                  <strong>{String(diff.witness)} / {String(diff.calculated)}</strong>
-                  {diff.delta_arcseconds ? <small>{diff.delta_arcseconds.toFixed(2)}"</small> : null}
-                </div>
-              ))}
-            </div>
-            <div className="accuracy-list">
-              <h3>Checklist</h3>
-              <div>
-                <span>Items</span>
-                <strong>{plReport.checklist_count}</strong>
-              </div>
-              <div>
-                <span>Schema</span>
-                <strong>{plReport.schema_version}</strong>
-              </div>
-            </div>
-          </div>
-          <p className="accuracy-footnote">{plReport.source_packet}</p>
-        </div>
-      )}
     </section>
   );
+
 }
 
+
 export default function Home() {
-  const [birthDate, setBirthDate] = useState("1998-04-30");
-  const [birthTime, setBirthTime] = useState("13:45");
+  const [birthDate, setBirthDate] = useState(() => localDateInputValue());
+  const [birthTime, setBirthTime] = useState(() => localTimeInputValue());
   const [gender, setGender] = useState<"male" | "female" | "unknown">("male");
-  const [placeName, setPlaceName] = useState("Стерлитамак");
-  const [profileName, setProfileName] = useState("Моя карта 30.04.1998");
+  const [placeName, setPlaceName] = useState("Маяпур");
+  const [profileName, setProfileName] = useState("Карта на сейчас");
   const [profileIsSelf, setProfileIsSelf] = useState(true);
   const [placeMatches, setPlaceMatches] = useState<PlaceCandidate[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<PlaceCandidate | null>(null);
-  const [manualTimezone, setManualTimezone] = useState("Asia/Yekaterinburg");
-  const [manualLatitude, setManualLatitude] = useState("53.6304");
-  const [manualLongitude, setManualLongitude] = useState("55.9308");
+  const [manualTimezone, setManualTimezone] = useState("Asia/Kolkata");
+  const [manualLatitude, setManualLatitude] = useState("23.4241");
+  const [manualLongitude, setManualLongitude] = useState("88.3883");
   const [zodiac, setZodiac] = useState("sidereal");
   const [calculationModel, setCalculationModel] = useState("drik_siddhanta");
   const [ayanamsa, setAyanamsa] = useState("lahiri");
@@ -8079,11 +5331,10 @@ export default function Home() {
   const [placeSearchStatus, setPlaceSearchStatus] = useState("Введите город, чтобы увидеть подсказки");
   const [chart, setChart] = useState<BirthChart | null>(null);
   const [chartMode, setChartMode] = useState("D1");
-  const [activeVargaFocusKey, setActiveVargaFocusKey] = useState("core");
   const [activeVargaSchemeKey, setActiveVargaSchemeKey] = useState<VargaSchemeKey>("shodasha");
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
-  const [termLanguage, setTermLanguage] = useState<TermLanguage>("sanskrit");
+  const [termLanguage, setTermLanguage] = useState<TermLanguage>("ru");
   const [houseHintsEnabled, setHouseHintsEnabled] = useState(true);
   const [selectedReaderExplanation, setSelectedReaderExplanation] = useState<ReaderExplanationDetail | null>(null);
   const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>("pro");
@@ -8093,8 +5344,9 @@ export default function Home() {
   const [chartStyleHydrated, setChartStyleHydrated] = useState(false);
   const [chartViewHydrated, setChartViewHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(true);
-  const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>(() => analysisTabFromLocation());
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
+  const [analysisWorkspaceOpen, setAnalysisWorkspaceOpen] = useState(false);
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [draftAnalysis, setDraftAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
   const [draftAnalysisStatus, setDraftAnalysisStatus] = useState("Личный разбор ещё не генерировался");
@@ -8112,21 +5364,19 @@ export default function Home() {
   const [mundaneReport, setMundaneReport] = useState<MundaneReport | null>(null);
   const [muhurtaReport, setMuhurtaReport] = useState<MuhurtaReport | null>(null);
   const [compatibilityReport, setCompatibilityReport] = useState<CompatibilityReport | null>(null);
-  const [dualCalculationReport, setDualCalculationReport] = useState<DualCalculationReport | null>(null);
   const [accuracyReport, setAccuracyReport] = useState<JHoraAccuracyReport | null>(null);
   const [plPacketReport, setPlPacketReport] = useState<ParasharaLightPacketReport | null>(null);
   const [witnessSummary, setWitnessSummary] = useState<WitnessSummary | null>(null);
   const [lastBirthPayload, setLastBirthPayload] = useState<BirthChartRequest | null>(null);
-  const [status, setStatus] = useState("Расчёт не запускался");
+  const [status, setStatus] = useState("Карта на сейчас строится автоматически");
   const [workflowStatus, setWorkflowStatus] = useState("Ожидает расчёт карты");
-  const [dualCalculationStatus, setDualCalculationStatus] = useState("JHora witness ещё не считался");
-  const [accuracyStatus, setAccuracyStatus] = useState("JHora export report не загружен");
-  const [plPacketStatus, setPlPacketStatus] = useState("Parashara Light packet не загружен");
-  const [witnessSummaryStatus, setWitnessSummaryStatus] = useState("Witness summary не загружен");
+  const [accuracyStatus, setAccuracyStatus] = useState("Внешняя сверка не загружена");
+  const [plPacketStatus, setPlPacketStatus] = useState("Дополнительная сверка не загружена");
+  const [witnessSummaryStatus, setWitnessSummaryStatus] = useState("Сводка точности не загружена");
   const [compatibilityStatus, setCompatibilityStatus] = useState("Ожидает основную карту");
-  const [compatibilityPacketStatus, setCompatibilityPacketStatus] = useState("Codex-пакет ещё не сформирован");
+  const [compatibilityPacketStatus, setCompatibilityPacketStatus] = useState("");
   const [compatibilityCodexAnalysis, setCompatibilityCodexAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
-  const [compatibilityCodexStatus, setCompatibilityCodexStatus] = useState("Полный разбор совместимости ещё не запускался");
+  const [compatibilityCodexStatus, setCompatibilityCodexStatus] = useState("");
   const [compatibilityChatMessages, setCompatibilityChatMessages] = useState<CodexAnalysisChatMessage[]>([]);
   const [compatibilityChatStatus, setCompatibilityChatStatus] = useState("Сначала сгенерируйте полный разбор совместимости");
   const [compatibilityChatBusy, setCompatibilityChatBusy] = useState(false);
@@ -8145,22 +5395,20 @@ export default function Home() {
   const [selectedPartnerPlace, setSelectedPartnerPlace] = useState<PlaceCandidate | null>(null);
   const [showPartnerPlaceSuggestions, setShowPartnerPlaceSuggestions] = useState(false);
   const [partnerPlaceSearchStatus, setPartnerPlaceSearchStatus] = useState("Введите город второго человека");
-  const [sourceQuery, setSourceQuery] = useState("Krishna protects devotee");
+  const [sourceQuery, setSourceQuery] = useState("Луна в 12 доме");
   const [sourceResults, setSourceResults] = useState<VLSearchResult[]>([]);
   const [researchResults, setResearchResults] = useState<ResearchSearchResult[]>([]);
-  const [researchStatus, setResearchStatus] = useState("Private corpus not searched");
+  const [researchStatus, setResearchStatus] = useState("Поиск ещё не запускался");
   const [sourceInventory, setSourceInventory] = useState<SourceInventory | null>(null);
   const [sourceWorks, setSourceWorks] = useState<SourceWorkSummary[]>([]);
   const [selectedSourceWork, setSelectedSourceWork] = useState<SourceWorkSummary | null>(null);
   const [sourcePassages, setSourcePassages] = useState<SourcePassageResult[]>([]);
-  const [sourceWorkStatus, setSourceWorkStatus] = useState("Corpus not loaded");
-  const [sourcePassageStatus, setSourcePassageStatus] = useState("Open a source to view fragments");
-  const [sourceStatus, setSourceStatus] = useState("Поиск по VL не запускался");
-  const [shastraEvidence, setShastraEvidence] = useState<ShastraEvidencePayload | null>(null);
-  const [shastraEvidenceStatus, setShastraEvidenceStatus] = useState("Evidence ещё не загружен");
+  const [sourceWorkStatus, setSourceWorkStatus] = useState("Источники ещё не загружены");
+  const [sourcePassageStatus, setSourcePassageStatus] = useState("Откройте источник, чтобы увидеть фрагменты");
+  const [sourceStatus, setSourceStatus] = useState("Поиск ещё не запускался");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
-  const [authUsername, setAuthUsername] = useState("haridas");
+  const [authUsername, setAuthUsername] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authStatus, setAuthStatus] = useState("Войдите, чтобы сохранять карты");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -8172,13 +5420,13 @@ export default function Home() {
   const [relatedProfileIds, setRelatedProfileIds] = useState<number[]>([]);
   const [profileStatus, setProfileStatus] = useState("Сохранённые карты не загружены");
   const [formDraftHydrated, setFormDraftHydrated] = useState(false);
+  const [currentChartDefault, setCurrentChartDefault] = useState(true);
+  const autoCurrentChartStartedRef = useRef(false);
+  const autoSavedChartStartedRef = useRef(false);
   const privateAccessLocked = PRIVATE_APP_REQUIRE_AUTH && !currentUser;
   const aiAccessLocked = !currentUser;
 
-  const calculatedLabel = useMemo(() => {
-    if (!chart) return "Карта останется пустой до расчёта эфемеридных позиций.";
-    return `${chart.grahas.length} грах рассчитано для ${chart.place.label ?? chart.place.name}.`;
-  }, [chart]);
+  const isCurrentChartLoading = currentChartDefault && !chart && status.startsWith("Считаю");
   const vimshottariPeriods = chart?.dashas?.vimshottari?.mahadashas ?? [];
   const vargaOptions = useMemo(
     () => availableVargaCodes(chart),
@@ -8187,9 +5435,6 @@ export default function Home() {
   const selectedVarga = chartMode === "D1" ? null : chart?.vargas?.[chartMode] ?? null;
   const selectedVargaPlacements = selectedVarga?.placements ?? [];
   const activeChartPointCount = chartMode === "D1" ? (chart ? chart.grahas.length + (chart.ascendant ? 1 : 0) : 0) : selectedVargaPlacements.length;
-  const activeChartContext = priorityVargaContexts[chartMode] ?? { scope: "Варга", detail: "дополнительный слой чтения" };
-  const activeChartReferenceLabel = chartReferenceOptions.find((option) => option.key === chartReference)?.label ?? "Лагна";
-  const activeChartStyleLabel = chartStyle === "south" ? "Южный стиль" : "Северный стиль";
   const activeTermLanguageLabel = termLanguage === "sanskrit" ? "Санскрит" : termLanguage === "ru" ? "Русский" : "English";
   const personSummary = birthReport?.person_summary ?? null;
   const chartPanelRef = useRef<HTMLElement | null>(null);
@@ -8257,27 +5502,17 @@ export default function Home() {
     });
   }
 
-  function selectVargaFocusGroup(groupKey: string, code: string) {
-    setActiveVargaFocusKey(groupKey);
-    setChartMode(code);
-  }
-
   function selectVargaScheme(schemeKey: VargaSchemeKey, code: string) {
     setActiveVargaSchemeKey(schemeKey);
     setChartMode(code);
   }
 
   function selectVargaCode(code: string) {
-    const currentGroup = vargaFocusGroups.find((group) => group.key === activeVargaFocusKey);
-    const matchingGroup = currentGroup?.codes.includes(code)
-      ? currentGroup
-      : vargaFocusGroups.find((group) => group.key !== "core" && group.codes.includes(code))
-        ?? vargaFocusGroups.find((group) => group.codes.includes(code));
-    if (matchingGroup) setActiveVargaFocusKey(matchingGroup.key);
     setChartMode(code);
   }
 
   function openCurrentDayPanel() {
+    setAnalysisWorkspaceOpen(true);
     setActiveAnalysisTab("transits");
     window.history.pushState(null, "", "/?analysis=transits#reports");
     window.requestAnimationFrame(() => {
@@ -8329,6 +5564,28 @@ export default function Home() {
   }
 
   useEffect(() => {
+    if (autoCurrentChartStartedRef.current) return;
+    const draft = readBirthFormDraft();
+    if (draft && draft.currentChartDefault === false) return;
+    const currentDate = localDateInputValue();
+    const currentTime = localTimeInputValue();
+    autoCurrentChartStartedRef.current = true;
+    setBirthDate(currentDate);
+    setBirthTime(currentTime);
+    setGender("unknown");
+    setPlaceName("Маяпур");
+    setProfileName("Карта на сейчас");
+    setProfileIsSelf(false);
+    setSelectedPlace(null);
+    setManualTimezone("Asia/Kolkata");
+    setManualLatitude("23.4241");
+    setManualLongitude("88.3883");
+    setCurrentChartDefault(true);
+    setShowBirthEditor(false);
+    void runCurrentChartCalculation(currentMayapurPayload(currentDate, currentTime, draft));
+  }, []);
+
+  useEffect(() => {
     try {
       setSidebarCollapsed(window.localStorage.getItem("jyotish-sidebar-collapsed") === "1");
     } catch {
@@ -8340,11 +5597,22 @@ export default function Home() {
     function applyRouteState() {
       const params = new URLSearchParams(window.location.search);
       const requestedAnalysis = params.get("analysis");
-      if (requestedAnalysis && analysisTabs.some((tab) => tab.key === requestedAnalysis)) {
+      if (
+        requestedAnalysis &&
+        requestedAnalysis !== "calculations" &&
+        requestedAnalysis !== "accuracy" &&
+        analysisTabs.some((tab) => tab.key === requestedAnalysis)
+      ) {
+        setAnalysisWorkspaceOpen(true);
         setActiveAnalysisTab(requestedAnalysis as AnalysisTab);
+      } else if (requestedAnalysis === "calculations" || requestedAnalysis === "accuracy") {
+        setAnalysisWorkspaceOpen(false);
+        setActiveAnalysisTab("overview");
+        window.history.replaceState(null, "", requestedAnalysis === "calculations" ? "/#varga-charts" : "/settings");
       }
       const requestedRelationship = params.get("relationship");
       if (requestedRelationship && /^\d+$/.test(requestedRelationship)) {
+        setAnalysisWorkspaceOpen(true);
         setActiveAnalysisTab("compatibility");
         setActiveCompatibilityRelationshipId(requestedRelationship);
         setCompatibilityStatus(`Загружаю связь #${requestedRelationship}...`);
@@ -8395,7 +5663,7 @@ export default function Home() {
     } catch {
       // localStorage can be unavailable in restricted browser modes.
     }
-    setShowAdvancedSettings(!window.matchMedia("(max-width: 760px)").matches);
+    setShowAdvancedSettings(false);
     setChartStyleHydrated(true);
   }, []);
 
@@ -8419,7 +5687,6 @@ export default function Home() {
           chartMode?: string;
           chartReference?: ChartReference;
           chartWorkspaceTab?: ChartWorkspaceTab;
-          activeVargaFocusKey?: string;
           activeVargaSchemeKey?: VargaSchemeKey;
           vargaCoverageOpen?: boolean;
         };
@@ -8431,9 +5698,6 @@ export default function Home() {
         }
         if (saved.chartWorkspaceTab && chartWorkspaceTabs.some((tab) => tab.key === saved.chartWorkspaceTab)) {
           setChartWorkspaceTab(saved.chartWorkspaceTab);
-        }
-        if (saved.activeVargaFocusKey && vargaFocusGroups.some((group) => group.key === saved.activeVargaFocusKey)) {
-          setActiveVargaFocusKey(saved.activeVargaFocusKey);
         }
         if (saved.activeVargaSchemeKey && vargaSchemeGroups.some((group) => group.key === saved.activeVargaSchemeKey)) {
           setActiveVargaSchemeKey(saved.activeVargaSchemeKey);
@@ -8457,7 +5721,6 @@ export default function Home() {
           chartMode,
           chartReference,
           chartWorkspaceTab,
-          activeVargaFocusKey,
           activeVargaSchemeKey,
           vargaCoverageOpen,
         }),
@@ -8466,7 +5729,6 @@ export default function Home() {
       // localStorage can be unavailable in restricted browser modes.
     }
   }, [
-    activeVargaFocusKey,
     activeVargaSchemeKey,
     chartMode,
     chartReference,
@@ -8522,8 +5784,48 @@ export default function Home() {
       if (Array.isArray(draft.relatedProfileIds)) {
         setRelatedProfileIds(draft.relatedProfileIds.filter((id) => Number.isInteger(id) && id > 0));
       }
-      if (typeof draft.showBirthEditor === "boolean") setShowBirthEditor(draft.showBirthEditor);
-      if (typeof draft.showAdvancedSettings === "boolean") setShowAdvancedSettings(draft.showAdvancedSettings);
+      setShowBirthEditor(false);
+      setShowAdvancedSettings(false);
+      const useCurrentChartDefault = draft.currentChartDefault !== false;
+      setCurrentChartDefault(useCurrentChartDefault);
+      if (useCurrentChartDefault) {
+        const currentDate = localDateInputValue();
+        const currentTime = localTimeInputValue();
+        setBirthDate(currentDate);
+        setBirthTime(currentTime);
+        setStatus("Показываю карту на сейчас. Данные рождения можно изменить кнопкой редактирования.");
+        if (!autoCurrentChartStartedRef.current) {
+          autoCurrentChartStartedRef.current = true;
+          void runCurrentChartCalculation(currentMayapurPayload(currentDate, currentTime, draft));
+        }
+      } else if (!autoSavedChartStartedRef.current) {
+        const savedPayload = birthPayloadFromDraft(draft);
+        if (savedPayload) {
+          autoSavedChartStartedRef.current = true;
+          setStatus("Считаю сохранённую карту...");
+          void runBirthCalculation(savedPayload, "Считаю сохранённую карту...");
+        }
+      }
+    } else {
+      const currentDate = localDateInputValue();
+      const currentTime = localTimeInputValue();
+      setBirthDate(currentDate);
+      setBirthTime(currentTime);
+      setGender("unknown");
+      setPlaceName("Маяпур");
+      setProfileName("Карта на сейчас");
+      setProfileIsSelf(false);
+      setSelectedPlace(null);
+      setManualTimezone("Asia/Kolkata");
+      setManualLatitude("23.4241");
+      setManualLongitude("88.3883");
+      setPlaceSearchStatus("Карта на сейчас: Маяпур, Индия");
+      setStatus("Показываю карту на сейчас. Данные рождения можно изменить кнопкой редактирования.");
+      setCurrentChartDefault(true);
+      if (!autoCurrentChartStartedRef.current) {
+        autoCurrentChartStartedRef.current = true;
+        void runCurrentChartCalculation(currentMayapurPayload(currentDate, currentTime));
+      }
     }
     setFormDraftHydrated(true);
   }, []);
@@ -8563,8 +5865,9 @@ export default function Home() {
       activeCompatibilityRelationshipId,
       relationshipBaseProfileId,
       relatedProfileIds,
-      showBirthEditor,
+      showBirthEditor: false,
       showAdvancedSettings,
+      currentChartDefault,
     });
   }, [
     activeCompatibilityRelationshipId,
@@ -8576,6 +5879,7 @@ export default function Home() {
     compatibilityPersonAProfileId,
     compatibilityPersonBProfileId,
     compatibilityRelationshipRoleKey,
+    currentChartDefault,
     ephemeris,
     formDraftHydrated,
     gender,
@@ -8597,7 +5901,6 @@ export default function Home() {
     selectedPlace,
     shadbalaProfile,
     showAdvancedSettings,
-    showBirthEditor,
     sunriseSource,
     timezoneSource,
     vargaScheme,
@@ -8616,11 +5919,12 @@ export default function Home() {
       if (!detail?.question) return;
       event.preventDefault();
       setSuggestedCodexQuestion(contextualizeAiQuestion(detail.question, detail));
+      setAnalysisWorkspaceOpen(true);
       setActiveAnalysisTab("guidance");
       setCodexChatStatus(
         draftAnalysis
           ? "Вопрос из подсказки подставлен в чат"
-          : "Вопрос из подсказки сохранён. Сначала сгенерируйте личный Codex-разбор.",
+          : "Вопрос из подсказки сохранён. Сначала сгенерируйте личный разбор.",
       );
       window.requestAnimationFrame(() => {
         document.getElementById("reports")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -8633,11 +5937,12 @@ export default function Home() {
       if (pendingQuestion) {
         window.sessionStorage.removeItem("jyotish-pending-ai-question");
         setSuggestedCodexQuestion(contextualizeAiQuestion(pendingQuestion));
+        setAnalysisWorkspaceOpen(true);
         setActiveAnalysisTab("guidance");
         setCodexChatStatus(
           draftAnalysis
             ? "Вопрос из подсказки подставлен в чат"
-            : "Вопрос из подсказки сохранён. Сначала сгенерируйте личный Codex-разбор.",
+            : "Вопрос из подсказки сохранён. Сначала сгенерируйте личный разбор.",
         );
       }
     } catch {
@@ -8667,76 +5972,65 @@ export default function Home() {
     () => placeMatches.filter((place) => place.id !== selectedPlace?.id).slice(0, 4),
     [placeMatches, selectedPlace],
   );
-  const chartFacts = useMemo(() => {
-    if (!chart) return [];
-    return [
-      ["Лагна", chart.ascendant?.rashi ?? "Ожидает"],
-      ["Титхи", chart.panchanga.tithi ? `${chart.panchanga.tithi.paksha} ${chart.panchanga.tithi.name}` : "Ожидает"],
-      ["Вара", chart.panchanga.vara?.name ?? "Ожидает"],
-      ["Йога", chart.panchanga.yoga?.name ?? "Ожидает"],
-      ["Карана", chart.panchanga.karana?.name ?? "Ожидает"],
-      ["UTC-смещение", chart.birth.utc_offset ?? "Ожидает"],
-    ];
-  }, [chart]);
 
   useEffect(() => {
     if (privateAccessLocked) {
       setAccuracyReport(null);
       setPlPacketReport(null);
       setWitnessSummary(null);
-      setAccuracyStatus("Войдите после одобрения, чтобы загрузить JHora export report");
-      setPlPacketStatus("Войдите после одобрения, чтобы загрузить Parashara Light packet");
-      setWitnessSummaryStatus("Войдите после одобрения, чтобы загрузить witness summary");
+      setAccuracyStatus("Войдите после одобрения, чтобы открыть сверку");
+      setPlPacketStatus("Войдите после одобрения, чтобы открыть сверку");
+      setWitnessSummaryStatus("Войдите после одобрения, чтобы открыть сверку");
       return;
     }
     if (activeAnalysisTab !== "accuracy") {
-      setAccuracyStatus("JHora export report загрузится во вкладке точности");
-      setPlPacketStatus("Parashara Light packet загрузится во вкладке точности");
-      setWitnessSummaryStatus("Witness summary загрузится во вкладке точности");
+      setAccuracyStatus("Сверка загрузится во вкладке точности");
+      setPlPacketStatus("Сверка загрузится во вкладке точности");
+      setWitnessSummaryStatus("Сверка загрузится во вкладке точности");
       return;
     }
     let cancelled = false;
-    setAccuracyStatus("Загружаю JHora export report...");
-    setPlPacketStatus("Загружаю Parashara Light packet...");
-    setWitnessSummaryStatus("Загружаю witness summary...");
+    setAccuracyStatus("Загружаю сверку...");
+    setPlPacketStatus("Загружаю сверку...");
+    setWitnessSummaryStatus("Загружаю сверку...");
     fetchWitnessSummary()
       .then((summary) => {
         if (cancelled) return;
         setWitnessSummary(summary);
-        setWitnessSummaryStatus(`Witness summary: ${summary.overall_status}`);
+        setWitnessSummaryStatus(`Сверка: ${summary.overall_status}`);
       })
       .catch((error) => {
         if (cancelled) return;
         setWitnessSummary(null);
-        setWitnessSummaryStatus(error instanceof Error ? error.message : "Witness summary API error");
+        setWitnessSummaryStatus(error instanceof Error ? error.message : "Ошибка сверки");
       });
     fetchJHoraAccuracyReport()
       .then((report) => {
         if (cancelled) return;
         setAccuracyReport(report);
-        setAccuracyStatus(report.passed ? "JHora export совпал" : "JHora export diff открыт");
+        setAccuracyStatus(report.passed ? "Сверка совпала" : "Есть расхождения");
       })
       .catch((error) => {
         if (cancelled) return;
         setAccuracyReport(null);
-        setAccuracyStatus(error instanceof Error ? error.message : "JHora accuracy API error");
+        setAccuracyStatus(error instanceof Error ? error.message : "Ошибка сверки");
       });
     fetchParasharaLightPacketReport()
       .then((report) => {
         if (cancelled) return;
         setPlPacketReport(report);
         if (report.summary.screenshot_blank) {
-          setPlPacketStatus("PL screenshot требует пересъёмки");
+          setPlPacketStatus("Скриншот PL требует пересъёмки");
         } else if (report.manual_witness_comparison.status === "diff_open") {
-          setPlPacketStatus("PL manual diff открыт");
+          setPlPacketStatus("Есть расхождения PL");
         } else {
-          setPlPacketStatus("PL packet загружен");
+          setPlPacketStatus("Данные PL загружены");
         }
       })
       .catch((error) => {
         if (cancelled) return;
         setPlPacketReport(null);
-        setPlPacketStatus(error instanceof Error ? error.message : "Parashara Light packet API error");
+        setPlPacketStatus(error instanceof Error ? error.message : "Ошибка сверки");
       });
     return () => {
       cancelled = true;
@@ -8745,6 +6039,12 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
+    if (currentChartDefault && !showBirthEditor) {
+      setPlaceMatches([]);
+      setShowPlaceSuggestions(false);
+      setPlaceSearchStatus("Карта на сейчас: Маяпур, Индия");
+      return;
+    }
     if (privateAccessLocked) {
       setPlaceMatches([]);
       setSelectedPlace(null);
@@ -8763,20 +6063,20 @@ export default function Home() {
       return;
     }
 
-    setPlaceSearchStatus("Ищу город и часовой пояс...");
+    setPlaceSearchStatus("Ищу город...");
     const searchTimeout = window.setTimeout(() => {
       searchPlaces(placeName)
         .then((items) => {
           if (cancelled) return;
           setPlaceMatches(items);
           setSelectedPlace(items[0] ?? null);
-          setPlaceSearchStatus(items.length ? `${items.length} подсказок найдено` : "Подсказок нет, можно ввести координаты вручную");
+          setPlaceSearchStatus(items.length ? `${items.length} подсказок найдено` : "Город не найден, можно указать место вручную");
         })
         .catch(() => {
           if (cancelled) return;
           setPlaceMatches([]);
           setSelectedPlace(null);
-          setPlaceSearchStatus("Не удалось получить подсказки, можно ввести координаты вручную");
+          setPlaceSearchStatus("Не удалось найти город, можно указать место вручную");
         });
     }, 350);
 
@@ -8784,10 +6084,15 @@ export default function Home() {
       cancelled = true;
       window.clearTimeout(searchTimeout);
     };
-  }, [placeName, privateAccessLocked, selectedPlace]);
+  }, [currentChartDefault, placeName, privateAccessLocked, selectedPlace, showBirthEditor]);
 
   useEffect(() => {
     let cancelled = false;
+    if (!analysisWorkspaceOpen) {
+      setPartnerPlaceMatches([]);
+      setShowPartnerPlaceSuggestions(false);
+      return;
+    }
     if (privateAccessLocked) {
       setPartnerPlaceMatches([]);
       setSelectedPartnerPlace(null);
@@ -8830,7 +6135,7 @@ export default function Home() {
       cancelled = true;
       window.clearTimeout(searchTimeout);
     };
-  }, [partnerPlaceName, privateAccessLocked, selectedPartnerPlace]);
+  }, [analysisWorkspaceOpen, partnerPlaceName, privateAccessLocked, selectedPartnerPlace]);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -8841,7 +6146,7 @@ export default function Home() {
           refreshProfiles();
         }
       })
-      .catch(() => setAuthStatus("Auth API недоступен"));
+      .catch(() => setAuthStatus("Вход временно недоступен"));
   }, []);
 
   useEffect(() => {
@@ -8871,7 +6176,7 @@ export default function Home() {
         if (cancelled) return;
         setSourceInventory(null);
         setSourceWorks([]);
-        setSourceWorkStatus(error instanceof Error ? error.message : "Source corpus API недоступен");
+        setSourceWorkStatus("Источники временно недоступны");
       });
 
     return () => {
@@ -8894,41 +6199,13 @@ export default function Home() {
       .catch((error) => {
         if (cancelled) return;
         setSourcePassages([]);
-        setSourcePassageStatus(error instanceof Error ? error.message : "Source passages API недоступен");
+        setSourcePassageStatus("Фрагменты временно недоступны");
       });
 
     return () => {
       cancelled = true;
     };
   }, [activeAnalysisTab, privateAccessLocked, selectedSourceWork]);
-
-  useEffect(() => {
-    if (activeAnalysisTab !== "sources") return;
-    if (privateAccessLocked) {
-      setShastraEvidence(null);
-      setShastraEvidenceStatus("Войдите после одобрения, чтобы загрузить evidence");
-      return;
-    }
-    let cancelled = false;
-    setShastraEvidenceStatus("Загружаю shastra evidence...");
-    fetchShastraEvidence()
-      .then((payload) => {
-        if (cancelled) return;
-        setShastraEvidence(payload);
-        setShastraEvidenceStatus(
-          `источники: ${payload.summary.evidence_items} фрагментов; проверенных цитат ${payload.summary.approved_evidence_items}`,
-        );
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        setShastraEvidence(null);
-        setShastraEvidenceStatus(error instanceof Error ? error.message : "Evidence API недоступен");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeAnalysisTab, privateAccessLocked]);
 
   useEffect(() => {
     if (privateAccessLocked) {
@@ -8977,6 +6254,7 @@ export default function Home() {
   }, [compatibilityPersonAProfileId, compatibilityPersonBProfileId, privateAccessLocked]);
 
   function selectPlace(place: PlaceCandidate) {
+    setCurrentChartDefault(false);
     setSelectedPlace(place);
     setPlaceName(place.label);
     setShowPlaceSuggestions(false);
@@ -9050,6 +6328,7 @@ export default function Home() {
   }
 
   function applyProfileToBirthForm(profile: ChartProfile) {
+    setCurrentChartDefault(false);
     setBirthDate(profile.birth_date);
     setBirthTime(profile.birth_time ?? "");
     setPlaceName(profile.place.label);
@@ -9104,9 +6383,9 @@ export default function Home() {
 
   function resetCompatibilityResultState() {
     setCompatibilityReport(null);
-    setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
+    setCompatibilityPacketStatus("");
     setCompatibilityCodexAnalysis(null);
-    setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+    setCompatibilityCodexStatus("");
     resetCompatibilityChat();
   }
 
@@ -9125,10 +6404,11 @@ export default function Home() {
         : [...current, relationship.related_profile_id],
     );
     setActiveAnalysisTab("compatibility");
+    setAnalysisWorkspaceOpen(true);
     setCompatibilityStatus(
       `Выбрана связь: ${relationship.profile?.display_name ?? "карта A"} → ${relationship.related_profile?.display_name ?? "карта B"} (${role.label})`,
     );
-    setCompatibilityPacketStatus(`Ракурс карты: ${chartReferenceOptions.find((option) => option.key === chartReferenceForRelationshipRole(role))?.label ?? "Лагна"}. Можно рассчитать совместимость или сформировать Codex-пакет.`);
+    setCompatibilityPacketStatus(`Ракурс карты: ${chartReferenceOptions.find((option) => option.key === chartReferenceForRelationshipRole(role))?.label ?? "Лагна"}. Можно рассчитать совместимость или подготовить разбор.`);
   }
 
   async function handleProfileRelationshipRoleChange(relatedProfileId: number, role: string) {
@@ -9188,6 +6468,7 @@ export default function Home() {
   }
 
   function loadSampleBirthData() {
+    setCurrentChartDefault(false);
     setBirthDate("1998-04-30");
     setBirthTime("13:45");
     setGender("male");
@@ -9197,7 +6478,7 @@ export default function Home() {
     setSelectedPlace(null);
     setPlaceMatches([]);
     setShowPlaceSuggestions(false);
-    setPlaceSearchStatus("Пример: Стерлитамак, IANA Asia/Yekaterinburg, исторический UTC +06:00");
+    setPlaceSearchStatus("Пример загружен: Стерлитамак, исторический часовой пояс +06:00");
     setManualTimezone("Asia/Yekaterinburg");
     setManualLatitude("53.6304");
     setManualLongitude("55.9308");
@@ -9210,8 +6491,34 @@ export default function Home() {
     setCompatibilityCodexAnalysis(null);
     setChartMode("D1");
     setChartReference("lagna");
+    setAnalysisWorkspaceOpen(false);
     setActiveAnalysisTab("overview");
     setStatus("Пример загружен. Нажмите «Рассчитать карту».");
+  }
+
+  function loadCurrentChartData() {
+    const currentDate = localDateInputValue();
+    const currentTime = localTimeInputValue();
+    setCurrentChartDefault(true);
+    setBirthDate(currentDate);
+    setBirthTime(currentTime);
+    setGender("unknown");
+    setPlaceName("Маяпур");
+    setProfileName("Карта на сейчас");
+    setProfileIsSelf(false);
+    setSelectedPlace(null);
+    setPlaceMatches([]);
+    setShowPlaceSuggestions(false);
+    setManualTimezone("Asia/Kolkata");
+    setManualLatitude("23.4241");
+    setManualLongitude("88.3883");
+    setPlaceSearchStatus("Карта на сейчас: Маяпур, Индия");
+    setShowBirthEditor(false);
+    setChartMode("D1");
+    setChartReference("lagna");
+    setAnalysisWorkspaceOpen(false);
+    setActiveAnalysisTab("overview");
+    void runCurrentChartCalculation(currentMayapurPayload(currentDate, currentTime));
   }
 
   function buildBirthPayload(): BirthChartRequest | null {
@@ -9247,6 +6554,26 @@ export default function Home() {
           : {}),
     };
   }
+
+  useEffect(() => {
+    if (!formDraftHydrated || currentChartDefault || chart || autoSavedChartStartedRef.current) return;
+    const payload = buildBirthPayload();
+    if (!payload) return;
+    autoSavedChartStartedRef.current = true;
+    void runBirthCalculation(payload, "Считаю сохранённую карту...");
+  }, [
+    birthDate,
+    birthTime,
+    chart,
+    currentChartDefault,
+    formDraftHydrated,
+    gender,
+    manualLatitude,
+    manualLongitude,
+    manualTimezone,
+    placeName,
+    selectedPlace,
+  ]);
 
   function payloadWithCurrentRelatedProfiles(payload: BirthChartRequest): BirthChartRequest {
     const currentProfileId = typeof payload.profile_id === "number" ? payload.profile_id : null;
@@ -9459,7 +6786,7 @@ export default function Home() {
     link.click();
     link.remove();
     URL.revokeObjectURL(objectUrl);
-    setStatus("Карта экспортирована в JSON");
+    setStatus("Карта экспортирована");
   }
 
   function handleSelectCompatibilityPersonAProfile(profileId: string) {
@@ -9533,7 +6860,7 @@ export default function Home() {
   }
 
   async function refreshWorkflowReports(payload: BirthChartRequest) {
-    setWorkflowStatus("Считаю JHora-like workflow...");
+    setWorkflowStatus("Считаю дополнительные разделы...");
     const today = isoDateOffset(0);
     const weekEnd = isoDateOffset(7);
     const annualPayload = {
@@ -9613,24 +6940,8 @@ export default function Home() {
     setWorkflowStatus(
       [transits, tithiPravesha, tajaka, prashna, mundane, muhurta].every((item) => item.status === "fulfilled")
         ? "рассчитано"
-        : "частично, см. API",
+        : "частично рассчитано",
     );
-  }
-
-  async function refreshDualCalculation(payload: BirthChartRequest) {
-    setDualCalculationStatus("Сверяю с JHora-профилем...");
-    try {
-      const result = await calculateDualCalculation(payload);
-      setDualCalculationReport(result);
-      setDualCalculationStatus(
-        result.delta.exact_match
-          ? "профили совпали"
-          : `diff: ${result.delta.summary.max_graha_delta_arcseconds.toFixed(2)}", ${result.authority_decision.differing_settings.length} настроек`,
-      );
-    } catch (error) {
-      setDualCalculationReport(null);
-      setDualCalculationStatus(error instanceof Error ? error.message : "JHora witness API недоступен");
-    }
   }
 
   async function handleGenerateCurrentDayOverview() {
@@ -9647,6 +6958,7 @@ export default function Home() {
     setCurrentDayOverview(null);
     setCurrentDayBusy(true);
     setCurrentDayStatus("Сохраняю обзор нынешнего дня...");
+    setAnalysisWorkspaceOpen(true);
     setActiveAnalysisTab("transits");
     try {
       const [overviewResult, transitResult] = await Promise.allSettled([
@@ -9660,7 +6972,7 @@ export default function Home() {
         throw overviewResult.reason;
       }
       setCurrentDayOverview(overviewResult.value);
-      setCurrentDayStatus(`Сохранён обзор #${overviewResult.value.id}: ${overviewResult.value.sections.length} раздела`);
+      setCurrentDayStatus(`Обзор сохранён: ${overviewResult.value.sections.length} раздела`);
     } catch (error) {
       setCurrentDayOverview(null);
       setCurrentDayStatus(error instanceof Error ? error.message : "Не удалось сохранить обзор нынешнего дня");
@@ -9677,19 +6989,19 @@ export default function Home() {
 
     setCompatibilityStatus("Считаю совместимость...");
     setCompatibilityCodexAnalysis(null);
-    setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
+    setCompatibilityCodexStatus("");
     try {
       const result = await calculateCompatibility({
         ...buildCompatibilityPayload(personA, personB),
       });
       setCompatibilityReport(result);
-      setCompatibilityPacketStatus("Можно сформировать Codex-пакет по этому расчёту");
+      setCompatibilityPacketStatus("Можно подготовить разбор по этому расчёту");
       setCompatibilityStatus("рассчитано");
     } catch (error) {
       setCompatibilityReport(null);
-      setCompatibilityPacketStatus("Codex-пакет ещё не сформирован");
+      setCompatibilityPacketStatus("");
       setCompatibilityCodexAnalysis(null);
-      setCompatibilityStatus(error instanceof Error ? error.message : "Ошибка API совместимости");
+      setCompatibilityStatus(error instanceof Error ? error.message : "Расчёт совместимости временно недоступен");
     }
   }
 
@@ -9698,7 +7010,7 @@ export default function Home() {
     const personB = buildPartnerPayload();
     if (!personA || !personB) return;
 
-    setCompatibilityPacketStatus("Формирую Codex-пакет...");
+    setCompatibilityPacketStatus("Готовлю разбор...");
     try {
       const packet = await generateCompatibilityAnalysisPacket({
         ...buildCompatibilityPayload(personA, personB),
@@ -9706,7 +7018,7 @@ export default function Home() {
       const compatibility = packet.context.compatibility as CompatibilityReport | undefined;
       if (compatibility) {
         setCompatibilityReport(compatibility);
-        setCompatibilityStatus("пакет сформирован");
+      setCompatibilityStatus("разбор подготовлен");
       }
       const perspectiveCount = compatibility?.analysis?.perspectives.length ?? 0;
       const requestCount = packet.citation_requests.length;
@@ -9720,39 +7032,35 @@ export default function Home() {
         }
       }
       setCompatibilityPacketStatus(
-        `Пакет: ${perspectiveCount} ракурсов, ${requestCount} запросов цитат${copied ? ", prompt скопирован" : ""}`,
+        copied ? "Разбор подготовлен и скопирован" : "Разбор подготовлен",
       );
     } catch (error) {
-      setCompatibilityPacketStatus(error instanceof Error ? error.message : "Ошибка Codex-пакета");
+      setCompatibilityPacketStatus(error instanceof Error ? error.message : "Ошибка подготовки разбора");
     }
   }
 
   async function handleCompatibilityCodexAnalysis() {
     if (aiAccessLocked) {
-      setCompatibilityCodexStatus("Войдите или зарегистрируйтесь, чтобы сохранить AI-разбор совместимости в личной истории.");
+      setCompatibilityCodexStatus("Войдите или зарегистрируйтесь, чтобы сохранить разбор совместимости в личной истории.");
       return;
     }
     const personA = selectedProfilePayload(compatibilityPersonAProfileId) ?? lastBirthPayload ?? buildBirthPayload();
     const personB = buildPartnerPayload();
     if (!personA || !personB) return;
 
-    setCompatibilityCodexStatus("Запускаю Codex CLI для полного разбора двух карт...");
+    setCompatibilityCodexStatus("Запускаю полный разбор двух карт...");
     try {
       const result = await generateCompatibilityCodexAnalysis({
         ...buildCompatibilityPayload(personA, personB),
       });
       if (isQueuedAnalysisGeneration(result)) {
-        setCompatibilityCodexStatus(
-          result.message || `Codex CLI задача #${result.job.id} поставлена в очередь. Статус появится в блоке активных генераций.`,
-        );
+        setCompatibilityCodexStatus("Разбор готовится и появится в истории.");
         return;
       }
       setCompatibilityCodexAnalysis(result);
       setCompatibilityChatMessages([]);
       setCompatibilityChatStatus("Можно задавать вопросы по этому разбору совместимости");
-      setCompatibilityCodexStatus(
-        `Codex CLI #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
-      );
+      setCompatibilityCodexStatus("Разбор готов.");
     } catch (error) {
       if (isAnalysisInProgressError(error)) {
         setCompatibilityCodexStatus(error.message);
@@ -9774,14 +7082,14 @@ export default function Home() {
     const history = [...compatibilityChatMessages, userMessage];
     setCompatibilityChatMessages(history);
     setCompatibilityChatBusy(true);
-    setCompatibilityChatStatus("Codex CLI отвечает по совместимости...");
+    setCompatibilityChatStatus("Готовлю ответ по совместимости...");
     try {
       const result = await askCompatibilityCodexAnalysis(compatibilityCodexAnalysis.id, question, history);
       setCompatibilityChatMessages([...history, { role: "assistant", content: result.answer }]);
       const sourceCount = result.source_traces?.length ?? result.evidence_references?.length ?? 0;
       setCompatibilityChatStatus(sourceCount ? `Ответ готов, источников: ${sourceCount}` : "Ответ готов");
     } catch (error) {
-      setCompatibilityChatMessages([...history, { role: "assistant", content: error instanceof Error ? error.message : "Ошибка Codex CLI" }]);
+      setCompatibilityChatMessages([...history, { role: "assistant", content: error instanceof Error ? error.message : "Ошибка ответа" }]);
       setCompatibilityChatStatus(isAnalysisInProgressError(error) ? "Ответ уже формируется" : "Ошибка ответа");
     } finally {
       setCompatibilityChatBusy(false);
@@ -9790,15 +7098,15 @@ export default function Home() {
 
   async function handleGenerateDraftAnalysis(forceRegenerate = false) {
     if (aiAccessLocked) {
-      setDraftAnalysisStatus("Войдите или зарегистрируйтесь, чтобы сохранить личный AI-разбор.");
+      setDraftAnalysisStatus("Войдите или зарегистрируйтесь, чтобы сохранить личный разбор.");
       return;
     }
     if (!activeSavedBirthProfile) {
-      setDraftAnalysisStatus("Сначала сохраните расчёт как вашу личную карту. Первый AI-разбор доступен только для сохранённой «моей карты».");
+      setDraftAnalysisStatus("Сначала сохраните расчёт как вашу личную карту. Первый разбор доступен только для сохранённой «моей карты».");
       return;
     }
     if (!activeSavedBirthProfile.is_self_profile) {
-      setDraftAnalysisStatus("AI-разбор чужой сохранённой карты будет платным действием после подключения оплаты. Карту можно хранить и смотреть бесплатно.");
+      setDraftAnalysisStatus("Разбор чужой сохранённой карты будет платным действием после подключения оплаты. Карту можно хранить и смотреть бесплатно.");
       return;
     }
     const basePayload = lastBirthPayload ?? buildBirthPayload();
@@ -9808,15 +7116,13 @@ export default function Home() {
     resetCodexChat();
     setDraftAnalysisStatus(
       forceRegenerate
-        ? "Сбрасываю старый Codex CLI разбор и запускаю перегенерацию с текущим корпусом шастр..."
-        : "Запускаю Codex CLI и сопоставление с шастрами...",
+        ? "Обновляю старый разбор по текущему корпусу шастр..."
+        : "Запускаю разбор и сопоставление с шастрами...",
     );
     try {
       const result = await generateBirthCodexAnalysis(payload, { forceRegenerate });
       if (isQueuedAnalysisGeneration(result)) {
-        setDraftAnalysisStatus(
-          result.message || `Codex CLI задача #${result.job.id} поставлена в очередь. Отчёт появится в истории после обработки.`,
-        );
+        setDraftAnalysisStatus("Разбор готовится и появится в истории.");
         return;
       }
       setDraftAnalysis(result);
@@ -9824,8 +7130,8 @@ export default function Home() {
       setCodexChatStatus("Можно задавать вопросы по этому разбору");
       setDraftAnalysisStatus(
         result.billing_status === "free_personal_analysis_already_used"
-          ? `Codex CLI #${result.id}: сохранённый бесплатный личный разбор, ${result.sections.length} разделов`
-          : `Codex CLI #${result.id}: ${result.sections.length} разделов, ${generatedStatusRu(result.review_status)}`,
+          ? "Открыт сохранённый личный разбор."
+          : "Разбор готов.",
       );
     } catch (error) {
       if (isAnalysisInProgressError(error)) {
@@ -9848,14 +7154,14 @@ export default function Home() {
     const history = [...codexChatMessages, userMessage];
     setCodexChatMessages(history);
     setCodexChatBusy(true);
-    setCodexChatStatus("Codex CLI отвечает...");
+    setCodexChatStatus("Готовлю ответ...");
     try {
       const result = await askBirthCodexAnalysis(draftAnalysis.id, question, history);
       setCodexChatMessages([...history, { role: "assistant", content: result.answer }]);
       const sourceCount = result.source_traces?.length ?? result.evidence_references?.length ?? 0;
       setCodexChatStatus(sourceCount ? `Ответ готов, источников: ${sourceCount}` : "Ответ готов");
     } catch (error) {
-      setCodexChatMessages([...history, { role: "assistant", content: error instanceof Error ? error.message : "Ошибка Codex CLI" }]);
+      setCodexChatMessages([...history, { role: "assistant", content: error instanceof Error ? error.message : "Ошибка ответа" }]);
       setCodexChatStatus(isAnalysisInProgressError(error) ? "Ответ уже формируется" : "Ошибка ответа");
     } finally {
       setCodexChatBusy(false);
@@ -9890,10 +7196,16 @@ export default function Home() {
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
       setCompatibilityCodexAnalysis(null);
-      setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
-      setWorkflowStatus("Дополнительные отчёты не запускались автоматически, чтобы не перегружать сервер");
-      setDualCalculationStatus("JHora witness запускается отдельно во вкладке точности");
-      setActiveAnalysisTab("overview");
+      setCompatibilityCodexStatus("");
+      setWorkflowStatus("Готово");
+      const requestedAnalysis = requestedAnalysisFromLocation();
+      if (requestedAnalysis) {
+        setAnalysisWorkspaceOpen(true);
+        setActiveAnalysisTab(requestedAnalysis);
+      } else {
+        setAnalysisWorkspaceOpen(false);
+        setActiveAnalysisTab("overview");
+      }
       setStatus("Сохранённая карта загружена и рассчитана");
       scrollToChartAfterCalculation();
       await refreshProfiles();
@@ -9902,7 +7214,7 @@ export default function Home() {
     }
   }
 
-  async function runBirthCalculation(payload: BirthChartRequest, statusMessage = "Формирую отчёт с приоритетом цитат...") {
+  async function runBirthCalculation(payload: BirthChartRequest, statusMessage = "Считаю карту...") {
     setStatus(statusMessage);
     try {
       const result = await generateBirthReport(payload);
@@ -9918,9 +7230,15 @@ export default function Home() {
       setCompatibilityReport(null);
       setCompatibilityStatus("Можно считать совместимость");
       setCompatibilityCodexAnalysis(null);
-      setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
-      setWorkflowStatus("Дополнительные отчёты не запускались автоматически, чтобы не перегружать сервер");
-      setDualCalculationStatus("JHora witness запускается отдельно во вкладке точности");
+      setCompatibilityCodexStatus("");
+      setWorkflowStatus("Готово");
+      const requestedAnalysis = requestedAnalysisFromLocation();
+      if (requestedAnalysis) {
+        setAnalysisWorkspaceOpen(true);
+        setActiveAnalysisTab(requestedAnalysis);
+      } else {
+        setAnalysisWorkspaceOpen(false);
+      }
       setStatus("Отчёт построен");
       scrollToChartAfterCalculation();
     } catch (error) {
@@ -9934,12 +7252,10 @@ export default function Home() {
       setMuhurtaReport(null);
       setCompatibilityReport(null);
       setCompatibilityCodexAnalysis(null);
-      setCompatibilityCodexStatus("Полный разбор совместимости ещё не запускался");
-      setDualCalculationReport(null);
-      setDualCalculationStatus("JHora witness ещё не считался");
+      setCompatibilityCodexStatus("");
       setLastBirthPayload(null);
       setCompatibilityStatus("Ожидает основную карту");
-      setStatus(error instanceof Error ? error.message : "Ошибка API");
+      setStatus("Расчёт временно недоступен.");
     }
   }
 
@@ -9947,6 +7263,36 @@ export default function Home() {
     const payload = buildBirthPayload();
     if (!payload) return;
     await runBirthCalculation(payload);
+  }
+
+  async function submitCurrentChartCalculation() {
+    const payload = buildBirthPayload();
+    if (!payload) return;
+    await runCurrentChartCalculation(payload);
+  }
+
+  async function runCurrentChartCalculation(payload: BirthChartRequest) {
+    setStatus("Считаю карту на сейчас...");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 5000);
+    try {
+      const result = await calculateBirthChart(payload, { signal: controller.signal });
+      setChart(result);
+      setChartMode("D1");
+      setShowBirthEditor(false);
+      setBirthReport(null);
+      setDraftAnalysis(null);
+      setCurrentDayOverview(null);
+      setLastBirthPayload(payload);
+      setStatus("Карта на сейчас построена");
+    } catch (error) {
+      setChart(null);
+      setBirthReport(null);
+      setLastBirthPayload(null);
+      setStatus("Расчёт сейчас временно недоступен.");
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -9961,26 +7307,26 @@ export default function Home() {
 
   async function handleSourceSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSourceStatus("Ищу в VL...");
+    setSourceStatus("Ищу в источниках...");
     try {
       const results = await searchVLSources(sourceQuery);
       setSourceResults(results);
-      setSourceStatus(results.length ? `${results.length} результатов` : "В VL ничего не найдено");
+      setSourceStatus(results.length ? `${results.length} результатов` : "В источниках ничего не найдено");
     } catch (error) {
       setSourceResults([]);
-      setSourceStatus(error instanceof Error ? error.message : "Ошибка поиска VL");
+      setSourceStatus(error instanceof Error ? error.message : "Поиск временно недоступен");
     }
   }
 
   async function handleResearchSearch() {
-    setResearchStatus("Searching private corpus...");
+    setResearchStatus("Ищу по книгам...");
     try {
       const results = await searchResearchSources(sourceQuery);
       setResearchResults(results);
-      setResearchStatus(results.length ? `${results.length} research-only fragments` : "No private corpus matches");
+      setResearchStatus(results.length ? `${results.length} фрагментов найдено` : "Совпадений не найдено");
     } catch (error) {
       setResearchResults([]);
-      setResearchStatus(error instanceof Error ? error.message : "Private corpus search error");
+      setResearchStatus(error instanceof Error ? error.message : "Ошибка поиска");
     }
   }
 
@@ -9990,48 +7336,56 @@ export default function Home() {
   const aiBillingStatus = activeSavedBirthProfile
     ? activeSavedBirthProfile.is_self_profile
       ? {
-          label: "Личный AI-разбор",
-          text: "Эта карта отмечена как «моя карта»: первый Codex-разбор доступен бесплатно; повтор вернёт сохранённый отчёт.",
+          label: "Личный разбор",
+          text: "Эта карта отмечена как «моя карта»: первый личный разбор доступен бесплатно; повтор вернёт сохранённый отчёт.",
           tone: "free" as const,
         }
       : {
           label: "Чужая сохранённая карта",
-          text: "Карту можно хранить и смотреть бесплатно. AI-разбор этой карты будет платным действием после подключения оплаты.",
+          text: "Карту можно хранить и смотреть бесплатно. Разбор этой карты будет платным действием после подключения оплаты.",
           tone: "paid" as const,
         }
     : {
         label: currentUser ? "Карта ещё не сохранена" : "Нужен вход",
         text: currentUser
-          ? "Сохраните расчёт как «моя карта», чтобы использовать первый бесплатный личный AI-разбор."
-          : "Войдите или зарегистрируйтесь: первый AI-разбор доступен только для вашей сохранённой карты.",
+          ? "Сохраните расчёт как «моя карта», чтобы использовать первый бесплатный личный разбор."
+          : "Войдите или зарегистрируйтесь: первый разбор доступен только для вашей сохранённой карты.",
         tone: "neutral" as const,
       };
 
   const activeMainNavKey: AppNavKey =
     activeAnalysisTab === "overview"
-      ? chartWorkspaceTab === "vargas"
+      ? "charts"
+      : chartWorkspaceTab === "vargas"
         ? "vargas"
-        : "charts"
-      : activeAnalysisTab === "calculations" ||
-          activeAnalysisTab === "yogas" ||
-          activeAnalysisTab === "timeline" ||
-          activeAnalysisTab === "transits" ||
-          activeAnalysisTab === "muhurta" ||
-          activeAnalysisTab === "compatibility" ||
-          activeAnalysisTab === "accuracy" ||
-          activeAnalysisTab === "guidance" ||
-          activeAnalysisTab === "sources"
-        ? activeAnalysisTab
-        : "charts";
+      : activeAnalysisTab === "transits"
+        ? "transits"
+        : activeAnalysisTab === "compatibility"
+          ? "compatibility"
+          : activeAnalysisTab === "sources"
+            ? "sources"
+            : activeAnalysisTab === "calculations"
+              ? "calculations"
+              : activeAnalysisTab === "yogas"
+                ? "yogas"
+                : activeAnalysisTab === "muhurta"
+                  ? "muhurta"
+                  : activeAnalysisTab === "guidance"
+                    ? "guidance"
+                    : activeAnalysisTab === "accuracy"
+                      ? "accuracy"
+          : "charts";
 
   function handleMainNavSelect(key: AppNavKey) {
     if (key === "charts" || key === "settings") {
       setChartWorkspaceTab("essentials");
+      setAnalysisWorkspaceOpen(false);
       setActiveAnalysisTab("overview");
       return;
     }
     if (key === "vargas") {
       setChartWorkspaceTab("vargas");
+      setAnalysisWorkspaceOpen(false);
       setActiveAnalysisTab("overview");
       return;
     }
@@ -10045,6 +7399,7 @@ export default function Home() {
       key === "sources" ||
       key === "accuracy"
     ) {
+      setAnalysisWorkspaceOpen(true);
       setActiveAnalysisTab(key);
     }
   }
@@ -10053,14 +7408,22 @@ export default function Home() {
     setClientMounted(true);
   }, []);
 
-  const initialUiReady = clientMounted && (!browserStorageAvailable() || (formDraftHydrated && chartStyleHydrated && chartViewHydrated));
+  const initialUiReady = true;
 
   if (!initialUiReady) {
     return (
       <main className={`app-shell shell-loading ${interfaceMode === "beginner" ? "beginner-mode" : "pro-mode"}${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
         <aside className="sidebar">
           <div className="sidebar-brand-row">
-            <div className="mark">Ом</div>
+            <div className="mark jyotish-mark" aria-hidden="true">
+              <svg viewBox="0 0 48 48" focusable="false">
+                <circle cx="24" cy="24" r="7.5" />
+                <circle cx="24" cy="24" r="14.5" />
+                <path d="M24 3v7M24 38v7M3 24h7M38 24h7" />
+                <path d="M9.15 9.15l4.95 4.95M33.9 33.9l4.95 4.95M38.85 9.15l-4.95 4.95M14.1 33.9l-4.95 4.95" />
+                <path d="M24 10.5l3 7.3 7.7.7-5.85 5.1 1.75 7.6L24 27.15l-6.6 4.05 1.75-7.6-5.85-5.1 7.7-.7z" />
+              </svg>
+            </div>
             <button
               type="button"
               className="sidebar-collapse-button"
@@ -10072,21 +7435,18 @@ export default function Home() {
             </button>
           </div>
           <div className="sidebar-title">
-            <h1>Jyotish Agent</h1>
-            <p>Гаудия-сиддханта джйотиш</p>
+            <h1>Веда Джйотиш</h1>
           </div>
           <AppNavigation activeKey="charts" home />
         </aside>
         <section className="workspace">
           <header className="topbar">
             <div className="topbar-title">
-              <strong>Карта рождения</strong>
-              <span>Загружаю сохранённый рабочий стол...</span>
+              <strong>Открываю карту</strong>
             </div>
           </header>
           <section className="panel initial-ui-loading" aria-live="polite">
-            <strong>Открываю сохранённые данные</strong>
-            <span>Сейчас подтянутся карта, настройки вида, язык терминов и последний выбранный раздел.</span>
+            <strong>Открываю карту</strong>
           </section>
         </section>
       </main>
@@ -10097,7 +7457,15 @@ export default function Home() {
     <main className={`app-shell ${interfaceMode === "beginner" ? "beginner-mode" : "pro-mode"}${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
       <aside className="sidebar">
         <div className="sidebar-brand-row">
-          <div className="mark">Ом</div>
+          <div className="mark jyotish-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" focusable="false">
+              <circle cx="24" cy="24" r="7.5" />
+              <circle cx="24" cy="24" r="14.5" />
+              <path d="M24 3v7M24 38v7M3 24h7M38 24h7" />
+              <path d="M9.15 9.15l4.95 4.95M33.9 33.9l4.95 4.95M38.85 9.15l-4.95 4.95M14.1 33.9l-4.95 4.95" />
+              <path d="M24 10.5l3 7.3 7.7.7-5.85 5.1 1.75 7.6L24 27.15l-6.6 4.05 1.75-7.6-5.85-5.1 7.7-.7z" />
+            </svg>
+          </div>
           <button
             type="button"
             className="sidebar-collapse-button"
@@ -10109,20 +7477,15 @@ export default function Home() {
           </button>
         </div>
         <div className="sidebar-title">
-          <h1>Jyotish Agent</h1>
-          <p>Гаудия-сиддханта джйотиш</p>
+          <h1>Веда Джйотиш</h1>
         </div>
         <AppNavigation activeKey={activeMainNavKey} home onSelect={handleMainNavSelect} />
-        <div className="product-sidebar-footer">
-          <InterfaceModeSwitch value={interfaceMode} onChange={handleInterfaceModeChange} />
-          <span className="product-sidebar-note">Личное пространство: карты, обзоры, диалоги.</span>
-        </div>
       </aside>
 
       <section className="workspace">
         <header className="topbar">
           <div className="topbar-title">
-            <strong>Карта рождения</strong>
+            <strong>{currentChartDefault ? "Карта на сейчас" : "Карта рождения"}</strong>
             <span>
               {birthDate} · {birthTime} · {selectedPlace?.label ?? chart?.place.label ?? placeName}
             </span>
@@ -10160,15 +7523,35 @@ export default function Home() {
                 <input placeholder="Пароль" type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} />
                 <label>
                   Дата рождения
-                  <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} />
+                  <input
+                    type="date"
+                    value={birthDate}
+                    onChange={(event) => {
+                      setCurrentChartDefault(false);
+                      setBirthDate(event.target.value);
+                    }}
+                  />
                 </label>
                 <label>
                   Время
-                  <input type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} />
+                  <input
+                    type="time"
+                    value={birthTime}
+                    onChange={(event) => {
+                      setCurrentChartDefault(false);
+                      setBirthTime(event.target.value);
+                    }}
+                  />
                 </label>
                 <label>
                   Город рождения
-                  <input value={placeName} onChange={(event) => setPlaceName(event.target.value)} />
+                  <input
+                    value={placeName}
+                    onChange={(event) => {
+                      setCurrentChartDefault(false);
+                      setPlaceName(event.target.value);
+                    }}
+                  />
                 </label>
               </div>
               <div className="product-auth-popover-actions">
@@ -10188,27 +7571,27 @@ export default function Home() {
           <section className="panel private-gate" aria-live="polite">
             <div>
               <h2>Закрытый доступ</h2>
-              <p>Зарегистрируйтесь или войдите. Сейчас аккаунт активируется сразу, чтобы астрологи могли проверить ресурс.</p>
             </div>
             <div className="private-gate-actions">
               <button type="button" className="primary-button" onClick={() => setAuthOpen(true)}>
                 Войти или зарегистрироваться
               </button>
-              <span>Форма откроется в верхнем окне входа; данные рождения можно указать сразу при регистрации.</span>
             </div>
             <p className="status-line">{authStatus}</p>
           </section>
         ) : (
         <div className={`content-grid${chart ? " chart-ready" : ""}`}>
-          <section className={`panel birth-panel${chart && !showBirthEditor ? " compact" : ""}`} id="chart">
+          <section className={`panel birth-panel${!showBirthEditor ? " compact" : ""}`} id="chart">
             <BirthCompactStrip
               birthDate={birthDate}
               birthTime={birthTime}
               placeName={placeName}
               selectedPlace={selectedPlace}
               chart={chart}
-              collapsed={Boolean(chart && !showBirthEditor)}
+              currentChartDefault={currentChartDefault}
+              collapsed={!showBirthEditor}
               onToggle={() => setShowBirthEditor((value) => !value)}
+              onUseCurrent={loadCurrentChartData}
             />
             <div className="panel-heading">
               <h2>Данные рождения</h2>
@@ -10220,8 +7603,14 @@ export default function Home() {
                 <input
                   type="date"
                   value={birthDate}
-                  onInput={(event) => setBirthDate(event.currentTarget.value)}
-                  onChange={(event) => setBirthDate(event.target.value)}
+                  onInput={(event) => {
+                    setCurrentChartDefault(false);
+                    setBirthDate(event.currentTarget.value);
+                  }}
+                  onChange={(event) => {
+                    setCurrentChartDefault(false);
+                    setBirthDate(event.target.value);
+                  }}
                 />
               </label>
               <label>
@@ -10229,8 +7618,14 @@ export default function Home() {
                 <input
                   type="time"
                   value={birthTime}
-                  onInput={(event) => setBirthTime(event.currentTarget.value)}
-                  onChange={(event) => setBirthTime(event.target.value)}
+                  onInput={(event) => {
+                    setCurrentChartDefault(false);
+                    setBirthTime(event.currentTarget.value);
+                  }}
+                  onChange={(event) => {
+                    setCurrentChartDefault(false);
+                    setBirthTime(event.target.value);
+                  }}
                 />
               </label>
               <label>
@@ -10246,6 +7641,7 @@ export default function Home() {
                 <input
                   value={placeName}
                   onChange={(event) => {
+                    setCurrentChartDefault(false);
                     setPlaceName(event.target.value);
                     setShowPlaceSuggestions(true);
                   }}
@@ -10290,7 +7686,7 @@ export default function Home() {
                   </>
                 ) : (
                   <div className="manual-place-panel">
-                    <span>Каталог не нашёл точное место. Можно рассчитать вручную по IANA timezone и координатам.</span>
+                    <span>Место не найдено. Укажите часовой пояс и координаты вручную.</span>
                     <div className="manual-place-grid">
                       <label>
                         Часовой пояс
@@ -10334,7 +7730,7 @@ export default function Home() {
                 </div>
               ) : null}
               <button className="primary-button mobile-calculate-button" type="button" onClick={handleCalculateClick}>Рассчитать карту</button>
-              <a className="mobile-chart-jump" href="#varga-charts">К карте и D-картам</a>
+              <a className="mobile-chart-jump" href="#varga-charts">К карте</a>
               <section className="advanced-settings-toggle" aria-labelledby="advanced-settings-title">
                 <button
                   type="button"
@@ -10343,8 +7739,8 @@ export default function Home() {
                   aria-expanded={showAdvancedSettings}
                   aria-controls="calculation-settings"
                 >
-                  <span id="advanced-settings-title">Настройки расчёта</span>
-                  <strong>{showAdvancedSettings ? "Скрыть" : "Показать"}</strong>
+                  <span id="advanced-settings-title">Параметры</span>
+                  <strong>{showAdvancedSettings ? "Скрыть" : "Открыть"}</strong>
                 </button>
                 {showAdvancedSettings ? (
                   <fieldset className="calculation-settings" id="calculation-settings">
@@ -10410,7 +7806,7 @@ export default function Home() {
                       <label>
                         Часовой пояс
                         <select value={timezoneSource} onChange={(event) => setTimezoneSource(event.target.value)}>
-                          <option value="iana">IANA historical</option>
+                          <option value="iana">Исторический часовой пояс</option>
                         </select>
                       </label>
                       <label>
@@ -10420,7 +7816,7 @@ export default function Home() {
                         </select>
                       </label>
                     </div>
-                    <span className="settings-note">SSS ведётся как отдельный профиль; сейчас расчёт Drik.</span>
+                    <span className="settings-note">Используется выбранный профиль расчёта.</span>
                   </fieldset>
                 ) : null}
               </section>
@@ -10430,31 +7826,28 @@ export default function Home() {
                   <label>
                     Стиль карты
                     <select value={chartStyle} onChange={(event) => handleChartStyleChange(event.target.value as "north" | "south")}>
-                      <option value="north">Северный: дома фиксированы</option>
-                      <option value="south">Южный: знаки фиксированы</option>
+                      <option value="north">Северный</option>
+                      <option value="south">Южный</option>
                     </select>
                   </label>
                   <label>
                     Язык терминов
                     <select value={termLanguage} onChange={(event) => handleTermLanguageChange(event.target.value as TermLanguage)}>
-                      <option value="sanskrit">Санскрит: Surya, Mithuna</option>
-                      <option value="ru">Русский: Солнце, Близнецы</option>
-                      <option value="en">English: Sun, Gemini</option>
+                      <option value="sanskrit">Санскрит</option>
+                      <option value="ru">Русский</option>
+                      <option value="en">English</option>
                     </select>
                   </label>
                   <label>
                     Режим интерфейса
                     <select value={interfaceMode} onChange={(event) => handleInterfaceModeChange(event.target.value as InterfaceMode)}>
-                      <option value="pro">Астролог: все рабочие панели</option>
-                      <option value="beginner">Новичок: главное и объяснения</option>
+                      <option value="pro">Астролог</option>
+                      <option value="beginner">Новичок</option>
                     </select>
                   </label>
                 </div>
                 <span className="settings-note">Влияет только на внешний вид карт, таблиц и плотность интерфейса; расчёт не меняется.</span>
               </fieldset>
-              <div className="notice">
-                Политика MVP: айанамша Lahiri, рамка Парашары, обязательные ссылки на источники.
-              </div>
               <button className="primary-button desktop-calculate-button" type="button" onClick={handleCalculateClick}>Рассчитать карту</button>
               <p className="status-line">{status}</p>
             </form>
@@ -10486,7 +7879,7 @@ export default function Home() {
                 />
                 <span>
                   <strong>Это моя карта</strong>
-                  <small>Первый личный AI-разбор бесплатно доступен только для карты, отмеченной как ваша.</small>
+                  <small>Основная карта владельца профиля.</small>
                 </span>
               </label>
               <button type="button" className="secondary-button save-profile-button" onClick={handleSaveProfile}>
@@ -10503,7 +7896,7 @@ export default function Home() {
               <p>{profileStatus}</p>
               {relatedProfileIds.length ? (
                 <p className="related-profile-summary">
-                  Контекст AI:{" "}
+                  Связанные карты:{" "}
                   {profiles
                     .filter((profile) => relatedProfileIds.includes(profile.id))
                     .map((profile) => profile.display_name)
@@ -10560,7 +7953,7 @@ export default function Home() {
                           Отклонить
                         </button>
                         <button type="button" className="secondary-button" onClick={() => handleIncomingProfileRelationshipAction(request.id, "block")}>
-                          Блок
+                          Заблокировать
                         </button>
                       </div>
                     );
@@ -10587,15 +7980,15 @@ export default function Home() {
                           <span>{profile.birth_date} · {profile.place.label}</span>
                           <small>
                             {profile.latest_calculation
-                              ? `${profile.latest_calculation.status}, ${profile.latest_calculation.graha_count} грах`
+                              ? `${stateLabels[profile.latest_calculation.status] ?? "расчёт сохранён"}, ${profile.latest_calculation.graha_count} грах`
                               : "Расчёт ещё не сохранён"}
                           </small>
                           {profile.is_self_profile ? (
                             <small className="profile-ai-note">
-                              <GlossaryTerm termKey="free_personal_ai">первый AI-разбор для этой карты</GlossaryTerm>
+                              <GlossaryTerm termKey="free_personal_ai">первый разбор для этой карты</GlossaryTerm>
                             </small>
                           ) : (
-                            <small className="profile-ai-note">карту можно хранить бесплатно; AI-разбор чужой карты будет отдельным действием</small>
+                            <small className="profile-ai-note">карту можно хранить бесплатно; разбор чужой карты будет отдельным действием</small>
                           )}
                         </div>
                         <label className="profile-relationship-role">
@@ -10621,7 +8014,7 @@ export default function Home() {
                             </small>
                           ) : null}
                           {!isBaseProfile && relationshipRole ? (
-                            <div className="profile-role-focus" aria-label="Фокус роли для AI-разбора">
+                            <div className="profile-role-focus" aria-label="Фокус роли для разбора">
                               <span>{relationshipRole.focus}</span>
                               <small>Дома <HouseTerms houses={relationshipRole.focusHouses} /></small>
                               <small>D-карты <VargaTerms vargas={relationshipRole.focusVargas} /></small>
@@ -10635,7 +8028,7 @@ export default function Home() {
                             disabled={isBaseProfile}
                             onChange={() => toggleRelatedProfile(profile.id)}
                           />
-                          <GlossaryTerm termKey="ai_context">{isBaseProfile ? "Базовая карта" : "Контекст AI"}</GlossaryTerm>
+                          <GlossaryTerm termKey="ai_context">{isBaseProfile ? "Базовая карта" : "Связанная карта"}</GlossaryTerm>
                         </label>
                         <button
                           type="button"
@@ -10659,222 +8052,41 @@ export default function Home() {
             <section className="panel chart-panel" id="varga-charts" ref={chartPanelRef}>
               <div className="panel-heading">
                 <div className="chart-title-block">
-                  <h2>{chartMode === "D1" ? "Карта раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
-                  <span>Отсчёт {activeChartReferenceLabel} · {activeChartContext.scope}: {activeChartContext.detail}</span>
-                  <div className="chart-mode-summary" aria-label="Текущий вид карты">
-                    <span>{chartMode} · {activeChartPointCount || "нет"} точек</span>
-                    <span>{activeChartStyleLabel}</span>
-                    <span>{activeTermLanguageLabel}</span>
-                    <a href="/settings">Изменить вид</a>
-                  </div>
-                </div>
-                <div className="chart-heading-tools">
-                  <div className="chart-action-strip" aria-label="Действия с текущей картой">
-                    <div className="chart-action-group primary">
-                      <a
-                        href="/?analysis=calculations#reports"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setActiveAnalysisTab("calculations");
-                          window.history.pushState(null, "", "/?analysis=calculations#reports");
-                          document.getElementById("reports")?.scrollIntoView({ block: "start" });
-                        }}
-                      >
-                        Таблица расчётов
-                      </a>
-                      <a href="#varga-charts" onClick={() => setChartWorkspaceTab("vargas")}>Атлас D-карт</a>
-                      <a
-                        href="/?analysis=guidance#reports"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setActiveAnalysisTab("guidance");
-                          window.history.pushState(null, "", "/?analysis=guidance#reports");
-                          document.getElementById("reports")?.scrollIntoView({ block: "start" });
-                        }}
-                      >
-                        AI-разбор
-                      </a>
-                      <button type="button" onClick={openCurrentDayPanel}>Сегодня</button>
-                    </div>
-                    <div className="chart-action-group file">
-                      <button type="button" onClick={handleSaveProfile} disabled={!chart}>Сохранить</button>
-                      <button type="button" onClick={handleExportCurrentChart} disabled={!chart}>Экспорт</button>
-                      <button type="button" onClick={() => window.print()} disabled={!chart}>Печать</button>
-                    </div>
-                  </div>
+                  <h2>{chartMode === "D1" ? "D1 Раши" : `${chartMode} ${selectedVarga?.name ?? "варга"}`}</h2>
                 </div>
               </div>
-              <ReadingFlowStrip
-                chart={chart}
-                chartMode={chartMode}
-                workspaceTab={chartWorkspaceTab}
-                activeAnalysisTab={activeAnalysisTab}
-                onOpenEssentials={() => setChartWorkspaceTab("essentials")}
-                onOpenVargas={() => setChartWorkspaceTab("vargas")}
-                onOpenCalculations={() => setActiveAnalysisTab("calculations")}
-                onOpenGuidance={() => setActiveAnalysisTab("guidance")}
-              />
-              <div className="chart-reference-row">
-                <strong>Отсчёт домов</strong>
-                <ChartReferenceToggle chart={chart} value={chartReference} onChange={setChartReference} />
-                <ChartDisplayControls
-                  chart={chart}
-                  chartMode={chartMode}
-                  vargaOptions={vargaOptions}
-                  onChartModeChange={selectVargaCode}
-                />
-                <label className="chart-house-hints-toggle">
-                  <input
-                    type="checkbox"
-                    checked={houseHintsEnabled}
-                    onChange={(event) => setHouseHintsEnabled(event.target.checked)}
-                  />
-                  <span>Подсказки в карте</span>
-                </label>
-              </div>
-              {interfaceMode === "beginner" ? (
-                <div className="beginner-guide-strip">
-                  <strong>Сначала смотри: лагна, Луна, Солнце, 7 дом, 12 дом и таблицу расчётов.</strong>
-                  <span>Подчёркнутые термины раскрывают короткое объяснение на телефоне и на компьютере.</span>
-                </div>
-              ) : null}
               <div className="chart-layout">
                 <div className="chart-visual-stack">
                   <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} houseHintsEnabled={houseHintsEnabled} />
-                  {!chart ? <StartChartNotice /> : null}
-                  <ChartNotationLegend termLanguage={termLanguage} />
+                  {isCurrentChartLoading ? (
+                    <div className="chart-loading-status" aria-live="polite">
+                      <strong>Считаю карту</strong>
+                    </div>
+                  ) : null}
+                  {!chart && !currentChartDefault ? <StartChartNotice /> : null}
+                  <QuickVargaSwitch
+                    chart={chart}
+                    chartMode={chartMode}
+                    vargaOptions={vargaOptions}
+                    onChartModeChange={selectVargaCode}
+                  />
                 </div>
                 <div className="chart-data-stack">
-                  <CoreInfoStrip chart={chart} termLanguage={termLanguage} />
                   <ChartSideCalculationTable
                     chart={chart}
                     termLanguage={termLanguage}
+                    status={status}
+                    currentChartDefault={currentChartDefault}
                     selectedExplanation={selectedReaderExplanation}
                     onClearExplanation={() => setSelectedReaderExplanation(null)}
+                    onRetryCurrentChart={submitCurrentChartCalculation}
+                    onStartBirthCalculation={submitBirthCalculation}
                   />
-                  <AiAccessPolicyPanel />
-                  <AiRelatedContextPanel relationships={profileRelationships} />
-                  <MvpReadinessPanel />
-                  {interfaceMode === "beginner" ? <BeginnerGuidedCourse /> : null}
-                  {interfaceMode === "beginner" ? <BeginnerAskAiPanel /> : null}
-                  {interfaceMode === "beginner" ? <BeginnerNextSteps /> : null}
-                  {interfaceMode === "beginner" ? <BeginnerLearningPanel /> : null}
-                  {interfaceMode === "beginner" ? <BeginnerCalculationGuide /> : null}
-                  <KeyVargaComparisonPanel
-                    chart={chart}
-                    activeCode={chartMode}
-                    chartStyle={chartStyle}
-                    chartReference={chartReference}
-                    termLanguage={termLanguage}
-                    onSelect={selectVargaCode}
-                  />
-                  <PlanetStrengthDigest chart={chart} />
-                  {interfaceMode === "pro" ? (
-                    <AstrologerWorkflowPanel
-                      chart={chart}
-                      activeTab={activeAnalysisTab}
-                      onSelect={setActiveAnalysisTab}
-                    />
-                  ) : null}
-                  {chartFacts.length ? (
-                    <div className="fact-grid">
-                      {chartFacts.map(([label, value]) => (
-                        <div className="fact-item" key={label}>
-                          <span>{label}</span>
-                          <strong>{value}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
                 </div>
               </div>
-              <PractitionerVargaRail
-                chart={chart}
-                activeCode={chartMode}
-                chartStyle={chartStyle}
-                chartReference={chartReference}
-                onSelect={selectVargaCode}
-              />
-              <ShodashaMiniAtlas
-                chart={chart}
-                activeCode={chartMode}
-                chartStyle={chartStyle}
-                chartReference={chartReference}
-                onSelect={selectVargaCode}
-              />
-              <PrimaryVargaTabs
-                chart={chart}
-                activeCode={chartMode}
-                activeGroupKey={activeVargaFocusKey}
-                workspaceTab={chartWorkspaceTab}
-                onSelect={selectVargaCode}
-                onFocusGroupSelect={selectVargaFocusGroup}
-                onWorkspaceTabChange={setChartWorkspaceTab}
-                onCoverageSelect={openVargaCoverageDetails}
-              />
-              <VargaCoverageSummary
-                chart={chart}
-                open={vargaCoverageOpen}
-                onOpenChange={setVargaCoverageOpen}
-                detailsRef={vargaCoverageRef}
-                onOpenAtlas={() => setChartWorkspaceTab("vargas")}
-              />
-              <JaiminiPendingStrip onOpenAtlas={() => setChartWorkspaceTab("vargas")} />
-              <div className="chart-workspace-body">
-                {chartWorkspaceTab === "essentials" ? (
-                  <EssentialChartPairBoard
-                    chart={chart}
-                    activeCode={chartMode}
-                    chartStyle={chartStyle}
-                    chartReference={chartReference}
-                    onSelect={selectVargaCode}
-                    onOpenAtlas={() => setChartWorkspaceTab("vargas")}
-                  />
-                ) : null}
-                {chartWorkspaceTab === "references" ? (
-                  <>
-                    <ReferenceChartBoard
-                      chart={chart}
-                      chartStyle={chartStyle}
-                      activeReference={chartReference}
-                      onSelect={setChartReference}
-                    />
-                    <BhavaOverviewBoard chart={chart} termLanguage={termLanguage} />
-                  </>
-                ) : null}
-                {chartWorkspaceTab === "vargas" ? (
-                  <>
-                    <VargaTaskMatrix
-                      chart={chart}
-                      activeGroupKey={activeVargaFocusKey}
-                      onSelect={selectVargaFocusGroup}
-                    />
-                    <VargaSchemeMatrix
-                      chart={chart}
-                      activeSchemeKey={activeVargaSchemeKey}
-                      onSelect={selectVargaScheme}
-                    />
-                    <VargaStudyBoard
-                      chart={chart}
-                      activeGroupKey={activeVargaFocusKey}
-                      activeCode={chartMode}
-                      chartStyle={chartStyle}
-                      chartReference={chartReference}
-                      onSelect={selectVargaCode}
-                    />
-                    <VargaAtlasBoard
-                      chart={chart}
-                      activeCode={chartMode}
-                      chartStyle={chartStyle}
-                      chartReference={chartReference}
-                      onSelect={selectVargaCode}
-                    />
-                  </>
-                ) : null}
-              </div>
-              <p className="calculation-result">{calculatedLabel}</p>
             </section>
 
+            {analysisWorkspaceOpen ? (
             <section className="analysis-workspace" id="reports">
               <div className="analysis-tab-shell">
                 <div className="analysis-tabs" role="tablist" aria-label="Разделы анализа">
@@ -10885,6 +8097,7 @@ export default function Home() {
                       className={activeAnalysisTab === tab.key ? "active" : ""}
                       data-analysis-tab={tab.key}
                       onClick={() => {
+                        setAnalysisWorkspaceOpen(true);
                         setActiveAnalysisTab(tab.key);
                         window.history.pushState(null, "", `/?analysis=${tab.key}#reports`);
                       }}
@@ -10892,50 +8105,33 @@ export default function Home() {
                       aria-selected={activeAnalysisTab === tab.key}
                     >
                       <strong>{tab.label}</strong>
-                      <span>{tab.hint}</span>
                     </button>
                   ))}
                 </div>
-                <label className="analysis-more-tabs">
-                  <span>Ещё</span>
-                  <select
-                    value={secondaryAnalysisTabs.some((tab) => tab.key === activeAnalysisTab) ? activeAnalysisTab : ""}
-                    onChange={(event) => {
-                      if (event.target.value) {
-                        setActiveAnalysisTab(event.target.value as AnalysisTab);
-                        window.history.pushState(null, "", `/?analysis=${event.target.value}#reports`);
-                      }
-                    }}
-                  >
-                    <option value="">Режим</option>
-                    {secondaryAnalysisTabs.map((tab) => (
-                      <option value={tab.key} key={tab.key}>
-                        {tab.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <a className="analysis-page-link" href="/compatibility">
-                  <strong>Совместимость</strong>
-                  <span>отдельная страница</span>
-                </a>
+                {secondaryAnalysisTabs.length ? (
+                  <label className="analysis-more-tabs" aria-label="Дополнительный режим анализа">
+                    <select
+                      value={secondaryAnalysisTabs.some((tab) => tab.key === activeAnalysisTab) ? activeAnalysisTab : ""}
+                      onChange={(event) => {
+                        if (event.target.value) {
+                          setAnalysisWorkspaceOpen(true);
+                          setActiveAnalysisTab(event.target.value as AnalysisTab);
+                          window.history.pushState(null, "", `/?analysis=${event.target.value}#reports`);
+                        }
+                      }}
+                    >
+                      <option value="">Режим</option>
+                      {secondaryAnalysisTabs.map((tab) => (
+                        <option value={tab.key} key={tab.key}>
+                          {tab.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
               </div>
               <div className="analysis-panel-slot">
                 {activeAnalysisTab === "overview" ? <PersonSummaryPanel summary={personSummary} /> : null}
-                {activeAnalysisTab === "calculations" ? (
-                  <div className="analysis-tab-stack">
-                    <DetailedCalculationsPanel
-                      summary={personSummary}
-                      chart={chart}
-                      activeCode={chartMode}
-                      chartStyle={chartStyle}
-                      chartReference={chartReference}
-                      termLanguage={termLanguage}
-                      onSelectVarga={selectVargaCode}
-                    />
-                    <DualCalculationPanel report={dualCalculationReport} status={dualCalculationStatus} />
-                  </div>
-                ) : null}
                 {activeAnalysisTab === "yogas" ? <ClassicalPanel classical={chart?.classical} /> : null}
                 {activeAnalysisTab === "timeline" ? (
                   <DashaWorkspacePanel summary={personSummary} periods={vimshottariPeriods} extra={chart?.dashas?.extra} />
@@ -11040,25 +8236,13 @@ export default function Home() {
                 {activeAnalysisTab === "sources" ? (
                   <section className="panel" id="sources">
                     <div className="panel-heading">
-                      <h2>Цитаты и статус источников</h2>
-                      <button type="button" className="secondary-button">Все источники</button>
+                      <h2>Источники</h2>
                     </div>
                     <form className="source-search" onSubmit={handleSourceSearch}>
                       <input value={sourceQuery} onChange={(event) => setSourceQuery(event.target.value)} />
-                      <button type="submit" className="secondary-button">Искать в VL</button>
-                      <button type="button" className="secondary-button" onClick={handleResearchSearch}>Private corpus</button>
-                      <span>{sourceStatus}</span>
-                      <span>{researchStatus}</span>
+                      <button type="submit" className="secondary-button">Искать</button>
+                      <button type="button" className="secondary-button" onClick={handleResearchSearch}>Книги</button>
                     </form>
-                    <div className="source-corpus-summary">
-                      <strong>Личный корпус шастр</strong>
-                      <span>{sourceWorkStatus}</span>
-                      {sourceInventory ? (
-                        <small>
-                          research-only: {sourceInventory.summary.research_only_works} книг / {sourceInventory.summary.research_only_passages} фрагментов
-                        </small>
-                      ) : null}
-                    </div>
                     {sourceWorks.length ? (
                       <div className="source-work-list">
                         {sourceWorks.map((work) => (
@@ -11069,9 +8253,7 @@ export default function Home() {
                             onClick={() => setSelectedSourceWork(work)}
                           >
                             <strong>{work.title}</strong>
-                            <span>
-                              {work.language_code} / {work.review_status} / {work.passage_count ?? 0} фрагм.
-                            </span>
+                            <span>{work.passage_count ?? 0} фрагм.</span>
                           </button>
                         ))}
                       </div>
@@ -11080,15 +8262,12 @@ export default function Home() {
                       <div className="source-results research-results">
                         <div>
                           <strong>{selectedSourceWork.title}</strong>
-                          <span>{selectedSourceWork.author || selectedSourceWork.edition || selectedSourceWork.slug}</span>
-                          <small>{sourcePassageStatus}</small>
+                          <span>{selectedSourceWork.author || selectedSourceWork.edition || "Источник"}</span>
                         </div>
                         {sourcePassages.map((passage) => (
                           <div key={passage.id}>
                             <strong>{passage.reference}</strong>
-                            <span>{passage.language_code} / {passage.review_status}</span>
                             <p>{passage.body}</p>
-                            <small>{passage.public_quote_policy || passage.rights_status}</small>
                           </div>
                         ))}
                       </div>
@@ -11109,29 +8288,17 @@ export default function Home() {
                         {researchResults.map((result) => (
                           <div key={`${result.work_title}-${result.title}`}>
                             <strong>{result.title}</strong>
-                            <span>{result.work_title} / {result.review_status}</span>
+                            <span>{result.work_title}</span>
                             <p>{result.body}</p>
-                            <small>{result.public_quote_policy}</small>
                           </div>
                         ))}
                       </div>
                     ) : null}
-                    <ShastraEvidenceReviewPanel evidence={shastraEvidence} status={shastraEvidenceStatus} />
-                    <ShastraAuditPanel audit={chart?.shastra_audit} />
-                    <div className="source-table">
-                      {sourceRows.map(([component, source, citation, state]) => (
-                        <div className="source-row" key={component}>
-                          <strong>{component}</strong>
-                          <span>{source}</span>
-                          <span>{citation}</span>
-                          <em className={state}>{stateLabels[state] ?? state}</em>
-                        </div>
-                      ))}
-                    </div>
                   </section>
                 ) : null}
               </div>
             </section>
+            ) : null}
           </section>
         </div>
         )}

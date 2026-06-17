@@ -99,9 +99,6 @@ export function HelpTerm({ item, children }: { item: HelpItem; children: ReactNo
       ref={wrapRef}
       className={`reader-help reader-help-inline${open ? " open" : ""}`}
       data-open={open ? "true" : "false"}
-      onMouseEnter={() => {
-        if (!pinned) setOpen(true);
-      }}
       onBlur={(event) => {
         if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
         if (!pinned) setOpen(false);
@@ -119,27 +116,26 @@ export function HelpTerm({ item, children }: { item: HelpItem; children: ReactNo
             return nextPinned;
           });
         }}
-        onFocus={() => {
-          if (!pinned) setOpen(true);
-        }}
         aria-expanded={open}
       >
         {children}
       </button>
-      <span className="reader-help-popover" role="tooltip">
-        <strong>{item.title}</strong>
-        <span>{item.text}</span>
-        <button
-          type="button"
-          className="help-ai-action"
-          onClick={(event) => {
-            event.stopPropagation();
-            requestAiExplanation(item);
-          }}
-        >
-          Спросить AI
-        </button>
-      </span>
+      {open ? (
+        <span className="reader-help-popover" role="tooltip">
+          <strong>{item.title}</strong>
+          <span>{item.text}</span>
+          <button
+            type="button"
+            className="help-ai-action"
+            onClick={(event) => {
+              event.stopPropagation();
+              requestAiExplanation(item);
+            }}
+          >
+            Спросить
+          </button>
+        </span>
+      ) : null}
     </span>
   );
 }

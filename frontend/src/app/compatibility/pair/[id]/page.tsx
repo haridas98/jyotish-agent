@@ -65,40 +65,40 @@ function statusLabel(status: string): string {
   if (status === "requested") return "ожидает подтверждения";
   if (status === "declined") return "отклонено";
   if (status === "blocked") return "заблокировано";
-  return "личная заметка";
+  return "заметка";
 }
 
 function statusVisibilityText(status: string): string {
-  if (status === "accepted") return "Оба зарегистрированных пользователя подтвердили связь и видят её у себя.";
-  if (status === "requested") return "Запрос отправлен зарегистрированному пользователю, но связь ещё не стала общей.";
-  if (status === "declined") return "Запрос отклонён; используйте только свои сохранённые карты и не считайте связь подтверждённой.";
-  if (status === "blocked") return "Пользователь запретил повторные запросы по этой связи.";
-  return "Это только ваша личная пометка. Второй человек не видит эту связь и не получает уведомление.";
+  if (status === "accepted") return "Связь подтверждена.";
+  if (status === "requested") return "Связь ожидает подтверждения.";
+  if (status === "declined") return "Запрос отклонён.";
+  if (status === "blocked") return "Повторный запрос закрыт.";
+  return "Личная связь.";
 }
 
-function statusAiPolicyText(status: string): string {
-  if (status === "accepted") return "AI может явно учитывать роль и факт подтверждённой связи.";
-  if (status === "requested") return "AI должен трактовать связь как ожидающую согласия, без вывода о взаимном подтверждении.";
-  if (status === "declined" || status === "blocked") return "AI не должен подавать такую связь как согласованную между пользователями.";
-  return "AI может использовать эту пару как вашу частную заметку, но не как подтверждённую связь двух аккаунтов.";
+function statusReadingText(status: string): string {
+  if (status === "accepted") return "Роль и подтверждённая связь учитываются в разборе.";
+  if (status === "requested") return "Пока используется как черновая связь.";
+  if (status === "declined" || status === "blocked") return "Связь не подтверждена.";
+  return "Пара читается как рабочая связь.";
 }
 
 function friendlyPairError(error: unknown): { message: string; needsAuth: boolean } {
   const message = error instanceof Error ? error.message : String(error || "");
   if (/401|403|auth|credential|forbidden|permission/i.test(message)) {
     return {
-      message: "Войдите в аккаунт, чтобы открыть свой паспорт пары.",
+      message: "Войдите, чтобы открыть пару.",
       needsAuth: true,
     };
   }
   if (/404|not found/i.test(message)) {
     return {
-      message: "Пара не найдена или у этого аккаунта нет доступа к ней.",
+      message: "Пара не найдена или недоступна.",
       needsAuth: false,
     };
   }
   return {
-    message: message || "Не удалось загрузить паспорт пары.",
+    message: message || "Не удалось загрузить пару.",
     needsAuth: false,
   };
 }
@@ -106,14 +106,14 @@ function friendlyPairError(error: unknown): { message: string; needsAuth: boolea
 function statusHelp(status: string): HelpItem {
   return {
     title: statusLabel(status),
-    text: `${statusVisibilityText(status)} ${statusAiPolicyText(status)}`,
+    text: `${statusVisibilityText(status)} ${statusReadingText(status)}`,
   };
 }
 
 function roleHelp(role: RelationshipRoleDefinition): HelpItem {
   return {
     title: role.label,
-    text: `Ракурс чтения: ${role.focus}. Под него выбраны фокусные дома и D-карты в этом паспорте пары.`,
+    text: `Ракурс чтения: ${role.focus}. Под него выбраны фокусные дома и дополнительные карты.`,
   };
 }
 
@@ -127,7 +127,7 @@ function profileMeta(profile: ChartProfileRelationship["profile"]): string {
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error(`${label}: API не ответил вовремя`)), ms);
+    const timer = window.setTimeout(() => reject(new Error(`${label}: сервис временно не ответил`)), ms);
     promise
       .then((value) => {
         window.clearTimeout(timer);
@@ -264,7 +264,7 @@ function PairCalculationLedger({ chart, role }: { chart: BirthChart | null; role
     <div className="compatibility-calculation-ledger" aria-label="Расчётная сводка пары">
       <div className="compatibility-calculation-ledger-head">
         <strong>Расчёты</strong>
-        <span>первое, что проверяет астролог</span>
+        <span>главные опоры чтения</span>
       </div>
       <div className="compatibility-calculation-ledger-grid">
         {rows.map((row) => (
@@ -361,32 +361,12 @@ function PairPersonCard({
         <strong>{profileTitle(profile)}</strong>
         <small>{profileMeta(profile)}</small>
       </div>
-      <dl className="compatibility-person-facts">
-        <div>
-          <dt>Лагна</dt>
-          <dd>{placementLine(chart?.ascendant)}</dd>
+      {chart ? (
+        <div className="compatibility-person-core">
+          <span>Лагна: {placementLine(chart.ascendant)}</span>
+          <span>Луна: {placementLine(moon(chart))}</span>
         </div>
-        <div>
-          <dt>Луна</dt>
-          <dd>{placementLine(moon(chart))}</dd>
-        </div>
-        {role.houses.map((house) => (
-          <div key={`${profile?.id ?? label}-focus-house-${house}`}>
-            <dt><HouseTerms houses={[house]} /></dt>
-            <dd>{houseLine(chart, house)}</dd>
-          </div>
-        ))}
-      </dl>
-      <PairCalculationLedger chart={chart} role={role} />
-      <PairChartBoard chart={chart} role={role} />
-      <div className="compatibility-varga-list">
-        {role.vargas.map((code) => (
-          <div key={code}>
-            <span><VargaTerms vargas={[code]} /></span>
-            <small>{vargaLine(chart, code)}</small>
-          </div>
-        ))}
-      </div>
+      ) : null}
     </article>
   );
 }
@@ -449,20 +429,17 @@ export default function CompatibilityPairPage() {
     }
   }
 
+  const showStatus = needsAuth || /ошиб|не удалось|войдите|некоррект|сервис/i.test(status);
+
   return (
     <ProductShell active="compatibility">
-      <header className="product-page-head">
-        <div>
-          <h1>Паспорт пары</h1>
-          <p>Две карты, роль второго человека, фокусные дома и D-карты перед запуском AI-разбора.</p>
-        </div>
+      <div className="page-action-strip">
         <a className="secondary-button" href="/compatibility">Назад</a>
-      </header>
-      {status ? <div className="product-status">{status}</div> : null}
+      </div>
+      {showStatus ? <div className="product-status">{status}</div> : null}
       {needsAuth ? (
         <section className="history-empty private-history-gate">
-          <strong>Паспорт пары личный</strong>
-          <span>Связи, карты двух людей, роль и будущий AI-разбор доступны только владельцу аккаунта. Нажмите «Войти» в верхней панели.</span>
+          <span>Войдите для доступа.</span>
         </section>
       ) : null}
       {relationship ? (
@@ -511,14 +488,14 @@ export default function CompatibilityPairPage() {
             </div>
             <div className="compatibility-privacy-note">
               <div>
-                <span>Приватность</span>
+                <span>Статус</span>
                 <strong><StatusTerm status={relationship.link_status} /></strong>
                 <small>{statusVisibilityText(relationship.link_status)}</small>
               </div>
               <div>
-                <span>Политика AI</span>
-                <strong>{relationship.requested_user ? `запрос: ${relationship.requested_user.username}` : "без внешнего запроса"}</strong>
-                <small>{statusAiPolicyText(relationship.link_status)}</small>
+                <span>Разбор</span>
+                <strong>{statusLabel(relationship.link_status)}</strong>
+                <small>{statusReadingText(relationship.link_status)}</small>
               </div>
             </div>
           </div>
@@ -543,7 +520,7 @@ export default function CompatibilityPairPage() {
               {loadingCharts ? "Загружаю..." : "Загрузить расчёты пары"}
             </button>
             <a className="primary-link-button" href={`/?analysis=compatibility&relationship=${relationship.id}#reports`}>
-              Запустить AI-разбор
+              Создать разбор
             </a>
           </div>
         </section>

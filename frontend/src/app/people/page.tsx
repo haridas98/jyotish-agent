@@ -15,10 +15,10 @@ import {
 function friendlyPeopleError(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
   if (/401|403|auth|credential|forbidden|permission/i.test(message)) {
-    return "Войдите в аккаунт, чтобы увидеть свои сохранённые карты и связи.";
+    return "Войдите, чтобы открыть сохранённые карты.";
   }
   if (/Unexpected token|JSON|API returned|fetch|network|Backend API/i.test(message)) {
-    return "Не удалось загрузить карты людей. Проверьте, что API запущен, и обновите страницу.";
+    return "Не удалось загрузить карты людей. Обновите страницу.";
   }
   return message || "Ошибка загрузки сохранённых карт";
 }
@@ -32,7 +32,22 @@ function formatRelationshipStatus(status: string) {
   if (status === "requested") return "запрос отправлен";
   if (status === "declined") return "запрос отклонён";
   if (status === "blocked") return "связь заблокирована";
-  return "личная сохранённая связь";
+  return "сохранённая связь";
+}
+
+function formatCalculationStatus(status: string | null | undefined) {
+  if (status === "complete" || status === "success" || status === "ready") return "рассчитано";
+  if (status === "queued") return "в очереди";
+  if (status === "running" || status === "processing") return "считается";
+  if (status === "failed" || status === "error") return "ошибка расчёта";
+  return "расчёт сохранён";
+}
+
+function formatBirthTimeAccuracy(value: string | null | undefined) {
+  if (value === "exact") return "точное время";
+  if (value === "approximate") return "примерное время";
+  if (value === "unknown") return "время неизвестно";
+  return "точность не указана";
 }
 
 export default function PeoplePage() {
@@ -40,6 +55,7 @@ export default function PeoplePage() {
   const [relationships, setRelationships] = useState<ChartProfileRelationship[]>([]);
   const [incoming, setIncoming] = useState<ChartProfileRelationship[]>([]);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
+  const [authChecked, setAuthChecked] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
 
   useEffect(() => {
@@ -51,9 +67,10 @@ export default function PeoplePage() {
       try {
         const user = await fetchCurrentUser();
         if (!mounted) return;
+        setAuthChecked(true);
         if (!user) {
           setNeedsAuth(true);
-          setStatus("Войдите в аккаунт, чтобы увидеть свои сохранённые карты и связи.");
+          setStatus("Войдите, чтобы открыть сохранённые карты.");
           return;
         }
         const [profileRows, relationshipRows, incomingRows] = await Promise.all([
@@ -68,6 +85,7 @@ export default function PeoplePage() {
         setStatus(`${profileRows.length} карт, ${relationshipRows.length} связей, ${incomingRows.length} входящих запросов`);
       } catch (error) {
         if (!mounted) return;
+        setAuthChecked(true);
         setStatus(friendlyPeopleError(error));
       }
     }
@@ -79,22 +97,21 @@ export default function PeoplePage() {
     };
   }, []);
 
+  const showStatus = !needsAuth && /ошиб|не удалось/i.test(status);
+
   return (
     <ProductShell active="people">
-      <header className="product-page-head">
-        <div>
-          <h1>Люди</h1>
-          <p>Сохранённые карты, роли родственников и связи с другими пользователями.</p>
+      {authChecked && !needsAuth ? (
+        <div className="page-action-strip">
+          <a className="primary-link-button" href="/">Добавить карту</a>
         </div>
-        <a className="primary-link-button" href="/">Добавить карту</a>
-      </header>
+      ) : null}
 
-      <div className="product-status">{status}</div>
+      {showStatus ? <div className="product-status">{status}</div> : null}
 
       {needsAuth ? (
         <section className="history-empty private-history-gate">
-          <strong>Личное пространство</strong>
-          <span>Карты людей, роли и запросы связей доступны только владельцу аккаунта.</span>
+          <span>Войдите для доступа.</span>
         </section>
       ) : null}
 
@@ -104,9 +121,7 @@ export default function PeoplePage() {
             <div className="compatibility-saved-role-head">
               <div>
                 <span>Сохранённые карты</span>
-                <strong>Кого можно подключать к личным обзорам и взаимодействиям</strong>
               </div>
-              <small>Основная карта отмечается отдельно; чужие карты можно хранить бесплатно, AI-разбор запускается отдельным действием.</small>
             </div>
             {profiles.length ? (
               <div className="history-list">
@@ -115,12 +130,14 @@ export default function PeoplePage() {
                     <div>
                       <strong>{profile.display_name}{profile.is_self_profile ? " · моя карта" : ""}</strong>
                       <span>{profile.birth_date} · {formatProfileTime(profile)} · {profile.place.label}</span>
-                      <p>{profile.latest_calculation ? `последний расчёт: ${profile.latest_calculation.status}, ${profile.latest_calculation.graha_count} грах` : "расчёт ещё не сохранён"}</p>
+                      <small className="history-row-meta">
+                        {profile.latest_calculation
+                          ? `${formatCalculationStatus(profile.latest_calculation.status)} · ${profile.latest_calculation.graha_count} грах`
+                          : "расчёт ещё не сохранён"}
+                        {" · "}
+                        {formatBirthTimeAccuracy(profile.birth_time_accuracy)}
+                      </small>
                     </div>
-                    <aside>
-                      <span>{profile.timezone}</span>
-                      <small>{profile.birth_time_accuracy}</small>
-                    </aside>
                   </a>
                 ))}
               </div>
@@ -133,9 +150,7 @@ export default function PeoplePage() {
             <div className="compatibility-saved-role-head">
               <div>
                 <span>Роли и связи</span>
-                <strong>Отец, мать, партнёр, брат, начальник и другие ракурсы чтения</strong>
               </div>
-              <small>Роль определяет дома, D-карты и контекст, с которым AI должен читать взаимодействие.</small>
             </div>
             {relationships.length ? (
               <div className="compatibility-saved-role-grid">
@@ -145,7 +160,6 @@ export default function PeoplePage() {
                     <div key={relationship.id}>
                       <span>{role.label} · {formatRelationshipStatus(relationship.link_status)}</span>
                       <strong>{relationship.profile?.display_name ?? "Карта"} → {relationship.related_profile?.display_name ?? "Связанная карта"}</strong>
-                      <small>{role.focus}; дома {role.houses.join(", ")}; {role.vargas.join(", ")}</small>
                     </div>
                   );
                 })}
@@ -155,31 +169,26 @@ export default function PeoplePage() {
             )}
           </section>
 
+          {incoming.length ? (
           <section className="compatibility-saved-role-context" aria-label="Входящие запросы связей">
             <div className="compatibility-saved-role-head">
               <div>
                 <span>Входящие запросы</span>
-                <strong>Привязка к зарегистрированным пользователям должна подтверждаться</strong>
               </div>
-              <small>Если другой пользователь хочет связать карту с вами, запрос должен быть принят или отклонён.</small>
             </div>
-            {incoming.length ? (
-              <div className="compatibility-saved-role-grid">
+            <div className="compatibility-saved-role-grid">
                 {incoming.map((request) => {
                   const role = relationshipRoleFor(request.role);
                   return (
                     <div key={request.id}>
                       <span>{role.label} · {formatRelationshipStatus(request.link_status)}</span>
                       <strong>{request.profile?.display_name ?? "Карта"} → {request.related_profile?.display_name ?? "ваша карта"}</strong>
-                      <small>Запрос от {request.user?.username ?? "пользователя"}</small>
                     </div>
                   );
                 })}
-              </div>
-            ) : (
-              <div className="history-empty">Входящих запросов нет.</div>
-            )}
+            </div>
           </section>
+          ) : null}
         </>
       ) : null}
     </ProductShell>

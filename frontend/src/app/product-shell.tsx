@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
-import { InterfaceModeSwitch, INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
+import { AppNavigation, appNavItems, type AppNavKey } from "@/app/app-navigation";
+import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { fetchCurrentUser, loginUser, logoutUser, registerUser, type User } from "@/lib/api";
 
 type ProductShellProps = {
@@ -10,24 +10,24 @@ type ProductShellProps = {
   children: ReactNode;
 };
 
+function friendlyStatus(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function ProductShell({ active, children }: ProductShellProps) {
   const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>("pro");
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [authUsername, setAuthUsername] = useState("");
   const [authPassword, setAuthPassword] = useState("");
-  const [authBirthDate, setAuthBirthDate] = useState("");
-  const [authBirthTime, setAuthBirthTime] = useState("");
-  const [authPlaceName, setAuthPlaceName] = useState("");
   const [authStatus, setAuthStatus] = useState("Проверяю вход...");
 
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(INTERFACE_MODE_STORAGE_KEY);
-      if (saved === "pro" || saved === "beginner") {
-        setInterfaceMode(saved);
-      }
+      if (saved === "pro" || saved === "beginner") setInterfaceMode(saved);
       setCollapsed(window.localStorage.getItem("jyotish-sidebar-collapsed") === "1");
     } catch {
       // Keep in-memory state when localStorage is unavailable.
@@ -36,18 +36,9 @@ export function ProductShell({ active, children }: ProductShellProps) {
     fetchCurrentUser()
       .then((currentUser) => {
         setUser(currentUser);
-        setAuthStatus(currentUser ? `Вошли как ${currentUser.username}` : "Войдите, чтобы видеть личные отчёты");
+        setAuthStatus(currentUser ? `Вошли как ${currentUser.username}` : "Войдите, чтобы открыть личное пространство");
       })
-      .catch((error) => setAuthStatus(error instanceof Error ? error.message : "Не удалось проверить вход"));
-  }, []);
-
-  const selectInterfaceMode = useCallback((value: InterfaceMode) => {
-    setInterfaceMode(value);
-    try {
-      window.localStorage.setItem(INTERFACE_MODE_STORAGE_KEY, value);
-    } catch {
-      // Keep the selected mode for this render.
-    }
+      .catch((error) => setAuthStatus(friendlyStatus(error, "Не удалось проверить вход")));
   }, []);
 
   const toggleCollapsed = useCallback(() => {
@@ -65,27 +56,17 @@ export function ProductShell({ active, children }: ProductShellProps) {
   async function handleAuth(mode: "login" | "register") {
     try {
       setAuthStatus(mode === "login" ? "Вхожу..." : "Регистрирую...");
-      const registrationOptions =
-        authBirthDate.trim() && authPlaceName.trim()
-          ? {
-              display_name: "Моя карта",
-              birth_date: authBirthDate.trim(),
-              birth_time: authBirthTime.trim(),
-              birth_time_accuracy: authBirthTime.trim() ? "exact" : "unknown",
-              place_name: authPlaceName.trim(),
-            }
-          : {};
       const currentUser =
         mode === "login"
           ? await loginUser(authUsername, authPassword)
-          : (await registerUser(authUsername, authPassword, registrationOptions)).user;
+          : (await registerUser(authUsername, authPassword)).user;
       setUser(currentUser);
       setAuthPassword("");
       setAuthOpen(false);
       window.dispatchEvent(new Event("jyotish-auth-changed"));
       setAuthStatus(`Вошли как ${currentUser.username}`);
     } catch (error) {
-      setAuthStatus(error instanceof Error ? error.message : "Ошибка авторизации");
+      setAuthStatus(friendlyStatus(error, "Ошибка авторизации"));
     }
   }
 
@@ -97,15 +78,25 @@ export function ProductShell({ active, children }: ProductShellProps) {
       window.dispatchEvent(new Event("jyotish-auth-changed"));
       setAuthStatus("Вы вышли из аккаунта");
     } catch (error) {
-      setAuthStatus(error instanceof Error ? error.message : "Ошибка выхода");
+      setAuthStatus(friendlyStatus(error, "Ошибка выхода"));
     }
   }
+
+  const activeItem = appNavItems.find((item) => item.key === active);
 
   return (
     <main className={`product-app ${interfaceMode === "beginner" ? "beginner-mode" : "pro-mode"}${collapsed ? " sidebar-collapsed" : ""}`}>
       <aside className="product-sidebar">
         <div className="sidebar-brand-row">
-          <div className="mark">Ом</div>
+          <div className="mark jyotish-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" focusable="false">
+              <circle cx="24" cy="24" r="7.5" />
+              <circle cx="24" cy="24" r="14.5" />
+              <path d="M24 3v7M24 38v7M3 24h7M38 24h7" />
+              <path d="M9.15 9.15l4.95 4.95M33.9 33.9l4.95 4.95M38.85 9.15l-4.95 4.95M14.1 33.9l-4.95 4.95" />
+              <path d="M24 10.5l3 7.3 7.7.7-5.85 5.1 1.75 7.6L24 27.15l-6.6 4.05 1.75-7.6-5.85-5.1 7.7-.7z" />
+            </svg>
+          </div>
           <button
             type="button"
             className="sidebar-collapse-button"
@@ -118,22 +109,17 @@ export function ProductShell({ active, children }: ProductShellProps) {
         </div>
 
         <div className="sidebar-title">
-          <h1>Jyotish Agent</h1>
-          <p>Карты, обзоры, диалоги</p>
+          <h1>Веда Джйотиш</h1>
         </div>
 
-        <AppNavigation activeKey={active as AppNavKey} />
-
-        <div className="product-sidebar-footer">
-          <InterfaceModeSwitch value={interfaceMode} onChange={selectInterfaceMode} />
-        </div>
+        <AppNavigation activeKey={active} />
       </aside>
 
       <section className="product-workspace">
         <header className="product-shell-topbar" aria-label="Панель аккаунта">
           <div className="product-shell-context">
-            <strong>Jyotish Agent</strong>
-            <span>{user ? `Личное пространство: ${user.username}` : "Войдите, чтобы видеть только свои отчёты"}</span>
+            <strong>{activeItem?.label ?? "Веда Джйотиш"}</strong>
+            {user ? <span>{user.username}</span> : null}
           </div>
           <div className="product-account-dock" aria-label="Аккаунт">
             {user ? (
@@ -144,7 +130,14 @@ export function ProductShell({ active, children }: ProductShellProps) {
                 </button>
               </>
             ) : (
-              <button type="button" className="product-account-button" onClick={() => setAuthOpen(true)}>
+              <button
+                type="button"
+                className="product-account-button"
+                onClick={() => {
+                  setAuthMode("login");
+                  setAuthOpen(true);
+                }}
+              >
                 Войти
               </button>
             )}
@@ -159,35 +152,28 @@ export function ProductShell({ active, children }: ProductShellProps) {
           <section className="product-auth-popover" aria-label="Вход и регистрация" onMouseDown={(event) => event.stopPropagation()}>
             <div className="product-auth-popover-head">
               <div>
-                <strong>Вход</strong>
-                <span>Регистрация может сразу создать вашу карту. Время рождения необязательно.</span>
+                <strong>{authMode === "login" ? "Вход" : "Регистрация"}</strong>
+                {authMode === "register" ? <span>Данные рождения вводятся отдельно в форме создания карты.</span> : null}
               </div>
               <button type="button" onClick={() => setAuthOpen(false)} aria-label="Закрыть">
                 ×
               </button>
             </div>
+            <div className="product-auth-mode-switch" role="tablist" aria-label="Режим авторизации">
+              <button type="button" className={authMode === "login" ? "active" : ""} onClick={() => setAuthMode("login")}>
+                Вход
+              </button>
+              <button type="button" className={authMode === "register" ? "active" : ""} onClick={() => setAuthMode("register")}>
+                Регистрация
+              </button>
+            </div>
             <div className="product-auth-popover-grid">
               <input placeholder="Логин" value={authUsername} onChange={(event) => setAuthUsername(event.target.value)} />
               <input placeholder="Пароль" type="password" value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} />
-              <label>
-                Дата рождения
-                <input type="date" value={authBirthDate} onChange={(event) => setAuthBirthDate(event.target.value)} />
-              </label>
-              <label>
-                Время
-                <input type="time" value={authBirthTime} onChange={(event) => setAuthBirthTime(event.target.value)} />
-              </label>
-              <label>
-                Город рождения
-                <input value={authPlaceName} onChange={(event) => setAuthPlaceName(event.target.value)} />
-              </label>
             </div>
             <div className="product-auth-popover-actions">
-              <button type="button" className="primary-button" onClick={() => handleAuth("login")}>
-                Войти
-              </button>
-              <button type="button" className="secondary-button" onClick={() => handleAuth("register")}>
-                Регистрация
+              <button type="button" className="primary-button" onClick={() => handleAuth(authMode)}>
+                {authMode === "login" ? "Войти" : "Зарегистрироваться"}
               </button>
             </div>
             <span className="product-auth-popover-status">{authStatus}</span>

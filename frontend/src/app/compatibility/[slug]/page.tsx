@@ -9,19 +9,19 @@ import { fetchAnalysisHistoryBySlug, type AnalysisHistoryDetail } from "@/lib/ap
 function friendlyCompatibilityError(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
   if (/401|403|auth|credential|forbidden|permission/i.test(message)) {
-    return "Войдите в аккаунт, чтобы открыть личный обзор совместимости.";
+    return "Войдите, чтобы открыть обзор.";
   }
   if (/404|not found/i.test(message)) {
-    return "Обзор совместимости не найден или недоступен этому пользователю.";
+    return "Обзор не найден.";
   }
-  return message || "Ошибка загрузки обзора";
+  return "Не удалось открыть обзор.";
 }
 
 export default function CompatibilityDetailPage() {
   const params = useParams<{ slug: string }>();
   const slug = Array.isArray(params.slug) ? params.slug.join("/") : params.slug;
   const [detail, setDetail] = useState<AnalysisHistoryDetail | null>(null);
-  const [status, setStatus] = useState("Загружаю обзор совместимости...");
+  const [status, setStatus] = useState("Загружаю обзор...");
 
   useEffect(() => {
     let mounted = true;
@@ -42,10 +42,11 @@ export default function CompatibilityDetailPage() {
   }, [slug]);
 
   const chatMode = detail ? "compatibility" : "disabled";
+  const showStatus = /ошиб|не удалось|войдите|не найден|недоступ/i.test(status);
 
   return (
     <ProductShell active="compatibility">
-      {status ? <div className="product-status">{status}</div> : null}
+      {showStatus ? <div className="product-status">{status}</div> : null}
       {detail ? <AnalysisReader detail={detail} chatMode={chatMode} /> : null}
     </ProductShell>
   );
