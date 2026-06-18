@@ -14,6 +14,7 @@
     "test:interactions": "node scripts/check-interactions-foundation.mjs",
     "test:compatibility": "node scripts/check-compatibility-foundation.mjs",
     "test:reports": "node scripts/check-reports-foundation.mjs",
+    "test:report-recipes": "node scripts/check-report-recipes.mjs",
     "production-check": "node scripts/production-check.mjs",
     "build:prod": "next build && npm run production-check",
     "audit:workbench": "node scripts/audit-workbench-architecture.mjs"

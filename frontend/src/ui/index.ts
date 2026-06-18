@@ -5,4 +5,5 @@ export * from "./layouts/chart";
 export * from "./components/EntityLink";
 export * from "./components/EntityChip";
 export * from "./components/EntityInspector";
+export * from "./reports";
 export * from "./components/LayoutRenderer";

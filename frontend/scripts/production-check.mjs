@@ -13,8 +13,10 @@ const forbidden = [
 ];
 const sourceTargets = [
   "src/ui/components",
+  "src/ui/reports",
   "src/astrology/entities",
   "src/astrology/relationships",
+  "src/astrology/reports",
   "src/app/app-navigation.tsx",
   "src/app/charts/[id]/page.tsx",
   "src/app/compatibility/page.tsx",
@@ -56,12 +58,24 @@ const forbiddenSourceMarkers = [
   /Aṣṭakūṭa/i,
   /Guna Milan/i,
   /raw recipe JSON/,
+  /raw recipe/,
   /raw pairKey/,
   /ownerUserId/,
   /recipe dump/,
   /raw evidence/,
   /requiredCalculationIds:\s*\[[^\]]*D60/,
   /primaryEntityIds:\s*\[[^\]]*varga\.D60/,
+];
+const reportsPageForbiddenMarkers = [
+  /house\.1/,
+  /house\.5/,
+  /house\.9/,
+  /house\.10/,
+  /graha\.MO/,
+  /graha\.SU/,
+  /calc\.varga\.D1/,
+  /calc\.varga\.D9/,
+  /calc\.vimshottari/,
 ];
 
 if (!targets.length) {
@@ -108,6 +122,14 @@ for (const target of sourceTargets) {
       if (pattern.test(content)) {
         console.error(`Forbidden UI marker found: ${pattern} in ${file}`);
         failed = true;
+      }
+    }
+    if (file.endsWith(join("src", "app", "reports", "page.tsx"))) {
+      for (const pattern of reportsPageForbiddenMarkers) {
+        if (pattern.test(content)) {
+          console.error(`Hardcoded report factor found in /reports page: ${pattern}`);
+          failed = true;
+        }
       }
     }
   }
