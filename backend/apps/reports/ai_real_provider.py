@@ -69,6 +69,72 @@ def build_provider_http_body(provider_payload: dict[str, Any]) -> dict[str, Any]
     return {
         "model": getattr(settings, "AI_REAL_PROVIDER_MODEL", "gpt-5.2"),
         "input": json.dumps(provider_payload, ensure_ascii=False, sort_keys=True),
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "AiReportResponse",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["schema_version", "provider", "report_type_id", "report_recipe_id", "theses"],
+                    "properties": {
+                        "schema_version": {"type": "integer", "const": 1},
+                        "provider": {"type": "string", "enum": ["real"]},
+                        "report_type_id": {"type": "string"},
+                        "report_recipe_id": {"type": "string"},
+                        "theses": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": [
+                                    "id",
+                                    "title",
+                                    "body",
+                                    "evidence_item_ids",
+                                    "citations",
+                                    "confidence",
+                                ],
+                                "properties": {
+                                    "id": {"type": "string"},
+                                    "title": {"type": "string"},
+                                    "body": {"type": "string"},
+                                    "evidence_item_ids": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                        "minItems": 1,
+                                    },
+                                    "citations": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "additionalProperties": False,
+                                            "required": [
+                                                "evidence_item_id",
+                                                "rule_id",
+                                                "passage_id",
+                                                "source_id",
+                                                "citation_label",
+                                            ],
+                                            "properties": {
+                                                "evidence_item_id": {"type": "string"},
+                                                "rule_id": {"type": "string"},
+                                                "passage_id": {"type": "string"},
+                                                "source_id": {"type": "string"},
+                                                "citation_label": {"type": "string"},
+                                            },
+                                        },
+                                        "minItems": 1,
+                                    },
+                                    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
     }
 
 
@@ -104,12 +170,18 @@ def parse_provider_response(raw: bytes) -> dict[str, Any]:
 
     output_text = data.get("output_text") if isinstance(data, dict) else None
     if isinstance(output_text, str):
-        try:
-            parsed = json.loads(output_text)
-        except json.JSONDecodeError as exc:
-            raise AiGatewayProviderError("provider output_text is not valid JSON") from exc
-        if isinstance(parsed, dict):
-            return parsed
+        return _parse_json_text(output_text, "provider output_text is not valid JSON")
+
+    output = data.get("output") if isinstance(data, dict) else None
+    if isinstance(output, list):
+        for item in output:
+            content = item.get("content") if isinstance(item, dict) else None
+            if not isinstance(content, list):
+                continue
+            for content_item in content:
+                text = content_item.get("text") if isinstance(content_item, dict) else None
+                if isinstance(text, str):
+                    return _parse_json_text(text, "provider output content is not valid JSON")
 
     choices = data.get("choices") if isinstance(data, dict) else None
     if isinstance(choices, list) and choices:
@@ -123,6 +195,16 @@ def parse_provider_response(raw: bytes) -> dict[str, Any]:
                 return parsed
 
     raise AiGatewayProviderError("provider response does not contain AiReportResponse JSON")
+
+
+def _parse_json_text(value: str, error_message: str) -> dict[str, Any]:
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise AiGatewayProviderError(error_message) from exc
+    if isinstance(parsed, dict):
+        return parsed
+    raise AiGatewayProviderError(error_message)
 
 
 class RealAiProvider:
