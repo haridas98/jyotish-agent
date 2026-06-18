@@ -8,12 +8,17 @@ function assert(condition, message) {
 }
 
 const page = readFileSync("src/app/reports/page.tsx", "utf8");
+const registry = readFileSync("src/astrology/reports/reportRecipeRegistry.ts", "utf8");
+const astrologyIndex = readFileSync("src/astrology/index.ts", "utf8");
 const productionCheck = readFileSync("scripts/production-check.mjs", "utf8");
 
 for (const required of [
   "ReportBuilderPage",
   "listChartProfiles",
   "listChartRelationships",
+  "listReportRecipes",
+  "getReportRecipe",
+  "type ReportRecipe",
   "listRelationshipRecipes",
   "getRelationshipType",
   "getRelationshipFactor",
@@ -25,11 +30,28 @@ for (const required of [
   "activeEntityId",
   "reportTypeId",
   "mode === \"astrologer\"",
-  "varga.D60",
   "birth_time_accuracy",
 ]) {
   assert(page.includes(required), `/reports missing required marker: ${required}`);
 }
+
+for (const required of [
+  "export type ReportRecipe",
+  "reportRecipeDefinitions",
+  "listReportRecipes",
+  "getReportRecipe",
+  "\"core\"",
+  "\"family\"",
+  "\"career\"",
+  "\"karma\"",
+  "\"varga.D60\"",
+]) {
+  assert(registry.includes(required), `Report Recipe Registry missing required marker: ${required}`);
+}
+
+assert(astrologyIndex.includes("./reports"), "astrology index must export reports registry");
+assert(!page.includes("const reportTypes"), "/reports must not keep inline report type definitions");
+assert(!page.includes("type ReportType"), "/reports must import report recipe types from registry");
 
 assert((page.match(/<EntityInspector/g) ?? []).length === 1, "/reports must render exactly one EntityInspector");
 

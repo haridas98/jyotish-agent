@@ -14,8 +14,12 @@ import {
 import {
   getRelationshipFactor,
   getRelationshipType,
+  getReportRecipe,
+  listReportRecipes,
   listRelationshipRecipes,
   type EntityId,
+  type ReportRecipe,
+  type ReportRecipeId,
   type RecipeFocus,
   type RelationshipFactorId,
   type RelationshipTypeId,
@@ -24,49 +28,7 @@ import {
 } from "@/astrology";
 import { EntityChip, EntityInspector } from "@/ui";
 
-type ReportType = {
-  id: string;
-  label: string;
-  summary: string;
-  primaryEntityIds: EntityId[];
-  secondaryEntityIds: EntityId[];
-  calculationIds: string[];
-};
-
-const reportTypes: ReportType[] = [
-  {
-    id: "core",
-    label: "Личный обзор",
-    summary: "Главная карта, лагна, Луна, Солнце, базовые дома и основные варги.",
-    primaryEntityIds: ["house.1", "graha.MO", "graha.SU"],
-    secondaryEntityIds: ["house.5", "house.9", "house.10"],
-    calculationIds: ["varga.D1", "varga.D9", "dasha.vimshottari"],
-  },
-  {
-    id: "family",
-    label: "Семья и род",
-    summary: "Родители, дети, родовая линия и контекст сохранённых связей.",
-    primaryEntityIds: ["house.4", "house.9", "varga.D12"],
-    secondaryEntityIds: ["house.2", "house.5", "graha.JU"],
-    calculationIds: ["varga.D1", "varga.D7", "varga.D12"],
-  },
-  {
-    id: "career",
-    label: "Дело и статус",
-    summary: "Десятый дом, деятельность, ответственность, работа и публичная роль.",
-    primaryEntityIds: ["house.10", "varga.D10", "graha.SA"],
-    secondaryEntityIds: ["house.6", "house.11", "graha.ME"],
-    calculationIds: ["varga.D1", "varga.D10", "dasha.vimshottari"],
-  },
-  {
-    id: "karma",
-    label: "Глубокий слой",
-    summary: "Тонкие варги и осторожный экспертный контекст без автоматических выводов.",
-    primaryEntityIds: ["house.8", "house.12", "graha.SA"],
-    secondaryEntityIds: ["graha.KE", "varga.D60"],
-    calculationIds: ["varga.D1", "varga.D30", "varga.D60"],
-  },
-];
+const reportRecipes = listReportRecipes();
 
 const calculationLabels: Record<string, string> = {
   "varga.D1": "D1",
@@ -106,7 +68,7 @@ function visibleCalculationIds(calculationIds: string[], mode: RelationshipUiMod
   return calculationIds.filter((id) => mode === "astrologer" || id !== "varga.D60");
 }
 
-function hasD60(reportType: ReportType, recipe: RelationshipRecipe | null): boolean {
+function hasD60(reportType: ReportRecipe, recipe: RelationshipRecipe | null): boolean {
   const recipeEntities = recipe
     ? [
         ...recipe.perspectiveAtoB.primaryEntityIds,
@@ -227,12 +189,12 @@ export default function ReportBuilderPage() {
   const [relationships, setRelationships] = useState<ChartRelationship[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<number | null>(null);
-  const [reportTypeId, setReportTypeId] = useState(reportTypes[0].id);
+  const [reportTypeId, setReportTypeId] = useState<ReportRecipeId>(reportRecipes[0].id);
   const [activeEntityId, setActiveEntityId] = useState<EntityId | null>(null);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [needsAuth, setNeedsAuth] = useState(false);
 
-  const reportType = reportTypes.find((item) => item.id === reportTypeId) ?? reportTypes[0];
+  const reportType = getReportRecipe(reportTypeId) ?? reportRecipes[0];
   const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? null;
   const relatedRelationships = relationships.filter(
     (relationship) => selectedProfileId && (relationship.chart_a_id === selectedProfileId || relationship.chart_b_id === selectedProfileId),
@@ -345,8 +307,8 @@ export default function ReportBuilderPage() {
 
                 <label>
                   Тип отчёта
-                  <select value={reportTypeId} onChange={(event) => setReportTypeId(event.target.value)}>
-                    {reportTypes.map((item) => (
+                  <select value={reportTypeId} onChange={(event) => setReportTypeId(event.target.value as ReportRecipeId)}>
+                    {reportRecipes.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.label}
                       </option>
