@@ -1,0 +1,41 @@
+{
+  "roles": [
+    "father",
+    "mother",
+    "parent",
+    "child",
+    "elder_sibling",
+    "younger_sibling",
+    "sibling",
+    "spouse",
+    "romantic_partner",
+    "business_partner",
+    "boss",
+    "subordinate",
+    "colleague",
+    "guru",
+    "student",
+    "friend",
+    "opponent",
+    "client",
+    "supplier",
+    "custom"
+  ],
+  "relationshipTypes": [
+    { "id": "father_child", "roleA": "father", "roleB": "child", "symmetric": false, "status": "active" },
+    { "id": "mother_child", "roleA": "mother", "roleB": "child", "symmetric": false, "status": "active" },
+    { "id": "parent_child", "roleA": "parent", "roleB": "child", "symmetric": false, "status": "active" },
+    { "id": "elder_younger_sibling", "roleA": "elder_sibling", "roleB": "younger_sibling", "symmetric": false, "status": "active" },
+    { "id": "siblings", "roleA": "sibling", "roleB": "sibling", "symmetric": true, "status": "active" },
+    { "id": "spouses", "roleA": "spouse", "roleB": "spouse", "symmetric": true, "status": "active" },
+    { "id": "romantic_partners", "roleA": "romantic_partner", "roleB": "romantic_partner", "symmetric": true, "status": "active" },
+    { "id": "business_partners", "roleA": "business_partner", "roleB": "business_partner", "symmetric": true, "status": "active" },
+    { "id": "boss_subordinate", "roleA": "boss", "roleB": "subordinate", "symmetric": false, "status": "active" },
+    { "id": "colleagues", "roleA": "colleague", "roleB": "colleague", "symmetric": true, "status": "active" },
+    { "id": "guru_student", "roleA": "guru", "roleB": "student", "symmetric": false, "status": "active" },
+    { "id": "friends", "roleA": "friend", "roleB": "friend", "symmetric": true, "status": "active" },
+    { "id": "opponents", "roleA": "opponent", "roleB": "opponent", "symmetric": true, "status": "active" },
+    { "id": "client_supplier", "roleA": "client", "roleB": "supplier", "symmetric": false, "status": "active" },
+    { "id": "custom", "roleA": "custom", "roleB": "custom", "symmetric": false, "status": "draft" }
+  ]
+}

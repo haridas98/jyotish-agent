@@ -7,17 +7,22 @@ from rest_framework.views import APIView
 
 from apps.accounts.permissions import PrivateAppAccess
 
-from .models import BirthProfile, BirthProfileRelationship, ChartCalculation
+from .models import BirthProfile, BirthProfileRelationship, ChartCalculation, ChartRelationship
 from .services import (
+    ChartRelationshipConflict,
     ChartProfileInputError,
     calculate_profile_chart,
     calculation_payload,
+    chart_relationship_payload,
     create_birth_profile,
+    create_chart_relationship,
+    list_chart_relationships,
     list_incoming_profile_relationship_requests,
     list_profile_relationships,
     profile_payload,
     profiles_payload,
     profile_relationship_payload,
+    update_chart_relationship,
     update_birth_profile_flags,
     update_incoming_profile_relationship_request,
     upsert_profile_relationship,
@@ -152,3 +157,61 @@ class BirthProfileRelationshipActionView(APIView):
         except ChartProfileInputError as exc:
             return Response({"error": str(exc)}, status=400)
         return Response({"relationship": profile_relationship_payload(relationship)})
+
+
+class ChartRelationshipListView(APIView):
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
+
+    def get(self, request):
+        chart_id = request.query_params.get("chart_id")
+        relationship_type_id = request.query_params.get("relationship_type_id")
+        try:
+            parsed_chart_id = int(chart_id) if chart_id else None
+        except ValueError:
+            return Response({"error": "chart_id is invalid"}, status=400)
+        relationships = list_chart_relationships(
+            request.user,
+            chart_id=parsed_chart_id,
+            relationship_type_id=relationship_type_id,
+        )
+        return Response({"relationships": [chart_relationship_payload(item) for item in relationships]})
+
+    def post(self, request):
+        try:
+            relationship = create_chart_relationship(request.user, request.data)
+        except BirthProfile.DoesNotExist:
+            return Response({"error": "chart not found"}, status=404)
+        except ChartRelationshipConflict as exc:
+            return Response({"error": str(exc)}, status=409)
+        except ChartProfileInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        return Response({"relationship": chart_relationship_payload(relationship)}, status=201)
+
+
+class ChartRelationshipDetailView(APIView):
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
+
+    def get(self, request, relationship_id: int):
+        relationship = get_object_or_404(
+            ChartRelationship.objects.select_related("chart_a", "chart_b", "chart_a__place", "chart_b__place"),
+            id=relationship_id,
+            owner_user=request.user,
+        )
+        return Response({"relationship": chart_relationship_payload(relationship)})
+
+    def patch(self, request, relationship_id: int):
+        relationship = get_object_or_404(ChartRelationship, id=relationship_id, owner_user=request.user)
+        try:
+            relationship = update_chart_relationship(request.user, relationship, request.data)
+        except BirthProfile.DoesNotExist:
+            return Response({"error": "chart not found"}, status=404)
+        except ChartRelationshipConflict as exc:
+            return Response({"error": str(exc)}, status=409)
+        except ChartProfileInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        return Response({"relationship": chart_relationship_payload(relationship)})
+
+    def delete(self, request, relationship_id: int):
+        relationship = get_object_or_404(ChartRelationship, id=relationship_id, owner_user=request.user)
+        relationship.delete()
+        return Response(status=204)

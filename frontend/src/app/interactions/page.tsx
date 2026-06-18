@@ -5,12 +5,14 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
 import {
+  createChartRelationship,
+  deleteChartRelationship,
   fetchCurrentUser,
   listChartProfiles,
-  listChartProfileRelationships,
-  upsertChartProfileRelationship,
+  listChartRelationships,
+  updateChartRelationship,
   type ChartProfile,
-  type ChartProfileRelationship,
+  type ChartRelationship,
 } from "@/lib/api";
 import {
   getRelationshipFactor,
@@ -21,6 +23,7 @@ import {
   type RelationshipFactorId,
   type RelationshipRecipe,
   type RelationshipTypeDefinition,
+  type RelationshipTypeId,
   type RelationshipUiMode,
 } from "@/astrology";
 import { EntityChip, EntityInspector } from "@/ui";
@@ -59,24 +62,6 @@ const roleLabels: Record<string, string> = {
   client: "клиент",
   supplier: "поставщик",
   custom: "роль",
-};
-
-const backendRoleByRecipe: Record<string, string> = {
-  father_child: "father",
-  mother_child: "mother",
-  parent_child: "father",
-  elder_younger_sibling: "sibling",
-  siblings: "sibling",
-  spouses: "partner",
-  romantic_partners: "partner",
-  business_partners: "partner",
-  boss_subordinate: "boss",
-  colleagues: "other",
-  guru_student: "other",
-  friends: "other",
-  opponents: "opponent",
-  client_supplier: "other",
-  custom: "other",
 };
 
 const calculationLabels: Record<string, string> = {
@@ -200,10 +185,16 @@ function ChipRow({ children, label }: { children: ReactNode; label: string }) {
   );
 }
 
+function relationshipLabel(relationship: ChartRelationship): string {
+  const type = getRelationshipType(relationship.relationship_type_id as RelationshipTypeId);
+  return type?.label.ru ?? relationship.relationship_type_id;
+}
+
 export default function InteractionsPage() {
   const [mode, setMode] = useState<RelationshipUiMode>("novice");
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
-  const [relationships, setRelationships] = useState<ChartProfileRelationship[]>([]);
+  const [relationships, setRelationships] = useState<ChartRelationship[]>([]);
+  const [editingRelationshipId, setEditingRelationshipId] = useState<number | null>(null);
   const [profileAId, setProfileAId] = useState<number | null>(null);
   const [profileBId, setProfileBId] = useState<number | null>(null);
   const [recipeId, setRecipeId] = useState("father_child");
@@ -219,7 +210,15 @@ export default function InteractionsPage() {
   const relationshipType = selectedRecipe ? getRelationshipType(selectedRecipe.relationshipTypeId) : null;
   const profileA = profiles.find((profile) => profile.id === profileAId) ?? null;
   const profileB = profiles.find((profile) => profile.id === profileBId) ?? null;
-  const canSave = Boolean(profileAId && profileBId && profileAId !== profileBId && selectedRecipe);
+  const canSave = Boolean(
+    profileAId &&
+      profileBId &&
+      profileAId !== profileBId &&
+      selectedRecipe &&
+      relationshipType &&
+      selectedRecipe.status !== "draft" &&
+      selectedRecipe.status !== "disabled",
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -235,7 +234,7 @@ export default function InteractionsPage() {
           return;
         }
 
-        const [profileList, relationshipList] = await Promise.all([listChartProfiles(), listChartProfileRelationships()]);
+        const [profileList, relationshipList] = await Promise.all([listChartProfiles(), listChartRelationships()]);
         if (cancelled) return;
         setProfiles(profileList);
         setRelationships(relationshipList);
@@ -265,22 +264,55 @@ export default function InteractionsPage() {
     setDirection((current) => (current === "a_to_b" ? "b_to_a" : "a_to_b"));
   }
 
+  function relationshipPayload() {
+    if (!profileAId || !profileBId || !selectedRecipe || !relationshipType) return null;
+    const chartAId = direction === "a_to_b" || relationshipType.symmetric ? profileAId : profileBId;
+    const chartBId = direction === "a_to_b" || relationshipType.symmetric ? profileBId : profileAId;
+    return {
+      chart_a_id: chartAId,
+      chart_b_id: chartBId,
+      relationship_type_id: selectedRecipe.relationshipTypeId,
+      role_a_id: relationshipType.roleA,
+      role_b_id: relationshipType.roleB,
+      notes: note,
+    };
+  }
+
+  function openRelationship(relationship: ChartRelationship) {
+    setEditingRelationshipId(relationship.id);
+    setProfileAId(relationship.chart_a_id);
+    setProfileBId(relationship.chart_b_id);
+    setRecipeId(relationship.relationship_type_id);
+    setDirection("a_to_b");
+    setNote(relationship.notes ?? "");
+    setStatus("Связь открыта.");
+  }
+
+  async function deleteRelationship(relationship: ChartRelationship) {
+    const nameA = relationship.chart_a?.display_name ?? "карта A";
+    const nameB = relationship.chart_b?.display_name ?? "карта B";
+    if (!window.confirm(`Удалить связь между «${nameA}» и «${nameB}»? Карты удалены не будут.`)) return;
+    try {
+      await deleteChartRelationship(relationship.id);
+      setRelationships((current) => current.filter((item) => item.id !== relationship.id));
+      if (editingRelationshipId === relationship.id) setEditingRelationshipId(null);
+      setStatus("Связь удалена.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось удалить связь.");
+    }
+  }
+
   async function saveRelationship() {
-    if (!canSave || !selectedRecipe || !profileAId || !profileBId) return;
+    const payload = relationshipPayload();
+    if (!canSave || !payload) return;
     setSaving(true);
     setStatus("Сохраняю связь...");
     try {
-      const relationship = await upsertChartProfileRelationship({
-        profile_id: profileAId,
-        related_profile_id: profileBId,
-        role: backendRoleByRecipe[selectedRecipe.id] ?? "other",
-        notes: note,
-        metadata: {
-          relationshipTypeId: selectedRecipe.relationshipTypeId,
-          direction,
-        },
-      });
+      const relationship = editingRelationshipId
+        ? await updateChartRelationship(editingRelationshipId, payload)
+        : await createChartRelationship(payload);
       setRelationships((current) => [relationship, ...current.filter((item) => item.id !== relationship.id)]);
+      setEditingRelationshipId(relationship.id);
       setStatus("Связь сохранена.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось сохранить связь.");
@@ -407,7 +439,7 @@ export default function InteractionsPage() {
                 </label>
 
                 <button type="button" className="primary-button" disabled={!canSave || saving} onClick={saveRelationship}>
-                  {saving ? "Сохраняю..." : "Сохранить связь"}
+                  {saving ? "Сохраняю..." : editingRelationshipId ? "Обновить связь" : "Сохранить связь"}
                 </button>
               </>
             )}
@@ -415,11 +447,22 @@ export default function InteractionsPage() {
             <div className="interaction-saved-list">
               <h3>Сохранённые связи</h3>
               {relationships.length ? (
-                relationships.slice(0, 6).map((relationship) => (
+                relationships.slice(0, 8).map((relationship) => (
                   <div key={relationship.id} className="interaction-saved-row">
-                    <strong>{relationship.profile?.display_name ?? "Карта"}</strong>
-                    <span>{relationship.related_profile?.display_name ?? "Связанная карта"}</span>
-                    <em>{relationship.link_status}</em>
+                    <strong>{relationship.chart_a?.display_name ?? "Карта"}</strong>
+                    <span>
+                      {roleLabels[relationship.role_a_id] ?? relationship.role_a_id} ↔ {relationship.chart_b?.display_name ?? "Связанная карта"}
+                    </span>
+                    <em>{relationshipLabel(relationship)}</em>
+                    <button type="button" onClick={() => openRelationship(relationship)}>
+                      Открыть
+                    </button>
+                    <button type="button" onClick={() => openRelationship(relationship)}>
+                      Редактировать
+                    </button>
+                    <button type="button" onClick={() => void deleteRelationship(relationship)}>
+                      Удалить
+                    </button>
                   </div>
                 ))
               ) : (
@@ -433,7 +476,7 @@ export default function InteractionsPage() {
               <>
                 <div className="interaction-preview-head">
                   <div>
-                    <span>Recipe preview</span>
+                    <span>Предпросмотр факторов</span>
                     <h2>{selectedRecipe.label.ru}</h2>
                     <p>
                       {profileTitle(profileA)} ↔ {profileTitle(profileB)}

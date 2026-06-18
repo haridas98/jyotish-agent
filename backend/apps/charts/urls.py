@@ -8,6 +8,8 @@ from .views import (
     BirthProfileRelationshipDetailView,
     BirthProfileRelationshipInboxView,
     BirthProfileRelationshipListView,
+    ChartRelationshipDetailView,
+    ChartRelationshipListView,
 )
 
 urlpatterns = [
@@ -16,6 +18,8 @@ urlpatterns = [
     path("charts/profiles", BirthProfileListView.as_view(), name="chart-profile-list"),
     path("charts/profiles/<int:profile_id>", BirthProfileDetailView.as_view(), name="chart-profile-detail"),
     path("charts/profile-relationships", BirthProfileRelationshipListView.as_view(), name="chart-profile-relationship-list"),
+    path("relationships", ChartRelationshipListView.as_view(), name="relationship-list"),
+    path("relationships/<int:relationship_id>", ChartRelationshipDetailView.as_view(), name="relationship-detail"),
     path(
         "charts/profile-relationships/inbox",
         BirthProfileRelationshipInboxView.as_view(),

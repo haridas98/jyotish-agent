@@ -6,6 +6,7 @@ from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth import get_user_model
+from django.db import models
 from django.db.models import OuterRef, Subquery
 from django.utils.dateparse import parse_datetime
 
@@ -17,15 +18,21 @@ from apps.places.geocoding import geocode_places
 from .models import (
     BirthProfile,
     BirthProfileRelationship,
+    ChartRelationship,
     ChartCalculation,
     DashaPeriod,
     Place,
     PlanetPosition,
     VargaPlacement,
 )
+from .relationship_contract import get_relationship_type_contract, is_known_role
 
 
 class ChartProfileInputError(ValueError):
+    pass
+
+
+class ChartRelationshipConflict(ValueError):
     pass
 
 
@@ -287,6 +294,119 @@ def _relationship_profile_summary(profile: BirthProfile) -> dict[str, Any]:
         "birth_date": profile.birth_date.isoformat(),
         "place_label": profile.place.metadata.get("label") or profile.place.name,
     }
+
+
+def chart_relationship_payload(relationship: ChartRelationship) -> dict[str, Any]:
+    return {
+        "id": relationship.id,
+        "chart_a_id": relationship.chart_a_id,
+        "chart_b_id": relationship.chart_b_id,
+        "chart_a": _relationship_profile_summary(relationship.chart_a)
+        if getattr(relationship, "chart_a", None)
+        else None,
+        "chart_b": _relationship_profile_summary(relationship.chart_b)
+        if getattr(relationship, "chart_b", None)
+        else None,
+        "relationship_type_id": relationship.relationship_type_id,
+        "role_a_id": relationship.role_a_id,
+        "role_b_id": relationship.role_b_id,
+        "pair_key": relationship.pair_key,
+        "notes": relationship.notes,
+        "created_at": relationship.created_at.isoformat(),
+        "updated_at": relationship.updated_at.isoformat(),
+    }
+
+
+def list_chart_relationships(
+    user: AbstractBaseUser,
+    *,
+    chart_id: int | None = None,
+    relationship_type_id: str | None = None,
+) -> list[ChartRelationship]:
+    queryset = ChartRelationship.objects.filter(owner_user=user).select_related(
+        "chart_a",
+        "chart_b",
+        "chart_a__place",
+        "chart_b__place",
+    )
+    if chart_id is not None:
+        queryset = queryset.filter(models.Q(chart_a_id=chart_id) | models.Q(chart_b_id=chart_id))
+    if relationship_type_id:
+        queryset = queryset.filter(relationship_type_id=relationship_type_id)
+    return list(queryset.order_by("-updated_at"))
+
+
+def create_chart_relationship(user: AbstractBaseUser, data: dict[str, Any]) -> ChartRelationship:
+    return _save_chart_relationship(user, data=data, existing=None)
+
+
+def update_chart_relationship(
+    user: AbstractBaseUser,
+    relationship: ChartRelationship,
+    data: dict[str, Any],
+) -> ChartRelationship:
+    return _save_chart_relationship(user, data=data, existing=relationship)
+
+
+def _save_chart_relationship(
+    user: AbstractBaseUser,
+    *,
+    data: dict[str, Any],
+    existing: ChartRelationship | None,
+) -> ChartRelationship:
+    chart_a_id = _required_int(data, "chart_a_id")
+    chart_b_id = _required_int(data, "chart_b_id")
+    if chart_a_id == chart_b_id:
+        raise ChartProfileInputError("chart_b_id must differ from chart_a_id")
+
+    chart_a = BirthProfile.objects.get(id=chart_a_id, user=user)
+    chart_b = BirthProfile.objects.get(id=chart_b_id, user=user)
+    relationship_type_id = str(data.get("relationship_type_id") or "").strip()
+    role_a_id = str(data.get("role_a_id") or "").strip()
+    role_b_id = str(data.get("role_b_id") or "").strip()
+    notes = str(data.get("notes") or "").strip()
+    if len(notes) > 5000:
+        raise ChartProfileInputError("notes is too long")
+
+    _validate_relationship_contract(relationship_type_id, role_a_id, role_b_id)
+    pair_key = relationship_pair_key(chart_a_id, chart_b_id)
+    duplicate = ChartRelationship.objects.filter(
+        owner_user=user,
+        relationship_type_id=relationship_type_id,
+        pair_key=pair_key,
+    )
+    if existing is not None:
+        duplicate = duplicate.exclude(id=existing.id)
+    if duplicate.exists():
+        raise ChartRelationshipConflict("relationship already exists")
+
+    relationship = existing or ChartRelationship(owner_user=user)
+    relationship.chart_a = chart_a
+    relationship.chart_b = chart_b
+    relationship.relationship_type_id = relationship_type_id
+    relationship.role_a_id = role_a_id
+    relationship.role_b_id = role_b_id
+    relationship.pair_key = pair_key
+    relationship.notes = notes
+    relationship.save()
+    return relationship
+
+
+def relationship_pair_key(chart_a_id: int, chart_b_id: int) -> str:
+    low, high = sorted((int(chart_a_id), int(chart_b_id)))
+    return f"{low}:{high}"
+
+
+def _validate_relationship_contract(relationship_type_id: str, role_a_id: str, role_b_id: str) -> None:
+    relationship_type = get_relationship_type_contract(relationship_type_id)
+    if relationship_type is None:
+        raise ChartProfileInputError("relationship_type_id is invalid")
+    if relationship_type.get("status") != "active":
+        raise ChartProfileInputError("relationship_type_id is not available")
+    if not is_known_role(role_a_id) or not is_known_role(role_b_id):
+        raise ChartProfileInputError("role is invalid")
+    if role_a_id != relationship_type["roleA"] or role_b_id != relationship_type["roleB"]:
+        raise ChartProfileInputError("roles do not match relationship_type_id")
 
 
 def list_profile_relationships(user: AbstractBaseUser) -> list[BirthProfileRelationship]:

@@ -1747,6 +1747,31 @@ export type ChartProfileRelationship = {
   updated_at: string;
 };
 
+export type ChartRelationship = {
+  id: number;
+  chart_a_id: number;
+  chart_b_id: number;
+  chart_a: null | {
+    id: number;
+    display_name: string;
+    birth_date: string;
+    place_label: string;
+  };
+  chart_b: null | {
+    id: number;
+    display_name: string;
+    birth_date: string;
+    place_label: string;
+  };
+  relationship_type_id: string;
+  role_a_id: string;
+  role_b_id: string;
+  pair_key: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ChartCalculationRecord = {
   id: number;
   profile_id: number;
@@ -2674,6 +2699,79 @@ export async function listChartProfileRelationships(): Promise<ChartProfileRelat
     throw new Error(data.error ?? "Р—Р°РїСЂРѕСЃ РЅРµ РІС‹РїРѕР»РЅРµРЅ");
   }
   return data.relationships ?? [];
+}
+
+export async function listChartRelationships(filters?: { chartId?: number; relationshipTypeId?: string }): Promise<ChartRelationship[]> {
+  const params = new URLSearchParams();
+  if (filters?.chartId) params.set("chart_id", String(filters.chartId));
+  if (filters?.relationshipTypeId) params.set("relationship_type_id", filters.relationshipTypeId);
+  const query = params.toString();
+  const response = await apiFetch(`/api/relationships${query ? `?${query}` : ""}`, { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Request failed");
+  }
+  return data.relationships ?? [];
+}
+
+export async function fetchChartRelationship(relationshipId: number): Promise<ChartRelationship> {
+  const response = await apiFetch(`/api/relationships/${relationshipId}`, { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Request failed");
+  }
+  return data.relationship;
+}
+
+export async function createChartRelationship(payload: {
+  chart_a_id: number;
+  chart_b_id: number;
+  relationship_type_id: string;
+  role_a_id: string;
+  role_b_id: string;
+  notes?: string;
+}): Promise<ChartRelationship> {
+  const response = await apiFetch("/api/relationships", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Request failed");
+  }
+  return data.relationship;
+}
+
+export async function updateChartRelationship(
+  relationshipId: number,
+  payload: {
+    chart_a_id: number;
+    chart_b_id: number;
+    relationship_type_id: string;
+    role_a_id: string;
+    role_b_id: string;
+    notes?: string;
+  },
+): Promise<ChartRelationship> {
+  const response = await apiFetch(`/api/relationships/${relationshipId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Request failed");
+  }
+  return data.relationship;
+}
+
+export async function deleteChartRelationship(relationshipId: number): Promise<void> {
+  const response = await apiFetch(`/api/relationships/${relationshipId}`, { method: "DELETE" });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error ?? "Request failed");
+  }
 }
 
 export async function fetchChartProfileRelationship(relationshipId: number): Promise<ChartProfileRelationship> {

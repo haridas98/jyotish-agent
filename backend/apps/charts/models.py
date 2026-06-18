@@ -117,6 +117,36 @@ class BirthProfileRelationship(models.Model):
         return f"{self.profile_id}->{self.related_profile_id}:{self.role}:{self.link_status}"
 
 
+class ChartRelationship(models.Model):
+    owner_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="chart_relationships")
+    chart_a = models.ForeignKey(BirthProfile, on_delete=models.CASCADE, related_name="chart_relationships_as_a")
+    chart_b = models.ForeignKey(BirthProfile, on_delete=models.CASCADE, related_name="chart_relationships_as_b")
+    relationship_type_id = models.CharField(max_length=64)
+    role_a_id = models.CharField(max_length=64)
+    role_b_id = models.CharField(max_length=64)
+    pair_key = models.CharField(max_length=64)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner_user", "relationship_type_id", "pair_key"],
+                name="unique_chart_relationship_owner_type_pair",
+            ),
+            models.CheckConstraint(condition=~models.Q(chart_a=models.F("chart_b")), name="chart_relationship_not_self"),
+        ]
+        indexes = [
+            models.Index(fields=["owner_user", "updated_at"], name="charts_chartrel_owner_upd_idx"),
+            models.Index(fields=["owner_user", "relationship_type_id"], name="charts_chartrel_owner_type_idx"),
+            models.Index(fields=["owner_user", "pair_key"], name="charts_chartrel_owner_pair_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.owner_user_id}:{self.relationship_type_id}:{self.pair_key}"
+
+
 class ChartCalculation(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

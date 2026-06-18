@@ -18,6 +18,7 @@ const sourceTargets = [
   "src/app/app-navigation.tsx",
   "src/app/charts/[id]/page.tsx",
   "src/app/interactions/page.tsx",
+  "src/app/people/page.tsx",
   "src/app/sources/page.tsx",
 ].filter((target) => existsSync(target));
 const forbiddenSourceMarkers = [
@@ -38,6 +39,10 @@ const forbiddenSourceMarkers = [
   /relationship\.badCompatibility/,
   /relationship\.karmicConnection/,
   /relationship\.moonRelationship/,
+  /raw recipe JSON/,
+  /raw pairKey/,
+  /ownerUserId/,
+  /recipe dump/,
   /requiredCalculationIds:\s*\[[^\]]*D60/,
   /primaryEntityIds:\s*\[[^\]]*varga\.D60/,
 ];

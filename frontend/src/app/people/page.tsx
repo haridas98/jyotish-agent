@@ -2,37 +2,36 @@
 
 import { useEffect, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
-import { relationshipRoleFor } from "@/lib/relationshipRoles";
 import {
   fetchCurrentUser,
-  listChartProfileRelationships,
   listChartProfiles,
-  listIncomingChartProfileRelationshipRequests,
+  listChartRelationships,
   type ChartProfile,
-  type ChartProfileRelationship,
+  type ChartRelationship,
 } from "@/lib/api";
+import { getRelationshipType, type RelationshipTypeId } from "@/astrology";
 
-function friendlyPeopleError(error: unknown): string {
-  const message = error instanceof Error ? error.message : "";
-  if (/401|403|auth|credential|forbidden|permission/i.test(message)) {
-    return "Войдите, чтобы открыть сохранённые карты.";
-  }
-  if (/Unexpected token|JSON|API returned|fetch|network|Backend API/i.test(message)) {
-    return "Не удалось загрузить карты людей. Обновите страницу.";
-  }
-  return message || "Ошибка загрузки сохранённых карт";
-}
+const roleLabels: Record<string, string> = {
+  father: "отец",
+  mother: "мать",
+  child: "ребёнок",
+  sibling: "родственник",
+  spouse: "супруг",
+  romantic_partner: "партнёр",
+  business_partner: "партнёр",
+  boss: "руководитель",
+  subordinate: "подчинённый",
+  colleague: "коллега",
+  guru: "наставник",
+  student: "ученик",
+  friend: "друг",
+  opponent: "оппонент",
+  client: "клиент",
+  supplier: "поставщик",
+};
 
 function formatProfileTime(profile: ChartProfile) {
   return profile.birth_time ? profile.birth_time.slice(0, 5) : "время неизвестно";
-}
-
-function formatRelationshipStatus(status: string) {
-  if (status === "accepted") return "связь подтверждена";
-  if (status === "requested") return "запрос отправлен";
-  if (status === "declined") return "запрос отклонён";
-  if (status === "blocked") return "связь заблокирована";
-  return "сохранённая связь";
 }
 
 function formatCalculationStatus(status: string | null | undefined) {
@@ -40,82 +39,67 @@ function formatCalculationStatus(status: string | null | undefined) {
   if (status === "queued") return "в очереди";
   if (status === "running" || status === "processing") return "считается";
   if (status === "failed" || status === "error") return "ошибка расчёта";
-  return "расчёт сохранён";
+  return "расчёт не сохранён";
 }
 
-function formatBirthTimeAccuracy(value: string | null | undefined) {
-  if (value === "exact") return "точное время";
-  if (value === "approximate") return "примерное время";
-  if (value === "unknown") return "время неизвестно";
-  return "точность не указана";
+function relationshipTypeLabel(relationship: ChartRelationship) {
+  return getRelationshipType(relationship.relationship_type_id as RelationshipTypeId)?.label.ru ?? relationship.relationship_type_id;
+}
+
+function relationshipDate(value: string) {
+  return new Date(value).toLocaleDateString("ru-RU");
 }
 
 export default function PeoplePage() {
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
-  const [relationships, setRelationships] = useState<ChartProfileRelationship[]>([]);
-  const [incoming, setIncoming] = useState<ChartProfileRelationship[]>([]);
+  const [relationships, setRelationships] = useState<ChartRelationship[]>([]);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
-  const [authChecked, setAuthChecked] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    const reloadOnAuthChanged = () => window.location.reload();
-    window.addEventListener("jyotish-auth-changed", reloadOnAuthChanged);
 
     async function loadPeople() {
       try {
         const user = await fetchCurrentUser();
         if (!mounted) return;
-        setAuthChecked(true);
         if (!user) {
           setNeedsAuth(true);
           setStatus("Войдите, чтобы открыть сохранённые карты.");
           return;
         }
-        const [profileRows, relationshipRows, incomingRows] = await Promise.all([
-          listChartProfiles(),
-          listChartProfileRelationships(),
-          listIncomingChartProfileRelationshipRequests(),
-        ]);
+        const [profileRows, relationshipRows] = await Promise.all([listChartProfiles(), listChartRelationships()]);
         if (!mounted) return;
         setProfiles(profileRows);
         setRelationships(relationshipRows);
-        setIncoming(incomingRows);
-        setStatus(`${profileRows.length} карт, ${relationshipRows.length} связей, ${incomingRows.length} входящих запросов`);
+        setStatus(`${profileRows.length} карт, ${relationshipRows.length} связей`);
       } catch (error) {
         if (!mounted) return;
-        setAuthChecked(true);
-        setStatus(friendlyPeopleError(error));
+        setStatus(error instanceof Error ? error.message : "Ошибка загрузки сохранённых карт");
       }
     }
 
     void loadPeople();
     return () => {
       mounted = false;
-      window.removeEventListener("jyotish-auth-changed", reloadOnAuthChanged);
     };
   }, []);
 
-  const showStatus = !needsAuth && /ошиб|не удалось/i.test(status);
-
   return (
     <ProductShell active="people">
-      {authChecked && !needsAuth ? (
+      {!needsAuth ? (
         <div className="page-action-strip">
-          <a className="primary-link-button" href="/">Добавить карту</a>
+          <a className="primary-link-button" href="/charts/new">Добавить карту</a>
         </div>
       ) : null}
 
-      {showStatus ? <div className="product-status">{status}</div> : null}
+      <div className="product-status">{status}</div>
 
       {needsAuth ? (
         <section className="history-empty private-history-gate">
           <span>Войдите для доступа.</span>
         </section>
-      ) : null}
-
-      {!needsAuth ? (
+      ) : (
         <>
           <section className="compatibility-saved-role-context" aria-label="Сохранённые карты">
             <div className="compatibility-saved-role-head">
@@ -134,8 +118,6 @@ export default function PeoplePage() {
                         {profile.latest_calculation
                           ? `${formatCalculationStatus(profile.latest_calculation.status)} · ${profile.latest_calculation.graha_count} грах`
                           : "расчёт ещё не сохранён"}
-                        {" · "}
-                        {formatBirthTimeAccuracy(profile.birth_time_accuracy)}
                       </small>
                     </div>
                   </a>
@@ -146,51 +128,38 @@ export default function PeoplePage() {
             )}
           </section>
 
-          <section className="compatibility-saved-role-context" aria-label="Связи людей">
+          <section className="compatibility-saved-role-context" aria-label="Связи между картами">
             <div className="compatibility-saved-role-head">
               <div>
-                <span>Роли и связи</span>
+                <span>Связи между картами</span>
               </div>
             </div>
             {relationships.length ? (
               <div className="compatibility-saved-role-grid">
-                {relationships.map((relationship) => {
-                  const role = relationshipRoleFor(relationship.role);
-                  return (
-                    <div key={relationship.id}>
-                      <span>{role.label} · {formatRelationshipStatus(relationship.link_status)}</span>
-                      <strong>{relationship.profile?.display_name ?? "Карта"} → {relationship.related_profile?.display_name ?? "Связанная карта"}</strong>
-                    </div>
-                  );
-                })}
+                {relationships.map((relationship) => (
+                  <div key={relationship.id}>
+                    <span>
+                      {relationshipTypeLabel(relationship)} · обновлено {relationshipDate(relationship.updated_at)}
+                    </span>
+                    <strong>
+                      {relationship.chart_a?.display_name ?? "Карта A"} · {roleLabels[relationship.role_a_id] ?? relationship.role_a_id}
+                      {" ↔ "}
+                      {relationship.chart_b?.display_name ?? "Карта B"} · {roleLabels[relationship.role_b_id] ?? relationship.role_b_id}
+                    </strong>
+                    {relationship.notes ? <small>{relationship.notes.slice(0, 140)}</small> : null}
+                    <a href="/interactions">Открыть во Взаимодействиях</a>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="history-empty">Связей между картами ещё нет.</div>
+              <div className="history-empty">
+                <span>Связей между картами ещё нет.</span>
+                <a href="/interactions">Создать связь</a>
+              </div>
             )}
           </section>
-
-          {incoming.length ? (
-          <section className="compatibility-saved-role-context" aria-label="Входящие запросы связей">
-            <div className="compatibility-saved-role-head">
-              <div>
-                <span>Входящие запросы</span>
-              </div>
-            </div>
-            <div className="compatibility-saved-role-grid">
-                {incoming.map((request) => {
-                  const role = relationshipRoleFor(request.role);
-                  return (
-                    <div key={request.id}>
-                      <span>{role.label} · {formatRelationshipStatus(request.link_status)}</span>
-                      <strong>{request.profile?.display_name ?? "Карта"} → {request.related_profile?.display_name ?? "ваша карта"}</strong>
-                    </div>
-                  );
-                })}
-            </div>
-          </section>
-          ) : null}
         </>
-      ) : null}
+      )}
     </ProductShell>
   );
 }
