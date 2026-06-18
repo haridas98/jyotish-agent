@@ -45,7 +45,7 @@ export const legacyMigrationItems: LegacyMigrationItem[] = [
     id: "legacy.relationship_copy_blocks",
     legacyName: "Compatibility and interaction explanatory blocks",
     targetBlockId: "block.compare.roleFactors",
-    entityIds: ["house.7", "varga.D9", "relationship.moonRelationship", "relationship.lagnaRelationship"],
+    entityIds: ["house.7", "varga.D9", "factor.moon.relationship", "factor.lagna.relationship"],
     contextIds: ["relationship.spouse", "relationship.custom"],
     action: "replace_with_relationship_recipe",
     status: "adapter_ready",

@@ -14,6 +14,7 @@ const forbidden = [
 const sourceTargets = [
   "src/ui/components",
   "src/astrology/entities",
+  "src/astrology/relationships",
   "src/app/app-navigation.tsx",
   "src/app/charts/[id]/page.tsx",
   "src/app/sources/page.tsx",
@@ -25,6 +26,12 @@ const forbiddenSourceMarkers = [
   /D9\s+[—-]\s+карта брака/i,
   /D9 отвечает за семью/i,
   /D60\s+[—-]\s+карта кармы/i,
+  /relationship\.goodCompatibility/,
+  /relationship\.badCompatibility/,
+  /relationship\.karmicConnection/,
+  /relationship\.moonRelationship/,
+  /requiredCalculationIds:\s*\[[^\]]*D60/,
+  /primaryEntityIds:\s*\[[^\]]*varga\.D60/,
 ];
 
 if (!targets.length) {

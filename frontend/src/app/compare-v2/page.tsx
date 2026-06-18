@@ -15,33 +15,33 @@ export default function CompareV2Page() {
       <div className="v2-topbar">
         <div>
           <strong>Compare v2</strong>
-          <span>Рецепты отношений без повторных блоков</span>
+          <span>Relationship recipe registry preview</span>
         </div>
       </div>
       <section className="v2-card v2-table-card">
         <div className="v2-card-head">
-          <h2>Роли</h2>
-          <small>Каждая роль задаёт нужные дома, D-карты и AI-факторы</small>
+          <h2>Recipes</h2>
+          <small>Typed roles, factors and directed focus layers.</small>
         </div>
         <div className="v2-table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Роль</th>
-                <th>D-карты</th>
-                <th>Главные факторы A</th>
-                <th>Главные факторы B</th>
-                <th>Общие проверки</th>
+                <th>Recipe</th>
+                <th>Status</th>
+                <th>A to B</th>
+                <th>B to A</th>
+                <th>Mutual factors</th>
               </tr>
             </thead>
             <tbody>
               {recipes.map((recipe) => (
                 <tr key={recipe.id}>
-                  <td>{recipe.label}</td>
-                  <td>{recipe.requiredVargas.join(", ")}</td>
-                  <td>{recipe.profileAFactors.map((factor) => factor.entityId).join(", ") || "—"}</td>
-                  <td>{recipe.profileBFactors.map((factor) => factor.entityId).join(", ") || "—"}</td>
-                  <td>{recipe.sharedFactors.map((factor) => factor.entityId).join(", ")}</td>
+                  <td>{recipe.label.ru}</td>
+                  <td>{recipe.status}</td>
+                  <td>{recipe.perspectiveAtoB.primaryEntityIds.join(", ") || "-"}</td>
+                  <td>{recipe.perspectiveBtoA.primaryEntityIds.join(", ") || "-"}</td>
+                  <td>{recipe.mutualFocus.relationshipFactorIds.join(", ") || "-"}</td>
                 </tr>
               ))}
             </tbody>
