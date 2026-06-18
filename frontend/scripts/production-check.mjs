@@ -17,6 +17,7 @@ const sourceTargets = [
   "src/astrology/entities",
   "src/astrology/relationships",
   "src/astrology/reports",
+  "src/astrology/sources",
   "src/app/app-navigation.tsx",
   "src/app/charts/[id]/page.tsx",
   "src/app/compatibility/page.tsx",
@@ -24,6 +25,7 @@ const sourceTargets = [
   "src/app/people/page.tsx",
   "src/app/reports/page.tsx",
   "src/app/report-evidence-debug/page.tsx",
+  "src/app/report-provenance-debug/page.tsx",
   "src/app/sources/page.tsx",
 ].filter((target) => existsSync(target));
 const forbiddenSourceMarkers = [
@@ -64,6 +66,8 @@ const forbiddenSourceMarkers = [
   /ownerUserId/,
   /recipe dump/,
   /raw evidence/,
+  /Р‘РёР±Р»РёРѕС‚РµРєР° С€Р°СЃС‚СЂ Рё СЃСЃС‹Р»РѕРє Р±СѓРґРµС‚ РїРѕРґРєР»СЋС‡РµРЅР° РѕС‚РґРµР»СЊРЅС‹Рј СЌС‚Р°РїРѕРј/,
+  /Библиотека шастр и ссылок будет подключена отдельным этапом/,
   /requiredCalculationIds:\s*\[[^\]]*D60/,
   /primaryEntityIds:\s*\[[^\]]*varga\.D60/,
 ];
