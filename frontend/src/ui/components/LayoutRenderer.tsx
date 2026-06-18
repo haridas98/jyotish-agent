@@ -56,7 +56,7 @@ function MissingBlock({ title, missing }: { title: string; missing: string[] }) 
   return (
     <div className="v2-block v2-missing">
       <strong>{title}</strong>
-      {missing.length ? <small>Missing calculations: {missing.join(", ")}</small> : <small>Block is not registered yet</small>}
+      {missing.length ? <small>Расчётные данные ещё не готовы.</small> : <small>Раздел временно недоступен.</small>}
     </div>
   );
 }

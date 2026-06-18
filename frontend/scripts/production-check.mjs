@@ -11,6 +11,21 @@ const forbidden = [
   /NEXT_PUBLIC_API_BASE_URL=http/,
   /31\.76\.79\.2/,
 ];
+const sourceTargets = [
+  "src/ui/components",
+  "src/astrology/entities",
+  "src/app/app-navigation.tsx",
+  "src/app/charts/[id]/page.tsx",
+  "src/app/sources/page.tsx",
+].filter((target) => existsSync(target));
+const forbiddenSourceMarkers = [
+  /source\.pending/,
+  /Block is not registered yet/,
+  /Missing calculations/,
+  /D9\s+[—-]\s+карта брака/i,
+  /D9 отвечает за семью/i,
+  /D60\s+[—-]\s+карта кармы/i,
+];
 
 if (!targets.length) {
   console.error("No browser bundle directories found.");
@@ -41,6 +56,20 @@ for (const target of targets) {
     for (const pattern of forbidden) {
       if (pattern.test(content)) {
         console.error(`Forbidden browser reference found: ${pattern} in ${file}`);
+        failed = true;
+      }
+    }
+  }
+}
+
+for (const target of sourceTargets) {
+  const targetFiles = statSync(target).isDirectory() ? files(target) : [target];
+  for (const file of targetFiles) {
+    if (!/\.(tsx?|css)$/.test(file)) continue;
+    const content = readFileSync(file, "utf8");
+    for (const pattern of forbiddenSourceMarkers) {
+      if (pattern.test(content)) {
+        console.error(`Forbidden UI marker found: ${pattern} in ${file}`);
         failed = true;
       }
     }

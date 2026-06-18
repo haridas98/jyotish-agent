@@ -25,8 +25,15 @@ const grahaNames: Record<string, string> = {
 
 registerCoreEntities();
 
-export function EntityInspector({ entityId }: { entityId: EntityId | null }) {
+type EntityInspectorProps = {
+  devMode?: boolean;
+  entityId: EntityId | null;
+  onClose?: () => void;
+};
+
+export function EntityInspector({ devMode = false, entityId, onClose }: EntityInspectorProps) {
   const explanation = entityId ? resolveExplanation(entityId) : null;
+  const showSources = devMode && explanation?.sources?.length;
 
   if (!explanation) {
     return (
@@ -42,6 +49,11 @@ export function EntityInspector({ entityId }: { entityId: EntityId | null }) {
       <div className="v2-inspector-title">
         <span>{explanation.kind}</span>
         <h2>{explanation.title}</h2>
+        {onClose ? (
+          <button type="button" aria-label="Закрыть объяснение" onClick={onClose}>
+            Закрыть
+          </button>
+        ) : null}
       </div>
       <div className="v2-inspector-tabs" aria-label="Разделы объяснения">
         <button type="button">Смысл</button>
@@ -53,11 +65,13 @@ export function EntityInspector({ entityId }: { entityId: EntityId | null }) {
         <p key={paragraph}>{paragraph}</p>
       ))}
       {explanation.warning ? <p className="v2-warning">{explanation.warning}</p> : null}
-      <div className="v2-source-list">
-        {explanation.sources.map((sourceId) => (
-          <span key={sourceId}>{sourceId}</span>
-        ))}
-      </div>
+      {showSources ? (
+        <div className="v2-source-list">
+          {explanation.sources.map((sourceId) => (
+            <span key={sourceId}>{sourceId}</span>
+          ))}
+        </div>
+      ) : null}
     </aside>
   );
 }

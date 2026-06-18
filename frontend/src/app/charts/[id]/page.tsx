@@ -11,7 +11,7 @@ import {
   type JyotishUserSettings,
 } from "@/lib/api";
 import type { EntityId } from "@/astrology";
-import { EntityChip } from "@/ui";
+import { EntityChip, EntityInspector } from "@/ui";
 
 function profileIdFromParams(value: string | string[] | undefined) {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -41,6 +41,7 @@ export default function ChartDetailPage() {
   const profileId = profileIdFromParams(params.id);
   const [profile, setProfile] = useState<ChartProfile | null>(null);
   const [userSettings, setUserSettings] = useState<JyotishUserSettings | null>(null);
+  const [activeEntityId, setActiveEntityId] = useState<EntityId | null>(null);
   const [status, setStatus] = useState("Загружаю карту...");
 
   useEffect(() => {
@@ -138,7 +139,12 @@ export default function ChartDetailPage() {
                     <dt>D-карты</dt>
                     <dd className="entity-chip-row">
                       {userSettings.calculation.divisionalChartsEnabled.map((chart) => (
-                        <EntityChip key={chart} entityId={`varga.${chart}` as EntityId} />
+                        <EntityChip
+                          active={activeEntityId === (`varga.${chart}` as EntityId)}
+                          key={chart}
+                          entityId={`varga.${chart}` as EntityId}
+                          onSelect={setActiveEntityId}
+                        />
                       ))}
                     </dd>
                   </div>
@@ -154,6 +160,10 @@ export default function ChartDetailPage() {
                 </dl>
               </div>
             </section>
+          ) : null}
+
+          {activeEntityId ? (
+            <EntityInspector entityId={activeEntityId} onClose={() => setActiveEntityId(null)} />
           ) : null}
 
           {profile.notes ? (
