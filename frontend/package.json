@@ -26,6 +26,7 @@
     "test:ai-real-provider": "node scripts/check-ai-real-provider.mjs",
     "test:ai-staging-gateway": "node scripts/check-ai-staging-gateway.mjs",
     "test:ai-staging-smoke": "node scripts/check-ai-staging-smoke.mjs",
+    "test:ai-human-review-mock": "node scripts/check-ai-human-review-mock.mjs",
     "smoke:ai-staging": "node scripts/smoke-ai-staging.mjs",
     "production-check": "node scripts/production-check.mjs",
     "build:prod": "next build && npm run production-check",
