@@ -4,20 +4,22 @@ export const sourceDefinitions: SourceDefinition[] = [
   {
     id: "source.bphs",
     title: {
-      original: "Brihat Parashara Hora Shastra",
+      original: "Bṛhat Parāśara Horā Śāstra",
       ru: "Брихат Парашара Хора Шастра",
       en: "Brihat Parashara Hora Shastra",
     },
     shortTitle: "BPHS",
     sourceType: "primary_shastra",
-    language: "sanskrit",
+    language: "english",
     author: "Parashara",
+    referenceUrl: "https://vedpuran.net/wp-content/uploads/2021/04/brihat_parashara_hora_shastra_english_v.pdf",
     edition: {
-      editor: "pilot metadata",
+      publisher: "VedPuran public PDF mirror / Internet Archive text mirror",
+      editor: "R. Santhanam-style English e-text",
     },
-    status: "draft",
-    accessPolicy: "metadata_only",
-    notes: "Pilot source metadata only; exact edition mapping is still under review.",
+    status: "verified",
+    accessPolicy: "locator_and_excerpt",
+    notes: "Verified as a concrete public edition anchor for chapter/verse/page mapping; textual authenticity review remains separate.",
   },
   {
     id: "source.vimshottari.tradition",
@@ -30,7 +32,7 @@ export const sourceDefinitions: SourceDefinition[] = [
     language: "other",
     status: "draft",
     accessPolicy: "metadata_only",
-    notes: "Placeholder for structured period rules before exact source passages are verified.",
+    notes: "Reserved for non-BPHS period-rule mapping; not used as verified evidence in the pilot.",
   },
 ];
 

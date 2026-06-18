@@ -11,6 +11,7 @@ export type SourceDefinition = {
   sourceType: "primary_shastra" | "traditional_commentary" | "modern_commentary" | "research" | "internal_note";
   language: "sanskrit" | "english" | "russian" | "hindi" | "other";
   author?: string;
+  referenceUrl?: string;
   edition?: {
     publisher?: string;
     year?: number;
