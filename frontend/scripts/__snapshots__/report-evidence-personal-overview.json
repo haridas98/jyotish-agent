@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "reportRecipeId": "personal_overview",
+  "reportRecipeVersion": 1,
+  "reportTypeId": "personal_overview",
+  "mode": "novice",
+  "profileIds": [
+    "101"
+  ],
+  "relationshipId": "501",
+  "relationshipTypeId": "spouses",
+  "itemIds": [
+    "calculation.section.chart_core.personal_overview.calculations.calc.varga.D1",
+    "calculation.section.chart_core.personal_overview.calculations.calc.varga.D9",
+    "calculation.section.chart_core.personal_overview.calculations.calc.vimshottari",
+    "entity.section.chart_core.personal_overview.additional_houses.house.10",
+    "entity.section.chart_core.personal_overview.additional_houses.house.5",
+    "entity.section.chart_core.personal_overview.additional_houses.house.9",
+    "entity.section.chart_core.personal_overview.key_points.graha.MO",
+    "entity.section.chart_core.personal_overview.key_points.graha.SU",
+    "entity.section.chart_core.personal_overview.key_points.house.1",
+    "relationship.section.relationship_context.personal_overview.relationship_context.factor.dasha.overlap",
+    "relationship.section.relationship_context.personal_overview.relationship_context.factor.lagna.relationship",
+    "relationship.section.relationship_context.personal_overview.relationship_context.factor.moon.relationship",
+    "relationship.section.relationship_context.personal_overview.relationship_context.factor.mutual.aspects",
+    "relationship.section.relationship_context.personal_overview.relationship_context.factor.overlay.planets_a_to_b",
+    "relationship.section.relationship_context.personal_overview.relationship_context.factor.overlay.planets_b_to_a"
+  ],
+  "sourceRefKeys": [
+    "bphs:bphs.graha.mo:graha.MO",
+    "bphs:bphs.graha.su:graha.SU",
+    "bphs:bphs.house.10:house.10",
+    "bphs:bphs.house.1:house.1",
+    "bphs:bphs.house.5:house.5",
+    "bphs:bphs.house.9:house.9",
+    "jyotish.classical:jyotish.classical.varga.D1:",
+    "jyotish.classical:jyotish.classical.varga.D9:",
+    "tradition:rule.relationship.spouses.mutual:",
+    "tradition:vimshottari.sequence:"
+  ],
+  "unavailableItemIds": []
+}

@@ -16,6 +16,7 @@
     "test:reports": "node scripts/check-reports-foundation.mjs",
     "test:report-recipes": "node scripts/check-report-recipes.mjs",
     "test:report-evidence": "node scripts/check-report-evidence.mjs",
+    "test:report-evidence-snapshot": "node scripts/check-report-evidence-snapshot.mjs",
     "production-check": "node scripts/production-check.mjs",
     "build:prod": "next build && npm run production-check",
     "audit:workbench": "node scripts/audit-workbench-architecture.mjs"

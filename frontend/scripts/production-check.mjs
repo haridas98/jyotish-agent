@@ -23,6 +23,7 @@ const sourceTargets = [
   "src/app/interactions/page.tsx",
   "src/app/people/page.tsx",
   "src/app/reports/page.tsx",
+  "src/app/report-evidence-debug/page.tsx",
   "src/app/sources/page.tsx",
 ].filter((target) => existsSync(target));
 const forbiddenSourceMarkers = [

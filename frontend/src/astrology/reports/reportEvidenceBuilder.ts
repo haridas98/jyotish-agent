@@ -9,7 +9,10 @@ function isBirthChart(value: unknown): value is BirthChart {
 }
 
 function itemId(parts: Array<string | number | null | undefined>): string {
-  return parts.filter((part) => part !== null && part !== undefined && String(part).length > 0).join(".");
+  return parts
+    .filter((part) => part !== null && part !== undefined && String(part).length > 0)
+    .map((part) => String(part).replace(/[^a-zA-Z0-9_.-]/g, "_"))
+    .join(".");
 }
 
 function sourceRef(sourceId: string, ruleId: string, entityId?: string): ReportEvidenceSourceRef {
@@ -88,12 +91,14 @@ function ruleIdsForRelationshipFactor(factorId: string, focuses: RecipeFocus[]):
 function sourceRefsFromItems(items: ReportEvidenceItem[]): ReportEvidenceSourceRef[] {
   const refs = items.flatMap((item) => item.provenance.sourceRefs);
   const seen = new Set<string>();
-  return refs.filter((ref) => {
-    const key = `${ref.sourceId}:${ref.ruleId}:${ref.entityId ?? ""}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return refs
+    .filter((ref) => {
+      const key = `${ref.sourceId}:${ref.ruleId}:${ref.entityId ?? ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort(compareSourceRefs);
 }
 
 export function buildReportEvidencePack(input: ReportEvidenceBuilderInput): ReportEvidencePack {
@@ -131,9 +136,10 @@ export function buildReportEvidencePack(input: ReportEvidenceBuilderInput): Repo
     });
   }
 
+  const sortedItems = sortEvidenceItems(items);
   const warnings = [
     ...input.resolvedRecipe.warnings.map((warning) => warning.label.ru),
-    ...items.flatMap((item) => item.warnings),
+    ...sortedItems.flatMap((item) => item.warnings),
   ];
 
   return {
@@ -145,10 +151,10 @@ export function buildReportEvidencePack(input: ReportEvidenceBuilderInput): Repo
     profileIds: [input.primaryProfileId].filter((id): id is string | number => id !== null && id !== undefined).map(String),
     relationshipId: input.selectedRelationship?.id === null || input.selectedRelationship?.id === undefined ? undefined : String(input.selectedRelationship.id),
     relationshipTypeId: input.selectedRelationship?.relationshipTypeId,
-    items,
+    items: sortedItems,
     warnings,
-    unavailableItemIds: items.filter((item) => !item.available).map((item) => item.id),
-    sourceRefs: sourceRefsFromItems(items),
+    unavailableItemIds: sortedItems.filter((item) => !item.available).map((item) => item.id).sort(),
+    sourceRefs: sourceRefsFromItems(sortedItems),
     inputSummary: {
       hasPrimaryChart: Boolean(chart),
       hasRelationshipContext: Boolean(input.selectedRelationship),
@@ -156,6 +162,14 @@ export function buildReportEvidencePack(input: ReportEvidenceBuilderInput): Repo
       resolvedFactorCount: input.resolvedRecipe.sections.flatMap((section) => section.factorGroups.flatMap((group) => group.factors)).length,
     },
   };
+}
+
+function compareSourceRefs(a: ReportEvidenceSourceRef, b: ReportEvidenceSourceRef): number {
+  return `${a.sourceId}:${a.ruleId}:${a.entityId ?? ""}`.localeCompare(`${b.sourceId}:${b.ruleId}:${b.entityId ?? ""}`);
+}
+
+function sortEvidenceItems(items: ReportEvidenceItem[]): ReportEvidenceItem[] {
+  return [...items].sort((a, b) => a.id.localeCompare(b.id));
 }
 
 function buildEvidenceItem(

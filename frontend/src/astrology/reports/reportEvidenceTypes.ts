@@ -60,6 +60,11 @@ export type ReportEvidencePack = {
   };
 };
 
+export type ReportEvidenceValidationResult = {
+  ok: boolean;
+  errors: string[];
+};
+
 export type ReportEvidenceBuilderInput = {
   resolvedRecipe: ResolvedReportRecipe;
   mode: RelationshipUiMode;
