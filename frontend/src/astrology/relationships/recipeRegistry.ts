@@ -67,7 +67,7 @@ const mutualBasic = (ruleId: string): RecipeFocus =>
 export const relationshipRecipeDefinitions: RelationshipRecipe[] = [
   recipe(
     "father_child",
-    "Отец и ребенок",
+    "Отец и ребёнок",
     "Father and child",
     focus({
       primaryEntityIds: ["house.5", "graha.JU", "varga.D7"],
@@ -91,7 +91,7 @@ export const relationshipRecipeDefinitions: RelationshipRecipe[] = [
   ),
   recipe(
     "mother_child",
-    "Мать и ребенок",
+    "Мать и ребёнок",
     "Mother and child",
     focus({
       primaryEntityIds: ["house.5", "graha.JU", "varga.D7"],

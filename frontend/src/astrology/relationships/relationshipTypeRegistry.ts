@@ -1,9 +1,9 @@
 import type { RelationshipTypeDefinition, RelationshipTypeId } from "./relationshipTypes";
 
 export const relationshipTypeDefinitions: RelationshipTypeDefinition[] = [
-  relationship("father_child", "Отец и ребенок", "Father and child", "father", "child", "family", false),
-  relationship("mother_child", "Мать и ребенок", "Mother and child", "mother", "child", "family", false),
-  relationship("parent_child", "Родитель и ребенок", "Parent and child", "parent", "child", "family", false),
+  relationship("father_child", "Отец и ребёнок", "Father and child", "father", "child", "family", false),
+  relationship("mother_child", "Мать и ребёнок", "Mother and child", "mother", "child", "family", false),
+  relationship("parent_child", "Родитель и ребёнок", "Parent and child", "parent", "child", "family", false),
   relationship("elder_younger_sibling", "Старший и младший", "Elder and younger sibling", "elder_sibling", "younger_sibling", "family", false),
   relationship("siblings", "Братья и сестры", "Siblings", "sibling", "sibling", "family", true),
   relationship("spouses", "Супруги", "Spouses", "spouse", "spouse", "romantic", true),

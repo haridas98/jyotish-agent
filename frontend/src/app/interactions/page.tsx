@@ -33,7 +33,7 @@ type Direction = "a_to_b" | "b_to_a";
 const categoryLabels: Record<RelationshipTypeDefinition["category"], string> = {
   family: "Семья",
   romantic: "Отношения",
-  business: "Дело",
+  business: "Бизнес",
   work: "Работа",
   education: "Обучение",
   social: "Социум",
