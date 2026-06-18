@@ -1,4 +1,6 @@
 export * from "./reportAccuracyPolicy";
+export * from "./reportEvidenceBuilder";
+export * from "./reportEvidenceTypes";
 export * from "./reportModePolicy";
 export * from "./reportRecipeRegistry";
 export * from "./reportRecipeResolver";
