@@ -1,652 +1,491 @@
 "use client";
 
+import Link from "next/link";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
 import {
-  calculateSavedProfile,
   fetchCurrentUser,
-  listIncomingChartProfileRelationshipRequests,
   listChartProfiles,
   listChartProfileRelationships,
-  updateChartProfileRelationshipRequest,
   upsertChartProfileRelationship,
-  type BirthChart,
-  type ChartCalculationRecord,
   type ChartProfile,
   type ChartProfileRelationship,
-  type GrahaPosition,
-  type VargaChart,
 } from "@/lib/api";
-import { relationshipRoleDefinitions, relationshipRoleFor, type RelationshipRoleDefinition } from "@/lib/relationshipRoles";
+import {
+  getRelationshipFactor,
+  getRelationshipType,
+  listRelationshipRecipes,
+  type EntityId,
+  type RecipeFocus,
+  type RelationshipFactorId,
+  type RelationshipRecipe,
+  type RelationshipTypeDefinition,
+  type RelationshipUiMode,
+} from "@/astrology";
+import { EntityChip, EntityInspector } from "@/ui";
 
-type InteractionRole = Omit<RelationshipRoleDefinition, "houses"> & { houses: string[] };
+type Direction = "a_to_b" | "b_to_a";
 
-const interactionRoles: InteractionRole[] = relationshipRoleDefinitions.map((role) => ({
-  ...role,
-  houses: role.houses.map(String),
-}));
-
-function roleFor(key: string): InteractionRole {
-  const role = relationshipRoleFor(key);
-  return { ...role, houses: role.houses.map(String) };
-}
-
-function statusLabel(status: string): string {
-  if (status === "accepted") return "подтверждено";
-  if (status === "requested") return "ожидает подтверждения";
-  if (status === "declined") return "отклонено";
-  if (status === "blocked") return "заблокировано";
-  return "личная пометка";
-}
-
-function StatusTerm({ status }: { status: string }) {
-  return <em className={`interaction-status ${status}`}>{statusLabel(status)}</em>;
-}
-
-function houseList(houses: Array<number | string>): string {
-  return houses.map((house) => `${house}`).join(", ");
-}
-
-function vargaList(vargas: string[]): string {
-  return vargas.join(", ");
-}
-
-function profileLabel(profile: ChartProfileRelationship["profile"], fallback?: ChartProfile): string {
-  return profile?.display_name ?? fallback?.display_name ?? "Карта";
-}
-
-function profileMeta(profile: ChartProfileRelationship["profile"], fallback?: ChartProfile): string {
-  const date = profile?.birth_date ?? fallback?.birth_date ?? "дата не указана";
-  const place = profile?.place_label ?? fallback?.place.label ?? "место не указано";
-  return `${date} · ${place}`;
-}
-
-const rashiNames = [
-  "Mesha",
-  "Vrishabha",
-  "Mithuna",
-  "Karka",
-  "Simha",
-  "Kanya",
-  "Tula",
-  "Vrishchika",
-  "Dhanu",
-  "Makara",
-  "Kumbha",
-  "Meena",
-];
-
-const southIndianSignCells: Record<number, { row: number; col: number }> = {
-  11: { row: 0, col: 0 },
-  0: { row: 0, col: 1 },
-  1: { row: 0, col: 2 },
-  2: { row: 0, col: 3 },
-  10: { row: 1, col: 0 },
-  3: { row: 1, col: 3 },
-  9: { row: 2, col: 0 },
-  4: { row: 2, col: 3 },
-  8: { row: 3, col: 0 },
-  7: { row: 3, col: 1 },
-  6: { row: 3, col: 2 },
-  5: { row: 3, col: 3 },
+const categoryLabels: Record<RelationshipTypeDefinition["category"], string> = {
+  family: "Семья",
+  romantic: "Отношения",
+  business: "Дело",
+  work: "Работа",
+  education: "Обучение",
+  social: "Социум",
+  conflict: "Конфликт",
+  custom: "Своя связь",
 };
 
-function bodyLabel(body: string | null | undefined): string {
-  const labels: Record<string, string> = {
-    Surya: "Su",
-    Chandra: "Mo",
-    Mangala: "Ma",
-    Budha: "Me",
-    Guru: "Ju",
-    Shukra: "Ve",
-    Shani: "Sa",
-    Rahu: "Ra",
-    Ketu: "Ke",
-    Lagna: "As",
-    Ascendant: "As",
-  };
-  return body ? labels[body] ?? body : "-";
+const roleLabels: Record<string, string> = {
+  father: "отец",
+  mother: "мать",
+  parent: "родитель",
+  child: "ребёнок",
+  elder_sibling: "старший",
+  younger_sibling: "младший",
+  sibling: "родственник",
+  spouse: "супруг",
+  romantic_partner: "партнёр",
+  business_partner: "партнёр",
+  boss: "руководитель",
+  subordinate: "подчинённый",
+  colleague: "коллега",
+  guru: "наставник",
+  student: "ученик",
+  friend: "друг",
+  opponent: "оппонент",
+  client: "клиент",
+  supplier: "поставщик",
+  custom: "роль",
+};
+
+const backendRoleByRecipe: Record<string, string> = {
+  father_child: "father",
+  mother_child: "mother",
+  parent_child: "father",
+  elder_younger_sibling: "sibling",
+  siblings: "sibling",
+  spouses: "partner",
+  romantic_partners: "partner",
+  business_partners: "partner",
+  boss_subordinate: "boss",
+  colleagues: "other",
+  guru_student: "other",
+  friends: "other",
+  opponents: "opponent",
+  client_supplier: "other",
+  custom: "other",
+};
+
+const calculationLabels: Record<string, string> = {
+  "varga.D1": "D1",
+  "varga.D3": "D3",
+  "varga.D7": "D7",
+  "varga.D9": "D9",
+  "varga.D10": "D10",
+  "varga.D12": "D12",
+  "varga.D20": "D20",
+  "varga.D60": "D60",
+  "dasha.vimshottari": "Вимшоттари",
+  "transits.current": "Транзиты",
+};
+
+function profileTitle(profile: ChartProfile | null): string {
+  return profile?.display_name ?? "Карта";
 }
 
-function normalizeRashiIndex(value: number | null | undefined): number | null {
-  if (typeof value !== "number" || Number.isNaN(value)) return null;
-  if (value >= 0 && value <= 11) return value;
-  if (value >= 1 && value <= 12) return value - 1;
-  return null;
+function profileMeta(profile: ChartProfile | null): string {
+  if (!profile) return "Не выбрана";
+  const place = profile.place?.label ?? profile.place?.name ?? "место не указано";
+  return `${profile.birth_date} · ${place}`;
 }
 
-function rashiIndexFromName(name: string | null | undefined): number | null {
-  if (!name) return null;
-  const normalized = name.trim().toLowerCase();
-  const index = rashiNames.findIndex((item) => item.toLowerCase() === normalized);
-  return index >= 0 ? index : null;
+function getVisibleRecipes(mode: RelationshipUiMode): RelationshipRecipe[] {
+  return listRelationshipRecipes().filter((recipe) => {
+    if (!(recipe.status !== "disabled")) return false;
+    if (mode !== "astrologer" && !(recipe.status !== "draft")) return false;
+    return recipe.visibleInModes.includes(mode);
+  });
 }
 
-function placementSignIndex(placement: Pick<GrahaPosition, "rashi" | "rashi_index"> | { rashi: string; rashi_index?: number }): number | null {
-  return normalizeRashiIndex(placement.rashi_index) ?? rashiIndexFromName(placement.rashi);
+function hasD60(focus: RecipeFocus): boolean {
+  return [...focus.primaryEntityIds, ...focus.secondaryEntityIds, ...focus.requiredCalculationIds, ...focus.optionalCalculationIds].includes("varga.D60");
 }
 
-function placementLine(placement: GrahaPosition | null | undefined): string {
-  if (!placement) return "-";
-  return `${bodyLabel(placement.body)} · ${placement.rashi} ${placement.nakshatra ?? ""} ${placement.pada ?? ""}`.trim();
-}
-
-function moon(chart: BirthChart | null): GrahaPosition | null {
-  return chart?.grahas.find((graha) => graha.body === "Chandra") ?? null;
-}
-
-function houseLine(chart: BirthChart | null, house: string): string {
-  const item = chart?.houses?.find((row) => String(row.house) === house);
-  return item?.rashi ?? "-";
-}
-
-function chartVarga(chart: BirthChart | null, code: string): VargaChart | null {
-  if (!chart || code === "D1") return null;
-  return chart.vargas?.[code] ?? null;
-}
-
-function InteractionMiniChart({ chart, code }: { chart: BirthChart | null; code: string }) {
-  const varga = chartVarga(chart, code);
-  const bySign = new Map<number, string[]>();
-  let lagnaIndex: number | null = null;
-
-  if (chart && code === "D1") {
-    lagnaIndex = chart.ascendant ? placementSignIndex(chart.ascendant) : null;
-    if (lagnaIndex !== null) bySign.set(lagnaIndex, ["As"]);
-    for (const graha of chart.grahas) {
-      const signIndex = placementSignIndex(graha);
-      if (signIndex === null) continue;
-      bySign.set(signIndex, [...(bySign.get(signIndex) ?? []), bodyLabel(graha.body)]);
-    }
-  } else if (varga) {
-    for (const placement of varga.placements) {
-      const signIndex = placementSignIndex(placement);
-      if (signIndex === null) continue;
-      const label = bodyLabel(placement.body);
-      if (label === "As") lagnaIndex = signIndex;
-      bySign.set(signIndex, [...(bySign.get(signIndex) ?? []), label]);
-    }
-  }
-
-  return (
-    <div className="compatibility-mini-rashi-grid" aria-label={`${code}: мини-карта`}>
-      {Array.from({ length: 16 }, (_, cellIndex) => {
-        const row = Math.floor(cellIndex / 4);
-        const col = cellIndex % 4;
-        const signIndexEntry = Object.entries(southIndianSignCells).find(([, cell]) => cell.row === row && cell.col === col);
-        if (!signIndexEntry) return <div className="compatibility-mini-rashi-center" key={`center-${cellIndex}`} />;
-        const signIndex = Number(signIndexEntry[0]);
-        const labels = bySign.get(signIndex) ?? [];
-        return (
-          <div className={lagnaIndex === signIndex ? "compatibility-mini-rashi-cell active" : "compatibility-mini-rashi-cell"} key={`${code}-${signIndex}`}>
-            <span>{signIndex + 1}</span>
-            {labels.slice(0, 3).map((label) => (
-              <strong key={`${code}-${signIndex}-${label}`}>{label}</strong>
-            ))}
-            {labels.length > 3 ? <em>+{labels.length - 3}</em> : null}
-          </div>
-        );
-      })}
-    </div>
+function hasMissingSource(recipe: RelationshipRecipe): boolean {
+  return [recipe.perspectiveAtoB, recipe.perspectiveBtoA, recipe.mutualFocus].some((focus) =>
+    focus.warnings.some((warning) => warning.type === "missing_source"),
   );
 }
 
-function InteractionChartBoard({ chart, role }: { chart: BirthChart | null; role: InteractionRole }) {
-  const codes = Array.from(new Set(["D1", ...role.vargas])).slice(0, 4);
-  return (
-    <div className="compatibility-mini-chart-board" aria-label="Мини-карты для роли взаимодействия">
-      {codes.map((code) => (
-        <div className="compatibility-mini-chart-card" key={`interaction-mini-${code}`}>
-          <div>
-            <strong>{code}</strong>
-            <span>{code === "D1" ? "основа" : chart?.vargas?.[code]?.name ?? "роль"}</span>
-          </div>
-          {chart ? <InteractionMiniChart chart={chart} code={code} /> : <small>Нажмите «Загрузить карты»</small>}
-        </div>
-      ))}
-    </div>
+function hasBirthTimeWarning(recipe: RelationshipRecipe): boolean {
+  return [recipe.perspectiveAtoB, recipe.perspectiveBtoA, recipe.mutualFocus].some((focus) =>
+    focus.warnings.some((warning) => warning.type === "birth_time_accuracy" || warning.type === "expert_only"),
   );
 }
 
-function friendlyLoadError(error: unknown): string {
-  const message = error instanceof Error ? error.message : "";
-  if (/Unexpected token|JSON|API returned|fetch|network/i.test(message)) {
-    return "Не удалось загрузить сохранённые связи. Обновите страницу.";
-  }
-  return message || "Не удалось загрузить взаимодействия";
+function labelCalculation(id: string): string {
+  return calculationLabels[id] ?? id.replace("varga.", "");
+}
+
+function RelationshipFactorChip({ factorId, mode }: { factorId: RelationshipFactorId; mode: RelationshipUiMode }) {
+  const factor = getRelationshipFactor(factorId);
+  return (
+    <span className="relationship-factor-chip" title={mode === "astrologer" ? factorId : undefined}>
+      {factor?.label.ru ?? factor?.label.en ?? "Фактор"}
+    </span>
+  );
+}
+
+function RecipeFocusPanel({
+  activeEntityId,
+  focus,
+  mode,
+  onSelectEntity,
+  title,
+}: {
+  activeEntityId: EntityId | null;
+  focus: RecipeFocus;
+  mode: RelationshipUiMode;
+  onSelectEntity: (entityId: EntityId) => void;
+  title: string;
+}) {
+  const primary = focus.primaryEntityIds.filter((entityId) => mode === "astrologer" || entityId !== "varga.D60");
+  const secondary = focus.secondaryEntityIds.filter((entityId) => mode === "astrologer" || entityId !== "varga.D60");
+  const required = focus.requiredCalculationIds.filter((id) => mode === "astrologer" || id !== "varga.D60");
+  const optional = focus.optionalCalculationIds.filter((id) => mode === "astrologer" || id !== "varga.D60");
+  const d60Hidden = mode !== "astrologer" && hasD60(focus);
+
+  return (
+    <section className="interaction-layer">
+      <h3>{title}</h3>
+      <ChipRow label="Главные точки">
+        {primary.map((entityId) => (
+          <EntityChip key={entityId} entityId={entityId} active={activeEntityId === entityId} onSelect={onSelectEntity} />
+        ))}
+      </ChipRow>
+      <ChipRow label="Дополнительно">
+        {secondary.map((entityId) => (
+          <EntityChip key={entityId} entityId={entityId} active={activeEntityId === entityId} onSelect={onSelectEntity} />
+        ))}
+      </ChipRow>
+      <ChipRow label="Факторы">
+        {focus.relationshipFactorIds.map((factorId) => (
+          <RelationshipFactorChip key={factorId} factorId={factorId} mode={mode} />
+        ))}
+      </ChipRow>
+      <ChipRow label="Расчёты">
+        {[...required, ...optional].map((id) => (
+          <span key={id} className="calculation-chip">
+            {labelCalculation(id)}
+          </span>
+        ))}
+      </ChipRow>
+      {d60Hidden ? <p className="interaction-muted">Есть экспертные дополнительные факторы в режиме астролога.</p> : null}
+    </section>
+  );
+}
+
+function ChipRow({ children, label }: { children: ReactNode; label: string }) {
+  const childArray = Array.isArray(children) ? children.filter(Boolean) : children;
+  const isEmpty = Array.isArray(childArray) ? childArray.length === 0 : !childArray;
+
+  return (
+    <div className="interaction-chip-row">
+      <span>{label}</span>
+      <div>{isEmpty ? <em>не задано</em> : childArray}</div>
+    </div>
+  );
 }
 
 export default function InteractionsPage() {
+  const [mode, setMode] = useState<RelationshipUiMode>("novice");
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
   const [relationships, setRelationships] = useState<ChartProfileRelationship[]>([]);
-  const [status, setStatus] = useState("Загружаю сохранённые карты и связи...");
-  const [baseProfileId, setBaseProfileId] = useState("");
-  const [relatedProfileId, setRelatedProfileId] = useState("");
-  const [roleKey, setRoleKey] = useState("partner");
-  const [requestedUsername, setRequestedUsername] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [incomingRequests, setIncomingRequests] = useState<ChartProfileRelationship[]>([]);
-  const [acceptedProfileIds, setAcceptedProfileIds] = useState<Record<number, string>>({});
-  const [previewCalculations, setPreviewCalculations] = useState<Record<number, ChartCalculationRecord>>({});
-  const [previewChartStatus, setPreviewChartStatus] = useState("Карты загрузятся после сохранения связи.");
-  const [loadingPreviewCharts, setLoadingPreviewCharts] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [profileAId, setProfileAId] = useState<number | null>(null);
+  const [profileBId, setProfileBId] = useState<number | null>(null);
+  const [recipeId, setRecipeId] = useState("father_child");
+  const [direction, setDirection] = useState<Direction>("a_to_b");
+  const [note, setNote] = useState("");
+  const [activeEntityId, setActiveEntityId] = useState<EntityId | null>(null);
+  const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const recipes = useMemo(() => getVisibleRecipes(mode), [mode]);
+  const selectedRecipe = useMemo(() => recipes.find((recipe) => recipe.id === recipeId) ?? recipes[0], [recipeId, recipes]);
+  const relationshipType = selectedRecipe ? getRelationshipType(selectedRecipe.relationshipTypeId) : null;
+  const profileA = profiles.find((profile) => profile.id === profileAId) ?? null;
+  const profileB = profiles.find((profile) => profile.id === profileBId) ?? null;
+  const canSave = Boolean(profileAId && profileBId && profileAId !== profileBId && selectedRecipe);
 
   useEffect(() => {
-    let mounted = true;
-    const reloadOnAuthChanged = () => window.location.reload();
-    window.addEventListener("jyotish-auth-changed", reloadOnAuthChanged);
+    let cancelled = false;
 
-    fetchCurrentUser()
-      .then((user) => {
-        if (!mounted) return null;
-        setAuthChecked(true);
-        setNeedsAuth(!user);
+    async function load() {
+      try {
+        const user = await fetchCurrentUser();
         if (!user) {
-          setStatus("");
-          return null;
+          if (!cancelled) {
+            setNeedsAuth(true);
+            setStatus("Войдите, чтобы видеть только свои связи.");
+          }
+          return;
         }
-        return Promise.all([listChartProfiles(), listChartProfileRelationships(), listIncomingChartProfileRelationshipRequests()]);
-      })
-      .then((result) => {
-        if (!result) return;
-        const [profileResult, relationshipResult, incomingResult] = result;
-        if (!mounted) return;
-        setProfiles(profileResult);
-        setRelationships(relationshipResult);
-        setIncomingRequests(incomingResult);
-        const first = profileResult[0]?.id ? String(profileResult[0].id) : "";
-        const second = profileResult.find((profile) => String(profile.id) !== first)?.id;
-        setBaseProfileId((current) => current || first);
-        setRelatedProfileId((current) => current || (second ? String(second) : ""));
-        setAcceptedProfileIds((current) => {
-          const fallback = first;
-          return Object.fromEntries(
-            incomingResult.map((request) => [
-              request.id,
-              current[request.id] && profileResult.some((profile) => String(profile.id) === current[request.id])
-                ? current[request.id]
-                : fallback,
-            ]),
-          );
-        });
-        setStatus(
-          relationshipResult.length || incomingResult.length
-            ? `${relationshipResult.length} связей, ${incomingResult.length} входящих запросов`
-            : "Связей пока нет: задайте роль человеку в сохранённых картах.",
-        );
-      })
-      .catch((error) => {
-        if (!mounted) return;
-        setAuthChecked(true);
-        setStatus(friendlyLoadError(error));
-      });
+
+        const [profileList, relationshipList] = await Promise.all([listChartProfiles(), listChartProfileRelationships()]);
+        if (cancelled) return;
+        setProfiles(profileList);
+        setRelationships(relationshipList);
+        setProfileAId((current) => current ?? profileList[0]?.id ?? null);
+        setProfileBId((current) => current ?? profileList.find((profile) => profile.id !== profileList[0]?.id)?.id ?? null);
+        setStatus(profileList.length < 2 ? "Для экрана нужны минимум две сохранённые карты." : "Выберите карты и тип связи.");
+      } catch (error) {
+        if (!cancelled) {
+          setStatus(error instanceof Error ? error.message : "Не удалось загрузить взаимодействия.");
+        }
+      }
+    }
+
+    load();
     return () => {
-      mounted = false;
-      window.removeEventListener("jyotish-auth-changed", reloadOnAuthChanged);
+      cancelled = true;
     };
   }, []);
 
-  const profileById = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile])), [profiles]);
-  const visibleRelationships = relationships.filter((relationship) => !["declined", "blocked"].includes(relationship.link_status));
-  const canCreateRelationship = Boolean(baseProfileId && relatedProfileId && baseProfileId !== relatedProfileId && !saving);
-  const selectedRole = roleFor(roleKey);
-  const selectedBaseProfile = baseProfileId ? profileById.get(Number(baseProfileId)) : undefined;
-  const selectedRelatedProfile = relatedProfileId ? profileById.get(Number(relatedProfileId)) : undefined;
-  const selectedExistingRelationship = visibleRelationships.find(
-    (relationship) =>
-      String(relationship.profile_id) === baseProfileId &&
-      String(relationship.related_profile_id) === relatedProfileId,
-  );
-  const selectedBaseChart = selectedExistingRelationship ? previewCalculations[selectedExistingRelationship.profile_id]?.result ?? null : null;
-  const selectedRelatedChart = selectedExistingRelationship ? previewCalculations[selectedExistingRelationship.related_profile_id]?.result ?? null : null;
-  const showStatus = !needsAuth && /ошиб|не удалось|войдите|сервис|выберите/i.test(status);
-  const showPreviewStatus = /ошиб|не удалось|сервис/i.test(previewChartStatus);
+  useEffect(() => {
+    if (!selectedRecipe && recipes[0]) setRecipeId(recipes[0].id);
+  }, [recipes, selectedRecipe]);
 
-  async function refreshRelationships() {
-    const [relationshipResult, incomingResult] = await Promise.all([
-      listChartProfileRelationships(),
-      listIncomingChartProfileRelationshipRequests(),
-    ]);
-    setRelationships(relationshipResult);
-    setIncomingRequests(incomingResult);
-    setStatus(
-      relationshipResult.length || incomingResult.length
-        ? `${relationshipResult.length} связей, ${incomingResult.length} входящих запросов`
-        : "Связей пока нет: задайте роль человеку в сохранённых картах.",
-    );
+  function swapProfiles() {
+    setProfileAId(profileBId);
+    setProfileBId(profileAId);
+    setDirection((current) => (current === "a_to_b" ? "b_to_a" : "a_to_b"));
   }
 
-  async function handleCreateRelationship() {
-    if (!canCreateRelationship) return;
+  async function saveRelationship() {
+    if (!canSave || !selectedRecipe || !profileAId || !profileBId) return;
     setSaving(true);
     setStatus("Сохраняю связь...");
     try {
-      await upsertChartProfileRelationship({
-        profile_id: Number(baseProfileId),
-        related_profile_id: Number(relatedProfileId),
-        role: roleKey,
-        ...(requestedUsername.trim() ? { requested_username: requestedUsername.trim() } : {}),
+      const relationship = await upsertChartProfileRelationship({
+        profile_id: profileAId,
+        related_profile_id: profileBId,
+        role: backendRoleByRecipe[selectedRecipe.id] ?? "other",
+        notes: note,
+        metadata: {
+          relationshipTypeId: selectedRecipe.relationshipTypeId,
+          direction,
+        },
       });
-      setRequestedUsername("");
-      await refreshRelationships();
-      setStatus(requestedUsername.trim() ? "Запрос на связь отправлен." : "Личная связь сохранена.");
+      setRelationships((current) => [relationship, ...current.filter((item) => item.id !== relationship.id)]);
+      setStatus("Связь сохранена.");
     } catch (error) {
-      setStatus(friendlyLoadError(error));
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить связь.");
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleIncomingAction(relationshipId: number, action: "accept" | "decline" | "block") {
-    const acceptedProfileId = Number(acceptedProfileIds[relationshipId]);
-    if (action === "accept" && !acceptedProfileId) {
-      setStatus("Выберите свою карту для подтверждения связи.");
-      return;
-    }
-    setSaving(true);
-    setStatus(action === "accept" ? "Подтверждаю связь..." : "Обновляю запрос...");
-    try {
-      await updateChartProfileRelationshipRequest(relationshipId, action, action === "accept" ? acceptedProfileId : undefined);
-      await refreshRelationships();
-      setStatus(action === "accept" ? "Связь подтверждена." : action === "decline" ? "Запрос отклонён." : "Пользователь заблокирован.");
-    } catch (error) {
-      setStatus(friendlyLoadError(error));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleLoadPreviewCharts() {
-    if (!selectedExistingRelationship || loadingPreviewCharts) return;
-    setLoadingPreviewCharts(true);
-    setPreviewChartStatus("Загружаю расчёты двух карт...");
-    try {
-      const [base, related] = await Promise.all([
-        previewCalculations[selectedExistingRelationship.profile_id]
-          ? Promise.resolve(previewCalculations[selectedExistingRelationship.profile_id])
-          : calculateSavedProfile(selectedExistingRelationship.profile_id),
-        previewCalculations[selectedExistingRelationship.related_profile_id]
-          ? Promise.resolve(previewCalculations[selectedExistingRelationship.related_profile_id])
-          : calculateSavedProfile(selectedExistingRelationship.related_profile_id),
-      ]);
-      setPreviewCalculations((current) => ({
-        ...current,
-        [selectedExistingRelationship.profile_id]: base,
-        [selectedExistingRelationship.related_profile_id]: related,
-      }));
-      setPreviewChartStatus("Карты загружены: можно смотреть D1 и D-карты по выбранной роли.");
-    } catch (error) {
-      setPreviewChartStatus(friendlyLoadError(error));
-    } finally {
-      setLoadingPreviewCharts(false);
     }
   }
 
   return (
     <ProductShell active="interactions">
-      {showStatus ? <div className="product-status">{status}</div> : null}
+      <header className="product-page-head">
+        <div>
+          <h1>Взаимодействия</h1>
+          <p>Выберите две сохранённые карты и тип связи. Разбор AI здесь не запускается.</p>
+        </div>
+        <div className="interaction-mode-toggle" aria-label="Режим просмотра">
+          <button type="button" className={mode === "novice" ? "active" : ""} onClick={() => setMode("novice")}>
+            Новичок
+          </button>
+          <button type="button" className={mode === "astrologer" ? "active" : ""} onClick={() => setMode("astrologer")}>
+            Астролог
+          </button>
+        </div>
+      </header>
 
-      {authChecked && needsAuth ? (
-        <section className="history-empty private-history-gate">
-          <span>Войдите для доступа.</span>
+      <p className="interaction-status-line">{status}</p>
+
+      {needsAuth ? (
+        <section className="interaction-empty panel">
+          <h2>Нужен вход</h2>
+          <p>После входа здесь будут доступны только ваши сохранённые карты и связи.</p>
         </section>
-      ) : null}
+      ) : (
+        <section className="interaction-workspace" aria-label="Рабочее место взаимодействий">
+          <aside className="interaction-type-list panel" aria-label="Типы связей">
+            <h2>Тип связи</h2>
+            {recipes.map((recipe) => {
+              const type = getRelationshipType(recipe.relationshipTypeId);
+              if (!type) return null;
+              return (
+                <button
+                  key={recipe.id}
+                  type="button"
+                  className={recipe.id === selectedRecipe?.id ? "interaction-type-card active" : "interaction-type-card"}
+                  onClick={() => setRecipeId(recipe.id)}
+                >
+                  <strong>{recipe.label.ru}</strong>
+                  <span>
+                    {categoryLabels[type.category]} · {type.symmetric ? "симметричная" : "направленная"}
+                  </span>
+                  {mode === "astrologer" ? <em>{recipe.status}</em> : null}
+                </button>
+              );
+            })}
+          </aside>
 
-      {!needsAuth && incomingRequests.length ? (
-        <section className="profile-relationship-inbox" aria-label="Входящие запросы на связь">
-          <strong>Входящие запросы на подтверждение связи</strong>
-          {incomingRequests.map((request) => {
-            const role = roleFor(request.role);
-            return (
-              <div className="profile-relationship-request" key={request.id}>
-                <div>
-                  <span>{request.user?.username ?? "Пользователь"} просит подтвердить связь</span>
-                  <strong>{profileLabel(request.profile)} → {profileLabel(request.related_profile)}</strong>
-                  <small>{role.label} · {request.profile?.birth_date ?? ""}</small>
+          <section className="interaction-setup-panel panel">
+            <h2>Настройка</h2>
+            {profiles.length < 2 ? (
+              <div className="interaction-empty">
+                <strong>Нужны минимум две карты.</strong>
+                <p>Создайте или сохраните вторую карту, чтобы сравнивать взаимодействие людей.</p>
+                <div className="interaction-actions">
+                  <Link href="/charts/new">Создать карту</Link>
+                  <Link href="/charts">Кабинет карт</Link>
                 </div>
+              </div>
+            ) : (
+              <>
                 <label>
-                  Моя карта
-                  <select
-                    value={acceptedProfileIds[request.id] ?? ""}
-                    onChange={(event) =>
-                      setAcceptedProfileIds((current) => ({
-                        ...current,
-                        [request.id]: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Выберите</option>
+                  Карта A
+                  <select value={profileAId ?? ""} onChange={(event) => setProfileAId(Number(event.target.value))}>
                     {profiles.map((profile) => (
-                      <option value={String(profile.id)} key={`incoming-${request.id}-${profile.id}`}>
+                      <option key={profile.id} value={profile.id} disabled={profile.id === profileBId}>
                         {profile.display_name}
                       </option>
                     ))}
                   </select>
                 </label>
-                <button type="button" className="secondary-button" disabled={saving} onClick={() => handleIncomingAction(request.id, "accept")}>
-                  Принять
-                </button>
-                <button type="button" className="secondary-button" disabled={saving} onClick={() => handleIncomingAction(request.id, "decline")}>
-                  Отклонить
-                </button>
-                <button type="button" className="secondary-button" disabled={saving} onClick={() => handleIncomingAction(request.id, "block")}>
-                  Заблокировать
-                </button>
-              </div>
-            );
-          })}
-        </section>
-      ) : null}
+                <small>{profileMeta(profileA)}</small>
 
-      {!needsAuth ? (
-      <section id="new-interaction" className={`interaction-create-panel${createOpen ? " open" : ""}`} aria-label="Создать взаимодействие">
-        <div>
-          <h2>Новая связь</h2>
-          <button type="button" className="secondary-button" onClick={() => setCreateOpen((value) => !value)}>
-            {createOpen ? "Скрыть" : "Выбрать карты"}
-          </button>
-        </div>
-        {createOpen ? (
-          <>
-            <label>
-              Базовая карта
-              <select value={baseProfileId} onChange={(event) => setBaseProfileId(event.target.value)}>
-                <option value="">Выберите карту</option>
-                {profiles.map((profile) => (
-                  <option value={String(profile.id)} key={`base-${profile.id}`}>
-                    {profile.display_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Второй человек
-              <select value={relatedProfileId} onChange={(event) => setRelatedProfileId(event.target.value)}>
-                <option value="">Выберите карту</option>
-                {profiles
-                  .filter((profile) => String(profile.id) !== baseProfileId)
-                  .map((profile) => (
-                    <option value={String(profile.id)} key={`related-${profile.id}`}>
-                      {profile.display_name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <label>
-              Роль
-              <select value={roleKey} onChange={(event) => setRoleKey(event.target.value)}>
-                {interactionRoles.map((role) => (
-                  <option value={role.key} key={`role-${role.key}`}>
-                    {role.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Логин для подтверждения
-              <input
-                value={requestedUsername}
-                onChange={(event) => setRequestedUsername(event.target.value)}
-                placeholder="необязательно"
-              />
-            </label>
-            <button type="button" className="primary-link-button" disabled={!canCreateRelationship} onClick={handleCreateRelationship}>
-              {saving ? "Сохраняю..." : requestedUsername.trim() ? "Отправить запрос" : "Сохранить связь"}
-            </button>
-          </>
-        ) : null}
-      </section>
-      ) : null}
+                <label>
+                  Карта B
+                  <select value={profileBId ?? ""} onChange={(event) => setProfileBId(Number(event.target.value))}>
+                    {profiles.map((profile) => (
+                      <option key={profile.id} value={profile.id} disabled={profile.id === profileAId}>
+                        {profile.display_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <small>{profileMeta(profileB)}</small>
 
-      {!needsAuth && selectedExistingRelationship ? (
-      <section className="interaction-pair-preview" aria-label="Предпросмотр парного разбора">
-        <div className="interaction-pair-preview-head">
-          <div>
-            <span>Предпросмотр разбора</span>
-            <strong>{selectedRole.label}: две карты в одном контексте</strong>
-          </div>
-          {selectedExistingRelationship ? (
-            <div className="interaction-actions">
-              <button type="button" className="secondary-button" disabled={loadingPreviewCharts} onClick={handleLoadPreviewCharts}>
-                {loadingPreviewCharts ? "Загружаю..." : "Загрузить карты"}
-              </button>
-              <a className="secondary-button" href={`/compatibility/pair/${selectedExistingRelationship.id}`}>
-                Открыть пару
-              </a>
-              <a className="primary-link-button" href={`/?analysis=compatibility&relationship=${selectedExistingRelationship.id}#reports`}>
-                Открыть разбор
-              </a>
+                <label>
+                  Тип связи
+                  <select value={selectedRecipe?.id ?? ""} onChange={(event) => setRecipeId(event.target.value)}>
+                    {recipes.map((recipe) => (
+                      <option key={recipe.id} value={recipe.id}>
+                        {recipe.label.ru}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {relationshipType && !relationshipType.symmetric ? (
+                  <div className="interaction-direction">
+                    <span>Направление</span>
+                    <button type="button" className={direction === "a_to_b" ? "active" : ""} onClick={() => setDirection("a_to_b")}>
+                      A как {roleLabels[relationshipType.roleA] ?? relationshipType.roleA}
+                    </button>
+                    <button type="button" className={direction === "b_to_a" ? "active" : ""} onClick={() => setDirection("b_to_a")}>
+                      B как {roleLabels[relationshipType.roleA] ?? relationshipType.roleA}
+                    </button>
+                  </div>
+                ) : null}
+
+                <button type="button" className="secondary-button" onClick={swapProfiles}>
+                  Поменять карты местами
+                </button>
+
+                <label>
+                  Заметка
+                  <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Короткий контекст связи" />
+                </label>
+
+                <button type="button" className="primary-button" disabled={!canSave || saving} onClick={saveRelationship}>
+                  {saving ? "Сохраняю..." : "Сохранить связь"}
+                </button>
+              </>
+            )}
+
+            <div className="interaction-saved-list">
+              <h3>Сохранённые связи</h3>
+              {relationships.length ? (
+                relationships.slice(0, 6).map((relationship) => (
+                  <div key={relationship.id} className="interaction-saved-row">
+                    <strong>{relationship.profile?.display_name ?? "Карта"}</strong>
+                    <span>{relationship.related_profile?.display_name ?? "Связанная карта"}</span>
+                    <em>{relationship.link_status}</em>
+                  </div>
+                ))
+              ) : (
+                <p>Связей пока нет.</p>
+              )}
             </div>
-          ) : (
-            <em>Сначала сохраните связь</em>
-          )}
-        </div>
-        {selectedExistingRelationship && showPreviewStatus ? <div className="product-status">{previewChartStatus}</div> : null}
-        <div className="interaction-pair-preview-grid">
-          {selectedExistingRelationship ? (
-          <div>
-            <span>Ракурс</span>
-            <strong>{selectedRole.label}</strong>
-          </div>
-          ) : (
-            <>
-              <div>
-                <span>Карта A</span>
-                <strong>{selectedBaseProfile?.display_name ?? "Выберите базовую карту"}</strong>
-                <small>{selectedBaseProfile ? profileMeta(null, selectedBaseProfile) : ""}</small>
-              </div>
-              <div>
-                <span>Карта B</span>
-                <strong>{selectedRelatedProfile?.display_name ?? "Выберите второго человека"}</strong>
-                <small>{selectedRelatedProfile ? profileMeta(null, selectedRelatedProfile) : ""}</small>
-              </div>
-            </>
-          )}
-          <div>
-            <span>Дома</span>
-            <strong>{houseList(selectedRole.houses)}</strong>
-          </div>
-          <div>
-            <span>D-карты</span>
-            <strong>{vargaList(selectedRole.vargas)}</strong>
-          </div>
-        </div>
-        {selectedExistingRelationship ? (
-          <div className="compatibility-context-grid interaction-preview-chart-grid" aria-label="Карты выбранного взаимодействия">
-            <article className="compatibility-person-card">
-              <div>
-                <span>Карта A</span>
-                <strong>{selectedBaseProfile?.display_name ?? profileLabel(selectedExistingRelationship.profile)}</strong>
-                <small>{selectedBaseProfile ? profileMeta(null, selectedBaseProfile) : profileMeta(selectedExistingRelationship.profile)}</small>
-              </div>
-              <dl className="compatibility-person-facts">
-                <div>
-                  <dt>Лагна</dt>
-                  <dd>{placementLine(selectedBaseChart?.ascendant)}</dd>
-                </div>
-                <div>
-                  <dt>Луна</dt>
-                  <dd>{placementLine(moon(selectedBaseChart))}</dd>
-                </div>
-                {selectedRole.houses.slice(0, 4).map((house) => (
-                  <div key={`interaction-base-house-${house}`}>
-                    <dt>{house} дом</dt>
-                    <dd>{houseLine(selectedBaseChart, house)}</dd>
-                  </div>
-                ))}
-              </dl>
-              <InteractionChartBoard chart={selectedBaseChart} role={selectedRole} />
-            </article>
-            <article className="compatibility-person-card">
-              <div>
-                <span>Карта B</span>
-                <strong>{selectedRelatedProfile?.display_name ?? profileLabel(selectedExistingRelationship.related_profile)}</strong>
-                <small>{selectedRelatedProfile ? profileMeta(null, selectedRelatedProfile) : profileMeta(selectedExistingRelationship.related_profile)}</small>
-              </div>
-              <dl className="compatibility-person-facts">
-                <div>
-                  <dt>Лагна</dt>
-                  <dd>{placementLine(selectedRelatedChart?.ascendant)}</dd>
-                </div>
-                <div>
-                  <dt>Луна</dt>
-                  <dd>{placementLine(moon(selectedRelatedChart))}</dd>
-                </div>
-                {selectedRole.houses.slice(0, 4).map((house) => (
-                  <div key={`interaction-related-house-${house}`}>
-                    <dt>{house} дом</dt>
-                    <dd>{houseLine(selectedRelatedChart, house)}</dd>
-                  </div>
-                ))}
-              </dl>
-              <InteractionChartBoard chart={selectedRelatedChart} role={selectedRole} />
-            </article>
-          </div>
-        ) : null}
-      </section>
-      ) : null}
+          </section>
 
-      {!needsAuth && visibleRelationships.length ? (
-        <section className="interaction-list" aria-label="Сохранённые взаимодействия">
-          {visibleRelationships.map((relationship) => {
-            const role = roleFor(relationship.role);
-            const baseProfile = profileById.get(relationship.profile_id);
-            const relatedProfile = profileById.get(relationship.related_profile_id);
-            return (
-              <article className="interaction-card" key={relationship.id}>
-                <div className="interaction-card-head">
+          <section className="interaction-preview-panel panel">
+            {selectedRecipe && relationshipType ? (
+              <>
+                <div className="interaction-preview-head">
                   <div>
-                    <span>{role.label}</span>
-                    <strong>
-                      {profileLabel(relationship.profile, baseProfile)} → {profileLabel(relationship.related_profile, relatedProfile)}
-                    </strong>
-                    <small>
-                      {profileMeta(relationship.profile, baseProfile)} / {profileMeta(relationship.related_profile, relatedProfile)}
-                    </small>
+                    <span>Recipe preview</span>
+                    <h2>{selectedRecipe.label.ru}</h2>
+                    <p>
+                      {profileTitle(profileA)} ↔ {profileTitle(profileB)}
+                    </p>
                   </div>
-                  <StatusTerm status={relationship.link_status} />
+                  <em>{relationshipType.symmetric ? "симметричная" : direction === "a_to_b" ? "A → B" : "B → A"}</em>
                 </div>
-                <div className="interaction-actions">
-                  <a className="secondary-button" href={`/compatibility/pair/${relationship.id}`}>
-                    Открыть пару
-                  </a>
-                  <a className="primary-link-button" href={`/?analysis=compatibility&relationship=${relationship.id}#reports`}>
-                    Открыть разбор
-                  </a>
-                </div>
-              </article>
-            );
-          })}
+
+                <RecipeFocusPanel
+                  title="Перспектива A → B"
+                  focus={selectedRecipe.perspectiveAtoB}
+                  mode={mode}
+                  activeEntityId={activeEntityId}
+                  onSelectEntity={setActiveEntityId}
+                />
+                <RecipeFocusPanel
+                  title="Перспектива B → A"
+                  focus={selectedRecipe.perspectiveBtoA}
+                  mode={mode}
+                  activeEntityId={activeEntityId}
+                  onSelectEntity={setActiveEntityId}
+                />
+                <RecipeFocusPanel
+                  title="Взаимный слой"
+                  focus={selectedRecipe.mutualFocus}
+                  mode={mode}
+                  activeEntityId={activeEntityId}
+                  onSelectEntity={setActiveEntityId}
+                />
+
+                {mode === "astrologer" && hasBirthTimeWarning(selectedRecipe) ? (
+                  <p className="interaction-warning">
+                    D60 требует точного времени рождения и остаётся только дополнительным экспертным фактором.
+                    {[profileA, profileB].some((profile) => profile?.birth_time_accuracy !== "exact") ? " В одной из карт время рождения не точное." : ""}
+                  </p>
+                ) : null}
+
+                {hasMissingSource(selectedRecipe) ? (
+                  <p className="interaction-warning">Часть источников будет подключена отдельным этапом.</p>
+                ) : null}
+
+                <EntityInspector entityId={activeEntityId} onClose={() => setActiveEntityId(null)} />
+              </>
+            ) : (
+              <div className="interaction-empty">
+                <strong>Recipe не выбран.</strong>
+                <p>Выберите тип связи слева.</p>
+              </div>
+            )}
+          </section>
         </section>
-      ) : !needsAuth ? (
-        <section className="history-empty">
-          <strong>Нет сохранённых взаимодействий</strong>
-          <a className="primary-link-button" href="/people">К картам</a>
-        </section>
-      ) : null}
+      )}
     </ProductShell>
   );
 }
