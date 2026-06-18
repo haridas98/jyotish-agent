@@ -1,0 +1,46 @@
+{
+  "request": {
+    "schemaVersion": 1,
+    "reportRecipeId": "personal_overview",
+    "reportRecipeVersion": 1,
+    "reportTypeId": "personal_overview",
+    "mode": "novice",
+    "eligibleItemIds": [
+      "calculation.section.chart_core.personal_overview.calculations.calc.varga.D1",
+      "calculation.section.chart_core.personal_overview.calculations.calc.varga.D9",
+      "calculation.section.chart_core.personal_overview.calculations.calc.vimshottari",
+      "entity.section.chart_core.personal_overview.key_points.graha.MO",
+      "entity.section.chart_core.personal_overview.key_points.graha.SU",
+      "entity.section.chart_core.personal_overview.key_points.house.1"
+    ],
+    "citationChainKeys": [
+      "bphs.graha.mo:passage.bphs.sun_moon.karakatva:source.bphs",
+      "bphs.graha.su:passage.bphs.sun_moon.karakatva:source.bphs",
+      "bphs.house.1:passage.bphs.lagna.general:source.bphs",
+      "jyotish.classical.varga.D1:passage.bphs.varga.sixteen.names:source.bphs",
+      "jyotish.classical.varga.D1:passage.bphs.varga.uses:source.bphs",
+      "jyotish.classical.varga.D9:passage.bphs.varga.sixteen.names:source.bphs",
+      "jyotish.classical.varga.D9:passage.bphs.varga.uses:source.bphs",
+      "vimshottari.sequence:passage.vimshottari.sequence.general:source.bphs"
+    ],
+    "excludedSummary": {
+      "total": 9,
+      "byReason": {
+        "needs_source": 8,
+        "unsupported": 1
+      }
+    }
+  },
+  "response": {
+    "schemaVersion": 1,
+    "provider": "mock",
+    "thesisCount": 6,
+    "firstThesisEvidenceItemIds": [
+      "calculation.section.chart_core.personal_overview.calculations.calc.varga.D1"
+    ],
+    "firstThesisCitationKeys": [
+      "jyotish.classical.varga.D1:passage.bphs.varga.sixteen.names:source.bphs",
+      "jyotish.classical.varga.D1:passage.bphs.varga.uses:source.bphs"
+    ]
+  }
+}
