@@ -18,7 +18,7 @@ from apps.accounts.permissions import PrivateAppAccess
 from apps.calculations.chart import ChartInputError
 from apps.calculations.ephemeris import EphemerisUnavailable
 from apps.calculations.workflows import build_transit_report
-from apps.charts.models import BirthProfile, BirthProfileRelationship, ChartCalculation
+from apps.charts.models import BirthProfile, BirthProfileRelationship, ChartCalculation, ChartRelationship
 from apps.charts.services import calculate_profile_chart, profile_payload
 from apps.interpretations.condition_matrix import shastra_condition_matrix
 from apps.interpretations.evidence_matcher import approve_shastra_condition_evidence, shastra_evidence_payload
@@ -26,6 +26,14 @@ from apps.interpretations.engine import public_interpretation_sections_for_chart
 from apps.interpretations.models import ShastraConditionEvidence
 from apps.sources.citations import combined_citation_search, local_research_corpus_search
 
+from .ai_gateway import (
+    AiGatewayInputError,
+    AiGatewayProviderError,
+    AiProviderTimeout,
+    ensure_rate_limit,
+    execute_ai_report_dry_run,
+    validate_client_payload,
+)
 from .analysis_packet import build_analysis_packet, build_compatibility_analysis_packet
 from .birth_report import compose_birth_report
 from .codex_cli_generation import (
@@ -51,6 +59,59 @@ CHAT_ANALYSIS_KINDS = {
 }
 ALL_HISTORY_KINDS = MAIN_ANALYSIS_KINDS | CHAT_ANALYSIS_KINDS
 CHAT_HISTORY_RECORD_LIMIT = 20
+
+
+class AiReportDryRunView(APIView):
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
+
+    def post(self, request):
+        if not getattr(settings, "AI_REPORTS_ENABLED", False):
+            return Response(status=404)
+
+        content_length = int(request.META.get("CONTENT_LENGTH") or 0)
+        max_bytes = int(getattr(settings, "AI_REPORT_GATEWAY_MAX_REQUEST_BYTES", 2048))
+        if content_length > max_bytes:
+            return Response({"error": "request body is too large"}, status=413)
+
+        try:
+            payload = validate_client_payload(dict(request.data))
+            ensure_rate_limit(request.user.id)
+        except AiGatewayInputError as exc:
+            status_code = 429 if "rate limit" in str(exc) else 400
+            return Response({"error": str(exc)}, status=status_code)
+
+        profile = get_object_or_404(
+            BirthProfile.objects.select_related("place"),
+            id=payload["chart_id"],
+            user=request.user,
+        )
+        relationship = None
+        if payload["relationship_id"] is not None:
+            relationship = get_object_or_404(
+                ChartRelationship.objects.select_related("chart_a", "chart_b"),
+                id=payload["relationship_id"],
+                owner_user=request.user,
+            )
+
+        try:
+            execution = execute_ai_report_dry_run(
+                profile=profile,
+                relationship=relationship,
+                report_type_id=payload["report_type_id"],
+                language=payload["language"],
+                audience=payload["audience"],
+            )
+        except AiProviderTimeout as exc:
+            return Response({"error": str(exc)}, status=504)
+        except AiGatewayProviderError as exc:
+            return Response({"error": str(exc)}, status=502)
+
+        return Response(
+            {
+                "response": execution.response,
+                "metadata": execution.metadata,
+            }
+        )
 
 
 def _cache_digest(data: object) -> str:

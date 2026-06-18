@@ -8,6 +8,7 @@ from .views import (
     AnalysisHistorySlugDetailView,
     AnalysisHistoryView,
     AnalysisUniversalChatView,
+    AiReportDryRunView,
     BirthAnalysisPacketView,
     BirthCodexAnalysisChatView,
     BirthCodexAnalysisView,
@@ -23,6 +24,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path("ai/report-dry-run", AiReportDryRunView.as_view(), name="ai-report-dry-run"),
     path("reports/history", AnalysisHistoryView.as_view(), name="analysis-history"),
     path("reports/history/<int:analysis_id>", AnalysisHistoryDetailView.as_view(), name="analysis-history-detail"),
     path(

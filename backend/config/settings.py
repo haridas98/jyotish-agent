@@ -226,6 +226,11 @@ VL_PUBLIC_BASE_URL = os.getenv("VL_PUBLIC_BASE_URL", "http://127.0.0.1:3001")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.2")
 CODEX_ANALYSIS_PROVIDER = os.getenv("CODEX_ANALYSIS_PROVIDER", "codex_cli").strip().lower()
+AI_REPORTS_ENABLED = env_bool("AI_REPORTS_ENABLED", False)
+AI_PROVIDER = os.getenv("AI_PROVIDER", "mock").strip().lower()
+AI_REPORT_GATEWAY_TIMEOUT_SECONDS = int(os.getenv("AI_REPORT_GATEWAY_TIMEOUT_SECONDS", "15"))
+AI_REPORT_GATEWAY_RATE_LIMIT_PER_MINUTE = int(os.getenv("AI_REPORT_GATEWAY_RATE_LIMIT_PER_MINUTE", "6"))
+AI_REPORT_GATEWAY_MAX_REQUEST_BYTES = int(os.getenv("AI_REPORT_GATEWAY_MAX_REQUEST_BYTES", "2048"))
 JHORA_ACCURACY_REPORT_PATH = os.getenv(
     "JHORA_ACCURACY_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "jhora" / "sterlitamak-1998" / "accuracy-report.json"),
