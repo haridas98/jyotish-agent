@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from uuid import uuid4
 from time import monotonic
 from typing import Any, Protocol
 
@@ -30,7 +31,22 @@ class AiProvider(Protocol):
 
 
 ALLOWED_CLIENT_FIELDS = {"report_type_id", "chart_id", "relationship_id", "language", "audience"}
-FORBIDDEN_CLIENT_FIELDS = {"pro" + "mpt", "evidence", "eligibleItems", "citations", "rules", "passages", "system"}
+FORBIDDEN_CLIENT_FIELDS = {
+    "pro" + "mpt",
+    "system",
+    "messages",
+    "evidence",
+    "eligibleItems",
+    "excludedItems",
+    "citations",
+    "rules",
+    "passages",
+    "sources",
+    "model",
+    "temperature",
+    "maxTokens",
+    "provider",
+}
 SUPPORTED_REPORT_TYPES = {"personal_overview"}
 SUPPORTED_LANGUAGES = {"ru", "en"}
 SUPPORTED_AUDIENCES = {"novice", "astrologer"}
@@ -257,16 +273,31 @@ class DisabledAiProvider:
 
 def provider_for_settings() -> AiProvider:
     provider = str(getattr(settings, "AI_PROVIDER", "mock")).strip().lower()
-    if provider == "mock":
+    if provider in {"mock", "real"}:
         return MockAiProvider()
     return DisabledAiProvider()
+
+
+def production_real_provider_blocked() -> bool:
+    staging_only = bool(getattr(settings, "AI_REPORTS_STAGING_ONLY", True))
+    allow_production = bool(getattr(settings, "AI_REPORTS_ALLOW_PRODUCTION_REAL", False))
+    return staging_only and not bool(getattr(settings, "DEBUG", False)) and not allow_production
+
+
+def real_provider_enabled() -> bool:
+    return (
+        bool(getattr(settings, "AI_REPORTS_ENABLED", False))
+        and bool(getattr(settings, "AI_REAL_PROVIDER_ENABLED", False))
+        and str(getattr(settings, "AI_PROVIDER", "disabled")).strip().lower() == "real"
+        and not production_real_provider_blocked()
+    )
 
 
 def validate_ai_response(request: dict[str, Any], response: dict[str, Any]) -> None:
     if response.get("schema_version") != 1:
         raise AiGatewayProviderError("schema_version must be 1")
-    if response.get("provider") != "mock":
-        raise AiGatewayProviderError("provider must be mock")
+    if response.get("provider") not in {"mock", "real"}:
+        raise AiGatewayProviderError("provider must be mock or real")
     theses = response.get("theses")
     if not isinstance(theses, list):
         raise AiGatewayProviderError("theses must be a list")
@@ -289,6 +320,12 @@ def validate_ai_response(request: dict[str, Any], response: dict[str, Any]) -> N
             raise AiGatewayProviderError("thesis has no evidence item")
         if not isinstance(citations, list) or not citations:
             raise AiGatewayProviderError("thesis has missing citation chain")
+        for field in ["title", "body"]:
+            value = str(thesis.get(field) or "")
+            if len(value) > int(getattr(settings, "AI_REPORT_GATEWAY_MAX_THESIS_CHARS", 900)):
+                raise AiGatewayProviderError("thesis text is too long")
+            if any(marker in value.lower() for marker in ["<script", "</", "http://", "https://", "]("]):
+                raise AiGatewayProviderError("unsafe text in thesis")
         for evidence_item_id in evidence_item_ids:
             if evidence_item_id not in known_items:
                 raise AiGatewayProviderError(f"unknown evidence item: {evidence_item_id}")
@@ -332,5 +369,48 @@ def execute_ai_report_dry_run(
             "elapsed_ms": elapsed_ms,
             "eligible_item_count": len(request["items"]),
             "excluded_item_count": request["excluded_summary"]["total"],
+        },
+    )
+
+
+def execute_ai_report_staging_run(
+    *,
+    profile: BirthProfile,
+    relationship: ChartRelationship | None,
+    report_type_id: str,
+    language: str,
+    audience: str,
+) -> AiGatewayExecution:
+    if not real_provider_enabled():
+        raise AiGatewayInputError("real provider is not enabled for this environment")
+    from .ai_real_provider import InsufficientVerifiedEvidence, RealAiProvider
+
+    request = build_ai_report_request(
+        profile=profile,
+        relationship=relationship,
+        report_type_id=report_type_id,
+        language=language,
+        audience=audience,
+    )
+    provider = RealAiProvider()
+    start = monotonic()
+    try:
+        response = provider.generate(request)
+    except InsufficientVerifiedEvidence:
+        raise
+    elapsed_ms = int((monotonic() - start) * 1000)
+    if elapsed_ms > int(getattr(settings, "AI_REPORT_GATEWAY_TIMEOUT_SECONDS", 15)) * 1000:
+        raise AiProviderTimeout("provider timeout")
+    validate_ai_response(request, response)
+    return AiGatewayExecution(
+        response=response,
+        metadata={
+            "request_id": uuid4().hex,
+            "provider": provider.provider_id,
+            "elapsed_ms": elapsed_ms,
+            "eligible_item_count": len(request["items"]),
+            "citation_count": sum(len(item["citation_chains"]) for item in request["items"]),
+            "excluded_item_count": request["excluded_summary"]["total"],
+            "validation_result": "accepted",
         },
     )

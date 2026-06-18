@@ -10,6 +10,10 @@ const forbidden = [
   /http:\/\/[^"'\s]+:18100/,
   /NEXT_PUBLIC_API_BASE_URL=http/,
   /31\.76\.79\.2/,
+  /sk-[A-Za-z0-9_-]{20,}/,
+  /sk-proj-[A-Za-z0-9_-]{20,}/,
+  /AI_REAL_PROVIDER_API_KEY/,
+  /OPENAI_API_KEY/,
 ];
 const sourceTargets = [
   "src/ui/components",
