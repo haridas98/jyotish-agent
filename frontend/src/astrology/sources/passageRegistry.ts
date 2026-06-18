@@ -13,8 +13,8 @@ export const passageDefinitions: PassageDefinition[] = [
       ru: "Лагна используется как основа чтения тела, характера и направления жизни.",
       en: "Lagna is used as a basis for reading body, temperament, and life direction.",
     },
-    status: "verified",
-    verificationNotes: "Pilot locator is section-level until chapter/verse mapping is completed.",
+    status: "draft",
+    verificationNotes: "Section-level pilot only. It must not be marked verified until edition, chapter and verse are mapped.",
   },
   {
     id: "passage.bphs.moon.general",
@@ -28,7 +28,8 @@ export const passageDefinitions: PassageDefinition[] = [
       ru: "Луна связывается с умом, восприятием и питанием жизни.",
       en: "The Moon is connected with mind, perception, and nourishment.",
     },
-    status: "verified",
+    status: "draft",
+    verificationNotes: "Section-level pilot only. It must not be marked verified until edition, chapter and verse are mapped.",
   },
   {
     id: "passage.bphs.sun.general",

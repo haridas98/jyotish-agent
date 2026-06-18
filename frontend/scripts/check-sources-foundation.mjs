@@ -35,6 +35,8 @@ assert(sourceRegistry.includes("source.bphs"), "BPHS pilot source is missing.");
 assert(sourceRegistry.includes("metadata_only"), "Metadata-only policy is missing.");
 assert(passageRegistry.includes("passage.bphs.lagna.general"), "Lagna pilot passage is missing.");
 assert(passageRegistry.includes("passage.bphs.moon.general"), "Moon pilot passage is missing.");
+assert(!/passage\.bphs\.lagna\.general[\s\S]*?status:\s*"verified"/.test(passageRegistry), "Section-level Lagna pilot must not be verified.");
+assert(!/passage\.bphs\.moon\.general[\s\S]*?status:\s*"verified"/.test(passageRegistry), "Section-level Moon pilot must not be verified.");
 assert(ruleRegistry.includes("bphs.house.1"), "House 1 pilot rule is missing.");
 assert(ruleRegistry.includes("bphs.graha.mo"), "Moon pilot rule is missing.");
 assert(ruleRegistry.includes("bphs.graha.su"), "Sun pilot rule is missing.");
@@ -44,9 +46,12 @@ assert(ruleRegistry.includes("vimshottari.sequence"), "Vimshottari pilot rule is
 
 assert(sourceValidation.includes("validateSourceRegistry"), "Source validation is missing.");
 assert(passageValidation.includes("references unknown source"), "Broken source reference validation is missing.");
+assert(passageValidation.includes("needs verified source"), "Verified passage/source consistency validation is missing.");
+assert(passageValidation.includes("needs chapter/verse or page locator"), "Precise verified locator validation is missing.");
 assert(ruleValidation.includes("references unknown entity"), "Unknown entity validation is missing.");
 assert(ruleValidation.includes("references unknown calculation"), "Unknown calculation validation is missing.");
 assert(ruleValidation.includes("Verified rule"), "Verified rule validation is missing.");
+assert(ruleValidation.includes("needs verified source"), "Verified rule/source consistency validation is missing.");
 assert(!ruleRegistry.includes("Jagannatha Hora"), "Third-party software text must not be copied into rules.");
 assert(!ruleRegistry.includes("Parashara's Light"), "Third-party software text must not be copied into rules.");
 assert(!ruleRegistry.includes("AI prompt"), "Rules must not contain AI prompts.");

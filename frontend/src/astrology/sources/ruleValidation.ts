@@ -30,6 +30,7 @@ export function validateRuleRegistry(): string[] {
       if (passages.some((passage) => passage?.status !== "verified")) errors.push(`Verified rule ${rule.id} references unverified passage`);
       for (const passage of passages) {
         const source = passage ? getSource(passage.sourceId) : null;
+        if (source?.status !== "verified") errors.push(`Verified rule ${rule.id} needs verified source`);
         if (source?.status === "disabled") errors.push(`Verified rule ${rule.id} uses disabled source ${source.id}`);
       }
     }

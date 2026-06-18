@@ -9,7 +9,7 @@ export const ruleDefinitions: RuleDefinition[] = [
     requiredCalculationIds: ["calc.varga.D1"],
     conditions: [{ type: "entity_present", entityId: "house.1" }],
     passageIds: ["passage.bphs.lagna.general"],
-    status: "verified",
+    status: "needs_source",
     interpretationPolicy: "conditional",
   },
   {
@@ -53,7 +53,7 @@ export const ruleDefinitions: RuleDefinition[] = [
     requiredCalculationIds: ["calc.planetPositions", "calc.nakshatras"],
     conditions: [{ type: "entity_present", entityId: "graha.MO" }],
     passageIds: ["passage.bphs.moon.general"],
-    status: "verified",
+    status: "needs_source",
     interpretationPolicy: "conditional",
   },
   {
