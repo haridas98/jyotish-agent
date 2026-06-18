@@ -13,6 +13,7 @@
     "test:relationships": "node scripts/check-relationship-foundation.mjs",
     "test:interactions": "node scripts/check-interactions-foundation.mjs",
     "test:compatibility": "node scripts/check-compatibility-foundation.mjs",
+    "test:reports": "node scripts/check-reports-foundation.mjs",
     "production-check": "node scripts/production-check.mjs",
     "build:prod": "next build && npm run production-check",
     "audit:workbench": "node scripts/audit-workbench-architecture.mjs"

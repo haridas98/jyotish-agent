@@ -20,9 +20,17 @@ const sourceTargets = [
   "src/app/compatibility/page.tsx",
   "src/app/interactions/page.tsx",
   "src/app/people/page.tsx",
+  "src/app/reports/page.tsx",
   "src/app/sources/page.tsx",
 ].filter((target) => existsSync(target));
 const forbiddenSourceMarkers = [
+  /PrivateHistoryPage/,
+  /historyKind/,
+  /birth_chart_codex_cli/,
+  /current_day_transit_overview/,
+  /fetchAnalysisHistory/,
+  /requestCodexAnalysis/,
+  /requestCompatibilityCodexAnalysis/,
   /source\.pending/,
   /Block is not registered yet/,
   /Missing calculations/,
