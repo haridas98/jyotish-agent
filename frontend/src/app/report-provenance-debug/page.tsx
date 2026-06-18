@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import {
   buildReportEvidencePack,
+  buildAiEligibilityPack,
   resolveEvidenceProvenance,
   resolveReportRecipe,
   validatePassageRegistry,
@@ -23,13 +24,14 @@ export default function ReportProvenanceDebugPage() {
     primaryProfileId: "debug",
   });
   const enriched = resolveEvidenceProvenance(evidence);
+  const eligibility = buildAiEligibilityPack(enriched);
   const validationErrors = [...validateSourceRegistry(), ...validatePassageRegistry(), ...validateRuleRegistry()];
 
   return (
     <main style={{ padding: 24 }}>
       <h1>Report Provenance Debug</h1>
       <p>{validationErrors.length ? validationErrors.join("; ") : "valid"}</p>
-      <pre>{JSON.stringify(enriched, null, 2)}</pre>
+      <pre>{JSON.stringify({ enriched, eligibility }, null, 2)}</pre>
     </main>
   );
 }

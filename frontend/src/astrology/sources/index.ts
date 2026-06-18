@@ -1,3 +1,5 @@
+export * from "./aiEligibilityGate";
+export * from "./aiEligibilityTypes";
 export * from "./coverageResolver";
 export * from "./passageRegistry";
 export * from "./passageTypes";

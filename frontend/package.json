@@ -19,6 +19,7 @@
     "test:report-evidence-snapshot": "node scripts/check-report-evidence-snapshot.mjs",
     "test:sources": "node scripts/check-sources-foundation.mjs",
     "test:provenance": "node scripts/check-provenance-foundation.mjs",
+    "test:ai-eligibility": "node scripts/check-ai-eligibility-gate.mjs",
     "production-check": "node scripts/production-check.mjs",
     "build:prod": "next build && npm run production-check",
     "audit:workbench": "node scripts/audit-workbench-architecture.mjs"
