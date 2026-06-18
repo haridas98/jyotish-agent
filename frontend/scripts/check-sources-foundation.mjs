@@ -26,6 +26,9 @@ const packageJson = read("package.json");
 assert(sourceTypes.includes("SourceDefinition"), "SourceDefinition is missing.");
 assert(sourceTypes.includes("accessPolicy"), "Source access policy is missing.");
 assert(sourceTypes.includes("referenceUrl"), "Source reference URL is missing.");
+assert(sourceTypes.includes("fileSha256"), "Source SHA-256 metadata is missing.");
+assert(sourceTypes.includes("retrievedAt"), "Source retrievedAt metadata is missing.");
+assert(sourceTypes.includes("bibliographicStatus"), "Source bibliographic status metadata is missing.");
 assert(passageTypes.includes("PassageDefinition"), "PassageDefinition is missing.");
 assert(passageTypes.includes("PassageLocator"), "PassageLocator is missing.");
 assert(ruleTypes.includes("RuleDefinition"), "RuleDefinition is missing.");
@@ -34,11 +37,16 @@ assert(ruleTypes.includes("graha_in_house"), "Typed rule conditions are missing.
 
 assert(sourceRegistry.includes("source.bphs"), "BPHS pilot source is missing.");
 assert(sourceRegistry.includes("brihat_parashara_hora_shastra_english_v.pdf"), "Selected BPHS public edition URL is missing.");
+assert(sourceRegistry.includes("40f12d7c6b42a7625d36bc1cc38576427f4c64f41a8f1353f4945a603a4397ba"), "Selected BPHS PDF SHA-256 is missing.");
+assert(sourceRegistry.includes("retrievedAt: \"2026-06-18\""), "Selected BPHS retrievedAt is missing.");
+assert(sourceRegistry.includes("pageCount: 302"), "Selected BPHS page count is missing.");
 assert(sourceRegistry.includes("metadata_only"), "Metadata-only policy is missing.");
 assert(sourceRegistry.includes("locator_and_excerpt"), "Verified source locator/excerpt policy is missing.");
 assert(sourceRegistry.includes("status: \"verified\""), "Selected BPHS source edition must be verified for 6C pilot citations.");
 assert(passageRegistry.includes("passage.bphs.lagna.general"), "Lagna pilot passage is missing.");
-assert(passageRegistry.includes("passage.bphs.moon.general"), "Moon pilot passage is missing.");
+assert(passageRegistry.includes("passage.bphs.sun_moon.karakatva"), "Shared Sun/Moon pilot passage is missing.");
+assert(!passageRegistry.includes("passage.bphs.moon.general"), "Duplicated Moon passage must be removed.");
+assert(!passageRegistry.includes("passage.bphs.sun.general"), "Duplicated Sun passage must be removed.");
 assert(passageRegistry.includes('chapter: "3", verseStart: "4", verseEnd: "9"'), "Lagna pilot needs exact BPHS chapter/verse locator.");
 assert(passageRegistry.includes('chapter: "3", verseStart: "12", verseEnd: "13"'), "Sun/Moon pilot needs exact BPHS chapter/verse locator.");
 assert(passageRegistry.includes('chapter: "6", verseStart: "2", verseEnd: "4"'), "Varga names pilot needs exact BPHS chapter/verse locator.");
@@ -53,12 +61,20 @@ assert(ruleRegistry.includes("vimshottari.sequence"), "Vimshottari pilot rule is
 assert(/id:\s*"bphs\.house\.1"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "House 1 rule must be verified after exact citation mapping.");
 assert(/id:\s*"bphs\.graha\.mo"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Moon rule must be verified after exact citation mapping.");
 assert(/id:\s*"bphs\.graha\.su"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Sun rule must be verified after exact citation mapping.");
+assert(ruleRegistry.includes("Луна как ум"), "Moon verified rule must stay within BPHS 3.12-13.");
+assert(ruleRegistry.includes("Солнце как атма"), "Sun verified rule must stay within BPHS 3.12-13.");
+assert(!ruleRegistry.includes("Солнце как атма и власть"), "Sun verified rule must not overclaim authority from BPHS 3.12-13.");
+assert(!ruleRegistry.includes("Луна как ум и восприятие"), "Moon verified rule must not overclaim perception from BPHS 3.12-13.");
 assert(/id:\s*"jyotish\.classical\.varga\.D1"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "D1 rule must be verified after exact citation mapping.");
 assert(/id:\s*"jyotish\.classical\.varga\.D9"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "D9 rule must be verified after exact citation mapping.");
+assert(ruleRegistry.includes("Навамша входит в шестнадцать варг; супруг рассматривается через Навамшу"), "D9 verified rule must stay within BPHS varga passages.");
+assert(!ruleRegistry.includes("D9 Навамша как существенная варга"), "D9 verified rule must not overclaim generic varga importance.");
 assert(/id:\s*"vimshottari\.sequence"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Vimshottari rule must be verified after exact citation mapping.");
 
 assert(sourceValidation.includes("validateSourceRegistry"), "Source validation is missing.");
+assert(sourceValidation.includes("needs file SHA-256"), "Verified source SHA-256 validation is missing.");
 assert(passageValidation.includes("references unknown source"), "Broken source reference validation is missing.");
+assert(passageValidation.includes("Duplicate passage locator"), "Duplicate passage locator validation is missing.");
 assert(passageValidation.includes("needs verified source"), "Verified passage/source consistency validation is missing.");
 assert(passageValidation.includes("needs chapter/verse or page locator"), "Precise verified locator validation is missing.");
 assert(ruleValidation.includes("references unknown entity"), "Unknown entity validation is missing.");

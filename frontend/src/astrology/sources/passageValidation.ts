@@ -13,9 +13,15 @@ function hasPreciseLocator(value: { chapter?: string; verseStart?: string; page?
   return Boolean(value.page || (value.chapter && value.verseStart));
 }
 
+function locatorKey(passage: { sourceId: string; locator: { chapter?: string; verseStart?: string; verseEnd?: string; section?: string; page?: number } }): string {
+  const locator = passage.locator;
+  return [passage.sourceId, locator.chapter ?? "", locator.verseStart ?? "", locator.verseEnd ?? "", locator.section ?? "", locator.page ?? ""].join(":");
+}
+
 export function validatePassageRegistry(): string[] {
   const errors: string[] = [];
   for (const id of duplicates(passageDefinitions.map((passage) => passage.id))) errors.push(`Duplicate passage id: ${id}`);
+  for (const key of duplicates(passageDefinitions.map((passage) => locatorKey(passage)))) errors.push(`Duplicate passage locator: ${key}`);
   for (const passage of passageDefinitions) {
     const source = getSource(passage.sourceId);
     if (!source) errors.push(`Passage ${passage.id} references unknown source ${passage.sourceId}`);

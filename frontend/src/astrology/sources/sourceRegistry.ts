@@ -13,6 +13,12 @@ export const sourceDefinitions: SourceDefinition[] = [
     language: "english",
     author: "Parashara",
     referenceUrl: "https://vedpuran.net/wp-content/uploads/2021/04/brihat_parashara_hora_shastra_english_v.pdf",
+    retrievedAt: "2026-06-18",
+    fileSha256: "40f12d7c6b42a7625d36bc1cc38576427f4c64f41a8f1353f4945a603a4397ba",
+    fileSizeBytes: 1260180,
+    pageCount: 302,
+    bibliographicStatus: "partial",
+    fileIntegrityStatus: "verified",
     edition: {
       publisher: "VedPuran public PDF mirror / Internet Archive text mirror",
       editor: "R. Santhanam-style English e-text",

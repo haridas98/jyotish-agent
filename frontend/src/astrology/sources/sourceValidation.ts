@@ -10,6 +10,10 @@ export function validateSourceRegistry(): string[] {
   for (const source of sourceDefinitions) {
     if (!source.title.ru || !source.title.en) errors.push(`Source ${source.id} needs public labels`);
     if (source.status === "verified" && !source.edition) errors.push(`Verified source ${source.id} needs edition metadata`);
+    if (source.status === "verified" && !source.referenceUrl) errors.push(`Verified source ${source.id} needs reference URL`);
+    if (source.status === "verified" && !source.fileSha256) errors.push(`Verified source ${source.id} needs file SHA-256`);
+    if (source.status === "verified" && !source.retrievedAt) errors.push(`Verified source ${source.id} needs retrievedAt`);
+    if (source.status === "verified" && source.fileIntegrityStatus !== "verified") errors.push(`Verified source ${source.id} needs verified file integrity`);
   }
   return errors;
 }

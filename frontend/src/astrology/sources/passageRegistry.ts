@@ -10,14 +10,14 @@ export const passageDefinitions: PassageDefinition[] = [
       en: "BPHS 3.4-9",
     },
     shortExcerpt: {
-      ru: "Раздел задаёт Лагну как восходящий знак и основу чтения карты рождения.",
-      en: "The section defines Lagna as the rising sign and a foundation for reading the birth chart.",
+      ru: "Раздел определяет Лагну как восходящий знак и указывает, что результаты читаются на основе Лагны и грах.",
+      en: "The section defines Lagna as the rising sign and says results are read from Lagna and the grahas.",
     },
     status: "verified",
-    verificationNotes: "Verified against the selected BPHS public edition anchor; cites chapter, verse range and page.",
+    verificationNotes: "Verified against the selected BPHS public PDF anchor; cites chapter, verse range and PDF page.",
   },
   {
-    id: "passage.bphs.moon.general",
+    id: "passage.bphs.sun_moon.karakatva",
     sourceId: "source.bphs",
     locator: { chapter: "3", verseStart: "12", verseEnd: "13", page: 6 },
     citationLabel: {
@@ -25,26 +25,11 @@ export const passageDefinitions: PassageDefinition[] = [
       en: "BPHS 3.12-13",
     },
     shortExcerpt: {
-      ru: "Раздел описывает природные значения Солнца и Луны среди каракатв грах.",
-      en: "The section describes the natural significations of the Sun and Moon among graha karakatvas.",
+      ru: "В этом месте Солнце названо атмой, а Луна — умом.",
+      en: "In this passage the Sun is named as the soul and the Moon as the mind.",
     },
     status: "verified",
-    verificationNotes: "Verified against the selected BPHS public edition anchor; Moon rule uses this shared graha-signification passage.",
-  },
-  {
-    id: "passage.bphs.sun.general",
-    sourceId: "source.bphs",
-    locator: { chapter: "3", verseStart: "12", verseEnd: "13", page: 6 },
-    citationLabel: {
-      ru: "БПХШ 3.12-13",
-      en: "BPHS 3.12-13",
-    },
-    shortExcerpt: {
-      ru: "Раздел описывает природные значения Солнца и Луны среди каракатв грах.",
-      en: "The section describes the natural significations of the Sun and Moon among graha karakatvas.",
-    },
-    status: "verified",
-    verificationNotes: "Verified against the selected BPHS public edition anchor; Sun rule uses this shared graha-signification passage.",
+    verificationNotes: "Single shared passage reused by Sun and Moon rules; broader claims require separate passages.",
   },
   {
     id: "passage.bphs.varga.sixteen.names",
@@ -59,7 +44,7 @@ export const passageDefinitions: PassageDefinition[] = [
       en: "The section lists the sixteen vargas, including Rashi and Navamsha.",
     },
     status: "verified",
-    verificationNotes: "Verified against the selected BPHS public edition anchor.",
+    verificationNotes: "Verified against the selected BPHS public PDF anchor.",
   },
   {
     id: "passage.bphs.varga.uses",
@@ -70,11 +55,11 @@ export const passageDefinitions: PassageDefinition[] = [
       en: "BPHS 7.1-8",
     },
     shortExcerpt: {
-      ru: "Раздел задаёт области чтения варг; Лагна читается по Раши, супруг/супруга — по Навамше.",
-      en: "The section assigns reading domains to vargas; Lagna is read from Rashi and spouse from Navamsha.",
+      ru: "Раздел задаёт области чтения варг: тело через Лагну, супруг/супруга через Навамшу.",
+      en: "The section assigns reading domains to vargas: body through Lagna and spouse through Navamsha.",
     },
     status: "verified",
-    verificationNotes: "Verified against the selected BPHS public edition anchor.",
+    verificationNotes: "Verified against the selected BPHS public PDF anchor.",
   },
   {
     id: "passage.vimshottari.sequence.general",
@@ -85,11 +70,11 @@ export const passageDefinitions: PassageDefinition[] = [
       en: "BPHS 46.2-16",
     },
     shortExcerpt: {
-      ru: "Раздел описывает применимость Вимшоттари, порядок управителей и продолжительность махадаш.",
-      en: "The section describes Vimshottari applicability, planetary order, and mahadasha durations.",
+      ru: "Раздел описывает применимость Вимшоттари, порядок управителей, длительность махадаш и остаток даши при рождении.",
+      en: "The section describes Vimshottari applicability, planetary order, mahadasha durations, and the balance at birth.",
     },
     status: "verified",
-    verificationNotes: "Verified against the selected BPHS public edition anchor.",
+    verificationNotes: "Verified against the selected BPHS public PDF anchor.",
   },
 ];
 

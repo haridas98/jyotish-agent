@@ -12,6 +12,12 @@ export type SourceDefinition = {
   language: "sanskrit" | "english" | "russian" | "hindi" | "other";
   author?: string;
   referenceUrl?: string;
+  retrievedAt?: string;
+  fileSha256?: string;
+  fileSizeBytes?: number;
+  pageCount?: number;
+  bibliographicStatus?: "unknown" | "partial" | "verified";
+  fileIntegrityStatus?: "unverified" | "verified";
   edition?: {
     publisher?: string;
     year?: number;
