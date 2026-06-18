@@ -125,9 +125,17 @@ export const relationshipRecipeDefinitions: RelationshipRecipe[] = [
     "spouses",
     "Супруги",
     "Spouses",
-    spouseFocus("rule.relationship.spouses.a_to_b"),
-    spouseFocus("rule.relationship.spouses.b_to_a"),
+    spouseFocus("a_to_b", "rule.relationship.spouses.a_to_b"),
+    spouseFocus("b_to_a", "rule.relationship.spouses.b_to_a"),
     mutualBasic("rule.relationship.spouses.mutual"),
+  ),
+  recipe(
+    "romantic_partners",
+    "\u0420\u043e\u043c\u0430\u043d\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u043f\u0430\u0440\u0442\u043d\u0451\u0440\u044b",
+    "Romantic partners",
+    spouseFocus("a_to_b", "rule.relationship.romantic_partners.a_to_b"),
+    spouseFocus("b_to_a", "rule.relationship.romantic_partners.b_to_a"),
+    mutualBasic("rule.relationship.romantic_partners.mutual"),
   ),
   recipe(
     "business_partners",
@@ -255,11 +263,15 @@ function siblingFocus(ruleId: string): RecipeFocus {
   });
 }
 
-function spouseFocus(ruleId: string): RecipeFocus {
+function spouseFocus(direction: "a_to_b" | "b_to_a", ruleId: string): RecipeFocus {
+  const overlayFactors =
+    direction === "b_to_a"
+      ? (["factor.overlay.houses_b_to_a", "factor.overlay.planets_b_to_a"] as const)
+      : (["factor.overlay.houses_a_to_b", "factor.overlay.planets_a_to_b"] as const);
   return focus({
     primaryEntityIds: ["house.7", "varga.D9"],
     secondaryEntityIds: ["graha.VE", "graha.JU"],
-    relationshipFactorIds: ["factor.overlay.houses_a_to_b", "factor.overlay.planets_a_to_b", "factor.moon.relationship"],
+    relationshipFactorIds: [...overlayFactors, "factor.moon.relationship"],
     requiredCalculationIds: ["varga.D1", "varga.D9"],
     optionalCalculationIds: ["dasha.vimshottari"],
     ruleIds: [ruleId],
