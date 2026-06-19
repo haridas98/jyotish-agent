@@ -61,7 +61,7 @@ class D1WorkbenchDevCheckView(APIView):
         chart = calculation.result if calculation else {}
         scope_summary = _workbench_scope_summary(chart if isinstance(chart, dict) else {}, scope)
 
-        return Response(
+        response = Response(
             {
                 "status": "ok",
                 "schemaVersion": "d1-workbench-check.v2" if scope == "d1" else "varga-workbench-check.v1",
@@ -85,6 +85,8 @@ class D1WorkbenchDevCheckView(APIView):
                 },
             }
         )
+        response["Cache-Control"] = "no-store"
+        return response
 
 
 def _workbench_supported_scopes(profile: BirthProfile | None = None) -> tuple[str, ...]:

@@ -1071,6 +1071,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}")
 
     assert response.status_code == 200
+    assert response["Cache-Control"] == "no-store"
     assert response.data["status"] == "ok"
     assert response.data["schemaVersion"] == "d1-workbench-check.v2"
     assert response.data["chartId"] == profile.id
