@@ -1093,6 +1093,9 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
         assert scope_response.data["grahaCount"] == 1
         assert scope_response.data["specialPointCount"] == 1
         assert scope_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]
+        if scope_id == "D30":
+            assert scope_response.data["methodId"] == "varga.d30.parashara_unequal.v1"
+            assert scope_response.data["methodVersion"] == "1"
 
     d9_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope=d9")
 

@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import PrivateAppAccess
-from apps.calculations.vargas import workbench_expert_varga_codes, workbench_varga_codes
+from apps.calculations.vargas import VARGA_METHOD_REGISTRY, workbench_expert_varga_codes, workbench_varga_codes
 
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation, ChartRelationship
 from .services import (
@@ -99,11 +99,14 @@ def _workbench_scope_method_summary(chart: dict, scope: str) -> dict:
         return {"methodId": "varga.parashara_shodasha.v1", "methodVersion": "1", "calculationPreset": default_preset}
     code = _workbench_scope_id(scope)
     varga = chart.get("vargas", {}).get(code, {}) if isinstance(chart.get("vargas"), dict) else {}
+    registry_method = VARGA_METHOD_REGISTRY.get(code)
     preset = str(varga.get("calculationPreset") or default_preset)
-    method_id = str(varga.get("methodId") or ("varga.jhora_uma_shambhu_hora.v1" if code == "D2" and preset == "jhora_uma_shambhu" else "varga.parashara_shodasha.v1"))
+    method_id = str(varga.get("methodId") or (registry_method.method_id if registry_method else "varga.parashara_shodasha.v1"))
+    if code == "D2" and preset == "jhora_uma_shambhu" and not varga.get("methodId"):
+        method_id = "varga.jhora_uma_shambhu_hora.v1"
     return {
         "methodId": method_id,
-        "methodVersion": str(varga.get("methodVersion") or "1"),
+        "methodVersion": str(varga.get("methodVersion") or (registry_method.method_version if registry_method else "1")),
         "calculationPreset": preset,
     }
 
