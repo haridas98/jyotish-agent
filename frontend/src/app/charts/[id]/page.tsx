@@ -61,7 +61,7 @@ export default function ChartDetailPage() {
 
   const model = useMemo(() => {
     if (!profile || !workbench) return null;
-    const scopeId = workbench.scope === "d9" ? "D9" : "D1";
+    const scopeId = workbench.scope === "d10" ? "D10" : workbench.scope === "d9" ? "D9" : "D1";
     return buildD1WorkbenchModel(profile, settings, workbench.calculation, scopeId);
   }, [profile, settings, workbench]);
 
@@ -74,7 +74,7 @@ export default function ChartDetailPage() {
         <span>Объяснение</span>
       </div>
       {model ? (
-        <D1ChartWorkbench key={model.scopeId} model={model} status={status} onScopeChange={(nextScope) => setScope(nextScope === "D9" ? "d9" : "d1")} />
+        <D1ChartWorkbench model={model} status={status} onScopeChange={(nextScope) => setScope(nextScope === "D10" ? "d10" : nextScope === "D9" ? "d9" : "d1")} />
       ) : (
         <D1ChartWorkbenchShell status={status} />
       )}

@@ -42,7 +42,7 @@ class D1WorkbenchDevCheckView(APIView):
         if not settings.DEV_LOGIN_TOKEN or token != settings.DEV_LOGIN_TOKEN:
             return Response({"error": "forbidden"}, status=403)
         scope = str(request.query_params.get("scope") or "d1").strip().lower()
-        if scope not in {"d1", "d9"}:
+        if scope not in {"d1", "d9", "d10"}:
             return Response({"error": "scope is not supported"}, status=400)
         try:
             chart_id = int(request.query_params.get("chart_id") or request.query_params.get("profile_id") or 0)
@@ -64,14 +64,14 @@ class D1WorkbenchDevCheckView(APIView):
             {
                 "status": "ok",
                 "schemaVersion": "d1-workbench-check.v2" if scope == "d1" else "varga-workbench-check.v1",
-                "scopeId": "D1" if scope == "d1" else "D9",
+                "scopeId": _workbench_scope_id(scope),
                 "chartId": profile.id,
                 "hasCalculation": calculation is not None,
                 **scope_summary,
                 "supportedStyles": ["north", "south"],
                 "supportedModes": ["novice", "astrologer"],
                 "entityInspectorCount": 1,
-                "supportedScopes": ["D1", "D9"],
+                "supportedScopes": ["D1", "D9", "D10"],
                 "forbiddenScopesPresent": {
                     "D60": False,
                     "AI": False,
@@ -81,9 +81,14 @@ class D1WorkbenchDevCheckView(APIView):
         )
 
 
+def _workbench_scope_id(scope: str) -> str:
+    return {"d1": "D1", "d9": "D9", "d10": "D10"}.get(scope, "D1")
+
+
 def _workbench_scope_summary(chart: dict, scope: str) -> dict:
-    if scope == "d9":
-        varga = chart.get("vargas", {}).get("D9", {}) if isinstance(chart.get("vargas"), dict) else {}
+    if scope in {"d9", "d10"}:
+        code = _workbench_scope_id(scope)
+        varga = chart.get("vargas", {}).get(code, {}) if isinstance(chart.get("vargas"), dict) else {}
         placements = [item for item in varga.get("placements", []) if isinstance(item, dict)] if isinstance(varga, dict) else []
         grahas = [item for item in placements if str(item.get("body") or "") not in {"Lagna", "Ascendant"}]
         special_points = [item for item in placements if str(item.get("body") or "") in {"Lagna", "Ascendant"}]
@@ -220,7 +225,7 @@ class BirthProfileWorkbenchView(APIView):
 
     def get(self, request, profile_id: int):
         scope = str(request.query_params.get("scope") or "d1").strip().lower()
-        if scope not in {"d1", "d9"}:
+        if scope not in {"d1", "d9", "d10"}:
             return Response({"error": "scope is not supported"}, status=400)
         profile = get_object_or_404(
             BirthProfile.objects.select_related("place"),
