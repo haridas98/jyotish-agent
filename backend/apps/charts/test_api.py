@@ -1040,6 +1040,9 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert d9_response.data["chartObjectCount"] == 2
     assert d9_response.data["tabIds"] == ["overview", "grahas", "houses"]
     assert d9_response.data["forbiddenScopesPresent"] == {"D60": False, "AI": False, "rawEvidence": False}
+    alias_response = public_client.get(f"/api/dev/varga-workbench-check?token=dev-token&chart_id={profile.id}&scope=d9")
+    assert alias_response.status_code == 200
+    assert alias_response.data == d9_response.data
     assert "birth_date" not in response.data
     assert "birth" not in response.data
 
