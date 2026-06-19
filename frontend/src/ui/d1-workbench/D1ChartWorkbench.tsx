@@ -2,16 +2,18 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import type { EntityId } from "@/astrology";
-import type {
-  ChartWorkbenchScopeId,
-  D1ChartStyle,
-  D1DataTab,
-  D1GrahaRow,
-  D1HouseCell,
-  D1ReaderMode,
-  D1SpecialPointRow,
-  D1TerminologyMode,
-  D1WorkbenchModel,
+import {
+  CHART_WORKBENCH_EXPERT_SCOPE_IDS,
+  CHART_WORKBENCH_SCOPE_IDS,
+  type ChartWorkbenchScopeId,
+  type D1ChartStyle,
+  type D1DataTab,
+  type D1GrahaRow,
+  type D1HouseCell,
+  type D1ReaderMode,
+  type D1SpecialPointRow,
+  type D1TerminologyMode,
+  type D1WorkbenchModel,
 } from "@/astrology/d1-workbench";
 import { EntityInspector } from "@/ui/components/EntityInspector";
 
@@ -118,7 +120,12 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
 
   const setActiveEntityId = (activeEntityId: EntityId | null) => setWorkbenchState((state) => ({ ...state, activeEntityId }));
   const setChartStyle = (chartStyle: D1ChartStyle) => setWorkbenchState((state) => ({ ...state, chartStyle }));
-  const setMode = (mode: D1ReaderMode) => setWorkbenchState((state) => ({ ...state, mode }));
+  const setMode = (mode: D1ReaderMode) => {
+    if (mode === "novice" && CHART_WORKBENCH_EXPERT_SCOPE_IDS.includes(model.scopeId as typeof CHART_WORKBENCH_EXPERT_SCOPE_IDS[number])) {
+      onScopeChange?.("D1");
+    }
+    setWorkbenchState((state) => ({ ...state, mode }));
+  };
   const setTerminologyMode = (terminologyMode: D1TerminologyMode) => setWorkbenchState((state) => ({ ...state, terminologyMode }));
   const setActiveTab = (activeTab: D1DataTab) => setWorkbenchState((state) => ({ ...state, activeTab }));
 
@@ -148,17 +155,9 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
 
       <div className="d1-toolbar" aria-label="Стиль карты">
         <strong>Карта</strong>
-        <button type="button" className={model.scopeId === "D1" ? "active" : ""} onClick={() => onScopeChange?.("D1")}>D1</button>
-        <button type="button" className={model.scopeId === "D2" ? "active" : ""} onClick={() => onScopeChange?.("D2")}>D2</button>
-        <button type="button" className={model.scopeId === "D3" ? "active" : ""} onClick={() => onScopeChange?.("D3")}>D3</button>
-        <button type="button" className={model.scopeId === "D4" ? "active" : ""} onClick={() => onScopeChange?.("D4")}>D4</button>
-        <button type="button" className={model.scopeId === "D7" ? "active" : ""} onClick={() => onScopeChange?.("D7")}>D7</button>
-        <button type="button" className={model.scopeId === "D9" ? "active" : ""} onClick={() => onScopeChange?.("D9")}>D9</button>
-        <button type="button" className={model.scopeId === "D10" ? "active" : ""} onClick={() => onScopeChange?.("D10")}>D10</button>
-        <button type="button" className={model.scopeId === "D12" ? "active" : ""} onClick={() => onScopeChange?.("D12")}>D12</button>
-        <button type="button" className={model.scopeId === "D16" ? "active" : ""} onClick={() => onScopeChange?.("D16")}>D16</button>
-        <button type="button" className={model.scopeId === "D20" ? "active" : ""} onClick={() => onScopeChange?.("D20")}>D20</button>
-        <button type="button" className={model.scopeId === "D24" ? "active" : ""} onClick={() => onScopeChange?.("D24")}>D24</button>
+        {availableScopesForMode(workbenchState.mode).map((scopeId) => (
+          <button key={scopeId} type="button" className={model.scopeId === scopeId ? "active" : ""} onClick={() => onScopeChange?.(scopeId)}>{scopeId}</button>
+        ))}
         <strong>Стиль</strong>
         <button type="button" className={workbenchState.chartStyle === "north" ? "active" : ""} onClick={() => setChartStyle("north")}>Северный</button>
         <button type="button" className={workbenchState.chartStyle === "south" ? "active" : ""} onClick={() => setChartStyle("south")}>Южный</button>
@@ -407,6 +406,10 @@ function placementLabel(row: D1GrahaRow | D1SpecialPointRow, terminologyMode: D1
   return row.label;
 }
 
+function availableScopesForMode(mode: D1ReaderMode): ChartWorkbenchScopeId[] {
+  if (mode === "astrologer") return [...CHART_WORKBENCH_SCOPE_IDS];
+  return CHART_WORKBENCH_SCOPE_IDS.filter((scopeId) => !CHART_WORKBENCH_EXPERT_SCOPE_IDS.includes(scopeId as typeof CHART_WORKBENCH_EXPERT_SCOPE_IDS[number]));
+}
 function availableTabs(model: D1WorkbenchModel): D1DataTab[] {
   const tabs: D1DataTab[] = ["overview", "grahas", "houses"];
   if (model.capabilities.nakshatrasAvailable) tabs.push("nakshatras");

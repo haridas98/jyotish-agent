@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import PrivateAppAccess
-from apps.calculations.vargas import workbench_varga_codes
+from apps.calculations.vargas import workbench_expert_varga_codes, workbench_varga_codes
 
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation, ChartRelationship
 from .services import (
@@ -74,6 +74,7 @@ class D1WorkbenchDevCheckView(APIView):
                 "supportedModes": ["novice", "astrologer"],
                 "entityInspectorCount": 1,
                 "supportedScopes": list(workbench_varga_codes()),
+                "expertOnlyScopes": list(workbench_expert_varga_codes()),
                 "forbiddenScopesPresent": {
                     "D60": False,
                     "AI": False,

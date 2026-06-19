@@ -31,11 +31,12 @@ if (exists("src/astrology/d1-workbench.ts")) {
   const model = read("src/astrology/d1-workbench.ts");
   assert(model.includes('schemaVersion: "d1-workbench.v1"'), "D1 model must expose schemaVersion");
   assert(model.includes("buildD1WorkbenchModel"), "D1 adapter missing");
-  assert(model.includes('CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24"]'), "Workbench model must expose one supported scope registry");
+  assert(model.includes('CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]'), "Workbench model must expose one supported scope registry");
   assert(model.includes("buildScopeSource"), "Workbench model must normalize D1, D3, D7, D9, D10 and D12 through one scope source");
   assert(model.includes("vargas?.[scopeId]"), "Varga scopes must come from indexed saved varga payload");
   assert(model.includes("VARGA_SCOPE_TITLES"), "Varga scope labels must come from one title registry");
-  for (const code of ["D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24"]) {
+  assert(model.includes('CHART_WORKBENCH_EXPERT_SCOPE_IDS = ["D30"]'), "D30 must be marked as astrologer-only scope");
+  for (const code of ["D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]) {
     assert(model.includes(`${code}:`), `${code} must be registered in the workbench title map`);
   }
   assert(model.includes("specialPoints"), "D1 model must separate special points from grahas");
@@ -55,14 +56,10 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(inspectorRenderCount === 1, "D1 workbench must render exactly one EntityInspector");
   assert(component.includes("specialPointsForHouse"), "D1 workbench must render special points separately from grahas");
   assert(component.includes("onScopeChange"), "D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24 workbench must switch scope through the same component");
-  assert(component.includes('model.scopeId === "D9"'), "Workbench must expose D9 through the same shell");
-  assert(component.includes('model.scopeId === "D10"'), "Workbench must expose D10 through the same shell");
-  assert(component.includes('model.scopeId === "D3"'), "Workbench must expose D3 through the same shell");
-  assert(component.includes('model.scopeId === "D7"'), "Workbench must expose D7 through the same shell");
-  assert(component.includes('model.scopeId === "D12"'), "Workbench must expose D12 through the same shell");
-  for (const code of ["D2", "D4", "D16", "D20", "D24"]) {
-    assert(component.includes(`model.scopeId === "${code}"`), `Workbench must expose ${code} through the same shell`);
-  }
+  assert(component.includes("CHART_WORKBENCH_SCOPE_IDS"), "Workbench must render scopes from the shared registry");
+  assert(component.includes("availableScopesForMode"), "Workbench must filter expert-only scopes by reader mode");
+  const modelSource = read("src/astrology/d1-workbench.ts");
+  assert(modelSource.includes("d30_time_precision"), "D30 workbench must show time precision warning");
   assert(component.includes("terminologyMode"), "D1 workbench must keep terminology mode in shared state");
   assert(component.includes("activeTab"), "D1 workbench must keep active data tab in shared state");
   assert(component.includes("chartStyle === \"north\"") && component.includes("chartStyle === \"south\""), "D1 workbench must support north/south style toggle");

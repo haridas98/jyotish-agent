@@ -15,6 +15,7 @@ class VargaMethod:
     method_version: str = "1"
     non_uniform: bool = False
     source_anchor: str = ""
+    expert_only: bool = False
 
 
 VARGA_METHOD_REGISTRY = {
@@ -34,9 +35,11 @@ VARGA_METHOD_REGISTRY = {
         "D30",
         "Trimsamsha",
         30,
+        workbench_ready=True,
         method_id="varga.d30.parashara_unequal.v1",
         non_uniform=True,
         source_anchor="BPHS 6.27-28",
+        expert_only=True,
     ),
     "D40": VargaMethod("D40", "Khavedamsha", 40),
     "D45": VargaMethod("D45", "Akshavedamsha", 45),
@@ -49,6 +52,10 @@ VARGA_NAMES = {code: method.name for code, method in VARGA_METHOD_REGISTRY.items
 
 def workbench_varga_codes() -> tuple[str, ...]:
     return tuple(code for code, method in VARGA_METHOD_REGISTRY.items() if method.workbench_ready)
+
+
+def workbench_expert_varga_codes() -> tuple[str, ...]:
+    return tuple(code for code, method in VARGA_METHOD_REGISTRY.items() if method.workbench_ready and method.expert_only)
 
 
 def varga_first_last_cases(code: str) -> list[dict[str, object]]:

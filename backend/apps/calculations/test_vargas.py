@@ -68,8 +68,10 @@ def test_varga_method_registry_marks_workbench_ready_scopes():
         "D16",
         "D20",
         "D24",
+        "D30",
     )
-    assert not VARGA_METHOD_REGISTRY["D30"].workbench_ready
+    assert VARGA_METHOD_REGISTRY["D30"].workbench_ready
+    assert VARGA_METHOD_REGISTRY["D30"].expert_only
     assert not VARGA_METHOD_REGISTRY["D60"].workbench_ready
 
 
@@ -118,7 +120,8 @@ def test_d30_method_registry_is_non_uniform_and_source_anchored():
     assert method.method_version == "1"
     assert method.non_uniform is True
     assert method.source_anchor == "BPHS 6.27-28"
-    assert not method.workbench_ready
+    assert method.workbench_ready is True
+    assert method.expert_only is True
 
 
 def test_d30_chart_contract_uses_parashara_unequal_method():
