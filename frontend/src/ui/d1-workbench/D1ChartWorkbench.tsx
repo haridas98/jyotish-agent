@@ -151,6 +151,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
         <button type="button" className={model.scopeId === "D1" ? "active" : ""} onClick={() => onScopeChange?.("D1")}>D1</button>
         <button type="button" className={model.scopeId === "D9" ? "active" : ""} onClick={() => onScopeChange?.("D9")}>D9</button>
         <button type="button" className={model.scopeId === "D10" ? "active" : ""} onClick={() => onScopeChange?.("D10")}>D10</button>
+        <button type="button" className={model.scopeId === "D12" ? "active" : ""} onClick={() => onScopeChange?.("D12")}>D12</button>
         <strong>Стиль</strong>
         <button type="button" className={workbenchState.chartStyle === "north" ? "active" : ""} onClick={() => setChartStyle("north")}>Северный</button>
         <button type="button" className={workbenchState.chartStyle === "south" ? "active" : ""} onClick={() => setChartStyle("south")}>Южный</button>
