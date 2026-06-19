@@ -1222,3 +1222,61 @@ def test_dev_d1_workbench_check_rejects_bad_token(user):
     response = APIClient().get("/api/dev/d1-workbench-check?token=bad&chart_id=1")
 
     assert response.status_code == 403
+
+@pytest.mark.django_db
+@override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
+def test_dev_dasha_workbench_check_returns_vimshottari_contract(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Dasha external check",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result={
+            "dashas": {
+                "vimshottari": {
+                    "system": "vimshottari",
+                    "level": "mahadasha",
+                    "year_length_days": 365.25,
+                    "mahadashas": [
+                        {"lord": "Ketu", "level": 1, "starts_at": "1990-08-15T10:24:00+00:00", "ends_at": "1995-01-01T00:00:00+00:00", "duration_years": 4.4, "sequence_index": 0},
+                        {"lord": "Shukra", "level": 1, "starts_at": "1995-01-01T00:00:00+00:00", "ends_at": "2015-01-01T00:00:00+00:00", "duration_years": 20.0, "sequence_index": 1},
+                    ],
+                }
+            },
+            "birth": {},
+        },
+    )
+
+    response = APIClient().get(f"/api/dev/dasha-workbench-check?token=dev-token&chart_id={profile.id}")
+
+    assert response.status_code == 200
+    assert response["Cache-Control"] == "no-store"
+    assert response.data == {
+        "status": "ok",
+        "schemaVersion": "dasha-workbench-check.v1",
+        "chartId": profile.id,
+        "hasCalculation": True,
+        "supportedSystems": ["vimshottari"],
+        "activeSystem": "vimshottari",
+        "mahadashaCount": 2,
+        "antardashaCount": 0,
+        "yearLengthDays": 365.25,
+        "currentMahadashaLord": "Ketu",
+        "currentAntardashaLord": "",
+        "entityInspectorCount": 1,
+        "supportedModes": ["novice", "astrologer"],
+        "forbiddenScopesPresent": {"AI": False, "rawEvidence": False},
+    }

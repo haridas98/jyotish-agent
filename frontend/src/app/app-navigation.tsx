@@ -58,6 +58,7 @@ export const appNavItems: AppNavItem[] = [
   { key: "charts", homeHref: "#chart", href: "/charts", label: "Карты", shortLabel: "Карты" },
   { key: "people", homeHref: "/people", href: "/people", label: "Люди", shortLabel: "Люди" },
   { key: "reports", homeHref: "/reports", href: "/reports", label: "Обзоры", shortLabel: "Обз." },
+  { key: "timeline", homeHref: "/dashas", href: "/dashas", label: "Даши", shortLabel: "Даши" },
   { key: "compatibility", homeHref: "/compatibility", href: "/compatibility", label: "Совместимость", shortLabel: "Совм." },
   { key: "interactions", homeHref: "/interactions", href: "/interactions", label: "Взаимодействия", shortLabel: "Связи" },
   { key: "transits", homeHref: "/transits", href: "/transits", label: "Транзиты", shortLabel: "Транз." },

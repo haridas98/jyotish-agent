@@ -12,11 +12,13 @@ from .views import (
     ChartRelationshipDetailView,
     ChartRelationshipListView,
     D1WorkbenchDevCheckView,
+    DashaWorkbenchDevCheckView,
 )
 
 urlpatterns = [
     path("dev/d1-workbench-check", D1WorkbenchDevCheckView.as_view(), name="dev-d1-workbench-check"),
     path("dev/varga-workbench-check", D1WorkbenchDevCheckView.as_view(), name="dev-varga-workbench-check"),
+    path("dev/dasha-workbench-check", DashaWorkbenchDevCheckView.as_view(), name="dev-dasha-workbench-check"),
     path("charts", BirthProfileListView.as_view(), name="chart-list"),
     path("charts/<int:profile_id>", BirthProfileDetailView.as_view(), name="chart-detail"),
     path("charts/<int:profile_id>/workbench", BirthProfileWorkbenchView.as_view(), name="chart-workbench"),

@@ -89,6 +89,59 @@ class D1WorkbenchDevCheckView(APIView):
         return response
 
 
+
+class DashaWorkbenchDevCheckView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        if not settings.ENABLE_DEV_LOGIN:
+            return Response({"error": "not found"}, status=404)
+        token = str(request.query_params.get("token") or "").strip()
+        if not settings.DEV_LOGIN_TOKEN or token != settings.DEV_LOGIN_TOKEN:
+            return Response({"error": "forbidden"}, status=403)
+        try:
+            chart_id = int(request.query_params.get("chart_id") or request.query_params.get("profile_id") or 0)
+        except (TypeError, ValueError):
+            return Response({"error": "chart_id is invalid"}, status=400)
+        if chart_id <= 0:
+            return Response({"error": "chart_id is required"}, status=400)
+
+        profile = get_object_or_404(BirthProfile.objects.select_related("place"), id=chart_id)
+        calculation = (
+            profile.calculations.filter(status=ChartCalculation.Status.COMPLETE)
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        chart = calculation.result if calculation and isinstance(calculation.result, dict) else {}
+        response = Response(_dasha_workbench_check_payload(profile.id, chart, calculation is not None))
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: bool) -> dict[str, object]:
+    vimshottari = ((chart.get("dashas") or {}).get("vimshottari") or {}) if isinstance(chart, dict) else {}
+    mahadashas = vimshottari.get("mahadashas") if isinstance(vimshottari.get("mahadashas"), list) else []
+    current_mahadasha = mahadashas[0] if mahadashas and isinstance(mahadashas[0], dict) else {}
+    antardashas = vimshottari.get("antardashas") if isinstance(vimshottari.get("antardashas"), list) else []
+    current_antardasha = antardashas[0] if antardashas and isinstance(antardashas[0], dict) else {}
+    return {
+        "status": "ok",
+        "schemaVersion": "dasha-workbench-check.v1",
+        "chartId": chart_id,
+        "hasCalculation": has_calculation,
+        "supportedSystems": ["vimshottari"],
+        "activeSystem": "vimshottari",
+        "mahadashaCount": len(mahadashas),
+        "antardashaCount": len(antardashas),
+        "yearLengthDays": vimshottari.get("year_length_days") or 365.25,
+        "currentMahadashaLord": str(current_mahadasha.get("lord") or ""),
+        "currentAntardashaLord": str(current_antardasha.get("lord") or ""),
+        "entityInspectorCount": 1,
+        "supportedModes": ["novice", "astrologer"],
+        "forbiddenScopesPresent": {"AI": False, "rawEvidence": False},
+    }
+
 def _workbench_supported_scopes(profile: BirthProfile | None = None) -> tuple[str, ...]:
     codes = tuple(workbench_varga_codes())
     if profile is not None and getattr(profile, "birth_time_accuracy", "") != BirthProfile.TimeAccuracy.EXACT:
