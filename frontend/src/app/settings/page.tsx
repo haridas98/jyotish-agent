@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
+import { CHART_WORKBENCH_EXPERT_SCOPE_IDS, CHART_WORKBENCH_SCOPE_IDS, type ChartWorkbenchScopeId } from "@/astrology/d1-workbench";
 import {
   fetchJyotishSettings,
   updateJyotishSettings,
@@ -31,9 +32,9 @@ const DEFAULT_DISPLAY: JyotishDisplaySettings = {
   themeMode: "system",
 };
 
-const DIVISIONAL_CHARTS = ["D1", "D9", "D10", "D60"] as const;
+const DIVISIONAL_CHARTS = CHART_WORKBENCH_SCOPE_IDS;
 
-function toggleChart(settings: JyotishCalculationSettings, chart: string): JyotishCalculationSettings {
+function toggleChart(settings: JyotishCalculationSettings, chart: ChartWorkbenchScopeId): JyotishCalculationSettings {
   const enabled = new Set(settings.divisionalChartsEnabled);
   if (enabled.has(chart)) {
     enabled.delete(chart);
@@ -175,7 +176,7 @@ export default function SettingsPage() {
                   checked={calculation.divisionalChartsEnabled.includes(chart)}
                   onChange={() => setCalculation(toggleChart(calculation, chart))}
                 />
-                <span>{chart}</span>
+                <span>{chart}{CHART_WORKBENCH_EXPERT_SCOPE_IDS.includes(chart as typeof CHART_WORKBENCH_EXPERT_SCOPE_IDS[number]) ? " expert" : ""}</span>
               </label>
             ))}
           </fieldset>

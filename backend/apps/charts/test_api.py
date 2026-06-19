@@ -1091,6 +1091,25 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert response.data["methodVersion"] == "1"
     assert response.data["calculationPreset"] == "parashara"
 
+    scopes = response.data["vargaScopes"]
+    assert [item["code"] for item in scopes] == response.data["supportedScopes"]
+    assert {item["category"] for item in scopes} == {"main", "family", "professional", "spiritual", "expert"}
+    assert next(item for item in scopes if item["code"] == "D1") == {
+        "code": "D1",
+        "name": "Rashi",
+        "category": "main",
+        "methodId": "varga.parashara_shodasha.v1",
+        "methodVersion": "1",
+        "calculationPreset": "parashara",
+        "expertOnly": False,
+        "timeAccuracyRequired": "",
+    }
+    d60_scope = next(item for item in scopes if item["code"] == "D60")
+    assert d60_scope["category"] == "expert"
+    assert d60_scope["expertOnly"] is True
+    assert d60_scope["timeAccuracyRequired"] == "exact"
+    assert d60_scope["methodId"] == "varga.d60.parashara_shashtyamsha.v1"
+
     d3_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope=d3")
     assert d3_response.status_code == 200
     assert d3_response.data["scopeId"] == "D3"

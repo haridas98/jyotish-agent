@@ -1695,7 +1695,7 @@ export type JyotishCalculationSettings = {
   nodeType: "mean" | "true";
   calculationProfile: "default" | "bphs_research" | "gaudiya_default";
   divisionalChartsEnabled: string[];
-  defaultDivisionalChart: "D1" | "D9" | "D10" | "D60";
+  defaultDivisionalChart: "D1" | "D2" | "D3" | "D4" | "D7" | "D9" | "D10" | "D12" | "D16" | "D20" | "D24" | "D30" | "D60";
   timezoneMode: "birth_place_timezone";
 };
 
@@ -1790,6 +1790,27 @@ export type ChartCalculationRecord = {
 
 export type ChartWorkbenchScope = "d1" | "d2" | "d3" | "d4" | "d7" | "d9" | "d10" | "d12" | "d16" | "d20" | "d24" | "d30" | "d60";
 
+export type VargaScopeCategory = "main" | "family" | "professional" | "spiritual" | "expert";
+
+export type VargaScopeMetadata = {
+  code: string;
+  name: string;
+  category: VargaScopeCategory;
+  methodId: string;
+  methodVersion: string;
+  calculationPreset: string;
+  expertOnly: boolean;
+  timeAccuracyRequired: string;
+};
+
+export type VargaAccuracyGate = {
+  scopeId: string;
+  status: "usable" | "blocked" | string;
+  requiredBirthTimeAccuracy: string;
+  actualBirthTimeAccuracy: string;
+  reason: string;
+};
+
 export type D1WorkbenchApiResponse = {
   scope: ChartWorkbenchScope;
   profile: ChartProfile;
@@ -1800,6 +1821,11 @@ export type D1WorkbenchApiResponse = {
     methodVersion: string;
     calculationPreset: string;
   };
+  warnings?: Array<{ code: string; severity: string; message: string }>;
+  accuracyGates?: Record<string, VargaAccuracyGate>;
+  supportedScopes?: string[];
+  expertOnlyScopes?: string[];
+  vargaScopes?: VargaScopeMetadata[];
 };
 
 export type VLSearchResult = {

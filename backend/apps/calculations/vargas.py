@@ -17,20 +17,21 @@ class VargaMethod:
     source_anchor: str = ""
     expert_only: bool = False
     time_accuracy_required: str = ""
+    category: str = "main"
 
 
 VARGA_METHOD_REGISTRY = {
     "D1": VargaMethod("D1", "Rashi", 1, True),
     "D2": VargaMethod("D2", "Hora", 2, True),
-    "D3": VargaMethod("D3", "Drekkana", 3, True),
+    "D3": VargaMethod("D3", "Drekkana", 3, True, category="family"),
     "D4": VargaMethod("D4", "Chaturthamsha", 4, True),
-    "D7": VargaMethod("D7", "Saptamsa", 7, True),
-    "D9": VargaMethod("D9", "Navamsa", 9, True),
-    "D10": VargaMethod("D10", "Dashamsa", 10, True),
-    "D12": VargaMethod("D12", "Dvadashamsha", 12, True),
+    "D7": VargaMethod("D7", "Saptamsa", 7, True, category="family"),
+    "D9": VargaMethod("D9", "Navamsa", 9, True, category="family"),
+    "D10": VargaMethod("D10", "Dashamsa", 10, True, category="professional"),
+    "D12": VargaMethod("D12", "Dvadashamsha", 12, True, category="family"),
     "D16": VargaMethod("D16", "Shodashamsha", 16, True),
-    "D20": VargaMethod("D20", "Vimshamsha", 20, True),
-    "D24": VargaMethod("D24", "Siddhamsha", 24, True),
+    "D20": VargaMethod("D20", "Vimshamsha", 20, True, category="spiritual"),
+    "D24": VargaMethod("D24", "Siddhamsha", 24, True, category="spiritual"),
     "D27": VargaMethod("D27", "Bhamsha", 27),
     "D30": VargaMethod(
         "D30",
@@ -41,6 +42,7 @@ VARGA_METHOD_REGISTRY = {
         non_uniform=True,
         source_anchor="BPHS 6.27-28",
         expert_only=True,
+        category="expert",
     ),
     "D40": VargaMethod("D40", "Khavedamsha", 40),
     "D45": VargaMethod("D45", "Akshavedamsha", 45),
@@ -53,6 +55,7 @@ VARGA_METHOD_REGISTRY = {
         source_anchor="JHora Sterlitamak 1998 D60 parity; BPHS Shashtyamsha source review pending",
         expert_only=True,
         time_accuracy_required="exact",
+        category="expert",
     ),
 }
 

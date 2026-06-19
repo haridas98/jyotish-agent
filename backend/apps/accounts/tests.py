@@ -254,6 +254,23 @@ def test_user_settings_patch_updates_calculation_and_display():
 
 
 @pytest.mark.django_db
+def test_user_settings_accept_workbench_varga_scope_registry():
+    user = get_user_model().objects.create_user(username="settings-workbench-vargas", password="strong-pass-108")
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.patch(
+        reverse("user-settings"),
+        {"calculation": {"divisionalChartsEnabled": ["D1", "D2", "D30"], "defaultDivisionalChart": "D30"}},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["calculation"]["divisionalChartsEnabled"] == ["D1", "D2", "D30"]
+    assert response.data["calculation"]["defaultDivisionalChart"] == "D30"
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "payload,error",
     [

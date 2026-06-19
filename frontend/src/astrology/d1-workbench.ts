@@ -1,5 +1,5 @@
 import type { EntityId } from "@/astrology";
-import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, HousePlacement, JyotishUserSettings, VargaPlacement } from "@/lib/api";
+import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, HousePlacement, JyotishUserSettings, VargaAccuracyGate, VargaPlacement, VargaScopeCategory, VargaScopeMetadata } from "@/lib/api";
 
 export const CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"] as const;
 export const CHART_WORKBENCH_EXPERT_SCOPE_IDS = ["D30", "D60"] as const;
@@ -44,6 +44,10 @@ export type D1WorkbenchModel = {
   grahas: D1GrahaRow[];
   specialPoints: D1SpecialPointRow[];
   warnings: D1Warning[];
+  supportedScopes: ChartWorkbenchScopeId[];
+  expertOnlyScopes: ChartWorkbenchScopeId[];
+  vargaScopes: D1VargaScopeMetadata[];
+  accuracyGates: Record<string, VargaAccuracyGate>;
 };
 
 export type D1WorkbenchCapabilities = {
@@ -100,6 +104,18 @@ export type D1Warning = {
   code: string;
   message: string;
   severity: "info" | "warning" | "critical";
+};
+
+export type D1VargaScopeMetadata = Omit<VargaScopeMetadata, "code"> & {
+  code: ChartWorkbenchScopeId;
+  category: VargaScopeCategory;
+};
+
+type WorkbenchApiMeta = {
+  supportedScopes?: string[];
+  expertOnlyScopes?: string[];
+  vargaScopes?: VargaScopeMetadata[];
+  accuracyGates?: Record<string, VargaAccuracyGate>;
 };
 
 type NormalizedPlacement = Partial<GrahaPosition> & Partial<VargaPlacement> & {
@@ -179,6 +195,7 @@ export function buildD1WorkbenchModel(
   settings: JyotishUserSettings | null,
   calculationResult: ChartCalculationRecord | null,
   scopeId: ChartWorkbenchScopeId = "D1",
+  apiMeta: WorkbenchApiMeta | null = null,
 ): D1WorkbenchModel {
   const chart = calculationResult?.result ?? null;
   const scope = buildScopeSource(chart, scopeId);
@@ -204,6 +221,9 @@ export function buildD1WorkbenchModel(
   const houses = buildHouseCells(scope, grahas, specialPoints);
   const capabilities = buildCapabilities(grahas, specialPoints);
   const rashiCount = new Set(houses.map((house) => house.rashiIndex).filter((item): item is number => item !== null)).size;
+  const supportedScopes = normalizeScopeList(apiMeta?.supportedScopes, [...CHART_WORKBENCH_SCOPE_IDS]);
+  const expertOnlyScopes = normalizeScopeList(apiMeta?.expertOnlyScopes, [...CHART_WORKBENCH_EXPERT_SCOPE_IDS]);
+  const vargaScopes = normalizeVargaScopes(apiMeta?.vargaScopes, supportedScopes, expertOnlyScopes);
 
   return {
     schemaVersion: "d1-workbench.v1",
@@ -242,7 +262,39 @@ export function buildD1WorkbenchModel(
     grahas,
     specialPoints,
     warnings,
+    supportedScopes,
+    expertOnlyScopes,
+    vargaScopes,
+    accuracyGates: apiMeta?.accuracyGates ?? {},
   };
+}
+
+function isChartWorkbenchScopeId(value: string): value is ChartWorkbenchScopeId {
+  return (CHART_WORKBENCH_SCOPE_IDS as readonly string[]).includes(value);
+}
+
+function normalizeScopeList(raw: string[] | undefined, fallback: ChartWorkbenchScopeId[]): ChartWorkbenchScopeId[] {
+  const normalized = (raw ?? []).map((item) => item.toUpperCase()).filter(isChartWorkbenchScopeId);
+  return normalized.length ? normalized : fallback;
+}
+
+function normalizeVargaScopes(raw: VargaScopeMetadata[] | undefined, supportedScopes: ChartWorkbenchScopeId[], expertOnlyScopes: ChartWorkbenchScopeId[]): D1VargaScopeMetadata[] {
+  const supported = new Set(supportedScopes);
+  const fromApi = (raw ?? [])
+    .filter((item) => isChartWorkbenchScopeId(item.code) && supported.has(item.code))
+    .map((item) => ({ ...item, code: item.code as ChartWorkbenchScopeId }));
+  if (fromApi.length) return fromApi;
+  const expert = new Set(expertOnlyScopes);
+  return supportedScopes.map((code) => ({
+    code,
+    name: code === "D1" ? "Rashi" : VARGA_SCOPE_TITLES[code as Exclude<ChartWorkbenchScopeId, "D1">],
+    category: expert.has(code) ? "expert" : code === "D10" ? "professional" : code === "D20" || code === "D24" ? "spiritual" : ["D3", "D7", "D9", "D12"].includes(code) ? "family" : "main",
+    methodId: code === "D30" ? "varga.d30.parashara_unequal.v1" : code === "D60" ? "varga.d60.parashara_shashtyamsha.v1" : "varga.parashara_shodasha.v1",
+    methodVersion: "1",
+    calculationPreset: "parashara",
+    expertOnly: expert.has(code),
+    timeAccuracyRequired: code === "D60" ? "exact" : "",
+  }));
 }
 
 function buildScopeSource(chart: BirthChart | null, scopeId: ChartWorkbenchScopeId): ScopeSource {

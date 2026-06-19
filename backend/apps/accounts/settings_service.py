@@ -4,6 +4,8 @@ from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser
 
+from apps.calculations.vargas import workbench_varga_codes
+
 from .models import UserJyotishSettings
 
 
@@ -39,7 +41,7 @@ ALLOWED_VALUES = {
         "houseSystem": {"whole_sign", "sripati", "equal"},
         "nodeType": {"mean", "true"},
         "calculationProfile": {"default", "bphs_research", "gaudiya_default"},
-        "defaultDivisionalChart": {"D1", "D9", "D10", "D60"},
+        "defaultDivisionalChart": set(workbench_varga_codes()),
         "timezoneMode": {"birth_place_timezone"},
     },
     "display": {
@@ -51,7 +53,7 @@ ALLOWED_VALUES = {
     },
 }
 
-ALLOWED_DIVISIONAL_CHARTS = {"D1", "D9", "D10", "D60"}
+ALLOWED_DIVISIONAL_CHARTS = set(workbench_varga_codes())
 
 
 def settings_payload(settings: UserJyotishSettings) -> dict[str, Any]:

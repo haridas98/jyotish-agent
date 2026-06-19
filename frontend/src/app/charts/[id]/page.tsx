@@ -62,7 +62,7 @@ export default function ChartDetailPage() {
   const model = useMemo(() => {
     if (!profile || !workbench) return null;
     const scopeId = workbench.scope.toUpperCase() as ChartWorkbenchScopeId;
-    return buildD1WorkbenchModel(profile, settings, workbench.calculation, scopeId);
+    return buildD1WorkbenchModel(profile, settings, workbench.calculation, scopeId, workbench);
   }, [profile, settings, workbench]);
 
   return (

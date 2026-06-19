@@ -56,8 +56,9 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(inspectorRenderCount === 1, "D1 workbench must render exactly one EntityInspector");
   assert(component.includes("specialPointsForHouse"), "D1 workbench must render special points separately from grahas");
   assert(component.includes("onScopeChange"), "D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24 workbench must switch scope through the same component");
-  assert(component.includes("CHART_WORKBENCH_SCOPE_IDS"), "Workbench must render scopes from the shared registry");
-  assert(component.includes("availableScopesForMode"), "Workbench must filter expert-only scopes by reader mode");
+  assert(component.includes("model.supportedScopes"), "Workbench must render scopes from API-supported registry data");
+  assert(component.includes("model.vargaScopes"), "Workbench must group scopes from API varga scope metadata");
+  assert(component.includes("availableScopeGroupsForMode"), "Workbench must filter grouped expert-only scopes by reader mode");
   const modelSource = read("src/astrology/d1-workbench.ts");
   assert(modelSource.includes("d30_time_precision"), "D30 workbench must show time precision warning");
   assert(modelSource.includes("d60_birth_time_accuracy"), "D60 workbench must show exact birth-time warning");
@@ -69,6 +70,13 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   for (const forbidden of ["AI", "source.pending", "Missing calculations", "Block is not registered yet"]) {
     assert(!component.includes(forbidden), `D1 workbench leaks forbidden marker: ${forbidden}`);
   }
+}
+
+if (exists("src/app/settings/page.tsx")) {
+  const settingsPage = read("src/app/settings/page.tsx");
+  assert(settingsPage.includes("CHART_WORKBENCH_SCOPE_IDS"), "Settings D-chart list must be synchronized with Workbench scope registry");
+  assert(settingsPage.includes("CHART_WORKBENCH_EXPERT_SCOPE_IDS"), "Settings must know expert-only vargas");
+  assert(!settingsPage.includes("[\"D1\", \"D9\", \"D10\", \"D60\"] as const"), "Settings must not keep the old hardcoded D1/D9/D10/D60 list");
 }
 
 if (failures.length) {

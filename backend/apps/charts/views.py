@@ -75,6 +75,7 @@ class D1WorkbenchDevCheckView(APIView):
                 "entityInspectorCount": 1,
                 "supportedScopes": list(_workbench_supported_scopes(profile)),
                 "expertOnlyScopes": list(_workbench_expert_scopes(profile)),
+                "vargaScopes": _workbench_varga_scopes(profile),
                 "warnings": _workbench_warnings(profile),
                 "accuracyGates": _workbench_accuracy_gates(profile),
                 "forbiddenScopesPresent": {
@@ -100,6 +101,24 @@ def _workbench_expert_scopes(profile: BirthProfile | None = None) -> tuple[str, 
 
 def _workbench_supported_scope_keys(profile: BirthProfile | None = None) -> set[str]:
     return {code.lower() for code in _workbench_supported_scopes(profile)}
+
+
+def _workbench_varga_scopes(profile: BirthProfile) -> list[dict[str, object]]:
+    supported = set(_workbench_supported_scopes(profile))
+    return [
+        {
+            "code": code,
+            "name": method.name,
+            "category": method.category,
+            "methodId": method.method_id,
+            "methodVersion": method.method_version,
+            "calculationPreset": "parashara",
+            "expertOnly": method.expert_only,
+            "timeAccuracyRequired": method.time_accuracy_required,
+        }
+        for code, method in VARGA_METHOD_REGISTRY.items()
+        if code in supported
+    ]
 
 
 def _workbench_accuracy_gates(profile: BirthProfile) -> dict[str, dict[str, str]]:
@@ -314,6 +333,7 @@ class BirthProfileWorkbenchView(APIView):
                 "accuracyGates": _workbench_accuracy_gates(profile),
                 "supportedScopes": list(_workbench_supported_scopes(profile)),
                 "expertOnlyScopes": list(_workbench_expert_scopes(profile)),
+                "vargaScopes": _workbench_varga_scopes(profile),
                 "result": calculation.result if calculation else None,
             }
         )

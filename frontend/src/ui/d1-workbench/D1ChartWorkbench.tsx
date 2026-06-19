@@ -3,8 +3,6 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import type { EntityId } from "@/astrology";
 import {
-  CHART_WORKBENCH_EXPERT_SCOPE_IDS,
-  CHART_WORKBENCH_SCOPE_IDS,
   type ChartWorkbenchScopeId,
   type D1ChartStyle,
   type D1DataTab,
@@ -117,11 +115,13 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
   });
   const selected = useMemo(() => selectedFacts(model, workbenchState.activeEntityId), [model, workbenchState.activeEntityId]);
   const tabIds = availableTabs(model);
+  const activeScopeMeta = model.vargaScopes.find((scope) => scope.code === model.scopeId);
+  const activeAccuracyGate = model.accuracyGates[model.scopeId];
 
   const setActiveEntityId = (activeEntityId: EntityId | null) => setWorkbenchState((state) => ({ ...state, activeEntityId }));
   const setChartStyle = (chartStyle: D1ChartStyle) => setWorkbenchState((state) => ({ ...state, chartStyle }));
   const setMode = (mode: D1ReaderMode) => {
-    if (mode === "novice" && CHART_WORKBENCH_EXPERT_SCOPE_IDS.includes(model.scopeId as typeof CHART_WORKBENCH_EXPERT_SCOPE_IDS[number])) {
+    if (mode === "novice" && model.expertOnlyScopes.includes(model.scopeId)) {
       onScopeChange?.("D1");
     }
     setWorkbenchState((state) => ({ ...state, mode }));
@@ -155,8 +155,15 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
 
       <div className="d1-toolbar" aria-label="Стиль карты">
         <strong>Карта</strong>
-        {availableScopesForMode(workbenchState.mode).map((scopeId) => (
-          <button key={scopeId} type="button" className={model.scopeId === scopeId ? "active" : ""} onClick={() => onScopeChange?.(scopeId)}>{scopeId}</button>
+        {availableScopeGroupsForMode(model, workbenchState.mode).map((group) => (
+          <div key={group.category} className="d1-scope-group" data-category={group.category}>
+            <span>{scopeCategoryLabel(group.category)}</span>
+            {group.scopes.map((scope) => (
+              <button key={scope.code} type="button" className={model.scopeId === scope.code ? "active" : ""} title={`${scope.name} - ${scope.methodId} v${scope.methodVersion}`} onClick={() => onScopeChange?.(scope.code)}>
+                {scope.code}
+              </button>
+            ))}
+          </div>
         ))}
         <strong>Стиль</strong>
         <button type="button" className={workbenchState.chartStyle === "north" ? "active" : ""} onClick={() => setChartStyle("north")}>Северный</button>
@@ -173,6 +180,13 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
       </div>
 
       {status ? <div className="product-status">{status}</div> : null}
+      {workbenchState.mode === "astrologer" && activeScopeMeta ? (
+        <div className="d1-method-strip">
+          <span>{activeScopeMeta.methodId} v{activeScopeMeta.methodVersion}</span>
+          <span>{activeScopeMeta.calculationPreset}</span>
+          {activeAccuracyGate ? <span>accuracy: {activeAccuracyGate.status}</span> : null}
+        </div>
+      ) : null}
       {model.warnings.length ? (
         <div className="d1-warning-list">
           {model.warnings.map((warning) => <span key={warning.code}>{warning.message}</span>)}
@@ -406,10 +420,26 @@ function placementLabel(row: D1GrahaRow | D1SpecialPointRow, terminologyMode: D1
   return row.label;
 }
 
-function availableScopesForMode(mode: D1ReaderMode): ChartWorkbenchScopeId[] {
-  if (mode === "astrologer") return [...CHART_WORKBENCH_SCOPE_IDS];
-  return CHART_WORKBENCH_SCOPE_IDS.filter((scopeId) => !CHART_WORKBENCH_EXPERT_SCOPE_IDS.includes(scopeId as typeof CHART_WORKBENCH_EXPERT_SCOPE_IDS[number]));
+function availableScopeGroupsForMode(model: D1WorkbenchModel, mode: D1ReaderMode) {
+  const supported = new Set(model.supportedScopes);
+  const expert = new Set(model.expertOnlyScopes);
+  const scopes = model.vargaScopes
+    .filter((scope) => supported.has(scope.code))
+    .filter((scope) => mode === "astrologer" || !expert.has(scope.code));
+  const categories = ["main", "family", "professional", "spiritual", "expert"] as const;
+  return categories
+    .map((category) => ({ category, scopes: scopes.filter((scope) => scope.category === category) }))
+    .filter((group) => group.scopes.length > 0);
 }
+
+function scopeCategoryLabel(category: string) {
+  if (category === "main") return "Base";
+  if (category === "family") return "Family";
+  if (category === "professional") return "Work";
+  if (category === "spiritual") return "Dharma";
+  return "Expert";
+}
+
 function availableTabs(model: D1WorkbenchModel): D1DataTab[] {
   const tabs: D1DataTab[] = ["overview", "grahas", "houses"];
   if (model.capabilities.nakshatrasAvailable) tabs.push("nakshatras");
