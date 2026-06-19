@@ -75,6 +75,33 @@ class BirthProfileDetailView(APIView):
         return Response(status=204)
 
 
+
+class BirthProfileWorkbenchView(APIView):
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
+
+    def get(self, request, profile_id: int):
+        scope = str(request.query_params.get("scope") or "d1").strip().lower()
+        if scope != "d1":
+            return Response({"error": "scope is not supported"}, status=400)
+        profile = get_object_or_404(
+            BirthProfile.objects.select_related("place"),
+            id=profile_id,
+            user=request.user,
+        )
+        calculation = (
+            profile.calculations.filter(status=ChartCalculation.Status.COMPLETE)
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        return Response(
+            {
+                "scope": "d1",
+                "profile": profile_payload(profile, latest_calculation=calculation),
+                "calculation": calculation_payload(calculation) if calculation else None,
+                "result": calculation.result if calculation else None,
+            }
+        )
+
 class BirthProfileCalculateView(APIView):
     permission_classes = [PrivateAppAccess, IsAuthenticated]
 

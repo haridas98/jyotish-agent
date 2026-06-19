@@ -909,3 +909,63 @@ def test_birth_profiles_private_gate_rejects_inactive_user():
     response = client.get("/api/charts/profiles")
 
     assert response.status_code in {401, 403}
+@pytest.mark.django_db
+def test_chart_workbench_returns_latest_complete_d1(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Workbench chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    calculation = ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result={
+            "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1, "navamsa": "Cancer"},
+            "grahas": [{"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1, "navamsa": "Aries"}],
+            "houses": [{"house": 1, "rashi": "Cancer", "rashi_index": 3}, {"house": 2, "rashi": "Leo", "rashi_index": 4}],
+            "birth": {},
+            "place": {},
+            "panchanga": {},
+        },
+    )
+
+    response = client.get(f"/api/charts/{profile.id}/workbench?scope=d1")
+
+    assert response.status_code == 200
+    assert response.data["scope"] == "d1"
+    assert response.data["profile"]["id"] == profile.id
+    assert response.data["calculation"]["id"] == calculation.id
+    assert response.data["result"]["grahas"][0]["body"] == "Surya"
+
+
+@pytest.mark.django_db
+def test_chart_workbench_does_not_expose_other_users_profile(user):
+    other_user = get_user_model().objects.create_user(username="workbench-other", password="strong-pass-108")
+    owner_client = APIClient()
+    owner_client.force_authenticate(user=user)
+    other_client = APIClient()
+    other_client.force_authenticate(user=other_user)
+    profile = owner_client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Private workbench chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    ).data["profile"]
+
+    response = other_client.get(f"/api/charts/{profile['id']}/workbench?scope=d1")
+
+    assert response.status_code == 404

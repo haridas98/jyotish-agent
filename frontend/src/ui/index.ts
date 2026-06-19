@@ -7,3 +7,4 @@ export * from "./components/EntityChip";
 export * from "./components/EntityInspector";
 export * from "./reports";
 export * from "./components/LayoutRenderer";
+export * from "./d1-workbench";

@@ -8,6 +8,7 @@ from .views import (
     BirthProfileRelationshipDetailView,
     BirthProfileRelationshipInboxView,
     BirthProfileRelationshipListView,
+    BirthProfileWorkbenchView,
     ChartRelationshipDetailView,
     ChartRelationshipListView,
 )
@@ -15,6 +16,7 @@ from .views import (
 urlpatterns = [
     path("charts", BirthProfileListView.as_view(), name="chart-list"),
     path("charts/<int:profile_id>", BirthProfileDetailView.as_view(), name="chart-detail"),
+    path("charts/<int:profile_id>/workbench", BirthProfileWorkbenchView.as_view(), name="chart-workbench"),
     path("charts/profiles", BirthProfileListView.as_view(), name="chart-profile-list"),
     path("charts/profiles/<int:profile_id>", BirthProfileDetailView.as_view(), name="chart-profile-detail"),
     path("charts/profile-relationships", BirthProfileRelationshipListView.as_view(), name="chart-profile-relationship-list"),

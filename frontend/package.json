@@ -27,6 +27,7 @@
     "test:ai-staging-gateway": "node scripts/check-ai-staging-gateway.mjs",
     "test:ai-staging-smoke": "node scripts/check-ai-staging-smoke.mjs",
     "test:ai-human-review-mock": "node scripts/check-ai-human-review-mock.mjs",
+    "test:d1-workbench": "node scripts/check-d1-workbench.mjs",
     "smoke:ai-staging": "node scripts/smoke-ai-staging.mjs",
     "production-check": "node scripts/production-check.mjs",
     "build:prod": "next build && npm run production-check",

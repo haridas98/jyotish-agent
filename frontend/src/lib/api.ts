@@ -1785,6 +1785,13 @@ export type ChartCalculationRecord = {
   updated_at: string;
 };
 
+export type D1WorkbenchApiResponse = {
+  scope: "d1";
+  profile: ChartProfile;
+  calculation: ChartCalculationRecord | null;
+  result: BirthChart | null;
+};
+
 export type VLSearchResult = {
   id: number;
   unit_id: number | null;
@@ -2638,6 +2645,15 @@ export async function fetchChartProfile(profileId: number): Promise<ChartProfile
   }
   return data.profile;
 }
+export async function fetchD1ChartWorkbench(profileId: number): Promise<D1WorkbenchApiResponse> {
+  const response = await apiFetch("/api/charts/" + profileId + "/workbench?scope=d1", { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Request failed");
+  }
+  return data;
+}
+
 export async function createChartProfile(payload: BirthChartRequest & { display_name: string; is_self_profile?: boolean; birth_time_accuracy?: string; gender?: "male" | "female" | "unknown"; notes?: string }): Promise<ChartProfile> {
   const birthTimeAccuracy = payload.birth_time_accuracy ?? (payload.birth_time?.trim() ? "exact" : "unknown");
   const response = await apiFetch("/api/charts", {
