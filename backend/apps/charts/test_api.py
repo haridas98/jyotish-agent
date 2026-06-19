@@ -1090,6 +1090,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert response.data["methodId"] == "varga.parashara_shodasha.v1"
     assert response.data["methodVersion"] == "1"
     assert response.data["calculationPreset"] == "parashara"
+    assert response.data["warnings"] == []
 
     scopes = response.data["vargaScopes"]
     assert [item["code"] for item in scopes] == response.data["supportedScopes"]
@@ -1137,6 +1138,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
         assert scope_response.data["grahaCount"] == 1
         assert scope_response.data["specialPointCount"] == 1
         assert scope_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
+        assert scope_response.data["warnings"] == []
         if scope_id == "D30":
             assert scope_response.data["methodId"] == "varga.d30.parashara_unequal.v1"
             assert scope_response.data["methodVersion"] == "1"
@@ -1152,9 +1154,18 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert d9_response.data["chartObjectCount"] == 2
     assert d9_response.data["tabIds"] == ["overview", "grahas", "houses"]
     assert d9_response.data["forbiddenScopesPresent"] == {"D60": False, "AI": False, "rawEvidence": False}
+    assert d9_response.data["warnings"] == []
     alias_response = public_client.get(f"/api/dev/varga-workbench-check?token=dev-token&chart_id={profile.id}&scope=d9")
     assert alias_response.status_code == 200
     assert alias_response.data == d9_response.data
+    d12_response = public_client.get(f"/api/dev/varga-workbench-check?token=dev-token&chart_id={profile.id}&scope=d12")
+    assert d12_response.status_code == 200
+    assert d12_response.data["scopeId"] == "D12"
+    assert d12_response.data["warnings"] == []
+    d60_response = public_client.get(f"/api/dev/varga-workbench-check?token=dev-token&chart_id={profile.id}&scope=d60")
+    assert d60_response.status_code == 200
+    assert d60_response.data["scopeId"] == "D60"
+    assert [warning["code"] for warning in d60_response.data["warnings"]] == ["d60_birth_time_accuracy"]
     assert "birth_date" not in response.data
     assert "birth" not in response.data
 
@@ -1194,7 +1205,7 @@ def test_dev_varga_workbench_check_blocks_d60_without_exact_birth_time(user):
     assert "D60" not in d1_response.data["supportedScopes"]
     assert "D60" not in d1_response.data["expertOnlyScopes"]
     assert d1_response.data["accuracyGates"]["D60"]["status"] == "blocked"
-    assert any(warning["code"] == "d60_birth_time_accuracy" for warning in d1_response.data["warnings"])
+    assert d1_response.data["warnings"] == []
 
 @pytest.mark.django_db
 @override_settings(ENABLE_DEV_LOGIN=False, DEV_LOGIN_TOKEN="dev-token")

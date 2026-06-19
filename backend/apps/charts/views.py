@@ -76,7 +76,7 @@ class D1WorkbenchDevCheckView(APIView):
                 "supportedScopes": list(_workbench_supported_scopes(profile)),
                 "expertOnlyScopes": list(_workbench_expert_scopes(profile)),
                 "vargaScopes": _workbench_varga_scopes(profile),
-                "warnings": _workbench_warnings(profile),
+                "warnings": _workbench_warnings(profile, scope),
                 "accuracyGates": _workbench_accuracy_gates(profile),
                 "forbiddenScopesPresent": {
                     "D60": False,
@@ -125,16 +125,9 @@ def _workbench_accuracy_gates(profile: BirthProfile) -> dict[str, dict[str, str]
     return {"D60": varga_accuracy_contract("D60", profile.birth_time_accuracy)}
 
 
-def _workbench_warnings(profile: BirthProfile) -> list[dict[str, str]]:
-    gate = varga_accuracy_contract("D60", profile.birth_time_accuracy)
-    if gate["status"] == "blocked":
-        return [
-            {
-                "code": "d60_birth_time_accuracy",
-                "severity": "warning",
-                "message": "D60 is expert-only and requires exact birth time.",
-            }
-        ]
+def _workbench_warnings(profile: BirthProfile, scope: str) -> list[dict[str, str]]:
+    if _workbench_scope_id(scope) != "D60":
+        return []
     return [
         {
             "code": "d60_birth_time_accuracy",
@@ -329,7 +322,7 @@ class BirthProfileWorkbenchView(APIView):
                 "profile": profile_payload(profile, latest_calculation=calculation),
                 "calculation": calculation_payload(calculation) if calculation else None,
                 "method": _workbench_scope_method_summary(calculation.result if calculation else {}, scope),
-                "warnings": _workbench_warnings(profile),
+                "warnings": _workbench_warnings(profile, scope),
                 "accuracyGates": _workbench_accuracy_gates(profile),
                 "supportedScopes": list(_workbench_supported_scopes(profile)),
                 "expertOnlyScopes": list(_workbench_expert_scopes(profile)),
