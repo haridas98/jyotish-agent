@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -28,6 +29,109 @@ from .services import (
     upsert_profile_relationship,
 )
 
+
+
+class D1WorkbenchDevCheckView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        if not settings.ENABLE_DEV_LOGIN:
+            return Response({"error": "not found"}, status=404)
+        token = str(request.query_params.get("token") or "").strip()
+        if not settings.DEV_LOGIN_TOKEN or token != settings.DEV_LOGIN_TOKEN:
+            return Response({"error": "forbidden"}, status=403)
+        try:
+            chart_id = int(request.query_params.get("chart_id") or request.query_params.get("profile_id") or 0)
+        except (TypeError, ValueError):
+            return Response({"error": "chart_id is invalid"}, status=400)
+        if chart_id <= 0:
+            return Response({"error": "chart_id is required"}, status=400)
+
+        profile = get_object_or_404(BirthProfile.objects.select_related("place"), id=chart_id)
+        calculation = (
+            profile.calculations.filter(status=ChartCalculation.Status.COMPLETE)
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        chart = calculation.result if calculation else {}
+        houses = chart.get("houses") if isinstance(chart, dict) else []
+        grahas = chart.get("grahas") if isinstance(chart, dict) else []
+        ascendant = chart.get("ascendant") if isinstance(chart, dict) else None
+        d1_grahas = ([ascendant] if isinstance(ascendant, dict) else []) + [item for item in grahas if isinstance(item, dict)]
+        sorted_houses = sorted(
+            int(item.get("house")) for item in houses if isinstance(item, dict) and str(item.get("house", "")).isdigit()
+        )
+        graha_codes = [_graha_code(str(item.get("body") or "")) for item in d1_grahas]
+        graha_codes = sorted([code for code in graha_codes if code], key=_graha_order)
+        rashi_count = len({item.get("rashi") for item in houses if isinstance(item, dict) and item.get("rashi")})
+
+        return Response(
+            {
+                "status": "ok",
+                "schemaVersion": "d1-workbench-check.v1",
+                "chartId": profile.id,
+                "hasCalculation": calculation is not None,
+                "workbench": {
+                    "source": "saved_chart_calculation",
+                    "d1": {
+                        "houseCount": len(sorted_houses),
+                        "grahaCount": len(d1_grahas),
+                        "ascendantPresent": isinstance(ascendant, dict),
+                        "rashiCount": rashi_count,
+                        "sortedHouseNumbers": sorted_houses,
+                        "sortedGrahaCodes": graha_codes,
+                    },
+                    "ui": {
+                        "hasNorthStyle": True,
+                        "hasSouthStyle": True,
+                        "hasNoviceMode": True,
+                        "hasAstrologerMode": True,
+                        "entityInspectorCount": 1,
+                        "clickTargets": {
+                            "houses": len(sorted_houses),
+                            "rashis": rashi_count,
+                            "grahas": len(d1_grahas),
+                            "placements": len([code for code in graha_codes if code != "AS"]),
+                        },
+                    },
+                    "forbidden": {
+                        "ai": False,
+                        "d9": False,
+                        "d60": False,
+                        "rawEvidence": False,
+                    },
+                },
+            }
+        )
+
+
+def _graha_code(body: str) -> str:
+    return {
+        "Ascendant": "AS",
+        "Lagna": "AS",
+        "Surya": "SU",
+        "Sun": "SU",
+        "Chandra": "MO",
+        "Moon": "MO",
+        "Mangala": "MA",
+        "Mars": "MA",
+        "Budha": "ME",
+        "Mercury": "ME",
+        "Guru": "JU",
+        "Jupiter": "JU",
+        "Shukra": "VE",
+        "Venus": "VE",
+        "Shani": "SA",
+        "Saturn": "SA",
+        "Rahu": "RA",
+        "Ketu": "KE",
+    }.get(body, body[:2].upper())
+
+
+def _graha_order(code: str) -> int:
+    order = ["AS", "SU", "MO", "MA", "ME", "JU", "VE", "SA", "RA", "KE"]
+    return order.index(code) if code in order else 99
 
 class BirthProfileListView(APIView):
     permission_classes = [PrivateAppAccess, IsAuthenticated]

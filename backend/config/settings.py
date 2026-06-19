@@ -34,6 +34,8 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = env_bool("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
 PRIVATE_APP_REQUIRE_AUTH = env_bool("PRIVATE_APP_REQUIRE_AUTH", private_app_auth_default(DEBUG))
+ENABLE_DEV_LOGIN = env_bool("ENABLE_DEV_LOGIN", False)
+DEV_LOGIN_TOKEN = os.getenv("DEV_LOGIN_TOKEN", "").strip()
 
 INSTALLED_APPS = [
     "django.contrib.admin",

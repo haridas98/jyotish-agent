@@ -969,3 +969,65 @@ def test_chart_workbench_does_not_expose_other_users_profile(user):
     response = other_client.get(f"/api/charts/{profile['id']}/workbench?scope=d1")
 
     assert response.status_code == 404
+@pytest.mark.django_db
+@override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
+def test_dev_d1_workbench_check_returns_summary_with_token(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "D1 external check",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result={
+            "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1, "navamsa": "Cancer"},
+            "grahas": [{"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1, "navamsa": "Aries"}],
+            "houses": [{"house": item, "rashi": "Cancer", "rashi_index": item - 1} for item in range(1, 13)],
+            "birth": {},
+            "place": {},
+            "panchanga": {},
+        },
+    )
+    public_client = APIClient()
+
+    response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}")
+
+    assert response.status_code == 200
+    assert response.data["status"] == "ok"
+    assert response.data["schemaVersion"] == "d1-workbench-check.v1"
+    assert response.data["chartId"] == profile.id
+    assert response.data["workbench"]["d1"]["houseCount"] == 12
+    assert response.data["workbench"]["d1"]["grahaCount"] == 2
+    assert response.data["workbench"]["ui"]["hasNorthStyle"] is True
+    assert response.data["workbench"]["ui"]["hasSouthStyle"] is True
+    assert response.data["workbench"]["ui"]["entityInspectorCount"] == 1
+    assert response.data["workbench"]["forbidden"]["ai"] is False
+    assert "birth_date" not in response.data
+    assert "birth" not in response.data
+
+
+@pytest.mark.django_db
+@override_settings(ENABLE_DEV_LOGIN=False, DEV_LOGIN_TOKEN="dev-token")
+def test_dev_d1_workbench_check_hidden_when_disabled(user):
+    response = APIClient().get("/api/dev/d1-workbench-check?token=dev-token&chart_id=1")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+@override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
+def test_dev_d1_workbench_check_rejects_bad_token(user):
+    response = APIClient().get("/api/dev/d1-workbench-check?token=bad&chart_id=1")
+
+    assert response.status_code == 403

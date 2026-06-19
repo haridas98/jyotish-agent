@@ -11,9 +11,11 @@ from .views import (
     BirthProfileWorkbenchView,
     ChartRelationshipDetailView,
     ChartRelationshipListView,
+    D1WorkbenchDevCheckView,
 )
 
 urlpatterns = [
+    path("dev/d1-workbench-check", D1WorkbenchDevCheckView.as_view(), name="dev-d1-workbench-check"),
     path("charts", BirthProfileListView.as_view(), name="chart-list"),
     path("charts/<int:profile_id>", BirthProfileDetailView.as_view(), name="chart-detail"),
     path("charts/<int:profile_id>/workbench", BirthProfileWorkbenchView.as_view(), name="chart-workbench"),
