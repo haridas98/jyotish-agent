@@ -111,6 +111,114 @@ def test_even_sign_d30_reverses_trimsamsa_sequence():
     assert divisional_placement(45.0, "D30") == (11, "Meena")
 
 
+def test_d30_method_registry_is_non_uniform_and_source_anchored():
+    method = VARGA_METHOD_REGISTRY["D30"]
+
+    assert method.method_id == "varga.d30.parashara_unequal.v1"
+    assert method.method_version == "1"
+    assert method.non_uniform is True
+    assert method.source_anchor == "BPHS 6.27-28"
+    assert not method.workbench_ready
+
+
+def test_d30_chart_contract_uses_parashara_unequal_method():
+    chart = divisional_chart({"Surya": 5.0}, ascendant_longitude=4.999999, codes=("D30",))
+
+    assert chart["D30"]["methodId"] == "varga.d30.parashara_unequal.v1"
+    assert chart["D30"]["methodVersion"] == "1"
+    assert chart["D30"]["calculationPreset"] == "parashara"
+
+
+def test_d30_uses_unequal_boundaries_with_start_inclusive_end_exclusive_policy():
+    odd_cases = [
+        (0.0, (0, "Mesha")),
+        (4.999999, (0, "Mesha")),
+        (5.0, (10, "Kumbha")),
+        (9.999999, (10, "Kumbha")),
+        (10.0, (8, "Dhanu")),
+        (17.999999, (8, "Dhanu")),
+        (18.0, (2, "Mithuna")),
+        (24.999999, (2, "Mithuna")),
+        (25.0, (6, "Tula")),
+        (29.999999, (6, "Tula")),
+        (30.0, (1, "Vrishabha")),
+    ]
+    for longitude, expected in odd_cases:
+        assert divisional_placement(longitude, "D30") == expected
+
+    even_cases = [
+        (30.0, (1, "Vrishabha")),
+        (34.999999, (1, "Vrishabha")),
+        (35.0, (5, "Kanya")),
+        (41.999999, (5, "Kanya")),
+        (42.0, (11, "Meena")),
+        (49.999999, (11, "Meena")),
+        (50.0, (9, "Makara")),
+        (54.999999, (9, "Makara")),
+        (55.0, (7, "Vrischika")),
+        (59.999999, (7, "Vrischika")),
+        (60.0, (0, "Mesha")),
+    ]
+    for longitude, expected in even_cases:
+        assert divisional_placement(longitude, "D30") == expected
+
+
+def test_d30_boundary_cases_are_not_generated_as_equal_thirtieths():
+    cases = varga_boundary_cases("D30")
+    first_two_signs = [(case["sign_index"], case["boundary_degree"]) for case in cases[:8]]
+
+    assert first_two_signs == [
+        (0, 5.0),
+        (0, 10.0),
+        (0, 18.0),
+        (0, 25.0),
+        (1, 5.0),
+        (1, 12.0),
+        (1, 20.0),
+        (1, 25.0),
+    ]
+    assert len(cases) == 48
+
+
+def test_d30_chart_snapshot_keeps_lagna_and_nine_grahas_order():
+    chart = divisional_chart(
+        {
+            "Surya": 5.0,
+            "Chandra": 10.0,
+            "Mangala": 18.0,
+            "Budha": 25.0,
+            "Guru": 34.999999,
+            "Shukra": 35.0,
+            "Shani": 42.0,
+            "Rahu": 50.0,
+            "Ketu": 55.0,
+        },
+        ascendant_longitude=4.999999,
+        codes=("D30",),
+    )
+
+    assert {"scopeId": "D30", **chart["D30"]} == {
+        "scopeId": "D30",
+        "code": "D30",
+        "name": "Trimsamsha",
+        "method": "BPHS 6.27-28 Parashara unequal Trimsamsha segments.",
+        "methodId": "varga.d30.parashara_unequal.v1",
+        "methodVersion": "1",
+        "calculationPreset": "parashara",
+        "placements": [
+            {"body": "Lagna", "rashi_index": 0, "rashi": "Mesha"},
+            {"body": "Surya", "rashi_index": 10, "rashi": "Kumbha"},
+            {"body": "Chandra", "rashi_index": 8, "rashi": "Dhanu"},
+            {"body": "Mangala", "rashi_index": 2, "rashi": "Mithuna"},
+            {"body": "Budha", "rashi_index": 6, "rashi": "Tula"},
+            {"body": "Guru", "rashi_index": 1, "rashi": "Vrishabha"},
+            {"body": "Shukra", "rashi_index": 5, "rashi": "Kanya"},
+            {"body": "Shani", "rashi_index": 11, "rashi": "Meena"},
+            {"body": "Rahu", "rashi_index": 9, "rashi": "Makara"},
+            {"body": "Ketu", "rashi_index": 7, "rashi": "Vrischika"},
+        ],
+    }
+
 def test_jhora_uma_shambhu_hora_uses_two_cycles_and_even_sign_reversal():
     assert divisional_placement(14.0, "D2", scheme="jhora_uma_shambhu") == (0, "Mesha")
     assert divisional_placement(16.0, "D2", scheme="jhora_uma_shambhu") == (1, "Vrishabha")

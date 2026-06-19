@@ -11,7 +11,10 @@ class VargaMethod:
     name: str
     divisions: int
     workbench_ready: bool = False
+    method_id: str = "varga.parashara_shodasha.v1"
     method_version: str = "1"
+    non_uniform: bool = False
+    source_anchor: str = ""
 
 
 VARGA_METHOD_REGISTRY = {
@@ -27,7 +30,14 @@ VARGA_METHOD_REGISTRY = {
     "D20": VargaMethod("D20", "Vimshamsha", 20, True),
     "D24": VargaMethod("D24", "Siddhamsha", 24, True),
     "D27": VargaMethod("D27", "Bhamsha", 27),
-    "D30": VargaMethod("D30", "Trimsamsha", 30),
+    "D30": VargaMethod(
+        "D30",
+        "Trimsamsha",
+        30,
+        method_id="varga.d30.parashara_unequal.v1",
+        non_uniform=True,
+        source_anchor="BPHS 6.27-28",
+    ),
     "D40": VargaMethod("D40", "Khavedamsha", 40),
     "D45": VargaMethod("D45", "Akshavedamsha", 45),
     "D60": VargaMethod("D60", "Shashtyamsha", 60),
@@ -61,6 +71,8 @@ def varga_first_last_cases(code: str) -> list[dict[str, object]]:
 
 def varga_boundary_cases(code: str) -> list[dict[str, object]]:
     method = _require_varga_method(code)
+    if code == "D30":
+        return _d30_boundary_cases()
     if method.divisions <= 1:
         return []
     span = 30.0 / method.divisions
@@ -79,6 +91,29 @@ def varga_boundary_cases(code: str) -> list[dict[str, object]]:
         )
     return cases
 
+def _d30_boundary_cases() -> list[dict[str, object]]:
+    cases = []
+    for sign_index in range(12):
+        boundaries = (
+            (5.0, 10.0, 18.0, 25.0)
+            if _is_odd_sign(sign_index)
+            else (5.0, 12.0, 20.0, 25.0)
+        )
+        sign_start = sign_index * 30.0
+        for boundary_degree in boundaries:
+            at_longitude = sign_start + boundary_degree
+            before_longitude = at_longitude - 0.000001
+            cases.append(
+                {
+                    "sign_index": sign_index,
+                    "boundary_degree": boundary_degree,
+                    "before_longitude": before_longitude,
+                    "at_longitude": at_longitude,
+                    "expected_before": divisional_placement(before_longitude, "D30"),
+                    "expected_at": divisional_placement(at_longitude, "D30"),
+                }
+            )
+    return cases
 
 def _require_varga_method(code: str) -> VargaMethod:
     try:
@@ -174,14 +209,16 @@ def _normalize_scheme(scheme: str) -> str:
 def _method_id(code: str, scheme: str) -> str:
     if code == "D2" and _normalize_scheme(scheme) == "jhora_uma_shambhu":
         return "varga.jhora_uma_shambhu_hora.v1"
-    return "varga.parashara_shodasha.v1"
+    return _require_varga_method(code).method_id
 
 
 def _method_version(code: str, scheme: str) -> str:
-    return "1"
+    return _require_varga_method(code).method_version
 
 
 def _method_note(code: str, scheme: str) -> str:
+    if code == "D30":
+        return "BPHS 6.27-28 Parashara unequal Trimsamsha segments."
     if code == "D2" and _normalize_scheme(scheme) == "jhora_uma_shambhu":
         return "JHora D-2 (US): Uma-Shambhu Hora with two zodiac cycles and reversed even-sign halves."
     return "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit."
