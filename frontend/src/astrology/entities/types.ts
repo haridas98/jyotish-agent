@@ -14,6 +14,7 @@ export type RashiEntityId = `rashi.${string}`;
 export type NakshatraEntityId = `nakshatra.${string}`;
 export type VargaEntityId = `varga.${string}`;
 export type PlacementEntityId = `placement.${string}.house.${number}` | `placement.${string}.rashi.${string}`;
+export type SpecialPointEntityId = "point.LAGNA";
 export type DashaEntityId = `dasha.${string}`;
 export type YogaEntityId = `yoga.${string}`;
 export type RelationshipEntityId = `relationship.${string}`;
@@ -25,6 +26,7 @@ export type EntityId =
   | NakshatraEntityId
   | VargaEntityId
   | PlacementEntityId
+  | SpecialPointEntityId
   | DashaEntityId
   | YogaEntityId
   | RelationshipEntityId;
@@ -36,6 +38,7 @@ export type EntityKind =
   | "nakshatra"
   | "varga"
   | "placement"
+  | "special_point"
   | "dasha"
   | "yoga"
   | "relationship";

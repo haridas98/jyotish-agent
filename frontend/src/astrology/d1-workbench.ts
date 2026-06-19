@@ -3,9 +3,12 @@ import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, H
 
 export type D1ChartStyle = "north" | "south";
 export type D1ReaderMode = "novice" | "astrologer";
+export type D1TerminologyMode = "ru" | "en" | "sa" | "short";
+export type D1DataTab = "overview" | "grahas" | "houses" | "nakshatras";
 
 export type D1WorkbenchModel = {
   schemaVersion: "d1-workbench.v1";
+  scopeId: "D1";
   profile: {
     id: number;
     title: string;
@@ -24,10 +27,29 @@ export type D1WorkbenchModel = {
   defaults: {
     chartStyle: D1ChartStyle;
     readerMode: D1ReaderMode;
+    terminologyMode: D1TerminologyMode;
+  };
+  capabilities: D1WorkbenchCapabilities;
+  stats: {
+    houseCount: number;
+    rashiCount: number;
+    grahaCount: number;
+    specialPointCount: number;
+    chartObjectCount: number;
   };
   houses: D1HouseCell[];
   grahas: D1GrahaRow[];
+  specialPoints: D1SpecialPointRow[];
   warnings: D1Warning[];
+};
+
+export type D1WorkbenchCapabilities = {
+  degrees: boolean;
+  nakshatrasAvailable: boolean;
+  padasAvailable: boolean;
+  dignityAvailable: boolean;
+  retrogradeAvailable: boolean;
+  navamsaAvailable: boolean;
 };
 
 export type D1HouseCell = {
@@ -37,13 +59,24 @@ export type D1HouseCell = {
   rashiName: string;
   rashiEntityId: EntityId | null;
   grahaCodes: string[];
+  specialPointCodes: string[];
 };
 
-export type D1GrahaRow = {
+export type D1GrahaRow = D1PlacementRow & {
+  kind: "graha";
+  entityId: EntityId;
+};
+
+export type D1SpecialPointRow = D1PlacementRow & {
+  kind: "special_point";
+  entityId: EntityId;
+};
+
+type D1PlacementRow = {
   body: string;
   code: string;
   label: string;
-  entityId: EntityId;
+  shortLabel: string;
   placementEntityId: EntityId | null;
   longitude: number | null;
   degreeInSign: string;
@@ -81,27 +114,30 @@ const RASHI_ENTITY_NAMES = [
   "Pisces",
 ] as const;
 
-const GRAHA_ORDER = ["AS", "SU", "MO", "MA", "ME", "JU", "VE", "SA", "RA", "KE"];
+const GRAHA_ORDER = ["SU", "MO", "MA", "ME", "JU", "VE", "SA", "RA", "KE"];
+const SPECIAL_POINT_ORDER = ["LAGNA"];
 
-const BODY_MAP: Record<string, { code: string; entityId: EntityId; label: string }> = {
-  Ascendant: { code: "AS", entityId: "house.1", label: "Лагна" },
-  Lagna: { code: "AS", entityId: "house.1", label: "Лагна" },
-  Sun: { code: "SU", entityId: "graha.SU", label: "Солнце" },
-  Surya: { code: "SU", entityId: "graha.SU", label: "Солнце" },
-  Moon: { code: "MO", entityId: "graha.MO", label: "Луна" },
-  Chandra: { code: "MO", entityId: "graha.MO", label: "Луна" },
-  Mars: { code: "MA", entityId: "graha.MA", label: "Марс" },
-  Mangala: { code: "MA", entityId: "graha.MA", label: "Марс" },
-  Mercury: { code: "ME", entityId: "graha.ME", label: "Меркурий" },
-  Budha: { code: "ME", entityId: "graha.ME", label: "Меркурий" },
-  Jupiter: { code: "JU", entityId: "graha.JU", label: "Юпитер" },
-  Guru: { code: "JU", entityId: "graha.JU", label: "Юпитер" },
-  Venus: { code: "VE", entityId: "graha.VE", label: "Венера" },
-  Shukra: { code: "VE", entityId: "graha.VE", label: "Венера" },
-  Saturn: { code: "SA", entityId: "graha.SA", label: "Сатурн" },
-  Shani: { code: "SA", entityId: "graha.SA", label: "Сатурн" },
-  Rahu: { code: "RA", entityId: "graha.RA", label: "Раху" },
-  Ketu: { code: "KE", entityId: "graha.KE", label: "Кету" },
+type BodyMeta = { code: string; entityId: EntityId; label: string; shortLabel: string; kind: "graha" | "special_point" };
+
+const BODY_MAP: Record<string, BodyMeta> = {
+  Ascendant: { code: "LAGNA", entityId: "point.LAGNA" as EntityId, label: "Лагна", shortLabel: "As", kind: "special_point" },
+  Lagna: { code: "LAGNA", entityId: "point.LAGNA" as EntityId, label: "Лагна", shortLabel: "As", kind: "special_point" },
+  Sun: { code: "SU", entityId: "graha.SU", label: "Солнце", shortLabel: "Su", kind: "graha" },
+  Surya: { code: "SU", entityId: "graha.SU", label: "Солнце", shortLabel: "Su", kind: "graha" },
+  Moon: { code: "MO", entityId: "graha.MO", label: "Луна", shortLabel: "Mo", kind: "graha" },
+  Chandra: { code: "MO", entityId: "graha.MO", label: "Луна", shortLabel: "Mo", kind: "graha" },
+  Mars: { code: "MA", entityId: "graha.MA", label: "Марс", shortLabel: "Ma", kind: "graha" },
+  Mangala: { code: "MA", entityId: "graha.MA", label: "Марс", shortLabel: "Ma", kind: "graha" },
+  Mercury: { code: "ME", entityId: "graha.ME", label: "Меркурий", shortLabel: "Me", kind: "graha" },
+  Budha: { code: "ME", entityId: "graha.ME", label: "Меркурий", shortLabel: "Me", kind: "graha" },
+  Jupiter: { code: "JU", entityId: "graha.JU", label: "Юпитер", shortLabel: "Ju", kind: "graha" },
+  Guru: { code: "JU", entityId: "graha.JU", label: "Юпитер", shortLabel: "Ju", kind: "graha" },
+  Venus: { code: "VE", entityId: "graha.VE", label: "Венера", shortLabel: "Ve", kind: "graha" },
+  Shukra: { code: "VE", entityId: "graha.VE", label: "Венера", shortLabel: "Ve", kind: "graha" },
+  Saturn: { code: "SA", entityId: "graha.SA", label: "Сатурн", shortLabel: "Sa", kind: "graha" },
+  Shani: { code: "SA", entityId: "graha.SA", label: "Сатурн", shortLabel: "Sa", kind: "graha" },
+  Rahu: { code: "RA", entityId: "graha.RA", label: "Раху", shortLabel: "Ra", kind: "graha" },
+  Ketu: { code: "KE", entityId: "graha.KE", label: "Кету", shortLabel: "Ke", kind: "graha" },
 };
 
 export function buildD1WorkbenchModel(
@@ -122,10 +158,14 @@ export function buildD1WorkbenchModel(
   }
 
   const grahas = buildGrahaRows(chart);
-  const houses = buildHouseCells(chart, grahas);
+  const specialPoints = buildSpecialPointRows(chart);
+  const houses = buildHouseCells(chart, grahas, specialPoints);
+  const capabilities = buildCapabilities(grahas, specialPoints);
+  const rashiCount = new Set(houses.map((house) => house.rashiIndex).filter((item): item is number => item !== null)).size;
 
   return {
     schemaVersion: "d1-workbench.v1",
+    scopeId: "D1",
     profile: {
       id: profile.id,
       title: profile.display_name,
@@ -144,31 +184,51 @@ export function buildD1WorkbenchModel(
     defaults: {
       chartStyle: settings?.display.chartStyle === "south_indian" ? "south" : "north",
       readerMode: settings?.display.terminologyMode === "sanskrit" ? "astrologer" : "novice",
+      terminologyMode: terminologyDefault(settings),
+    },
+    capabilities,
+    stats: {
+      houseCount: houses.length,
+      rashiCount,
+      grahaCount: grahas.length,
+      specialPointCount: specialPoints.length,
+      chartObjectCount: grahas.length + specialPoints.length,
     },
     houses,
     grahas,
+    specialPoints,
     warnings,
   };
 }
 
 function buildGrahaRows(chart: BirthChart | null): D1GrahaRow[] {
-  const placements = chart ? ([chart.ascendant ? { ...chart.ascendant, body: "Ascendant" } : null, ...chart.grahas].filter(Boolean) as GrahaPosition[]) : [];
+  const placements = chart ? chart.grahas.filter(Boolean) : [];
   return placements
-    .map((placement) => buildGrahaRow(chart, placement))
+    .map((placement) => buildPlacementRow(chart, placement, "graha"))
+    .filter((row): row is D1GrahaRow => row.kind === "graha")
     .sort((a, b) => orderOf(a.code) - orderOf(b.code) || a.code.localeCompare(b.code));
 }
 
-function buildGrahaRow(chart: BirthChart | null, placement: GrahaPosition): D1GrahaRow {
-  const meta = BODY_MAP[placement.body] ?? { code: placement.body.slice(0, 2).toUpperCase(), entityId: "graha.SU" as EntityId, label: placement.body };
+function buildSpecialPointRows(chart: BirthChart | null): D1SpecialPointRow[] {
+  const placements = chart?.ascendant ? [{ ...chart.ascendant, body: chart.ascendant.body || "Lagna" }] : [];
+  return placements
+    .map((placement) => buildPlacementRow(chart, placement, "special_point"))
+    .filter((row): row is D1SpecialPointRow => row.kind === "special_point")
+    .sort((a, b) => specialPointOrderOf(a.code) - specialPointOrderOf(b.code) || a.code.localeCompare(b.code));
+}
+
+function buildPlacementRow(chart: BirthChart | null, placement: GrahaPosition, expectedKind: "graha" | "special_point"): D1GrahaRow | D1SpecialPointRow {
+  const meta = BODY_MAP[placement.body] ?? { code: placement.body.slice(0, 2).toUpperCase(), entityId: "graha.SU" as EntityId, label: placement.body, shortLabel: placement.body.slice(0, 2), kind: "graha" as const };
   const rashiIndex = normalizeRashiIndex(placement.rashi_index) ?? rashiIndexByName(placement.rashi);
   const house = houseForRashiIndex(chart?.houses ?? [], rashiIndex);
   const houseEntityId = house ? (`house.${house}` as EntityId) : null;
-  return {
+  const common = {
     body: placement.body,
     code: meta.code,
     label: meta.label,
-    entityId: grahaEntityId(placement.body),
-    placementEntityId: house && meta.code !== "AS" ? (`placement.${meta.code}.house.${house}` as EntityId) : null,
+    shortLabel: meta.shortLabel,
+    entityId: meta.kind === "graha" ? grahaEntityId(placement.body) : meta.entityId,
+    placementEntityId: house && meta.kind === "graha" ? (`placement.${meta.code}.house.${house}` as EntityId) : null,
     longitude: typeof placement.longitude === "number" ? placement.longitude : null,
     degreeInSign: typeof placement.longitude === "number" ? formatDegreeInSign(placement.longitude) : "-",
     rashiName: placement.rashi,
@@ -183,13 +243,13 @@ function buildGrahaRow(chart: BirthChart | null, placement: GrahaPosition): D1Gr
     retrograde: Boolean(placement.retrograde),
     navamsa: placement.navamsa || null,
   };
+  if (meta.kind !== expectedKind) {
+    return { ...common, kind: meta.kind } as D1GrahaRow | D1SpecialPointRow;
+  }
+  return { ...common, kind: meta.kind } as D1GrahaRow | D1SpecialPointRow;
 }
 
-function grahaEntityId(body: string): EntityId {
-  return (BODY_MAP[body]?.entityId ?? "graha.SU") as EntityId;
-}
-
-function buildHouseCells(chart: BirthChart | null, grahas: D1GrahaRow[]): D1HouseCell[] {
+function buildHouseCells(chart: BirthChart | null, grahas: D1GrahaRow[], specialPoints: D1SpecialPointRow[]): D1HouseCell[] {
   const houses = Array.from({ length: 12 }, (_, index) => {
     const houseNumber = index + 1;
     const source = chart?.houses.find((item) => item.house === houseNumber) ?? null;
@@ -201,9 +261,31 @@ function buildHouseCells(chart: BirthChart | null, grahas: D1GrahaRow[]): D1Hous
       rashiName: source?.rashi ?? "-",
       rashiEntityId: rashiEntityId(rashiIndex),
       grahaCodes: grahas.filter((graha) => graha.house === houseNumber).map((graha) => graha.code).sort((a, b) => orderOf(a) - orderOf(b)),
+      specialPointCodes: specialPoints.filter((point) => point.house === houseNumber).map((point) => point.code),
     } satisfies D1HouseCell;
   });
   return houses.sort((a, b) => a.house - b.house);
+}
+
+function grahaEntityId(body: string): EntityId {
+  const meta = BODY_MAP[body];
+  return meta?.kind === "graha" ? meta.entityId : ("graha.SU" as EntityId);
+}
+function buildCapabilities(grahas: D1GrahaRow[], specialPoints: D1SpecialPointRow[]): D1WorkbenchCapabilities {
+  const rows = [...grahas, ...specialPoints];
+  return {
+    degrees: rows.some((row) => row.longitude !== null),
+    nakshatrasAvailable: rows.some((row) => Boolean(row.nakshatra)),
+    padasAvailable: rows.some((row) => row.pada !== null),
+    dignityAvailable: grahas.some((row) => Boolean(row.dignity)),
+    retrogradeAvailable: grahas.some((row) => row.retrograde),
+    navamsaAvailable: rows.some((row) => Boolean(row.navamsa)),
+  };
+}
+
+function terminologyDefault(settings: JyotishUserSettings | null): D1TerminologyMode {
+  if (settings?.display.terminologyMode === "sanskrit") return "sa";
+  return "ru";
 }
 
 function houseForRashiIndex(houses: HousePlacement[], rashiIndex: number | null): number | null {
@@ -230,6 +312,11 @@ function rashiEntityId(index: number | null): EntityId | null {
 
 function orderOf(code: string): number {
   const index = GRAHA_ORDER.indexOf(code);
+  return index >= 0 ? index : 99;
+}
+
+function specialPointOrderOf(code: string): number {
+  const index = SPECIAL_POINT_ORDER.indexOf(code);
   return index >= 0 ? index : 99;
 }
 

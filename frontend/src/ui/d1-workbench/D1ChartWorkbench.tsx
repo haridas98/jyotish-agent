@@ -1,14 +1,43 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, type CSSProperties } from "react";
 import type { EntityId } from "@/astrology";
-import type { D1ChartStyle, D1GrahaRow, D1HouseCell, D1ReaderMode, D1WorkbenchModel } from "@/astrology/d1-workbench";
+import type {
+  D1ChartStyle,
+  D1DataTab,
+  D1GrahaRow,
+  D1HouseCell,
+  D1ReaderMode,
+  D1SpecialPointRow,
+  D1TerminologyMode,
+  D1WorkbenchModel,
+} from "@/astrology/d1-workbench";
 import { EntityInspector } from "@/ui/components/EntityInspector";
 
 type D1ChartWorkbenchProps = {
   model: D1WorkbenchModel;
   onRecalculate?: () => void;
   status?: string;
+};
+
+type ChartWorkbenchState = {
+  scopeId: "D1";
+  mode: D1ReaderMode;
+  chartStyle: D1ChartStyle;
+  activeEntityId: EntityId | null;
+  activeTab: D1DataTab;
+  terminologyMode: D1TerminologyMode;
+  displayLayers: {
+    houseNumbers: boolean;
+    rashiLabels: boolean;
+    grahas: boolean;
+    specialPoints: boolean;
+    degrees: boolean;
+    nakshatras: boolean;
+    padas: boolean;
+    retrograde: boolean;
+    dignity: boolean;
+  };
 };
 
 const NORTH_POSITIONS: Record<number, { x: number; y: number }> = {
@@ -56,17 +85,40 @@ export function D1ChartWorkbenchShell({ status = "Открываю карту D1
       </div>
       <div className="d1-shell-grid">
         <div className="d1-chart-placeholder">{status}</div>
-        <aside className="v2-inspector"><h2>Объяснение</h2><p>Нажмите на дом, знак или граху.</p></aside>
+        <aside className="v2-inspector"><h2>Объяснение</h2><p>Нажмите на дом, знак, граху или Лагну.</p></aside>
       </div>
     </section>
   );
 }
 
 export function D1ChartWorkbench({ model, onRecalculate, status }: D1ChartWorkbenchProps) {
-  const [chartStyle, setChartStyle] = useState<D1ChartStyle>(model.defaults.chartStyle);
-  const [mode, setMode] = useState<D1ReaderMode>(model.defaults.readerMode);
-  const [activeEntityId, setActiveEntityId] = useState<EntityId | null>(null);
-  const selected = useMemo(() => selectedFacts(model, activeEntityId), [model, activeEntityId]);
+  const [workbenchState, setWorkbenchState] = useState<ChartWorkbenchState>({
+    scopeId: "D1",
+    mode: model.defaults.readerMode,
+    chartStyle: model.defaults.chartStyle,
+    activeEntityId: null,
+    activeTab: "overview",
+    terminologyMode: model.defaults.terminologyMode,
+    displayLayers: {
+      houseNumbers: true,
+      rashiLabels: true,
+      grahas: true,
+      specialPoints: true,
+      degrees: true,
+      nakshatras: model.capabilities.nakshatrasAvailable,
+      padas: model.capabilities.padasAvailable,
+      retrograde: model.capabilities.retrogradeAvailable,
+      dignity: model.capabilities.dignityAvailable,
+    },
+  });
+  const selected = useMemo(() => selectedFacts(model, workbenchState.activeEntityId), [model, workbenchState.activeEntityId]);
+  const tabIds = availableTabs(model);
+
+  const setActiveEntityId = (activeEntityId: EntityId | null) => setWorkbenchState((state) => ({ ...state, activeEntityId }));
+  const setChartStyle = (chartStyle: D1ChartStyle) => setWorkbenchState((state) => ({ ...state, chartStyle }));
+  const setMode = (mode: D1ReaderMode) => setWorkbenchState((state) => ({ ...state, mode }));
+  const setTerminologyMode = (terminologyMode: D1TerminologyMode) => setWorkbenchState((state) => ({ ...state, terminologyMode }));
+  const setActiveTab = (activeTab: D1DataTab) => setWorkbenchState((state) => ({ ...state, activeTab }));
 
   return (
     <section className="d1-workbench" aria-label="Карта D1">
@@ -78,7 +130,8 @@ export function D1ChartWorkbench({ model, onRecalculate, status }: D1ChartWorkbe
         </div>
         <div className="d1-actions">
           <a href={`/charts/${model.profile.id}/edit`}>Редактировать</a>
-          <a href="/charts">Кабинет карт</a>
+          <a href="/compatibility">Сравнить</a>
+          <a href="/settings">Настройки</a>
           {onRecalculate ? <button type="button" onClick={onRecalculate}>Обновить расчёт</button> : null}
         </div>
       </div>
@@ -92,12 +145,18 @@ export function D1ChartWorkbench({ model, onRecalculate, status }: D1ChartWorkbe
       </div>
 
       <div className="d1-toolbar" aria-label="Стиль карты">
-        <strong>Стиль карты</strong>
-        <button type="button" className={chartStyle === "north" ? "active" : ""} onClick={() => setChartStyle("north")}>Северный</button>
-        <button type="button" className={chartStyle === "south" ? "active" : ""} onClick={() => setChartStyle("south")}>Южный</button>
+        <strong>Стиль</strong>
+        <button type="button" className={workbenchState.chartStyle === "north" ? "active" : ""} onClick={() => setChartStyle("north")}>Северный</button>
+        <button type="button" className={workbenchState.chartStyle === "south" ? "active" : ""} onClick={() => setChartStyle("south")}>Южный</button>
         <strong>Режим</strong>
-        <button type="button" className={mode === "novice" ? "active" : ""} onClick={() => setMode("novice")}>Новичок</button>
-        <button type="button" className={mode === "astrologer" ? "active" : ""} onClick={() => setMode("astrologer")}>Астролог</button>
+        <button type="button" className={workbenchState.mode === "novice" ? "active" : ""} onClick={() => setMode("novice")}>Новичок</button>
+        <button type="button" className={workbenchState.mode === "astrologer" ? "active" : ""} onClick={() => setMode("astrologer")}>Астролог</button>
+        <strong>Термины</strong>
+        {(["ru", "en", "sa", "short"] as const).map((termMode) => (
+          <button key={termMode} type="button" className={workbenchState.terminologyMode === termMode ? "active" : ""} onClick={() => setTerminologyMode(termMode)}>
+            {termMode === "short" ? "Кратко" : termMode.toUpperCase()}
+          </button>
+        ))}
       </div>
 
       {status ? <div className="product-status">{status}</div> : null}
@@ -109,15 +168,20 @@ export function D1ChartWorkbench({ model, onRecalculate, status }: D1ChartWorkbe
 
       <div className="d1-main-grid">
         <div>
-          {chartStyle === "north" ? (
-            <NorthChart model={model} mode={mode} onSelect={setActiveEntityId} />
+          {workbenchState.chartStyle === "north" ? (
+            <NorthChart model={model} state={workbenchState} onSelect={setActiveEntityId} />
           ) : (
-            <SouthChart model={model} mode={mode} onSelect={setActiveEntityId} />
+            <SouthChart model={model} state={workbenchState} onSelect={setActiveEntityId} />
           )}
-          <GrahaTable model={model} mode={mode} onSelect={setActiveEntityId} />
+          <div className="d1-toolbar" aria-label="Вкладки D1">
+            {tabIds.map((tabId) => (
+              <button key={tabId} type="button" className={workbenchState.activeTab === tabId ? "active" : ""} onClick={() => setActiveTab(tabId)}>{tabLabel(tabId)}</button>
+            ))}
+          </div>
+          <ChartDataTabs model={model} state={workbenchState} onSelect={setActiveEntityId} />
         </div>
         <aside className="d1-inspector-panel">
-          <EntityInspector entityId={activeEntityId} onClose={() => setActiveEntityId(null)} />
+          <EntityInspector entityId={workbenchState.activeEntityId} onClose={() => setActiveEntityId(null)} />
           {selected.length ? (
             <div className="d1-selected-facts">
               {selected.map((fact) => <span key={fact}>{fact}</span>)}
@@ -129,10 +193,10 @@ export function D1ChartWorkbench({ model, onRecalculate, status }: D1ChartWorkbe
   );
 }
 
-function NorthChart({ model, mode, onSelect }: { model: D1WorkbenchModel; mode: D1ReaderMode; onSelect: (id: EntityId) => void }) {
+function NorthChart({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
   return (
     <section className="d1-chart-card">
-      <div className="d1-chart-title"><h2>D1 Раши</h2><span>Нажмите на дом, знак или граху</span></div>
+      <div className="d1-chart-title"><h2>D1 Раши</h2><span>Нажмите на дом, знак, граху или Лагну</span></div>
       <div className="d1-north-chart">
         <svg viewBox="0 0 100 100" aria-hidden="true">
           <path d="M0 0 L100 100 M100 0 L0 100" />
@@ -141,21 +205,21 @@ function NorthChart({ model, mode, onSelect }: { model: D1WorkbenchModel; mode: 
         </svg>
         {model.houses.map((house) => {
           const position = NORTH_POSITIONS[house.house];
-          return <ChartCell key={house.house} house={house} grahas={grahasForHouse(model, house.house)} mode={mode} onSelect={onSelect} style={{ left: `${position.x}%`, top: `${position.y}%` }} />;
+          return <ChartCell key={house.house} house={house} grahas={grahasForHouse(model, house.house)} specialPoints={specialPointsForHouse(model, house.house)} state={state} onSelect={onSelect} style={{ left: `${position.x}%`, top: `${position.y}%` }} />;
         })}
       </div>
     </section>
   );
 }
 
-function SouthChart({ model, mode, onSelect }: { model: D1WorkbenchModel; mode: D1ReaderMode; onSelect: (id: EntityId) => void }) {
+function SouthChart({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
   return (
     <section className="d1-chart-card">
       <div className="d1-chart-title"><h2>D1 Раши</h2><span>Южноиндийская сетка знаков</span></div>
       <div className="d1-south-chart">
         {model.houses.map((house) => {
           const position = SOUTH_GRID[house.house];
-          return <ChartCell key={house.house} house={house} grahas={grahasForHouse(model, house.house)} mode={mode} onSelect={onSelect} style={{ gridColumn: position.col, gridRow: position.row }} />;
+          return <ChartCell key={house.house} house={house} grahas={grahasForHouse(model, house.house)} specialPoints={specialPointsForHouse(model, house.house)} state={state} onSelect={onSelect} style={{ gridColumn: position.col, gridRow: position.row }} />;
         })}
         <div className="d1-south-center">D1</div>
       </div>
@@ -163,51 +227,137 @@ function SouthChart({ model, mode, onSelect }: { model: D1WorkbenchModel; mode: 
   );
 }
 
-function ChartCell({ house, grahas, mode, onSelect, style }: { house: D1HouseCell; grahas: D1GrahaRow[]; mode: D1ReaderMode; onSelect: (id: EntityId) => void; style: CSSProperties }) {
+function ChartCell({ house, grahas, specialPoints, state, onSelect, style }: { house: D1HouseCell; grahas: D1GrahaRow[]; specialPoints: D1SpecialPointRow[]; state: ChartWorkbenchState; onSelect: (id: EntityId) => void; style: CSSProperties }) {
   return (
     <div className="d1-chart-cell" style={style}>
-      <button type="button" className="d1-house-button" onClick={() => onSelect(house.houseEntityId)}>{house.house}</button>
-      {house.rashiEntityId ? <button type="button" className="d1-rashi-button" onClick={() => onSelect(house.rashiEntityId!)}>{house.rashiName}</button> : null}
+      {state.displayLayers.houseNumbers ? <button type="button" className="d1-house-button" onClick={() => onSelect(house.houseEntityId)}>{house.house}</button> : null}
+      {state.displayLayers.rashiLabels && house.rashiEntityId ? <button type="button" className="d1-rashi-button" onClick={() => onSelect(house.rashiEntityId!)}>{house.rashiName}</button> : null}
       <div className="d1-graha-stack">
-        {grahas.map((graha) => (
-          <button key={graha.code} type="button" onClick={() => onSelect(graha.placementEntityId ?? graha.entityId)}>
-            {mode === "novice" ? graha.label : graha.code}{graha.retrograde ? " (R)" : ""}
+        {state.displayLayers.specialPoints ? specialPoints.map((point) => (
+          <button key={point.code} type="button" onClick={() => onSelect(point.entityId)}>
+            {placementLabel(point, state.terminologyMode)}{state.displayLayers.degrees && state.mode === "astrologer" ? ` ${point.degreeInSign}` : ""}
           </button>
-        ))}
+        )) : null}
+        {state.displayLayers.grahas ? grahas.map((graha) => (
+          <button key={graha.code} type="button" onClick={() => onSelect(graha.placementEntityId ?? graha.entityId)}>
+            {placementLabel(graha, state.terminologyMode)}{graha.retrograde && state.displayLayers.retrograde ? " (R)" : ""}{state.displayLayers.degrees && state.mode === "astrologer" ? ` ${graha.degreeInSign}` : ""}
+          </button>
+        )) : null}
       </div>
     </div>
   );
 }
 
-function GrahaTable({ model, mode, onSelect }: { model: D1WorkbenchModel; mode: D1ReaderMode; onSelect: (id: EntityId) => void }) {
+function ChartDataTabs({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
+  if (state.activeTab === "grahas") return <GrahaTable model={model} state={state} onSelect={onSelect} />;
+  if (state.activeTab === "houses") return <HouseTable model={model} onSelect={onSelect} />;
+  if (state.activeTab === "nakshatras" && model.capabilities.nakshatrasAvailable) return <NakshatraTable model={model} state={state} onSelect={onSelect} />;
+  return <OverviewPanel model={model} state={state} onSelect={onSelect} />;
+}
+
+function OverviewPanel({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
+  const sun = model.grahas.find((item) => item.code === "SU");
+  const moon = model.grahas.find((item) => item.code === "MO");
+  const lagna = model.specialPoints.find((item) => item.code === "LAGNA");
+  const rows = [lagna, sun, moon].filter(Boolean) as Array<D1GrahaRow | D1SpecialPointRow>;
   return (
     <section className="d1-table-card">
-      <div className="d1-chart-title"><h2>Таблица D1</h2><span>Основные расчётные значения рядом с картой</span></div>
+      <div className="d1-chart-title"><h2>Обзор</h2><span>D1 · {model.stats.grahaCount} грах · {model.stats.specialPointCount} опорная точка</span></div>
+      <div className="d1-table-scroll">
+        <table>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.code}>
+                <td><button type="button" onClick={() => onSelect(row.entityId)}>{placementLabel(row, state.terminologyMode)}</button></td>
+                <td>{row.rashiEntityId ? <button type="button" onClick={() => onSelect(row.rashiEntityId!)}>{row.rashiName}</button> : row.rashiName}</td>
+                <td>{row.houseEntityId ? <button type="button" onClick={() => onSelect(row.houseEntityId!)}>{row.house}</button> : "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function GrahaTable({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
+  const isAstrologer = state.mode === "astrologer";
+  return (
+    <section className="d1-table-card">
+      <div className="d1-chart-title"><h2>Грахи</h2><span>Только планеты; Лагна вынесена в опорные точки</span></div>
       <div className="d1-table-scroll">
         <table>
           <thead>
             <tr>
               <th>Граха</th>
+              {isAstrologer ? <th>Градус</th> : null}
               <th>Знак</th>
-              <th>Градус</th>
               <th>Дом</th>
-              <th>Накшатра</th>
-              <th>Пада</th>
-              {mode === "astrologer" ? <th>Статус</th> : null}
-              {mode === "astrologer" ? <th>Навамша</th> : null}
+              {isAstrologer && model.capabilities.nakshatrasAvailable ? <th>Накшатра</th> : null}
+              {isAstrologer && model.capabilities.padasAvailable ? <th>Пада</th> : null}
+              {isAstrologer && model.capabilities.retrogradeAvailable ? <th>Ретр.</th> : null}
+              {isAstrologer && model.capabilities.dignityAvailable ? <th>Достоинство</th> : null}
+              {isAstrologer && model.capabilities.navamsaAvailable ? <th>Навамша</th> : null}
             </tr>
           </thead>
           <tbody>
             {model.grahas.map((graha) => (
               <tr key={graha.code}>
-                <td><button type="button" onClick={() => onSelect(graha.placementEntityId ?? graha.entityId)}>{mode === "novice" ? graha.label : graha.code}</button></td>
+                <td><button type="button" onClick={() => onSelect(graha.placementEntityId ?? graha.entityId)}>{placementLabel(graha, state.terminologyMode)}</button></td>
+                {isAstrologer ? <td>{graha.degreeInSign}</td> : null}
                 <td>{graha.rashiEntityId ? <button type="button" onClick={() => onSelect(graha.rashiEntityId!)}>{graha.rashiName}</button> : graha.rashiName}</td>
-                <td>{graha.degreeInSign}</td>
                 <td>{graha.houseEntityId ? <button type="button" onClick={() => onSelect(graha.houseEntityId!)}>{graha.house}</button> : "-"}</td>
-                <td>{graha.nakshatraEntityId ? <button type="button" onClick={() => onSelect(graha.nakshatraEntityId!)}>{graha.nakshatra}</button> : "-"}</td>
-                <td>{graha.pada ?? "-"}</td>
-                {mode === "astrologer" ? <td>{statusText(graha)}</td> : null}
-                {mode === "astrologer" ? <td>{graha.navamsa ?? "-"}</td> : null}
+                {isAstrologer && model.capabilities.nakshatrasAvailable ? <td>{graha.nakshatraEntityId ? <button type="button" onClick={() => onSelect(graha.nakshatraEntityId!)}>{graha.nakshatra}</button> : "-"}</td> : null}
+                {isAstrologer && model.capabilities.padasAvailable ? <td>{graha.pada ?? "-"}</td> : null}
+                {isAstrologer && model.capabilities.retrogradeAvailable ? <td>{graha.retrograde ? "да" : "-"}</td> : null}
+                {isAstrologer && model.capabilities.dignityAvailable ? <td>{graha.dignity ?? "-"}</td> : null}
+                {isAstrologer && model.capabilities.navamsaAvailable ? <td>{graha.navamsa ?? "-"}</td> : null}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function HouseTable({ model, onSelect }: { model: D1WorkbenchModel; onSelect: (id: EntityId) => void }) {
+  return (
+    <section className="d1-table-card">
+      <div className="d1-chart-title"><h2>Дома</h2><span>Знаки и объекты в домах</span></div>
+      <div className="d1-table-scroll">
+        <table>
+          <thead><tr><th>Дом</th><th>Знак</th><th>Планеты</th><th>Опорные точки</th></tr></thead>
+          <tbody>
+            {model.houses.map((house) => (
+              <tr key={house.house}>
+                <td><button type="button" onClick={() => onSelect(house.houseEntityId)}>{house.house}</button></td>
+                <td>{house.rashiEntityId ? <button type="button" onClick={() => onSelect(house.rashiEntityId!)}>{house.rashiName}</button> : house.rashiName}</td>
+                <td>{house.grahaCodes.join(", ") || "-"}</td>
+                <td>{house.specialPointCodes.join(", ") || "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function NakshatraTable({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
+  const rows = [...model.specialPoints, ...model.grahas].filter((row) => row.nakshatra);
+  return (
+    <section className="d1-table-card">
+      <div className="d1-chart-title"><h2>Накшатры</h2><span>Только уже рассчитанные данные</span></div>
+      <div className="d1-table-scroll">
+        <table>
+          <thead><tr><th>Объект</th><th>Накшатра</th><th>Пада</th></tr></thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.code}>
+                <td><button type="button" onClick={() => onSelect(row.entityId)}>{placementLabel(row, state.terminologyMode)}</button></td>
+                <td>{row.nakshatraEntityId ? <button type="button" onClick={() => onSelect(row.nakshatraEntityId!)}>{row.nakshatra}</button> : row.nakshatra}</td>
+                <td>{row.pada ?? "-"}</td>
               </tr>
             ))}
           </tbody>
@@ -221,13 +371,39 @@ function grahasForHouse(model: D1WorkbenchModel, house: number) {
   return model.grahas.filter((graha) => graha.house === house);
 }
 
+function specialPointsForHouse(model: D1WorkbenchModel, house: number) {
+  return model.specialPoints.filter((point) => point.house === house);
+}
+
 function selectedFacts(model: D1WorkbenchModel, entityId: EntityId | null): string[] {
   if (!entityId) return [];
+  const point = model.specialPoints.find((item) => item.entityId === entityId);
+  if (point) return [`${point.label}: ${point.rashiName}, дом ${point.house ?? "-"}`, `Накшатра: ${point.nakshatra ?? "-"}`, "Лагна является опорной точкой, а не грахой."];
   const graha = model.grahas.find((item) => item.entityId === entityId || item.placementEntityId === entityId);
   if (graha) return [`${graha.label}: ${graha.rashiName}, дом ${graha.house ?? "-"}`, `Накшатра: ${graha.nakshatra ?? "-"}`, `Статус: ${statusText(graha)}`];
   const house = model.houses.find((item) => item.houseEntityId === entityId || item.rashiEntityId === entityId);
-  if (house) return [`Дом ${house.house}: ${house.rashiName}`, `Грахи: ${house.grahaCodes.join(", ") || "нет"}`];
+  if (house) return [`Дом ${house.house}: ${house.rashiName}`, `Грахи: ${house.grahaCodes.join(", ") || "нет"}`, `Опорные точки: ${house.specialPointCodes.join(", ") || "нет"}`];
   return [];
+}
+
+function placementLabel(row: D1GrahaRow | D1SpecialPointRow, terminologyMode: D1TerminologyMode) {
+  if (terminologyMode === "short") return row.shortLabel;
+  if (terminologyMode === "en") return row.body === "Surya" ? "Sun" : row.body === "Chandra" ? "Moon" : row.body;
+  if (terminologyMode === "sa") return row.body;
+  return row.label;
+}
+
+function availableTabs(model: D1WorkbenchModel): D1DataTab[] {
+  const tabs: D1DataTab[] = ["overview", "grahas", "houses"];
+  if (model.capabilities.nakshatrasAvailable) tabs.push("nakshatras");
+  return tabs;
+}
+
+function tabLabel(tab: D1DataTab) {
+  if (tab === "overview") return "Обзор";
+  if (tab === "grahas") return "Грахи";
+  if (tab === "houses") return "Дома";
+  return "Накшатры";
 }
 
 function statusText(graha: D1GrahaRow) {

@@ -58,49 +58,51 @@ class D1WorkbenchDevCheckView(APIView):
         houses = chart.get("houses") if isinstance(chart, dict) else []
         grahas = chart.get("grahas") if isinstance(chart, dict) else []
         ascendant = chart.get("ascendant") if isinstance(chart, dict) else None
-        d1_grahas = ([ascendant] if isinstance(ascendant, dict) else []) + [item for item in grahas if isinstance(item, dict)]
+        d1_grahas = [item for item in grahas if isinstance(item, dict)]
+        special_points = [ascendant] if isinstance(ascendant, dict) else []
         sorted_houses = sorted(
             int(item.get("house")) for item in houses if isinstance(item, dict) and str(item.get("house", "")).isdigit()
         )
-        graha_codes = [_graha_code(str(item.get("body") or "")) for item in d1_grahas]
-        graha_codes = sorted([code for code in graha_codes if code], key=_graha_order)
-        rashi_count = len({item.get("rashi") for item in houses if isinstance(item, dict) and item.get("rashi")})
+        rashi_values = set()
+        for item in houses if isinstance(houses, list) else []:
+            if not isinstance(item, dict):
+                continue
+            rashi_index = item.get("rashi_index")
+            if isinstance(rashi_index, int):
+                rashi_values.add(rashi_index + 1 if 0 <= rashi_index <= 11 else rashi_index)
+            elif item.get("rashi"):
+                rashi_values.add(str(item.get("rashi")))
+        nakshatras_available = any(isinstance(item, dict) and item.get("nakshatra") for item in [*special_points, *d1_grahas])
+        tab_ids = ["overview", "grahas", "houses"] + (["nakshatras"] if nakshatras_available else [])
 
         return Response(
             {
                 "status": "ok",
-                "schemaVersion": "d1-workbench-check.v1",
+                "schemaVersion": "d1-workbench-check.v2",
+                "scopeId": "D1",
                 "chartId": profile.id,
                 "hasCalculation": calculation is not None,
-                "workbench": {
-                    "source": "saved_chart_calculation",
-                    "d1": {
-                        "houseCount": len(sorted_houses),
-                        "grahaCount": len(d1_grahas),
-                        "ascendantPresent": isinstance(ascendant, dict),
-                        "rashiCount": rashi_count,
-                        "sortedHouseNumbers": sorted_houses,
-                        "sortedGrahaCodes": graha_codes,
-                    },
-                    "ui": {
-                        "hasNorthStyle": True,
-                        "hasSouthStyle": True,
-                        "hasNoviceMode": True,
-                        "hasAstrologerMode": True,
-                        "entityInspectorCount": 1,
-                        "clickTargets": {
-                            "houses": len(sorted_houses),
-                            "rashis": rashi_count,
-                            "grahas": len(d1_grahas),
-                            "placements": len([code for code in graha_codes if code != "AS"]),
-                        },
-                    },
-                    "forbidden": {
-                        "ai": False,
-                        "d9": False,
-                        "d60": False,
-                        "rawEvidence": False,
-                    },
+                "houseCount": len(sorted_houses),
+                "rashiCount": len(rashi_values),
+                "grahaCount": len(d1_grahas),
+                "specialPointCount": len(special_points),
+                "chartObjectCount": len(d1_grahas) + len(special_points),
+                "supportedStyles": ["north", "south"],
+                "supportedModes": ["novice", "astrologer"],
+                "tabIds": tab_ids,
+                "nakshatrasAvailable": nakshatras_available,
+                "entityInspectorCount": 1,
+                "clickTargets": {
+                    "houses": len(sorted_houses),
+                    "rashis": len(rashi_values),
+                    "grahas": len(d1_grahas),
+                    "specialPoints": len(special_points),
+                },
+                "forbiddenScopesPresent": {
+                    "D9": False,
+                    "D60": False,
+                    "AI": False,
+                    "rawEvidence": False,
                 },
             }
         )

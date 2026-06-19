@@ -82,6 +82,17 @@ export function registerCoreEntities() {
     );
   });
 
+  registerEntity(
+    baseEntity(
+      "point.LAGNA" as EntityId,
+      "special_point",
+      "As",
+      "Лагна",
+      "Ascendant",
+      "Lagna",
+      "Лагна — восходящая точка карты и опора чтения домов. Она не является грахой, но задаёт начало bhava-структуры и телесно-личностный фокус D1.",
+    ),
+  );
   houseSummaries.forEach((summary, index) => {
     const house = index + 1;
     registerEntity(baseEntity(`house.${house}` as EntityId, "house", String(house), `${house} дом`, `${house}th house`, `Bhava ${house}`, summary));

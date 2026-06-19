@@ -1005,14 +1005,19 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
 
     assert response.status_code == 200
     assert response.data["status"] == "ok"
-    assert response.data["schemaVersion"] == "d1-workbench-check.v1"
+    assert response.data["schemaVersion"] == "d1-workbench-check.v2"
     assert response.data["chartId"] == profile.id
-    assert response.data["workbench"]["d1"]["houseCount"] == 12
-    assert response.data["workbench"]["d1"]["grahaCount"] == 2
-    assert response.data["workbench"]["ui"]["hasNorthStyle"] is True
-    assert response.data["workbench"]["ui"]["hasSouthStyle"] is True
-    assert response.data["workbench"]["ui"]["entityInspectorCount"] == 1
-    assert response.data["workbench"]["forbidden"]["ai"] is False
+    assert response.data["scopeId"] == "D1"
+    assert response.data["houseCount"] == 12
+    assert response.data["rashiCount"] == 12
+    assert response.data["grahaCount"] == 1
+    assert response.data["specialPointCount"] == 1
+    assert response.data["chartObjectCount"] == 2
+    assert response.data["supportedStyles"] == ["north", "south"]
+    assert response.data["supportedModes"] == ["novice", "astrologer"]
+    assert response.data["entityInspectorCount"] == 1
+    assert response.data["clickTargets"] == {"houses": 12, "rashis": 12, "grahas": 1, "specialPoints": 1}
+    assert response.data["forbiddenScopesPresent"] == {"D9": False, "D60": False, "AI": False, "rawEvidence": False}
     assert "birth_date" not in response.data
     assert "birth" not in response.data
 
