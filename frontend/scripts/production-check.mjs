@@ -86,6 +86,17 @@ const reportsPageForbiddenMarkers = [
   /calc\.varga\.D9/,
   /calc\.vimshottari/,
 ];
+const navigationServerHtmlChecks = [
+  { route: "/", file: ".next/server/app/index.html" },
+  { route: "/charts", file: ".next/server/app/charts.html" },
+  { route: "/people", file: ".next/server/app/people.html" },
+  { route: "/reports", file: ".next/server/app/reports.html" },
+  { route: "/dashas", file: ".next/server/app/dashas.html" },
+  { route: "/compatibility", file: ".next/server/app/compatibility.html" },
+  { route: "/interactions", file: ".next/server/app/interactions.html" },
+  { route: "/sources", file: ".next/server/app/sources.html" },
+  { route: "/settings", file: ".next/server/app/settings.html" },
+];
 
 if (!targets.length) {
   console.error("No browser bundle directories found.");
@@ -144,6 +155,23 @@ for (const target of sourceTargets) {
   }
 }
 
+const navConfig = readFileSync("src/app/app-navigation.tsx", "utf8");
+if (!navConfig.includes('href: "/dashas"') || !navConfig.includes('label: "Даши"')) {
+  console.error("Shared navigation config must include /dashas.");
+  failed = true;
+}
+for (const check of navigationServerHtmlChecks) {
+  if (!existsSync(check.file)) {
+    console.error(`Navigation HTML check target is missing for ${check.route}: ${check.file}`);
+    failed = true;
+    continue;
+  }
+  const content = readFileSync(check.file, "utf8");
+  if (!content.includes('href="/dashas"') || !content.includes('data-nav-key="timeline"')) {
+    console.error(`Navigation for ${check.route} does not include the shared /dashas item.`);
+    failed = true;
+  }
+}
 if (failed) {
   process.exit(1);
 }
