@@ -1,8 +1,8 @@
 import type { EntityId } from "@/astrology";
 import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, HousePlacement, JyotishUserSettings, VargaPlacement } from "@/lib/api";
 
-export const CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"] as const;
-export const CHART_WORKBENCH_EXPERT_SCOPE_IDS = ["D30"] as const;
+export const CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"] as const;
+export const CHART_WORKBENCH_EXPERT_SCOPE_IDS = ["D30", "D60"] as const;
 export type ChartWorkbenchScopeId = (typeof CHART_WORKBENCH_SCOPE_IDS)[number];
 export type D1ChartStyle = "north" | "south";
 export type D1ReaderMode = "novice" | "astrologer";
@@ -148,6 +148,7 @@ const VARGA_SCOPE_TITLES: Record<Exclude<ChartWorkbenchScopeId, "D1">, string> =
   D20: "D20 Vimshamsha",
   D24: "D24 Siddhamsha",
   D30: "D30 Trimsamsha",
+  D60: "D60 Shashtyamsha",
 };
 
 type BodyMeta = { code: string; entityId: EntityId; label: string; shortLabel: string; kind: "graha" | "special_point" };
@@ -190,6 +191,9 @@ export function buildD1WorkbenchModel(
   }
   if (scope.scopeId === "D30") {
     warnings.push({ code: "d30_time_precision", message: "D30 чувствительна к точности времени; используйте её только при уверенном времени рождения.", severity: "warning" });
+  }
+  if (scope.scopeId === "D60") {
+    warnings.push({ code: "d60_birth_time_accuracy", message: "D60 is expert-only and requires exact birth time.", severity: "critical" });
   }
   if (scope.missing) {
     warnings.push({ code: `${scope.scopeId.toLowerCase()}_absent`, message: `${scope.scopeId} пока отсутствует в сохранённом расчёте.`, severity: "warning" });

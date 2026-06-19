@@ -31,12 +31,12 @@ if (exists("src/astrology/d1-workbench.ts")) {
   const model = read("src/astrology/d1-workbench.ts");
   assert(model.includes('schemaVersion: "d1-workbench.v1"'), "D1 model must expose schemaVersion");
   assert(model.includes("buildD1WorkbenchModel"), "D1 adapter missing");
-  assert(model.includes('CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]'), "Workbench model must expose one supported scope registry");
+  assert(model.includes('CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]'), "Workbench model must expose one supported scope registry");
   assert(model.includes("buildScopeSource"), "Workbench model must normalize D1, D3, D7, D9, D10 and D12 through one scope source");
   assert(model.includes("vargas?.[scopeId]"), "Varga scopes must come from indexed saved varga payload");
   assert(model.includes("VARGA_SCOPE_TITLES"), "Varga scope labels must come from one title registry");
-  assert(model.includes('CHART_WORKBENCH_EXPERT_SCOPE_IDS = ["D30"]'), "D30 must be marked as astrologer-only scope");
-  for (const code of ["D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]) {
+  assert(model.includes('CHART_WORKBENCH_EXPERT_SCOPE_IDS = ["D30", "D60"]'), "D30 must be marked as astrologer-only scope");
+  for (const code of ["D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]) {
     assert(model.includes(`${code}:`), `${code} must be registered in the workbench title map`);
   }
   assert(model.includes("specialPoints"), "D1 model must separate special points from grahas");
@@ -60,12 +60,13 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("availableScopesForMode"), "Workbench must filter expert-only scopes by reader mode");
   const modelSource = read("src/astrology/d1-workbench.ts");
   assert(modelSource.includes("d30_time_precision"), "D30 workbench must show time precision warning");
+  assert(modelSource.includes("d60_birth_time_accuracy"), "D60 workbench must show exact birth-time warning");
   assert(component.includes("terminologyMode"), "D1 workbench must keep terminology mode in shared state");
   assert(component.includes("activeTab"), "D1 workbench must keep active data tab in shared state");
   assert(component.includes("chartStyle === \"north\"") && component.includes("chartStyle === \"south\""), "D1 workbench must support north/south style toggle");
   assert(component.includes("mode === \"novice\"") && component.includes("mode === \"astrologer\""), "D1 workbench must support novice/astrologer mode");
   assert(!/calculate(?:House|Nakshatra|Dasha|Varga)\s*\(/.test(component), "React component must not calculate astrology formulas");
-  for (const forbidden of ["AI", "D60", "source.pending", "Missing calculations", "Block is not registered yet"]) {
+  for (const forbidden of ["AI", "source.pending", "Missing calculations", "Block is not registered yet"]) {
     assert(!component.includes(forbidden), `D1 workbench leaks forbidden marker: ${forbidden}`);
   }
 }

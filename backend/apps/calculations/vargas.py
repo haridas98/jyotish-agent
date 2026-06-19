@@ -48,8 +48,10 @@ VARGA_METHOD_REGISTRY = {
         "D60",
         "Shashtyamsha",
         60,
+        workbench_ready=True,
         method_id="varga.d60.parashara_shashtyamsha.v1",
         source_anchor="JHora Sterlitamak 1998 D60 parity; BPHS Shashtyamsha source review pending",
+        expert_only=True,
         time_accuracy_required="exact",
     ),
 }

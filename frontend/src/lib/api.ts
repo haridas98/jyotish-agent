@@ -1788,7 +1788,7 @@ export type ChartCalculationRecord = {
   updated_at: string;
 };
 
-export type ChartWorkbenchScope = "d1" | "d2" | "d3" | "d4" | "d7" | "d9" | "d10" | "d12" | "d16" | "d20" | "d24";
+export type ChartWorkbenchScope = "d1" | "d2" | "d3" | "d4" | "d7" | "d9" | "d10" | "d12" | "d16" | "d20" | "d24" | "d30" | "d60";
 
 export type D1WorkbenchApiResponse = {
   scope: ChartWorkbenchScope;

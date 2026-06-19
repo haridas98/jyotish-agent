@@ -954,7 +954,7 @@ def test_chart_workbench_returns_latest_complete_d1(user):
             "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1, "navamsa": "Cancer"},
             "grahas": [{"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1, "navamsa": "Aries"}],
             "houses": [{"house": 1, "rashi": "Cancer", "rashi_index": 3}, {"house": 2, "rashi": "Leo", "rashi_index": 4}],
-            "vargas": {"D2": {"code": "D2", "name": "Hora", "method": "Parashara", "methodId": "varga.parashara_shodasha.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D30": {"code": "D30", "name": "Trimsamsha", "method": "BPHS 6.27-28 Parashara unequal Trimsamsha segments.", "methodId": "varga.d30.parashara_unequal.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Kumbha", "rashi_index": 10}]}, "D4": {"code": "D4", "name": "Chaturthamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D16": {"code": "D16", "name": "Shodashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D20": {"code": "D20", "name": "Vimshamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Vrischika", "rashi_index": 7}]}, "D24": {"code": "D24", "name": "Siddhamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Kanya", "rashi_index": 5}, {"body": "Surya", "rashi": "Dhanu", "rashi_index": 8}]}, "D3": {"code": "D3", "name": "Drekkana", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Meena", "rashi_index": 11}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D7": {"code": "D7", "name": "Saptamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mithuna", "rashi_index": 2}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}, "D10": {"code": "D10", "name": "Dashamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrischika", "rashi_index": 7}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D12": {"code": "D12", "name": "Dvadashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Tula", "rashi_index": 6}]}},
+            "vargas": {"D2": {"code": "D2", "name": "Hora", "method": "Parashara", "methodId": "varga.parashara_shodasha.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D30": {"code": "D30", "name": "Trimsamsha", "method": "BPHS 6.27-28 Parashara unequal Trimsamsha segments.", "methodId": "varga.d30.parashara_unequal.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Kumbha", "rashi_index": 10}]}, "D60": {"code": "D60", "name": "Shashtyamsha", "method": "Parashara Shashtyamsha", "methodId": "varga.d60.parashara_shashtyamsha.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Vrishabha", "rashi_index": 1}]}, "D4": {"code": "D4", "name": "Chaturthamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D16": {"code": "D16", "name": "Shodashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D20": {"code": "D20", "name": "Vimshamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Vrischika", "rashi_index": 7}]}, "D24": {"code": "D24", "name": "Siddhamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Kanya", "rashi_index": 5}, {"body": "Surya", "rashi": "Dhanu", "rashi_index": 8}]}, "D3": {"code": "D3", "name": "Drekkana", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Meena", "rashi_index": 11}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D7": {"code": "D7", "name": "Saptamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mithuna", "rashi_index": 2}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}, "D10": {"code": "D10", "name": "Dashamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrischika", "rashi_index": 7}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D12": {"code": "D12", "name": "Dvadashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Tula", "rashi_index": 6}]}},
             "birth": {},
             "place": {},
             "panchanga": {},
@@ -1006,8 +1006,12 @@ def test_chart_workbench_returns_latest_complete_d1(user):
         assert scope_response.data["scope"] == scope
         assert scope_response.data["result"]["vargas"][scope.upper()]["placements"][0]["body"] == "Lagna"
 
-    bad_scope_response = client.get(f"/api/charts/{profile.id}/workbench?scope=d60")
-    assert bad_scope_response.status_code == 400
+    d60_response = client.get(f"/api/charts/{profile.id}/workbench?scope=d60")
+    assert d60_response.status_code == 200
+    assert d60_response.data["scope"] == "d60"
+    assert d60_response.data["result"]["vargas"]["D60"]["methodId"] == "varga.d60.parashara_shashtyamsha.v1"
+    assert d60_response.data["method"] == {"methodId": "varga.d60.parashara_shashtyamsha.v1", "methodVersion": "1", "calculationPreset": "parashara"}
+    assert any(warning["code"] == "d60_birth_time_accuracy" for warning in d60_response.data["warnings"])
 
 
 @pytest.mark.django_db
@@ -1056,7 +1060,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
             "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1, "navamsa": "Cancer"},
             "grahas": [{"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1, "navamsa": "Aries"}],
             "houses": [{"house": item, "rashi": "Cancer", "rashi_index": item - 1} for item in range(1, 13)],
-            "vargas": {"D2": {"code": "D2", "name": "Hora", "method": "Parashara", "methodId": "varga.parashara_shodasha.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D30": {"code": "D30", "name": "Trimsamsha", "method": "BPHS 6.27-28 Parashara unequal Trimsamsha segments.", "methodId": "varga.d30.parashara_unequal.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Kumbha", "rashi_index": 10}]}, "D4": {"code": "D4", "name": "Chaturthamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D16": {"code": "D16", "name": "Shodashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D20": {"code": "D20", "name": "Vimshamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Vrischika", "rashi_index": 7}]}, "D24": {"code": "D24", "name": "Siddhamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Kanya", "rashi_index": 5}, {"body": "Surya", "rashi": "Dhanu", "rashi_index": 8}]}, "D3": {"code": "D3", "name": "Drekkana", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Meena", "rashi_index": 11}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D7": {"code": "D7", "name": "Saptamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mithuna", "rashi_index": 2}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}, "D10": {"code": "D10", "name": "Dashamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrischika", "rashi_index": 7}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D12": {"code": "D12", "name": "Dvadashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Tula", "rashi_index": 6}]}},
+            "vargas": {"D2": {"code": "D2", "name": "Hora", "method": "Parashara", "methodId": "varga.parashara_shodasha.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D30": {"code": "D30", "name": "Trimsamsha", "method": "BPHS 6.27-28 Parashara unequal Trimsamsha segments.", "methodId": "varga.d30.parashara_unequal.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Kumbha", "rashi_index": 10}]}, "D60": {"code": "D60", "name": "Shashtyamsha", "method": "Parashara Shashtyamsha", "methodId": "varga.d60.parashara_shashtyamsha.v1", "methodVersion": "1", "calculationPreset": "parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Vrishabha", "rashi_index": 1}]}, "D4": {"code": "D4", "name": "Chaturthamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D16": {"code": "D16", "name": "Shodashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mesha", "rashi_index": 0}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D20": {"code": "D20", "name": "Vimshamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Vrischika", "rashi_index": 7}]}, "D24": {"code": "D24", "name": "Siddhamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Kanya", "rashi_index": 5}, {"body": "Surya", "rashi": "Dhanu", "rashi_index": 8}]}, "D3": {"code": "D3", "name": "Drekkana", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Meena", "rashi_index": 11}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D7": {"code": "D7", "name": "Saptamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mithuna", "rashi_index": 2}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}, "D10": {"code": "D10", "name": "Dashamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrischika", "rashi_index": 7}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D12": {"code": "D12", "name": "Dvadashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Tula", "rashi_index": 6}]}},
             "birth": {},
             "place": {},
             "panchanga": {},
@@ -1081,8 +1085,8 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert response.data["entityInspectorCount"] == 1
     assert response.data["clickTargets"] == {"houses": 12, "rashis": 12, "grahas": 1, "specialPoints": 1}
     assert response.data["forbiddenScopesPresent"] == {"D60": False, "AI": False, "rawEvidence": False}
-    assert response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]
-    assert response.data["expertOnlyScopes"] == ["D30"]
+    assert response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
+    assert response.data["expertOnlyScopes"] == ["D30", "D60"]
     assert response.data["methodId"] == "varga.parashara_shodasha.v1"
     assert response.data["methodVersion"] == "1"
     assert response.data["calculationPreset"] == "parashara"
@@ -1094,7 +1098,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert d3_response.data["rashiCount"] == 12
     assert d3_response.data["grahaCount"] == 1
     assert d3_response.data["specialPointCount"] == 1
-    assert d3_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]
+    assert d3_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
 
     d7_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope=d7")
     assert d7_response.status_code == 200
@@ -1103,7 +1107,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert d7_response.data["rashiCount"] == 12
     assert d7_response.data["grahaCount"] == 1
     assert d7_response.data["specialPointCount"] == 1
-    assert d7_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]
+    assert d7_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
 
     for scope, scope_id in (("d2", "D2"), ("d4", "D4"), ("d16", "D16"), ("d20", "D20"), ("d24", "D24"), ("d30", "D30")):
         scope_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope={scope}")
@@ -1113,7 +1117,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
         assert scope_response.data["rashiCount"] == 12
         assert scope_response.data["grahaCount"] == 1
         assert scope_response.data["specialPointCount"] == 1
-        assert scope_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30"]
+        assert scope_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
         if scope_id == "D30":
             assert scope_response.data["methodId"] == "varga.d30.parashara_unequal.v1"
             assert scope_response.data["methodVersion"] == "1"
@@ -1135,6 +1139,43 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert "birth_date" not in response.data
     assert "birth" not in response.data
 
+
+
+@pytest.mark.django_db
+@override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
+def test_dev_varga_workbench_check_blocks_d60_without_exact_birth_time(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Approximate D60 check",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "birth_time_accuracy": "approximate",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result={"vargas": {}, "birth": {"time_accuracy": "approximate"}},
+    )
+
+    public_client = APIClient()
+    response = public_client.get(f"/api/dev/varga-workbench-check?token=dev-token&chart_id={profile.id}&scope=d60")
+
+    assert response.status_code == 400
+    d1_response = public_client.get(f"/api/dev/varga-workbench-check?token=dev-token&chart_id={profile.id}&scope=d1")
+    assert d1_response.status_code == 200
+    assert "D60" not in d1_response.data["supportedScopes"]
+    assert "D60" not in d1_response.data["expertOnlyScopes"]
+    assert d1_response.data["accuracyGates"]["D60"]["status"] == "blocked"
+    assert any(warning["code"] == "d60_birth_time_accuracy" for warning in d1_response.data["warnings"])
 
 @pytest.mark.django_db
 @override_settings(ENABLE_DEV_LOGIN=False, DEV_LOGIN_TOKEN="dev-token")

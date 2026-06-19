@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import PrivateAppAccess
-from apps.calculations.vargas import VARGA_METHOD_REGISTRY, workbench_expert_varga_codes, workbench_varga_codes
+from apps.calculations.vargas import VARGA_METHOD_REGISTRY, varga_accuracy_contract, workbench_expert_varga_codes, workbench_varga_codes
 
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation, ChartRelationship
 from .services import (
@@ -43,8 +43,6 @@ class D1WorkbenchDevCheckView(APIView):
         if not settings.DEV_LOGIN_TOKEN or token != settings.DEV_LOGIN_TOKEN:
             return Response({"error": "forbidden"}, status=403)
         scope = str(request.query_params.get("scope") or "d1").strip().lower()
-        if scope not in _workbench_supported_scope_keys():
-            return Response({"error": "scope is not supported"}, status=400)
         try:
             chart_id = int(request.query_params.get("chart_id") or request.query_params.get("profile_id") or 0)
         except (TypeError, ValueError):
@@ -53,6 +51,8 @@ class D1WorkbenchDevCheckView(APIView):
             return Response({"error": "chart_id is required"}, status=400)
 
         profile = get_object_or_404(BirthProfile.objects.select_related("place"), id=chart_id)
+        if scope not in _workbench_supported_scope_keys(profile):
+            return Response({"error": "scope is not supported"}, status=400)
         calculation = (
             profile.calculations.filter(status=ChartCalculation.Status.COMPLETE)
             .order_by("-created_at", "-id")
@@ -73,8 +73,10 @@ class D1WorkbenchDevCheckView(APIView):
                 "supportedStyles": ["north", "south"],
                 "supportedModes": ["novice", "astrologer"],
                 "entityInspectorCount": 1,
-                "supportedScopes": list(workbench_varga_codes()),
-                "expertOnlyScopes": list(workbench_expert_varga_codes()),
+                "supportedScopes": list(_workbench_supported_scopes(profile)),
+                "expertOnlyScopes": list(_workbench_expert_scopes(profile)),
+                "warnings": _workbench_warnings(profile),
+                "accuracyGates": _workbench_accuracy_gates(profile),
                 "forbiddenScopesPresent": {
                     "D60": False,
                     "AI": False,
@@ -84,8 +86,43 @@ class D1WorkbenchDevCheckView(APIView):
         )
 
 
-def _workbench_supported_scope_keys() -> set[str]:
-    return {code.lower() for code in workbench_varga_codes()}
+def _workbench_supported_scopes(profile: BirthProfile | None = None) -> tuple[str, ...]:
+    codes = tuple(workbench_varga_codes())
+    if profile is not None and getattr(profile, "birth_time_accuracy", "") != BirthProfile.TimeAccuracy.EXACT:
+        return tuple(code for code in codes if code != "D60")
+    return codes
+
+
+def _workbench_expert_scopes(profile: BirthProfile | None = None) -> tuple[str, ...]:
+    supported = set(_workbench_supported_scopes(profile))
+    return tuple(code for code in workbench_expert_varga_codes() if code in supported)
+
+
+def _workbench_supported_scope_keys(profile: BirthProfile | None = None) -> set[str]:
+    return {code.lower() for code in _workbench_supported_scopes(profile)}
+
+
+def _workbench_accuracy_gates(profile: BirthProfile) -> dict[str, dict[str, str]]:
+    return {"D60": varga_accuracy_contract("D60", profile.birth_time_accuracy)}
+
+
+def _workbench_warnings(profile: BirthProfile) -> list[dict[str, str]]:
+    gate = varga_accuracy_contract("D60", profile.birth_time_accuracy)
+    if gate["status"] == "blocked":
+        return [
+            {
+                "code": "d60_birth_time_accuracy",
+                "severity": "warning",
+                "message": "D60 is expert-only and requires exact birth time.",
+            }
+        ]
+    return [
+        {
+            "code": "d60_birth_time_accuracy",
+            "severity": "warning",
+            "message": "D60 is expert-only and requires exact birth time.",
+        }
+    ]
 
 
 def _workbench_scope_id(scope: str) -> str:
@@ -137,7 +174,11 @@ def _workbench_scope_summary(chart: dict, scope: str) -> dict:
         }
 
     houses = chart.get("houses") if isinstance(chart, dict) else []
+    if not isinstance(houses, list):
+        houses = []
     grahas = chart.get("grahas") if isinstance(chart, dict) else []
+    if not isinstance(grahas, list):
+        grahas = []
     ascendant = chart.get("ascendant") if isinstance(chart, dict) else None
     d1_grahas = [item for item in grahas if isinstance(item, dict)]
     special_points = [ascendant] if isinstance(ascendant, dict) else []
@@ -251,13 +292,13 @@ class BirthProfileWorkbenchView(APIView):
 
     def get(self, request, profile_id: int):
         scope = str(request.query_params.get("scope") or "d1").strip().lower()
-        if scope not in _workbench_supported_scope_keys():
-            return Response({"error": "scope is not supported"}, status=400)
         profile = get_object_or_404(
             BirthProfile.objects.select_related("place"),
             id=profile_id,
             user=request.user,
         )
+        if scope not in _workbench_supported_scope_keys(profile):
+            return Response({"error": "scope is not supported"}, status=400)
         calculation = (
             profile.calculations.filter(status=ChartCalculation.Status.COMPLETE)
             .order_by("-created_at", "-id")
@@ -269,6 +310,10 @@ class BirthProfileWorkbenchView(APIView):
                 "profile": profile_payload(profile, latest_calculation=calculation),
                 "calculation": calculation_payload(calculation) if calculation else None,
                 "method": _workbench_scope_method_summary(calculation.result if calculation else {}, scope),
+                "warnings": _workbench_warnings(profile),
+                "accuracyGates": _workbench_accuracy_gates(profile),
+                "supportedScopes": list(_workbench_supported_scopes(profile)),
+                "expertOnlyScopes": list(_workbench_expert_scopes(profile)),
                 "result": calculation.result if calculation else None,
             }
         )

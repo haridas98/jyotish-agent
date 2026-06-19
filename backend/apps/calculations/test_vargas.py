@@ -70,10 +70,13 @@ def test_varga_method_registry_marks_workbench_ready_scopes():
         "D20",
         "D24",
         "D30",
+        "D60",
     )
     assert VARGA_METHOD_REGISTRY["D30"].workbench_ready
     assert VARGA_METHOD_REGISTRY["D30"].expert_only
-    assert not VARGA_METHOD_REGISTRY["D60"].workbench_ready
+    assert VARGA_METHOD_REGISTRY["D60"].workbench_ready
+    assert VARGA_METHOD_REGISTRY["D60"].expert_only
+    assert VARGA_METHOD_REGISTRY["D60"].time_accuracy_required == "exact"
 
 
 def test_varga_first_last_generator_matches_divisional_placement():
@@ -511,15 +514,17 @@ def test_d7_chart_snapshot_keeps_lagna_and_graha_order():
         ],
     }
 
-def test_d60_method_registry_is_time_sensitive_and_hidden_from_workbench():
+def test_d60_method_registry_is_time_sensitive_and_expert_only_in_workbench():
     method = VARGA_METHOD_REGISTRY["D60"]
 
     assert method.method_id == "varga.d60.parashara_shashtyamsha.v1"
     assert method.method_version == "1"
     assert method.source_anchor == "JHora Sterlitamak 1998 D60 parity; BPHS Shashtyamsha source review pending"
     assert method.time_accuracy_required == "exact"
-    assert method.workbench_ready is False
-    assert "D60" not in workbench_varga_codes()
+    assert method.workbench_ready is True
+    assert method.expert_only is True
+    assert "D60" in workbench_varga_codes()
+    assert "D60" in varga_module.workbench_expert_varga_codes()
 
 
 def test_d60_boundary_policy_half_degree_start_inclusive_end_exclusive():
