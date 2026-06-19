@@ -1,6 +1,7 @@
-import type { EntityId } from "@/astrology";
-import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, HousePlacement, JyotishUserSettings } from "@/lib/api";
+﻿import type { EntityId } from "@/astrology";
+import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, HousePlacement, JyotishUserSettings, VargaPlacement } from "@/lib/api";
 
+export type ChartWorkbenchScopeId = "D1" | "D9";
 export type D1ChartStyle = "north" | "south";
 export type D1ReaderMode = "novice" | "astrologer";
 export type D1TerminologyMode = "ru" | "en" | "sa" | "short";
@@ -8,7 +9,7 @@ export type D1DataTab = "overview" | "grahas" | "houses" | "nakshatras";
 
 export type D1WorkbenchModel = {
   schemaVersion: "d1-workbench.v1";
-  scopeId: "D1";
+  scopeId: "D1" | "D9";
   profile: {
     id: number;
     title: string;
@@ -99,6 +100,21 @@ export type D1Warning = {
   severity: "info" | "warning" | "critical";
 };
 
+type NormalizedPlacement = Partial<GrahaPosition> & Partial<VargaPlacement> & {
+  body: string;
+  rashi: string;
+  rashi_index?: number;
+};
+
+type ScopeSource = {
+  scopeId: ChartWorkbenchScopeId;
+  title: string;
+  houses: HousePlacement[];
+  grahaPlacements: NormalizedPlacement[];
+  specialPointPlacements: NormalizedPlacement[];
+  missing: boolean;
+};
+
 const RASHI_ENTITY_NAMES = [
   "Aries",
   "Taurus",
@@ -114,6 +130,7 @@ const RASHI_ENTITY_NAMES = [
   "Pisces",
 ] as const;
 
+const RASHI_SANSKRIT_NAMES = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya", "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena"] as const;
 const GRAHA_ORDER = ["SU", "MO", "MA", "ME", "JU", "VE", "SA", "RA", "KE"];
 const SPECIAL_POINT_ORDER = ["LAGNA"];
 
@@ -144,8 +161,10 @@ export function buildD1WorkbenchModel(
   profile: ChartProfile,
   settings: JyotishUserSettings | null,
   calculationResult: ChartCalculationRecord | null,
+  scopeId: ChartWorkbenchScopeId = "D1",
 ): D1WorkbenchModel {
   const chart = calculationResult?.result ?? null;
+  const scope = buildScopeSource(chart, scopeId);
   const warnings: D1Warning[] = [];
   if (!chart) {
     warnings.push({ code: "calculation_absent", message: "Для этой карты ещё нет сохранённого расчёта.", severity: "warning" });
@@ -153,19 +172,19 @@ export function buildD1WorkbenchModel(
   if (profile.birth_time_accuracy !== "exact") {
     warnings.push({ code: "birth_time_accuracy", message: "Время рождения не отмечено как точное; дома и Лагна требуют осторожности.", severity: "warning" });
   }
-  if (chart && !chart.ascendant) {
-    warnings.push({ code: "lagna_absent", message: "В расчёте нет Лагны.", severity: "critical" });
+  if (scope.missing) {
+    warnings.push({ code: `${scope.scopeId.toLowerCase()}_absent`, message: `${scope.scopeId} пока отсутствует в сохранённом расчёте.`, severity: "warning" });
   }
 
-  const grahas = buildGrahaRows(chart);
-  const specialPoints = buildSpecialPointRows(chart);
-  const houses = buildHouseCells(chart, grahas, specialPoints);
+  const grahas = buildGrahaRows(scope);
+  const specialPoints = buildSpecialPointRows(scope);
+  const houses = buildHouseCells(scope, grahas, specialPoints);
   const capabilities = buildCapabilities(grahas, specialPoints);
   const rashiCount = new Set(houses.map((house) => house.rashiIndex).filter((item): item is number => item !== null)).size;
 
   return {
     schemaVersion: "d1-workbench.v1",
-    scopeId: "D1",
+    scopeId: scope.scopeId,
     profile: {
       id: profile.id,
       title: profile.display_name,
@@ -201,27 +220,60 @@ export function buildD1WorkbenchModel(
   };
 }
 
-function buildGrahaRows(chart: BirthChart | null): D1GrahaRow[] {
-  const placements = chart ? chart.grahas.filter(Boolean) : [];
-  return placements
-    .map((placement) => buildPlacementRow(chart, placement, "graha"))
+function buildScopeSource(chart: BirthChart | null, scopeId: ChartWorkbenchScopeId): ScopeSource {
+  if (scopeId === "D9") {
+    const varga = chart?.vargas?.D9 ?? null;
+    const placements = (varga?.placements ?? []) as NormalizedPlacement[];
+    const specialPointPlacements = placements.filter((item) => isLagnaBody(item.body));
+    const grahaPlacements = placements.filter((item) => !isLagnaBody(item.body));
+    return {
+      scopeId,
+      title: "D9 Навамша",
+      houses: buildVargaHouses(specialPointPlacements[0] ?? null),
+      grahaPlacements,
+      specialPointPlacements,
+      missing: !varga,
+    };
+  }
+  return {
+    scopeId: "D1",
+    title: "D1 Раши",
+    houses: chart?.houses ?? [],
+    grahaPlacements: (chart?.grahas ?? []) as NormalizedPlacement[],
+    specialPointPlacements: chart?.ascendant ? [{ ...chart.ascendant, body: chart.ascendant.body || "Lagna" }] : [],
+    missing: !chart,
+  };
+}
+
+function buildVargaHouses(lagna: NormalizedPlacement | null): HousePlacement[] {
+  const lagnaIndex = normalizeRashiIndex(lagna?.rashi_index) ?? rashiIndexByName(lagna?.rashi ?? "");
+  if (!lagnaIndex) return [];
+  return Array.from({ length: 12 }, (_, index) => {
+    const rashiIndex = ((lagnaIndex - 1 + index) % 12) + 1;
+    return { house: index + 1, rashi_index: rashiIndex - 1, rashi: RASHI_SANSKRIT_NAMES[rashiIndex - 1] };
+  });
+}
+
+function buildGrahaRows(scope: ScopeSource): D1GrahaRow[] {
+  return scope.grahaPlacements
+    .map((placement) => buildPlacementRow(scope, placement, "graha"))
     .filter((row): row is D1GrahaRow => row.kind === "graha")
     .sort((a, b) => orderOf(a.code) - orderOf(b.code) || a.code.localeCompare(b.code));
 }
 
-function buildSpecialPointRows(chart: BirthChart | null): D1SpecialPointRow[] {
-  const placements = chart?.ascendant ? [{ ...chart.ascendant, body: chart.ascendant.body || "Lagna" }] : [];
-  return placements
-    .map((placement) => buildPlacementRow(chart, placement, "special_point"))
+function buildSpecialPointRows(scope: ScopeSource): D1SpecialPointRow[] {
+  return scope.specialPointPlacements
+    .map((placement) => buildPlacementRow(scope, placement, "special_point"))
     .filter((row): row is D1SpecialPointRow => row.kind === "special_point")
     .sort((a, b) => specialPointOrderOf(a.code) - specialPointOrderOf(b.code) || a.code.localeCompare(b.code));
 }
 
-function buildPlacementRow(chart: BirthChart | null, placement: GrahaPosition, expectedKind: "graha" | "special_point"): D1GrahaRow | D1SpecialPointRow {
+function buildPlacementRow(scope: ScopeSource, placement: NormalizedPlacement, expectedKind: "graha" | "special_point"): D1GrahaRow | D1SpecialPointRow {
   const meta = BODY_MAP[placement.body] ?? { code: placement.body.slice(0, 2).toUpperCase(), entityId: "graha.SU" as EntityId, label: placement.body, shortLabel: placement.body.slice(0, 2), kind: "graha" as const };
   const rashiIndex = normalizeRashiIndex(placement.rashi_index) ?? rashiIndexByName(placement.rashi);
-  const house = houseForRashiIndex(chart?.houses ?? [], rashiIndex);
+  const house = houseForRashiIndex(scope.houses, rashiIndex);
   const houseEntityId = house ? (`house.${house}` as EntityId) : null;
+  const longitude = typeof placement.longitude === "number" ? placement.longitude : null;
   const common = {
     body: placement.body,
     code: meta.code,
@@ -229,8 +281,8 @@ function buildPlacementRow(chart: BirthChart | null, placement: GrahaPosition, e
     shortLabel: meta.shortLabel,
     entityId: meta.kind === "graha" ? grahaEntityId(placement.body) : meta.entityId,
     placementEntityId: house && meta.kind === "graha" ? (`placement.${meta.code}.house.${house}` as EntityId) : null,
-    longitude: typeof placement.longitude === "number" ? placement.longitude : null,
-    degreeInSign: typeof placement.longitude === "number" ? formatDegreeInSign(placement.longitude) : "-",
+    longitude,
+    degreeInSign: longitude !== null ? formatDegreeInSign(longitude) : "-",
     rashiName: placement.rashi,
     rashiIndex,
     rashiEntityId: rashiEntityId(rashiIndex),
@@ -249,16 +301,16 @@ function buildPlacementRow(chart: BirthChart | null, placement: GrahaPosition, e
   return { ...common, kind: meta.kind } as D1GrahaRow | D1SpecialPointRow;
 }
 
-function buildHouseCells(chart: BirthChart | null, grahas: D1GrahaRow[], specialPoints: D1SpecialPointRow[]): D1HouseCell[] {
-  const houses = Array.from({ length: 12 }, (_, index) => {
-    const houseNumber = index + 1;
-    const source = chart?.houses.find((item) => item.house === houseNumber) ?? null;
-    const rashiIndex = normalizeRashiIndex(source?.rashi_index) ?? rashiIndexByName(source?.rashi ?? "");
+function buildHouseCells(scope: ScopeSource, grahas: D1GrahaRow[], specialPoints: D1SpecialPointRow[]): D1HouseCell[] {
+  const sourceHouses = scope.houses.length ? scope.houses : Array.from({ length: 12 }, (_, index) => ({ house: index + 1, rashi_index: index, rashi: RASHI_ENTITY_NAMES[index] }));
+  const houses = sourceHouses.map((source) => {
+    const houseNumber = source.house;
+    const rashiIndex = normalizeRashiIndex(source.rashi_index) ?? rashiIndexByName(source.rashi ?? "");
     return {
       house: houseNumber,
       houseEntityId: `house.${houseNumber}` as EntityId,
       rashiIndex,
-      rashiName: source?.rashi ?? "-",
+      rashiName: source.rashi ?? "-",
       rashiEntityId: rashiEntityId(rashiIndex),
       grahaCodes: grahas.filter((graha) => graha.house === houseNumber).map((graha) => graha.code).sort((a, b) => orderOf(a) - orderOf(b)),
       specialPointCodes: specialPoints.filter((point) => point.house === houseNumber).map((point) => point.code),
@@ -267,10 +319,6 @@ function buildHouseCells(chart: BirthChart | null, grahas: D1GrahaRow[], special
   return houses.sort((a, b) => a.house - b.house);
 }
 
-function grahaEntityId(body: string): EntityId {
-  const meta = BODY_MAP[body];
-  return meta?.kind === "graha" ? meta.entityId : ("graha.SU" as EntityId);
-}
 function buildCapabilities(grahas: D1GrahaRow[], specialPoints: D1SpecialPointRow[]): D1WorkbenchCapabilities {
   const rows = [...grahas, ...specialPoints];
   return {
@@ -288,6 +336,15 @@ function terminologyDefault(settings: JyotishUserSettings | null): D1Terminology
   return "ru";
 }
 
+function isLagnaBody(body: string): boolean {
+  return body === "Lagna" || body === "Ascendant";
+}
+
+function grahaEntityId(body: string): EntityId {
+  const meta = BODY_MAP[body];
+  return meta?.kind === "graha" ? meta.entityId : ("graha.SU" as EntityId);
+}
+
 function houseForRashiIndex(houses: HousePlacement[], rashiIndex: number | null): number | null {
   if (!rashiIndex) return null;
   return houses.find((house) => normalizeRashiIndex(house.rashi_index) === rashiIndex)?.house ?? null;
@@ -301,8 +358,10 @@ function normalizeRashiIndex(index: number | null | undefined): number | null {
 }
 
 function rashiIndexByName(name: string): number | null {
-  const index = RASHI_ENTITY_NAMES.findIndex((item) => item.toLowerCase() === name.toLowerCase());
-  return index >= 0 ? index + 1 : null;
+  const englishIndex = RASHI_ENTITY_NAMES.findIndex((item) => item.toLowerCase() === name.toLowerCase());
+  if (englishIndex >= 0) return englishIndex + 1;
+  const sanskritIndex = RASHI_SANSKRIT_NAMES.findIndex((item) => item.toLowerCase() === name.toLowerCase());
+  return sanskritIndex >= 0 ? sanskritIndex + 1 : null;
 }
 
 function rashiEntityId(index: number | null): EntityId | null {

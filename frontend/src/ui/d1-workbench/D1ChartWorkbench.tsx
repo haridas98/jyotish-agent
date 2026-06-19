@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, type CSSProperties } from "react";
 import type { EntityId } from "@/astrology";
 import type {
+  ChartWorkbenchScopeId,
   D1ChartStyle,
   D1DataTab,
   D1GrahaRow,
@@ -17,11 +18,12 @@ import { EntityInspector } from "@/ui/components/EntityInspector";
 type D1ChartWorkbenchProps = {
   model: D1WorkbenchModel;
   onRecalculate?: () => void;
+  onScopeChange?: (scopeId: ChartWorkbenchScopeId) => void;
   status?: string;
 };
 
 type ChartWorkbenchState = {
-  scopeId: "D1";
+  scopeId: ChartWorkbenchScopeId;
   mode: D1ReaderMode;
   chartStyle: D1ChartStyle;
   activeEntityId: EntityId | null;
@@ -91,9 +93,9 @@ export function D1ChartWorkbenchShell({ status = "Открываю карту D1
   );
 }
 
-export function D1ChartWorkbench({ model, onRecalculate, status }: D1ChartWorkbenchProps) {
+export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }: D1ChartWorkbenchProps) {
   const [workbenchState, setWorkbenchState] = useState<ChartWorkbenchState>({
-    scopeId: "D1",
+    scopeId: model.scopeId,
     mode: model.defaults.readerMode,
     chartStyle: model.defaults.chartStyle,
     activeEntityId: null,
@@ -145,6 +147,9 @@ export function D1ChartWorkbench({ model, onRecalculate, status }: D1ChartWorkbe
       </div>
 
       <div className="d1-toolbar" aria-label="Стиль карты">
+        <strong>Карта</strong>
+        <button type="button" className={model.scopeId === "D1" ? "active" : ""} onClick={() => onScopeChange?.("D1")}>D1</button>
+        <button type="button" className={model.scopeId === "D9" ? "active" : ""} onClick={() => onScopeChange?.("D9")}>D9</button>
         <strong>Стиль</strong>
         <button type="button" className={workbenchState.chartStyle === "north" ? "active" : ""} onClick={() => setChartStyle("north")}>Северный</button>
         <button type="button" className={workbenchState.chartStyle === "south" ? "active" : ""} onClick={() => setChartStyle("south")}>Южный</button>
@@ -196,7 +201,7 @@ export function D1ChartWorkbench({ model, onRecalculate, status }: D1ChartWorkbe
 function NorthChart({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
   return (
     <section className="d1-chart-card">
-      <div className="d1-chart-title"><h2>D1 Раши</h2><span>Нажмите на дом, знак, граху или Лагну</span></div>
+      <div className="d1-chart-title"><h2>{model.scopeId} Раши</h2><span>Нажмите на дом, знак, граху или Лагну</span></div>
       <div className="d1-north-chart">
         <svg viewBox="0 0 100 100" aria-hidden="true">
           <path d="M0 0 L100 100 M100 0 L0 100" />
@@ -215,13 +220,13 @@ function NorthChart({ model, state, onSelect }: { model: D1WorkbenchModel; state
 function SouthChart({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
   return (
     <section className="d1-chart-card">
-      <div className="d1-chart-title"><h2>D1 Раши</h2><span>Южноиндийская сетка знаков</span></div>
+      <div className="d1-chart-title"><h2>{model.scopeId} Раши</h2><span>Южноиндийская сетка знаков</span></div>
       <div className="d1-south-chart">
         {model.houses.map((house) => {
           const position = SOUTH_GRID[house.house];
           return <ChartCell key={house.house} house={house} grahas={grahasForHouse(model, house.house)} specialPoints={specialPointsForHouse(model, house.house)} state={state} onSelect={onSelect} style={{ gridColumn: position.col, gridRow: position.row }} />;
         })}
-        <div className="d1-south-center">D1</div>
+        <div className="d1-south-center">{model.scopeId}</div>
       </div>
     </section>
   );
@@ -262,7 +267,7 @@ function OverviewPanel({ model, state, onSelect }: { model: D1WorkbenchModel; st
   const rows = [lagna, sun, moon].filter(Boolean) as Array<D1GrahaRow | D1SpecialPointRow>;
   return (
     <section className="d1-table-card">
-      <div className="d1-chart-title"><h2>Обзор</h2><span>D1 · {model.stats.grahaCount} грах · {model.stats.specialPointCount} опорная точка</span></div>
+      <div className="d1-chart-title"><h2>Обзор</h2><span>{model.scopeId} · {model.stats.grahaCount} грах · {model.stats.specialPointCount} опорная точка</span></div>
       <div className="d1-table-scroll">
         <table>
           <tbody>

@@ -41,6 +41,9 @@ class D1WorkbenchDevCheckView(APIView):
         token = str(request.query_params.get("token") or "").strip()
         if not settings.DEV_LOGIN_TOKEN or token != settings.DEV_LOGIN_TOKEN:
             return Response({"error": "forbidden"}, status=403)
+        scope = str(request.query_params.get("scope") or "d1").strip().lower()
+        if scope not in {"d1", "d9"}:
+            return Response({"error": "scope is not supported"}, status=400)
         try:
             chart_id = int(request.query_params.get("chart_id") or request.query_params.get("profile_id") or 0)
         except (TypeError, ValueError):
@@ -55,57 +58,87 @@ class D1WorkbenchDevCheckView(APIView):
             .first()
         )
         chart = calculation.result if calculation else {}
-        houses = chart.get("houses") if isinstance(chart, dict) else []
-        grahas = chart.get("grahas") if isinstance(chart, dict) else []
-        ascendant = chart.get("ascendant") if isinstance(chart, dict) else None
-        d1_grahas = [item for item in grahas if isinstance(item, dict)]
-        special_points = [ascendant] if isinstance(ascendant, dict) else []
-        sorted_houses = sorted(
-            int(item.get("house")) for item in houses if isinstance(item, dict) and str(item.get("house", "")).isdigit()
-        )
-        rashi_values = set()
-        for item in houses if isinstance(houses, list) else []:
-            if not isinstance(item, dict):
-                continue
-            rashi_index = item.get("rashi_index")
-            if isinstance(rashi_index, int):
-                rashi_values.add(rashi_index + 1 if 0 <= rashi_index <= 11 else rashi_index)
-            elif item.get("rashi"):
-                rashi_values.add(str(item.get("rashi")))
-        nakshatras_available = any(isinstance(item, dict) and item.get("nakshatra") for item in [*special_points, *d1_grahas])
-        tab_ids = ["overview", "grahas", "houses"] + (["nakshatras"] if nakshatras_available else [])
+        scope_summary = _workbench_scope_summary(chart if isinstance(chart, dict) else {}, scope)
 
         return Response(
             {
                 "status": "ok",
-                "schemaVersion": "d1-workbench-check.v2",
-                "scopeId": "D1",
+                "schemaVersion": "d1-workbench-check.v2" if scope == "d1" else "varga-workbench-check.v1",
+                "scopeId": "D1" if scope == "d1" else "D9",
                 "chartId": profile.id,
                 "hasCalculation": calculation is not None,
-                "houseCount": len(sorted_houses),
-                "rashiCount": len(rashi_values),
-                "grahaCount": len(d1_grahas),
-                "specialPointCount": len(special_points),
-                "chartObjectCount": len(d1_grahas) + len(special_points),
+                **scope_summary,
                 "supportedStyles": ["north", "south"],
                 "supportedModes": ["novice", "astrologer"],
-                "tabIds": tab_ids,
-                "nakshatrasAvailable": nakshatras_available,
                 "entityInspectorCount": 1,
-                "clickTargets": {
-                    "houses": len(sorted_houses),
-                    "rashis": len(rashi_values),
-                    "grahas": len(d1_grahas),
-                    "specialPoints": len(special_points),
-                },
+                "supportedScopes": ["D1", "D9"],
                 "forbiddenScopesPresent": {
-                    "D9": False,
                     "D60": False,
                     "AI": False,
                     "rawEvidence": False,
                 },
             }
         )
+
+
+def _workbench_scope_summary(chart: dict, scope: str) -> dict:
+    if scope == "d9":
+        varga = chart.get("vargas", {}).get("D9", {}) if isinstance(chart.get("vargas"), dict) else {}
+        placements = [item for item in varga.get("placements", []) if isinstance(item, dict)] if isinstance(varga, dict) else []
+        grahas = [item for item in placements if str(item.get("body") or "") not in {"Lagna", "Ascendant"}]
+        special_points = [item for item in placements if str(item.get("body") or "") in {"Lagna", "Ascendant"}]
+        house_count = 12 if special_points else 0
+        rashi_count = 12 if special_points else len({item.get("rashi_index") for item in placements if item.get("rashi_index") is not None})
+        return {
+            "houseCount": house_count,
+            "rashiCount": rashi_count,
+            "grahaCount": len(grahas),
+            "specialPointCount": len(special_points),
+            "chartObjectCount": len(grahas) + len(special_points),
+            "tabIds": ["overview", "grahas", "houses"],
+            "nakshatrasAvailable": False,
+            "clickTargets": {
+                "houses": house_count,
+                "rashis": rashi_count,
+                "grahas": len(grahas),
+                "specialPoints": len(special_points),
+            },
+        }
+
+    houses = chart.get("houses") if isinstance(chart, dict) else []
+    grahas = chart.get("grahas") if isinstance(chart, dict) else []
+    ascendant = chart.get("ascendant") if isinstance(chart, dict) else None
+    d1_grahas = [item for item in grahas if isinstance(item, dict)]
+    special_points = [ascendant] if isinstance(ascendant, dict) else []
+    sorted_houses = sorted(
+        int(item.get("house")) for item in houses if isinstance(item, dict) and str(item.get("house", "")).isdigit()
+    )
+    rashi_values = set()
+    for item in houses if isinstance(houses, list) else []:
+        if not isinstance(item, dict):
+            continue
+        rashi_index = item.get("rashi_index")
+        if isinstance(rashi_index, int):
+            rashi_values.add(rashi_index + 1 if 0 <= rashi_index <= 11 else rashi_index)
+        elif item.get("rashi"):
+            rashi_values.add(str(item.get("rashi")))
+    nakshatras_available = any(isinstance(item, dict) and item.get("nakshatra") for item in [*special_points, *d1_grahas])
+    tab_ids = ["overview", "grahas", "houses"] + (["nakshatras"] if nakshatras_available else [])
+    return {
+        "houseCount": len(sorted_houses),
+        "rashiCount": len(rashi_values),
+        "grahaCount": len(d1_grahas),
+        "specialPointCount": len(special_points),
+        "chartObjectCount": len(d1_grahas) + len(special_points),
+        "tabIds": tab_ids,
+        "nakshatrasAvailable": nakshatras_available,
+        "clickTargets": {
+            "houses": len(sorted_houses),
+            "rashis": len(rashi_values),
+            "grahas": len(d1_grahas),
+            "specialPoints": len(special_points),
+        },
+    }
 
 
 def _graha_code(body: str) -> str:
@@ -187,7 +220,7 @@ class BirthProfileWorkbenchView(APIView):
 
     def get(self, request, profile_id: int):
         scope = str(request.query_params.get("scope") or "d1").strip().lower()
-        if scope != "d1":
+        if scope not in {"d1", "d9"}:
             return Response({"error": "scope is not supported"}, status=400)
         profile = get_object_or_404(
             BirthProfile.objects.select_related("place"),
@@ -201,7 +234,7 @@ class BirthProfileWorkbenchView(APIView):
         )
         return Response(
             {
-                "scope": "d1",
+                "scope": scope,
                 "profile": profile_payload(profile, latest_calculation=calculation),
                 "calculation": calculation_payload(calculation) if calculation else None,
                 "result": calculation.result if calculation else None,

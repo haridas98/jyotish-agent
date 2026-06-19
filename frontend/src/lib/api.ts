@@ -1785,8 +1785,10 @@ export type ChartCalculationRecord = {
   updated_at: string;
 };
 
+export type ChartWorkbenchScope = "d1" | "d9";
+
 export type D1WorkbenchApiResponse = {
-  scope: "d1";
+  scope: ChartWorkbenchScope;
   profile: ChartProfile;
   calculation: ChartCalculationRecord | null;
   result: BirthChart | null;
@@ -2645,8 +2647,8 @@ export async function fetchChartProfile(profileId: number): Promise<ChartProfile
   }
   return data.profile;
 }
-export async function fetchD1ChartWorkbench(profileId: number): Promise<D1WorkbenchApiResponse> {
-  const response = await apiFetch("/api/charts/" + profileId + "/workbench?scope=d1", { cache: "no-store" });
+export async function fetchD1ChartWorkbench(profileId: number, scope: ChartWorkbenchScope = "d1"): Promise<D1WorkbenchApiResponse> {
+  const response = await apiFetch("/api/charts/" + profileId + "/workbench?scope=" + scope, { cache: "no-store" });
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error ?? "Request failed");

@@ -31,6 +31,9 @@ if (exists("src/astrology/d1-workbench.ts")) {
   const model = read("src/astrology/d1-workbench.ts");
   assert(model.includes('schemaVersion: "d1-workbench.v1"'), "D1 model must expose schemaVersion");
   assert(model.includes("buildD1WorkbenchModel"), "D1 adapter missing");
+  assert(model.includes('scopeId: "D1" | "D9"'), "Workbench model must support D1/D9 scope union");
+  assert(model.includes("buildScopeSource"), "Workbench model must normalize D1 and D9 through one scope source");
+  assert(model.includes("vargas?.D9"), "D9 must come from saved varga payload");
   assert(model.includes("specialPoints"), "D1 model must separate special points from grahas");
   assert(model.includes("point.LAGNA"), "D1 model must use point.LAGNA for Lagna");
   assert(!model.includes('Ascendant: { code: "AS", entityId: "house.1"'), "Lagna must not be modeled as house.1 graha row");
@@ -47,12 +50,14 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   const inspectorRenderCount = (component.match(/<EntityInspector/g) ?? []).length;
   assert(inspectorRenderCount === 1, "D1 workbench must render exactly one EntityInspector");
   assert(component.includes("specialPointsForHouse"), "D1 workbench must render special points separately from grahas");
+  assert(component.includes("onScopeChange"), "D1/D9 workbench must switch scope through the same component");
+  assert(component.includes('model.scopeId === "D9"'), "Workbench must expose D9 through the same shell");
   assert(component.includes("terminologyMode"), "D1 workbench must keep terminology mode in shared state");
   assert(component.includes("activeTab"), "D1 workbench must keep active data tab in shared state");
   assert(component.includes("chartStyle === \"north\"") && component.includes("chartStyle === \"south\""), "D1 workbench must support north/south style toggle");
   assert(component.includes("mode === \"novice\"") && component.includes("mode === \"astrologer\""), "D1 workbench must support novice/astrologer mode");
   assert(!/calculate(?:House|Nakshatra|Dasha|Varga)\s*\(/.test(component), "React component must not calculate astrology formulas");
-  for (const forbidden of ["AI", "D9", "D60", "source.pending", "Missing calculations", "Block is not registered yet"]) {
+  for (const forbidden of ["AI", "D60", "source.pending", "Missing calculations", "Block is not registered yet"]) {
     assert(!component.includes(forbidden), `D1 workbench leaks forbidden marker: ${forbidden}`);
   }
 }

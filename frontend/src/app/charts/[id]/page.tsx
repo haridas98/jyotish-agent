@@ -9,6 +9,7 @@ import {
   fetchD1ChartWorkbench,
   fetchJyotishSettings,
   type ChartProfile,
+  type ChartWorkbenchScope,
   type D1WorkbenchApiResponse,
   type JyotishUserSettings,
 } from "@/lib/api";
@@ -26,6 +27,7 @@ export default function ChartDetailPage() {
   const [profile, setProfile] = useState<ChartProfile | null>(null);
   const [settings, setSettings] = useState<JyotishUserSettings | null>(null);
   const [workbench, setWorkbench] = useState<D1WorkbenchApiResponse | null>(null);
+  const [scope, setScope] = useState<ChartWorkbenchScope>("d1");
   const [status, setStatus] = useState("Открываю карту D1...");
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function ChartDetailPage() {
         const [profileRow, settingsRow, workbenchRow] = await Promise.all([
           fetchChartProfile(profileId),
           fetchJyotishSettings(),
-          fetchD1ChartWorkbench(profileId),
+          fetchD1ChartWorkbench(profileId, scope),
         ]);
         if (!mounted) return;
         setProfile(profileRow);
@@ -55,11 +57,12 @@ export default function ChartDetailPage() {
     return () => {
       mounted = false;
     };
-  }, [profileId]);
+  }, [profileId, scope]);
 
   const model = useMemo(() => {
     if (!profile || !workbench) return null;
-    return buildD1WorkbenchModel(profile, settings, workbench.calculation);
+    const scopeId = workbench.scope === "d9" ? "D9" : "D1";
+    return buildD1WorkbenchModel(profile, settings, workbench.calculation, scopeId);
   }, [profile, settings, workbench]);
 
   return (
@@ -71,7 +74,7 @@ export default function ChartDetailPage() {
         <span>Объяснение</span>
       </div>
       {model ? (
-        <D1ChartWorkbench model={model} status={status} />
+        <D1ChartWorkbench key={model.scopeId} model={model} status={status} onScopeChange={(nextScope) => setScope(nextScope === "D9" ? "d9" : "d1")} />
       ) : (
         <D1ChartWorkbenchShell status={status} />
       )}

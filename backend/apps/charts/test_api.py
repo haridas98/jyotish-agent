@@ -933,6 +933,7 @@ def test_chart_workbench_returns_latest_complete_d1(user):
             "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1, "navamsa": "Cancer"},
             "grahas": [{"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1, "navamsa": "Aries"}],
             "houses": [{"house": 1, "rashi": "Cancer", "rashi_index": 3}, {"house": 2, "rashi": "Leo", "rashi_index": 4}],
+            "vargas": {"D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}},
             "birth": {},
             "place": {},
             "panchanga": {},
@@ -946,6 +947,13 @@ def test_chart_workbench_returns_latest_complete_d1(user):
     assert response.data["profile"]["id"] == profile.id
     assert response.data["calculation"]["id"] == calculation.id
     assert response.data["result"]["grahas"][0]["body"] == "Surya"
+    d9_response = client.get(f"/api/charts/{profile.id}/workbench?scope=d9")
+
+    assert d9_response.status_code == 200
+    assert d9_response.data["scope"] == "d9"
+    assert d9_response.data["profile"]["id"] == profile.id
+    assert d9_response.data["calculation"]["id"] == calculation.id
+    assert d9_response.data["result"]["vargas"]["D9"]["placements"][0]["body"] == "Lagna"
 
 
 @pytest.mark.django_db
@@ -994,6 +1002,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
             "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1, "navamsa": "Cancer"},
             "grahas": [{"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1, "navamsa": "Aries"}],
             "houses": [{"house": item, "rashi": "Cancer", "rashi_index": item - 1} for item in range(1, 13)],
+            "vargas": {"D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}},
             "birth": {},
             "place": {},
             "panchanga": {},
@@ -1017,7 +1026,20 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert response.data["supportedModes"] == ["novice", "astrologer"]
     assert response.data["entityInspectorCount"] == 1
     assert response.data["clickTargets"] == {"houses": 12, "rashis": 12, "grahas": 1, "specialPoints": 1}
-    assert response.data["forbiddenScopesPresent"] == {"D9": False, "D60": False, "AI": False, "rawEvidence": False}
+    assert response.data["forbiddenScopesPresent"] == {"D60": False, "AI": False, "rawEvidence": False}
+    assert response.data["supportedScopes"] == ["D1", "D9"]
+
+    d9_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope=d9")
+
+    assert d9_response.status_code == 200
+    assert d9_response.data["schemaVersion"] == "varga-workbench-check.v1"
+    assert d9_response.data["scopeId"] == "D9"
+    assert d9_response.data["houseCount"] == 12
+    assert d9_response.data["grahaCount"] == 1
+    assert d9_response.data["specialPointCount"] == 1
+    assert d9_response.data["chartObjectCount"] == 2
+    assert d9_response.data["tabIds"] == ["overview", "grahas", "houses"]
+    assert d9_response.data["forbiddenScopesPresent"] == {"D60": False, "AI": False, "rawEvidence": False}
     assert "birth_date" not in response.data
     assert "birth" not in response.data
 
