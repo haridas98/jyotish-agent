@@ -180,3 +180,45 @@ def test_d10_chart_snapshot_keeps_lagna_and_graha_order():
             {"body": "Mangala", "rashi_index": 6, "rashi": "Tula"},
         ],
     }
+
+
+def test_d12_dvadashamsha_golden_first_and_last_parts_for_all_rashis():
+    rashi_names = [
+        "Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya",
+        "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena",
+    ]
+    for sign_index, sign_name in enumerate(rashi_names):
+        sign_start = sign_index * 30.0
+        assert divisional_placement(sign_start, "D12") == (sign_index, sign_name)
+        expected_last_index = (sign_index + 11) % 12
+        assert divisional_placement(sign_start + 29.999999, "D12") == (expected_last_index, rashi_names[expected_last_index])
+
+
+def test_d12_dvadashamsha_golden_boundary_degrees_do_not_drift():
+    one_dvadashamsha = 30.0 / 12.0
+    assert divisional_placement(one_dvadashamsha - 0.000001, "D12") == (0, "Mesha")
+    assert divisional_placement(one_dvadashamsha, "D12") == (1, "Vrishabha")
+    assert divisional_placement((2 * one_dvadashamsha) - 0.000001, "D12") == (1, "Vrishabha")
+    assert divisional_placement(2 * one_dvadashamsha, "D12") == (2, "Mithuna")
+    assert divisional_placement(30.0 - 0.000001, "D12") == (11, "Meena")
+    assert divisional_placement(30.0, "D12") == (1, "Vrishabha")
+
+
+def test_d12_chart_snapshot_keeps_lagna_and_graha_order():
+    chart = divisional_chart(
+        {"Surya": 15.942392, "Chandra": 68.368149, "Mangala": 18.9547},
+        ascendant_longitude=115.401188,
+        codes=("D12",),
+    )
+
+    assert chart["D12"] == {
+        "code": "D12",
+        "name": "Dvadashamsha",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "placements": [
+            {"body": "Lagna", "rashi_index": 1, "rashi": "Vrishabha"},
+            {"body": "Surya", "rashi_index": 6, "rashi": "Tula"},
+            {"body": "Chandra", "rashi_index": 5, "rashi": "Kanya"},
+            {"body": "Mangala", "rashi_index": 7, "rashi": "Vrischika"},
+        ],
+    }
