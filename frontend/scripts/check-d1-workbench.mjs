@@ -31,10 +31,12 @@ if (exists("src/astrology/d1-workbench.ts")) {
   const model = read("src/astrology/d1-workbench.ts");
   assert(model.includes('schemaVersion: "d1-workbench.v1"'), "D1 model must expose schemaVersion");
   assert(model.includes("buildD1WorkbenchModel"), "D1 adapter missing");
-  assert(model.includes('scopeId: "D1" | "D9" | "D10" | "D12"'), "Workbench model must support D1/D9/D10/D12 scope union");
-  assert(model.includes("buildScopeSource"), "Workbench model must normalize D1, D9, D10 and D12 through one scope source");
+  assert(model.includes('scopeId: "D1" | "D3" | "D7" | "D9" | "D10" | "D12"'), "Workbench model must support D1/D3/D7/D9/D10/D12 scope union");
+  assert(model.includes("buildScopeSource"), "Workbench model must normalize D1, D3, D7, D9, D10 and D12 through one scope source");
   assert(model.includes("vargas?.D9"), "D9 must come from saved varga payload");
   assert(model.includes("vargas?.D10"), "D10 must come from saved varga payload");
+  assert(model.includes("vargas?.D3"), "D3 must come from saved varga payload");
+  assert(model.includes("vargas?.D7"), "D7 must come from saved varga payload");
   assert(model.includes("vargas?.D12"), "D12 must come from saved varga payload");
   assert(model.includes("specialPoints"), "D1 model must separate special points from grahas");
   assert(model.includes("point.LAGNA"), "D1 model must use point.LAGNA for Lagna");
@@ -52,9 +54,11 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   const inspectorRenderCount = (component.match(/<EntityInspector/g) ?? []).length;
   assert(inspectorRenderCount === 1, "D1 workbench must render exactly one EntityInspector");
   assert(component.includes("specialPointsForHouse"), "D1 workbench must render special points separately from grahas");
-  assert(component.includes("onScopeChange"), "D1/D9/D10/D12 workbench must switch scope through the same component");
+  assert(component.includes("onScopeChange"), "D1/D3/D7/D9/D10/D12 workbench must switch scope through the same component");
   assert(component.includes('model.scopeId === "D9"'), "Workbench must expose D9 through the same shell");
   assert(component.includes('model.scopeId === "D10"'), "Workbench must expose D10 through the same shell");
+  assert(component.includes('model.scopeId === "D3"'), "Workbench must expose D3 through the same shell");
+  assert(component.includes('model.scopeId === "D7"'), "Workbench must expose D7 through the same shell");
   assert(component.includes('model.scopeId === "D12"'), "Workbench must expose D12 through the same shell");
   assert(component.includes("terminologyMode"), "D1 workbench must keep terminology mode in shared state");
   assert(component.includes("activeTab"), "D1 workbench must keep active data tab in shared state");

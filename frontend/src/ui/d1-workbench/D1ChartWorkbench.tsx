@@ -149,6 +149,8 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
       <div className="d1-toolbar" aria-label="Стиль карты">
         <strong>Карта</strong>
         <button type="button" className={model.scopeId === "D1" ? "active" : ""} onClick={() => onScopeChange?.("D1")}>D1</button>
+        <button type="button" className={model.scopeId === "D3" ? "active" : ""} onClick={() => onScopeChange?.("D3")}>D3</button>
+        <button type="button" className={model.scopeId === "D7" ? "active" : ""} onClick={() => onScopeChange?.("D7")}>D7</button>
         <button type="button" className={model.scopeId === "D9" ? "active" : ""} onClick={() => onScopeChange?.("D9")}>D9</button>
         <button type="button" className={model.scopeId === "D10" ? "active" : ""} onClick={() => onScopeChange?.("D10")}>D10</button>
         <button type="button" className={model.scopeId === "D12" ? "active" : ""} onClick={() => onScopeChange?.("D12")}>D12</button>

@@ -933,7 +933,7 @@ def test_chart_workbench_returns_latest_complete_d1(user):
             "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1, "navamsa": "Cancer"},
             "grahas": [{"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1, "navamsa": "Aries"}],
             "houses": [{"house": 1, "rashi": "Cancer", "rashi_index": 3}, {"house": 2, "rashi": "Leo", "rashi_index": 4}],
-            "vargas": {"D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}, "D10": {"code": "D10", "name": "Dashamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrischika", "rashi_index": 7}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D12": {"code": "D12", "name": "Dvadashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Tula", "rashi_index": 6}]}},
+            "vargas": {"D3": {"code": "D3", "name": "Drekkana", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Meena", "rashi_index": 11}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D7": {"code": "D7", "name": "Saptamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mithuna", "rashi_index": 2}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}, "D10": {"code": "D10", "name": "Dashamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrischika", "rashi_index": 7}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D12": {"code": "D12", "name": "Dvadashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Tula", "rashi_index": 6}]}},
             "birth": {},
             "place": {},
             "panchanga": {},
@@ -962,6 +962,15 @@ def test_chart_workbench_returns_latest_complete_d1(user):
     assert d12_response.status_code == 200
     assert d12_response.data["scope"] == "d12"
     assert d12_response.data["result"]["vargas"]["D12"]["placements"][0]["body"] == "Lagna"
+    d3_response = client.get(f"/api/charts/{profile.id}/workbench?scope=d3")
+    assert d3_response.status_code == 200
+    assert d3_response.data["scope"] == "d3"
+    assert d3_response.data["result"]["vargas"]["D3"]["placements"][0]["body"] == "Lagna"
+
+    d7_response = client.get(f"/api/charts/{profile.id}/workbench?scope=d7")
+    assert d7_response.status_code == 200
+    assert d7_response.data["scope"] == "d7"
+    assert d7_response.data["result"]["vargas"]["D7"]["placements"][0]["body"] == "Lagna"
 
     bad_scope_response = client.get(f"/api/charts/{profile.id}/workbench?scope=d60")
     assert bad_scope_response.status_code == 400
@@ -1013,7 +1022,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
             "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1, "navamsa": "Cancer"},
             "grahas": [{"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1, "navamsa": "Aries"}],
             "houses": [{"house": item, "rashi": "Cancer", "rashi_index": item - 1} for item in range(1, 13)],
-            "vargas": {"D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}, "D10": {"code": "D10", "name": "Dashamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrischika", "rashi_index": 7}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D12": {"code": "D12", "name": "Dvadashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Tula", "rashi_index": 6}]}},
+            "vargas": {"D3": {"code": "D3", "name": "Drekkana", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Meena", "rashi_index": 11}, {"body": "Surya", "rashi": "Simha", "rashi_index": 4}]}, "D7": {"code": "D7", "name": "Saptamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Mithuna", "rashi_index": 2}, {"body": "Surya", "rashi": "Karka", "rashi_index": 3}]}, "D9": {"code": "D9", "name": "Navamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Karka", "rashi_index": 3}, {"body": "Surya", "rashi": "Makara", "rashi_index": 9}]}, "D10": {"code": "D10", "name": "Dashamsa", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrischika", "rashi_index": 7}, {"body": "Surya", "rashi": "Kanya", "rashi_index": 5}]}, "D12": {"code": "D12", "name": "Dvadashamsha", "method": "Parashara", "placements": [{"body": "Lagna", "rashi": "Vrishabha", "rashi_index": 1}, {"body": "Surya", "rashi": "Tula", "rashi_index": 6}]}},
             "birth": {},
             "place": {},
             "panchanga": {},
@@ -1038,7 +1047,25 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert response.data["entityInspectorCount"] == 1
     assert response.data["clickTargets"] == {"houses": 12, "rashis": 12, "grahas": 1, "specialPoints": 1}
     assert response.data["forbiddenScopesPresent"] == {"D60": False, "AI": False, "rawEvidence": False}
-    assert response.data["supportedScopes"] == ["D1", "D9", "D10", "D12"]
+    assert response.data["supportedScopes"] == ["D1", "D3", "D7", "D9", "D10", "D12"]
+
+    d3_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope=d3")
+    assert d3_response.status_code == 200
+    assert d3_response.data["scopeId"] == "D3"
+    assert d3_response.data["houseCount"] == 12
+    assert d3_response.data["rashiCount"] == 12
+    assert d3_response.data["grahaCount"] == 1
+    assert d3_response.data["specialPointCount"] == 1
+    assert d3_response.data["supportedScopes"] == ["D1", "D3", "D7", "D9", "D10", "D12"]
+
+    d7_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope=d7")
+    assert d7_response.status_code == 200
+    assert d7_response.data["scopeId"] == "D7"
+    assert d7_response.data["houseCount"] == 12
+    assert d7_response.data["rashiCount"] == 12
+    assert d7_response.data["grahaCount"] == 1
+    assert d7_response.data["specialPointCount"] == 1
+    assert d7_response.data["supportedScopes"] == ["D1", "D3", "D7", "D9", "D10", "D12"]
 
     d9_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope=d9")
 

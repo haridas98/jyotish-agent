@@ -1,7 +1,7 @@
 import type { EntityId } from "@/astrology";
 import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, HousePlacement, JyotishUserSettings, VargaPlacement } from "@/lib/api";
 
-export type ChartWorkbenchScopeId = "D1" | "D9" | "D10" | "D12";
+export type ChartWorkbenchScopeId = "D1" | "D3" | "D7" | "D9" | "D10" | "D12";
 export type D1ChartStyle = "north" | "south";
 export type D1ReaderMode = "novice" | "astrologer";
 export type D1TerminologyMode = "ru" | "en" | "sa" | "short";
@@ -9,7 +9,7 @@ export type D1DataTab = "overview" | "grahas" | "houses" | "nakshatras";
 
 export type D1WorkbenchModel = {
   schemaVersion: "d1-workbench.v1";
-  scopeId: "D1" | "D9" | "D10" | "D12";
+  scopeId: "D1" | "D3" | "D7" | "D9" | "D10" | "D12";
   profile: {
     id: number;
     title: string;
@@ -221,14 +221,14 @@ export function buildD1WorkbenchModel(
 }
 
 function buildScopeSource(chart: BirthChart | null, scopeId: ChartWorkbenchScopeId): ScopeSource {
-  if (scopeId === "D9" || scopeId === "D10" || scopeId === "D12") {
-    const varga = scopeId === "D9" ? chart?.vargas?.D9 ?? null : scopeId === "D10" ? chart?.vargas?.D10 ?? null : chart?.vargas?.D12 ?? null;
+  if (scopeId === "D3" || scopeId === "D7" || scopeId === "D9" || scopeId === "D10" || scopeId === "D12") {
+    const varga = scopeId === "D3" ? chart?.vargas?.D3 ?? null : scopeId === "D7" ? chart?.vargas?.D7 ?? null : scopeId === "D9" ? chart?.vargas?.D9 ?? null : scopeId === "D10" ? chart?.vargas?.D10 ?? null : chart?.vargas?.D12 ?? null;
     const placements = (varga?.placements ?? []) as NormalizedPlacement[];
     const specialPointPlacements = placements.filter((item) => isLagnaBody(item.body));
     const grahaPlacements = placements.filter((item) => !isLagnaBody(item.body));
     return {
       scopeId,
-      title: scopeId === "D9" ? "D9 Навамша" : scopeId === "D10" ? "D10 Дашамша" : "D12 Двадашамша",
+      title: scopeId === "D3" ? "D3 Дреккана" : scopeId === "D7" ? "D7 Саптамша" : scopeId === "D9" ? "D9 Навамша" : scopeId === "D10" ? "D10 Дашамша" : "D12 Двадашамша",
       houses: buildVargaHouses(specialPointPlacements[0] ?? null),
       grahaPlacements,
       specialPointPlacements,
