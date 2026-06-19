@@ -100,6 +100,27 @@ def test_birth_profile_create_accepts_unknown_birth_time(user):
 
 
 @pytest.mark.django_db
+def test_profile_input_carries_birth_time_accuracy_for_d60_gate(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Approximate time chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "birth_time_accuracy": "approximate",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    profile = BirthProfile.objects.get(id=response.data["profile"]["id"])
+    assert _profile_input(profile)["birth_time_accuracy"] == "approximate"
+
+@pytest.mark.django_db
 def test_birth_profile_create_marks_single_self_profile(user):
     client = APIClient()
     client.force_authenticate(user=user)

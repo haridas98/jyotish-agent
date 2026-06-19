@@ -647,6 +647,52 @@ def test_build_birth_chart_adds_shodasha_varga_payload():
     }
 
 
+def test_build_birth_chart_blocks_d60_when_birth_time_is_not_exact():
+    from apps.calculations.chart import build_birth_chart
+
+    class FakeProviderWithGrahaAndLagna:
+        def planet_positions(self, moment, bodies, settings):
+            return {
+                "Surya": BodyPosition(
+                    body="Surya",
+                    longitude=30.0,
+                    latitude=0.0,
+                    distance_au=1.0,
+                    speed_longitude=1.0,
+                    placement=zodiac_placement(30.0),
+                )
+            }
+
+        def ascendant_position(self, moment, latitude, longitude, settings):
+            return BodyPosition(
+                body="Lagna",
+                longitude=90.0,
+                latitude=None,
+                distance_au=None,
+                speed_longitude=None,
+                placement=zodiac_placement(90.0),
+            )
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "birth_time_accuracy": "approximate",
+            "place_name": "Vrindavan",
+        },
+        provider=FakeProviderWithGrahaAndLagna(),
+    )
+
+    assert result["birth"]["time_accuracy"] == "approximate"
+    assert "D60" not in result["vargas"]
+    assert result["varga_accuracy"]["D60"] == {
+        "scopeId": "D60",
+        "status": "blocked",
+        "requiredBirthTimeAccuracy": "exact",
+        "actualBirthTimeAccuracy": "approximate",
+        "reason": "d60_requires_exact_birth_time",
+    }
+
 @pytest.mark.django_db
 def test_birth_chart_api_returns_400_for_bad_input():
     response = APIClient().post(reverse("birth-chart"), {"birth_date": "2000-01-01"}, format="json")

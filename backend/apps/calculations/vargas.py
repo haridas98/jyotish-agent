@@ -16,6 +16,7 @@ class VargaMethod:
     non_uniform: bool = False
     source_anchor: str = ""
     expert_only: bool = False
+    time_accuracy_required: str = ""
 
 
 VARGA_METHOD_REGISTRY = {
@@ -43,7 +44,14 @@ VARGA_METHOD_REGISTRY = {
     ),
     "D40": VargaMethod("D40", "Khavedamsha", 40),
     "D45": VargaMethod("D45", "Akshavedamsha", 45),
-    "D60": VargaMethod("D60", "Shashtyamsha", 60),
+    "D60": VargaMethod(
+        "D60",
+        "Shashtyamsha",
+        60,
+        method_id="varga.d60.parashara_shashtyamsha.v1",
+        source_anchor="JHora Sterlitamak 1998 D60 parity; BPHS Shashtyamsha source review pending",
+        time_accuracy_required="exact",
+    ),
 }
 
 SHODASHA_VARGA_CODES = tuple(VARGA_METHOD_REGISTRY)
@@ -133,9 +141,12 @@ def divisional_chart(
     ascendant_longitude: float | None = None,
     codes: tuple[str, ...] = SHODASHA_VARGA_CODES,
     scheme: str = "parashara",
+    birth_time_accuracy: str = "exact",
 ) -> dict[str, dict[str, object]]:
     charts = {}
     for code in codes:
+        if varga_accuracy_contract(code, birth_time_accuracy)["status"] == "blocked":
+            continue
         placements = []
         if ascendant_longitude is not None:
             placements.append(_placement("Lagna", ascendant_longitude, code, scheme))
@@ -150,6 +161,20 @@ def divisional_chart(
             "placements": placements,
         }
     return charts
+
+
+def varga_accuracy_contract(code: str, birth_time_accuracy: str) -> dict[str, str]:
+    method = _require_varga_method(code)
+    actual = str(birth_time_accuracy or "unknown").strip().lower()
+    required = method.time_accuracy_required
+    status = "blocked" if required and actual != required else "usable"
+    return {
+        "scopeId": code,
+        "status": status,
+        "requiredBirthTimeAccuracy": required or "any",
+        "actualBirthTimeAccuracy": actual,
+        "reason": f"{code.lower()}_requires_{required}_birth_time" if required else "no_time_accuracy_restriction",
+    }
 
 
 def divisional_placement(longitude: float, code: str, scheme: str = "parashara") -> tuple[int, str]:
@@ -226,6 +251,8 @@ def _method_version(code: str, scheme: str) -> str:
 def _method_note(code: str, scheme: str) -> str:
     if code == "D30":
         return "BPHS 6.27-28 Parashara unequal Trimsamsha segments."
+    if code == "D60":
+        return "Parashara Shashtyamsha: 60 equal half-degree divisions; JHora Sterlitamak parity locked."
     if code == "D2" and _normalize_scheme(scheme) == "jhora_uma_shambhu":
         return "JHora D-2 (US): Uma-Shambhu Hora with two zodiac cycles and reversed even-sign halves."
     return "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit."

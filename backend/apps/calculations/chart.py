@@ -17,7 +17,7 @@ from .panchanga import panchanga_from_longitudes
 from .dasha_systems import extra_dasha_payload
 from .shastra_audit import shastra_audit_payload
 from .solar import gulika_segment_for_moment, solar_day, solar_day_payload
-from .vargas import divisional_chart
+from .vargas import divisional_chart, varga_accuracy_contract
 from .vimshottari import vimshottari_payload
 
 CALCULATION_VERSION = "mvp-0.1"
@@ -34,6 +34,7 @@ def build_birth_chart(
 ) -> dict[str, Any]:
     birth_date = _required_date(data, "birth_date")
     birth_time = _required_time(data, "birth_time")
+    birth_time_accuracy = str(data.get("birth_time_accuracy") or "exact").strip().lower()
     place_name = _required_string(data, "place_name")
     place = _resolve_place_or_custom(data, place_name)
 
@@ -84,6 +85,7 @@ def build_birth_chart(
             "utc_offset": _utc_offset(local_moment),
             "local_datetime": local_moment.isoformat(),
             "utc_datetime": local_moment.astimezone(datetime_timezone.utc).isoformat(),
+            "time_accuracy": birth_time_accuracy,
         },
         "place": {
             "id": place.id,
@@ -100,7 +102,8 @@ def build_birth_chart(
         "ascendant": _position_payload(ascendant) if ascendant else None,
         "houses": _whole_sign_houses(ascendant) if ascendant else [],
         "house_cusps": house_cusps,
-        "vargas": _varga_payload(positions, ascendant, settings.varga_scheme),
+        "vargas": _varga_payload(positions, ascendant, settings.varga_scheme, birth_time_accuracy),
+        "varga_accuracy": _varga_accuracy_payload(birth_time_accuracy),
         "panchanga": {},
         "dashas": {},
     }
@@ -336,13 +339,18 @@ def _varga_payload(
     positions: dict[str, BodyPosition],
     ascendant: BodyPosition | None,
     varga_scheme: str,
+    birth_time_accuracy: str,
 ) -> dict[str, dict[str, object]]:
     return divisional_chart(
         {body: positions[body].longitude for body in GRAHAS if body in positions},
         ascendant_longitude=ascendant.longitude if ascendant else None,
         scheme=varga_scheme,
+        birth_time_accuracy=birth_time_accuracy,
     )
 
+
+def _varga_accuracy_payload(birth_time_accuracy: str) -> dict[str, dict[str, str]]:
+    return {"D60": varga_accuracy_contract("D60", birth_time_accuracy)}
 
 def _position_payload(position: BodyPosition) -> dict[str, Any]:
     return {

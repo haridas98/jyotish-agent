@@ -618,6 +618,7 @@ def _profile_input(profile: BirthProfile) -> dict[str, Any]:
     return {
         "birth_date": profile.birth_date.isoformat(),
         "birth_time": profile.birth_time.isoformat(timespec="minutes") if profile.birth_time else "",
+        "birth_time_accuracy": profile.birth_time_accuracy,
         "place_id": profile.place.external_id or str(profile.place.id),
         "place_name": profile.place.metadata.get("label") or profile.place.name,
         "timezone": profile.timezone_name,
