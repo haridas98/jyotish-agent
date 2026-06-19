@@ -165,6 +165,9 @@ export type VargaChart = {
   code: string;
   name: string;
   method: string;
+  methodId?: string;
+  methodVersion?: string;
+  calculationPreset?: string;
   placements: VargaPlacement[];
 };
 
@@ -1792,6 +1795,11 @@ export type D1WorkbenchApiResponse = {
   profile: ChartProfile;
   calculation: ChartCalculationRecord | null;
   result: BirthChart | null;
+  method?: {
+    methodId: string;
+    methodVersion: string;
+    calculationPreset: string;
+  };
 };
 
 export type VLSearchResult = {

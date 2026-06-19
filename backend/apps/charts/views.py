@@ -69,6 +69,7 @@ class D1WorkbenchDevCheckView(APIView):
                 "chartId": profile.id,
                 "hasCalculation": calculation is not None,
                 **scope_summary,
+                **_workbench_scope_method_summary(chart if isinstance(chart, dict) else {}, scope),
                 "supportedStyles": ["north", "south"],
                 "supportedModes": ["novice", "astrologer"],
                 "entityInspectorCount": 1,
@@ -88,6 +89,22 @@ def _workbench_supported_scope_keys() -> set[str]:
 
 def _workbench_scope_id(scope: str) -> str:
     return scope.upper() if scope in _workbench_supported_scope_keys() else "D1"
+
+
+def _workbench_scope_method_summary(chart: dict, scope: str) -> dict:
+    settings = chart.get("settings") if isinstance(chart.get("settings"), dict) else {}
+    default_preset = str(settings.get("varga_scheme") or "parashara")
+    if scope == "d1":
+        return {"methodId": "varga.parashara_shodasha.v1", "methodVersion": "1", "calculationPreset": default_preset}
+    code = _workbench_scope_id(scope)
+    varga = chart.get("vargas", {}).get(code, {}) if isinstance(chart.get("vargas"), dict) else {}
+    preset = str(varga.get("calculationPreset") or default_preset)
+    method_id = str(varga.get("methodId") or ("varga.jhora_uma_shambhu_hora.v1" if code == "D2" and preset == "jhora_uma_shambhu" else "varga.parashara_shodasha.v1"))
+    return {
+        "methodId": method_id,
+        "methodVersion": str(varga.get("methodVersion") or "1"),
+        "calculationPreset": preset,
+    }
 
 
 def _workbench_scope_summary(chart: dict, scope: str) -> dict:
@@ -247,6 +264,7 @@ class BirthProfileWorkbenchView(APIView):
                 "scope": scope,
                 "profile": profile_payload(profile, latest_calculation=calculation),
                 "calculation": calculation_payload(calculation) if calculation else None,
+                "method": _workbench_scope_method_summary(calculation.result if calculation else {}, scope),
                 "result": calculation.result if calculation else None,
             }
         )

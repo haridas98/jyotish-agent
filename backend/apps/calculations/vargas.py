@@ -11,6 +11,7 @@ class VargaMethod:
     name: str
     divisions: int
     workbench_ready: bool = False
+    method_version: str = "1"
 
 
 VARGA_METHOD_REGISTRY = {
@@ -101,6 +102,9 @@ def divisional_chart(
             "code": code,
             "name": VARGA_NAMES[code],
             "method": _method_note(code, scheme),
+            "methodId": _method_id(code, scheme),
+            "methodVersion": _method_version(code, scheme),
+            "calculationPreset": _normalize_scheme(scheme),
             "placements": placements,
         }
     return charts
@@ -160,9 +164,21 @@ def _placement(body: str, longitude: float, code: str, scheme: str) -> dict[str,
 
 def _normalize_scheme(scheme: str) -> str:
     value = str(scheme or "parashara").strip().lower()
+    if value == "parashara":
+        return "parashara"
     if value in {"jhora", "jhora_v8", "jhora_uma_shambhu"}:
         return "jhora_uma_shambhu"
-    return "parashara"
+    raise ValueError(f"Unsupported varga scheme: {scheme}")
+
+
+def _method_id(code: str, scheme: str) -> str:
+    if code == "D2" and _normalize_scheme(scheme) == "jhora_uma_shambhu":
+        return "varga.jhora_uma_shambhu_hora.v1"
+    return "varga.parashara_shodasha.v1"
+
+
+def _method_version(code: str, scheme: str) -> str:
+    return "1"
 
 
 def _method_note(code: str, scheme: str) -> str:

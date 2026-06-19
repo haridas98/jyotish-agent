@@ -33,6 +33,26 @@ def test_parashara_shodasha_varga_codes_are_generated():
         "D60",
     }
     assert chart["D9"]["placements"][0] == {"body": "Lagna", "rashi_index": 3, "rashi": "Karka"}
+    assert chart["D2"]["methodId"] == "varga.parashara_shodasha.v1"
+    assert chart["D2"]["methodVersion"] == "1"
+    assert chart["D2"]["calculationPreset"] == "parashara"
+
+
+def test_varga_method_contract_changes_with_explicit_scheme():
+    chart = divisional_chart({"Surya": 15.0}, codes=("D2",), scheme="jhora_uma_shambhu")
+
+    assert chart["D2"]["methodId"] == "varga.jhora_uma_shambhu_hora.v1"
+    assert chart["D2"]["methodVersion"] == "1"
+    assert chart["D2"]["calculationPreset"] == "jhora_uma_shambhu"
+
+
+def test_unknown_varga_scheme_is_rejected_not_silently_replaced():
+    try:
+        divisional_chart({"Surya": 15.0}, codes=("D2",), scheme="unknown_method")
+    except ValueError as exc:
+        assert "Unsupported varga scheme" in str(exc)
+    else:
+        raise AssertionError("unknown varga scheme must fail")
 
 
 def test_varga_method_registry_marks_workbench_ready_scopes():
@@ -160,6 +180,9 @@ def test_d9_chart_snapshot_keeps_lagna_and_graha_order():
         "code": "D9",
         "name": "Navamsa",
         "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "methodId": "varga.parashara_shodasha.v1",
+        "methodVersion": "1",
+        "calculationPreset": "parashara",
         "placements": [
             {"body": "Lagna", "rashi_index": 10, "rashi": "Kumbha"},
             {"body": "Surya", "rashi_index": 4, "rashi": "Simha"},
@@ -216,6 +239,9 @@ def test_d10_chart_snapshot_keeps_lagna_and_graha_order():
         "code": "D10",
         "name": "Dashamsa",
         "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "methodId": "varga.parashara_shodasha.v1",
+        "methodVersion": "1",
+        "calculationPreset": "parashara",
         "placements": [
             {"body": "Lagna", "rashi_index": 7, "rashi": "Vrischika"},
             {"body": "Surya", "rashi_index": 5, "rashi": "Kanya"},
@@ -258,6 +284,9 @@ def test_d12_chart_snapshot_keeps_lagna_and_graha_order():
         "code": "D12",
         "name": "Dvadashamsha",
         "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "methodId": "varga.parashara_shodasha.v1",
+        "methodVersion": "1",
+        "calculationPreset": "parashara",
         "placements": [
             {"body": "Lagna", "rashi_index": 1, "rashi": "Vrishabha"},
             {"body": "Surya", "rashi_index": 6, "rashi": "Tula"},
@@ -300,6 +329,9 @@ def test_d3_chart_snapshot_keeps_lagna_and_graha_order():
         "code": "D3",
         "name": "Drekkana",
         "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "methodId": "varga.parashara_shodasha.v1",
+        "methodVersion": "1",
+        "calculationPreset": "parashara",
         "placements": [
             {"body": "Lagna", "rashi_index": 11, "rashi": "Meena"},
             {"body": "Surya", "rashi_index": 4, "rashi": "Simha"},
@@ -356,6 +388,9 @@ def test_d7_chart_snapshot_keeps_lagna_and_graha_order():
         "code": "D7",
         "name": "Saptamsa",
         "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "methodId": "varga.parashara_shodasha.v1",
+        "methodVersion": "1",
+        "calculationPreset": "parashara",
         "placements": [
             {"body": "Lagna", "rashi_index": 2, "rashi": "Mithuna"},
             {"body": "Surya", "rashi_index": 3, "rashi": "Karka"},
