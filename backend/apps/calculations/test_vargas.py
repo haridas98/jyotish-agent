@@ -222,3 +222,101 @@ def test_d12_chart_snapshot_keeps_lagna_and_graha_order():
             {"body": "Mangala", "rashi_index": 7, "rashi": "Vrischika"},
         ],
     }
+
+
+def test_d3_drekkana_golden_first_and_last_parts_for_all_rashis():
+    rashi_names = [
+        "Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya",
+        "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena",
+    ]
+    for sign_index, sign_name in enumerate(rashi_names):
+        sign_start = sign_index * 30.0
+        assert divisional_placement(sign_start, "D3") == (sign_index, sign_name)
+        expected_last_index = (sign_index + 8) % 12
+        assert divisional_placement(sign_start + 29.999999, "D3") == (expected_last_index, rashi_names[expected_last_index])
+
+
+def test_d3_drekkana_golden_boundary_degrees_do_not_drift():
+    one_drekkana = 30.0 / 3.0
+    assert divisional_placement(one_drekkana - 0.000001, "D3") == (0, "Mesha")
+    assert divisional_placement(one_drekkana, "D3") == (4, "Simha")
+    assert divisional_placement((2 * one_drekkana) - 0.000001, "D3") == (4, "Simha")
+    assert divisional_placement(2 * one_drekkana, "D3") == (8, "Dhanu")
+    assert divisional_placement(30.0 - 0.000001, "D3") == (8, "Dhanu")
+    assert divisional_placement(30.0, "D3") == (1, "Vrishabha")
+
+
+def test_d3_chart_snapshot_keeps_lagna_and_graha_order():
+    chart = divisional_chart(
+        {"Surya": 15.942392, "Chandra": 68.368149, "Mangala": 18.9547},
+        ascendant_longitude=115.401188,
+        codes=("D3",),
+    )
+
+    assert chart["D3"] == {
+        "code": "D3",
+        "name": "Drekkana",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "placements": [
+            {"body": "Lagna", "rashi_index": 11, "rashi": "Meena"},
+            {"body": "Surya", "rashi_index": 4, "rashi": "Simha"},
+            {"body": "Chandra", "rashi_index": 2, "rashi": "Mithuna"},
+            {"body": "Mangala", "rashi_index": 4, "rashi": "Simha"},
+        ],
+    }
+
+
+def test_d7_saptamsa_golden_first_and_last_parts_for_all_rashis():
+    rashi_names = [
+        "Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya",
+        "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena",
+    ]
+    expected_starts = [
+        (0, "Mesha"),
+        (7, "Vrischika"),
+        (2, "Mithuna"),
+        (9, "Makara"),
+        (4, "Simha"),
+        (11, "Meena"),
+        (6, "Tula"),
+        (1, "Vrishabha"),
+        (8, "Dhanu"),
+        (3, "Karka"),
+        (10, "Kumbha"),
+        (5, "Kanya"),
+    ]
+    for sign_index, expected_start in enumerate(expected_starts):
+        sign_start = sign_index * 30.0
+        assert divisional_placement(sign_start, "D7") == expected_start
+        expected_last_index = (expected_start[0] + 6) % 12
+        assert divisional_placement(sign_start + 29.999999, "D7") == (expected_last_index, rashi_names[expected_last_index])
+
+
+def test_d7_saptamsa_golden_boundary_degrees_do_not_drift():
+    one_saptamsa = 30.0 / 7.0
+    assert divisional_placement(one_saptamsa - 0.000001, "D7") == (0, "Mesha")
+    assert divisional_placement(one_saptamsa, "D7") == (1, "Vrishabha")
+    assert divisional_placement((2 * one_saptamsa) - 0.000001, "D7") == (1, "Vrishabha")
+    assert divisional_placement(2 * one_saptamsa, "D7") == (2, "Mithuna")
+    assert divisional_placement(30.0 - 0.000001, "D7") == (6, "Tula")
+    assert divisional_placement(30.0, "D7") == (7, "Vrischika")
+
+
+def test_d7_chart_snapshot_keeps_lagna_and_graha_order():
+    chart = divisional_chart(
+        {"Surya": 15.942392, "Chandra": 68.368149, "Mangala": 18.9547},
+        ascendant_longitude=115.401188,
+        codes=("D7",),
+    )
+
+    assert chart["D7"] == {
+        "code": "D7",
+        "name": "Saptamsa",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "placements": [
+            {"body": "Lagna", "rashi_index": 2, "rashi": "Mithuna"},
+            {"body": "Surya", "rashi_index": 3, "rashi": "Karka"},
+            {"body": "Chandra", "rashi_index": 3, "rashi": "Karka"},
+            {"body": "Mangala", "rashi_index": 4, "rashi": "Simha"},
+        ],
+    }
