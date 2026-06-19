@@ -124,3 +124,59 @@ def test_d9_chart_snapshot_keeps_lagna_and_graha_order():
             {"body": "Mangala", "rashi_index": 5, "rashi": "Kanya"},
         ],
     }
+
+
+def test_d10_dashamsa_golden_first_and_last_parts_for_all_rashis():
+    rashi_names = [
+        "Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya",
+        "Tula", "Vrischika", "Dhanu", "Makara", "Kumbha", "Meena",
+    ]
+    expected_starts = [
+        (0, "Mesha"),
+        (9, "Makara"),
+        (2, "Mithuna"),
+        (11, "Meena"),
+        (4, "Simha"),
+        (1, "Vrishabha"),
+        (6, "Tula"),
+        (3, "Karka"),
+        (8, "Dhanu"),
+        (5, "Kanya"),
+        (10, "Kumbha"),
+        (7, "Vrischika"),
+    ]
+    for sign_index, expected_start in enumerate(expected_starts):
+        sign_start = sign_index * 30.0
+        assert divisional_placement(sign_start, "D10") == expected_start
+        expected_last_index = (expected_start[0] + 9) % 12
+        assert divisional_placement(sign_start + 29.999999, "D10") == (expected_last_index, rashi_names[expected_last_index])
+
+
+def test_d10_dashamsa_golden_boundary_degrees_do_not_drift():
+    one_dashamsa = 30.0 / 10.0
+    assert divisional_placement(one_dashamsa - 0.000001, "D10") == (0, "Mesha")
+    assert divisional_placement(one_dashamsa, "D10") == (1, "Vrishabha")
+    assert divisional_placement((2 * one_dashamsa) - 0.000001, "D10") == (1, "Vrishabha")
+    assert divisional_placement(2 * one_dashamsa, "D10") == (2, "Mithuna")
+    assert divisional_placement(30.0 - 0.000001, "D10") == (9, "Makara")
+    assert divisional_placement(30.0, "D10") == (9, "Makara")
+
+
+def test_d10_chart_snapshot_keeps_lagna_and_graha_order():
+    chart = divisional_chart(
+        {"Surya": 15.942392, "Chandra": 68.368149, "Mangala": 18.9547},
+        ascendant_longitude=115.401188,
+        codes=("D10",),
+    )
+
+    assert chart["D10"] == {
+        "code": "D10",
+        "name": "Dashamsa",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "placements": [
+            {"body": "Lagna", "rashi_index": 7, "rashi": "Vrischika"},
+            {"body": "Surya", "rashi_index": 5, "rashi": "Kanya"},
+            {"body": "Chandra", "rashi_index": 4, "rashi": "Simha"},
+            {"body": "Mangala", "rashi_index": 6, "rashi": "Tula"},
+        ],
+    }
