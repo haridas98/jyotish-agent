@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { ProductShell } from "@/app/product-shell";
-import { buildD1WorkbenchModel } from "@/astrology/d1-workbench";
+import { buildD1WorkbenchModel, type ChartWorkbenchScopeId } from "@/astrology/d1-workbench";
 import {
   fetchChartProfile,
   fetchD1ChartWorkbench,
@@ -61,7 +61,7 @@ export default function ChartDetailPage() {
 
   const model = useMemo(() => {
     if (!profile || !workbench) return null;
-    const scopeId = workbench.scope === "d12" ? "D12" : workbench.scope === "d10" ? "D10" : workbench.scope === "d9" ? "D9" : workbench.scope === "d7" ? "D7" : workbench.scope === "d3" ? "D3" : "D1";
+    const scopeId = workbench.scope.toUpperCase() as ChartWorkbenchScopeId;
     return buildD1WorkbenchModel(profile, settings, workbench.calculation, scopeId);
   }, [profile, settings, workbench]);
 
@@ -74,7 +74,7 @@ export default function ChartDetailPage() {
         <span>Объяснение</span>
       </div>
       {model ? (
-        <D1ChartWorkbench model={model} status={status} onScopeChange={(nextScope) => setScope(nextScope === "D12" ? "d12" : nextScope === "D10" ? "d10" : nextScope === "D9" ? "d9" : nextScope === "D7" ? "d7" : nextScope === "D3" ? "d3" : "d1")} />
+        <D1ChartWorkbench model={model} status={status} onScopeChange={(nextScope) => setScope(nextScope.toLowerCase() as ChartWorkbenchScope)} />
       ) : (
         <D1ChartWorkbenchShell status={status} />
       )}

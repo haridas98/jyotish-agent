@@ -1,4 +1,11 @@
-from apps.calculations.vargas import divisional_chart, divisional_placement
+from apps.calculations.vargas import (
+    VARGA_METHOD_REGISTRY,
+    divisional_chart,
+    divisional_placement,
+    varga_boundary_cases,
+    varga_first_last_cases,
+    workbench_varga_codes,
+)
 
 
 def test_parashara_shodasha_varga_codes_are_generated():
@@ -26,6 +33,42 @@ def test_parashara_shodasha_varga_codes_are_generated():
         "D60",
     }
     assert chart["D9"]["placements"][0] == {"body": "Lagna", "rashi_index": 3, "rashi": "Karka"}
+
+
+def test_varga_method_registry_marks_workbench_ready_scopes():
+    assert workbench_varga_codes() == (
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D7",
+        "D9",
+        "D10",
+        "D12",
+        "D16",
+        "D20",
+        "D24",
+    )
+    assert not VARGA_METHOD_REGISTRY["D30"].workbench_ready
+    assert not VARGA_METHOD_REGISTRY["D60"].workbench_ready
+
+
+def test_varga_first_last_generator_matches_divisional_placement():
+    for code in ("D2", "D4", "D16", "D20", "D24"):
+        cases = varga_first_last_cases(code)
+        assert len(cases) == 12
+        for case in cases:
+            assert divisional_placement(case["start_longitude"], code) == case["expected_start"]
+            assert divisional_placement(case["last_longitude"], code) == case["expected_last"]
+
+
+def test_varga_boundary_generator_matches_divisional_placement():
+    for code in ("D2", "D4", "D16", "D20", "D24"):
+        cases = varga_boundary_cases(code)
+        assert cases
+        for case in cases:
+            assert divisional_placement(case["before_longitude"], code) == case["expected_before"]
+            assert divisional_placement(case["at_longitude"], code) == case["expected_at"]
 
 
 def test_varga_core_parashara_rules():

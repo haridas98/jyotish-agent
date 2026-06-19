@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import PrivateAppAccess
+from apps.calculations.vargas import workbench_varga_codes
 
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation, ChartRelationship
 from .services import (
@@ -42,7 +43,7 @@ class D1WorkbenchDevCheckView(APIView):
         if not settings.DEV_LOGIN_TOKEN or token != settings.DEV_LOGIN_TOKEN:
             return Response({"error": "forbidden"}, status=403)
         scope = str(request.query_params.get("scope") or "d1").strip().lower()
-        if scope not in {"d1", "d3", "d7", "d9", "d10", "d12"}:
+        if scope not in _workbench_supported_scope_keys():
             return Response({"error": "scope is not supported"}, status=400)
         try:
             chart_id = int(request.query_params.get("chart_id") or request.query_params.get("profile_id") or 0)
@@ -71,7 +72,7 @@ class D1WorkbenchDevCheckView(APIView):
                 "supportedStyles": ["north", "south"],
                 "supportedModes": ["novice", "astrologer"],
                 "entityInspectorCount": 1,
-                "supportedScopes": ["D1", "D3", "D7", "D9", "D10", "D12"],
+                "supportedScopes": list(workbench_varga_codes()),
                 "forbiddenScopesPresent": {
                     "D60": False,
                     "AI": False,
@@ -81,12 +82,16 @@ class D1WorkbenchDevCheckView(APIView):
         )
 
 
+def _workbench_supported_scope_keys() -> set[str]:
+    return {code.lower() for code in workbench_varga_codes()}
+
+
 def _workbench_scope_id(scope: str) -> str:
-    return {"d1": "D1", "d3": "D3", "d7": "D7", "d9": "D9", "d10": "D10", "d12": "D12"}.get(scope, "D1")
+    return scope.upper() if scope in _workbench_supported_scope_keys() else "D1"
 
 
 def _workbench_scope_summary(chart: dict, scope: str) -> dict:
-    if scope in {"d3", "d7", "d9", "d10", "d12"}:
+    if scope != "d1":
         code = _workbench_scope_id(scope)
         varga = chart.get("vargas", {}).get(code, {}) if isinstance(chart.get("vargas"), dict) else {}
         placements = [item for item in varga.get("placements", []) if isinstance(item, dict)] if isinstance(varga, dict) else []
@@ -225,7 +230,7 @@ class BirthProfileWorkbenchView(APIView):
 
     def get(self, request, profile_id: int):
         scope = str(request.query_params.get("scope") or "d1").strip().lower()
-        if scope not in {"d1", "d3", "d7", "d9", "d10", "d12"}:
+        if scope not in _workbench_supported_scope_keys():
             return Response({"error": "scope is not supported"}, status=400)
         profile = get_object_or_404(
             BirthProfile.objects.select_related("place"),

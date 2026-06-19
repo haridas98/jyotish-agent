@@ -1,7 +1,8 @@
 import type { EntityId } from "@/astrology";
 import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, HousePlacement, JyotishUserSettings, VargaPlacement } from "@/lib/api";
 
-export type ChartWorkbenchScopeId = "D1" | "D3" | "D7" | "D9" | "D10" | "D12";
+export const CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24"] as const;
+export type ChartWorkbenchScopeId = (typeof CHART_WORKBENCH_SCOPE_IDS)[number];
 export type D1ChartStyle = "north" | "south";
 export type D1ReaderMode = "novice" | "astrologer";
 export type D1TerminologyMode = "ru" | "en" | "sa" | "short";
@@ -9,7 +10,7 @@ export type D1DataTab = "overview" | "grahas" | "houses" | "nakshatras";
 
 export type D1WorkbenchModel = {
   schemaVersion: "d1-workbench.v1";
-  scopeId: "D1" | "D3" | "D7" | "D9" | "D10" | "D12";
+  scopeId: ChartWorkbenchScopeId;
   profile: {
     id: number;
     title: string;
@@ -134,6 +135,19 @@ const RASHI_SANSKRIT_NAMES = ["Mesha", "Vrishabha", "Mithuna", "Karka", "Simha",
 const GRAHA_ORDER = ["SU", "MO", "MA", "ME", "JU", "VE", "SA", "RA", "KE"];
 const SPECIAL_POINT_ORDER = ["LAGNA"];
 
+const VARGA_SCOPE_TITLES: Record<Exclude<ChartWorkbenchScopeId, "D1">, string> = {
+  D2: "D2 Hora",
+  D3: "D3 Drekkana",
+  D4: "D4 Chaturthamsha",
+  D7: "D7 Saptamsa",
+  D9: "D9 Navamsa",
+  D10: "D10 Dashamsa",
+  D12: "D12 Dvadashamsha",
+  D16: "D16 Shodashamsha",
+  D20: "D20 Vimshamsha",
+  D24: "D24 Siddhamsha",
+};
+
 type BodyMeta = { code: string; entityId: EntityId; label: string; shortLabel: string; kind: "graha" | "special_point" };
 
 const BODY_MAP: Record<string, BodyMeta> = {
@@ -221,14 +235,14 @@ export function buildD1WorkbenchModel(
 }
 
 function buildScopeSource(chart: BirthChart | null, scopeId: ChartWorkbenchScopeId): ScopeSource {
-  if (scopeId === "D3" || scopeId === "D7" || scopeId === "D9" || scopeId === "D10" || scopeId === "D12") {
-    const varga = scopeId === "D3" ? chart?.vargas?.D3 ?? null : scopeId === "D7" ? chart?.vargas?.D7 ?? null : scopeId === "D9" ? chart?.vargas?.D9 ?? null : scopeId === "D10" ? chart?.vargas?.D10 ?? null : chart?.vargas?.D12 ?? null;
+  if (scopeId !== "D1") {
+    const varga = chart?.vargas?.[scopeId] ?? null;
     const placements = (varga?.placements ?? []) as NormalizedPlacement[];
     const specialPointPlacements = placements.filter((item) => isLagnaBody(item.body));
     const grahaPlacements = placements.filter((item) => !isLagnaBody(item.body));
     return {
       scopeId,
-      title: scopeId === "D3" ? "D3 Дреккана" : scopeId === "D7" ? "D7 Саптамша" : scopeId === "D9" ? "D9 Навамша" : scopeId === "D10" ? "D10 Дашамша" : "D12 Двадашамша",
+      title: VARGA_SCOPE_TITLES[scopeId],
       houses: buildVargaHouses(specialPointPlacements[0] ?? null),
       grahaPlacements,
       specialPointPlacements,
@@ -237,13 +251,14 @@ function buildScopeSource(chart: BirthChart | null, scopeId: ChartWorkbenchScope
   }
   return {
     scopeId: "D1",
-    title: "D1 Раши",
+    title: "D1 Rashi",
     houses: chart?.houses ?? [],
     grahaPlacements: (chart?.grahas ?? []) as NormalizedPlacement[],
     specialPointPlacements: chart?.ascendant ? [{ ...chart.ascendant, body: chart.ascendant.body || "Lagna" }] : [],
     missing: !chart,
   };
 }
+
 
 function buildVargaHouses(lagna: NormalizedPlacement | null): HousePlacement[] {
   const lagnaIndex = normalizeRashiIndex(lagna?.rashi_index) ?? rashiIndexByName(lagna?.rashi ?? "");

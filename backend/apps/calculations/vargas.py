@@ -1,47 +1,89 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from math import floor
 
 from .constants import RASHIS
 
-SHODASHA_VARGA_CODES = (
-    "D1",
-    "D2",
-    "D3",
-    "D4",
-    "D7",
-    "D9",
-    "D10",
-    "D12",
-    "D16",
-    "D20",
-    "D24",
-    "D27",
-    "D30",
-    "D40",
-    "D45",
-    "D60",
-)
+@dataclass(frozen=True)
+class VargaMethod:
+    code: str
+    name: str
+    divisions: int
+    workbench_ready: bool = False
 
-VARGA_NAMES = {
-    "D1": "Rashi",
-    "D2": "Hora",
-    "D3": "Drekkana",
-    "D4": "Chaturthamsha",
-    "D7": "Saptamsa",
-    "D9": "Navamsa",
-    "D10": "Dashamsa",
-    "D12": "Dvadashamsha",
-    "D16": "Shodashamsha",
-    "D20": "Vimshamsha",
-    "D24": "Siddhamsha",
-    "D27": "Bhamsha",
-    "D30": "Trimsamsha",
-    "D40": "Khavedamsha",
-    "D45": "Akshavedamsha",
-    "D60": "Shashtyamsha",
+
+VARGA_METHOD_REGISTRY = {
+    "D1": VargaMethod("D1", "Rashi", 1, True),
+    "D2": VargaMethod("D2", "Hora", 2, True),
+    "D3": VargaMethod("D3", "Drekkana", 3, True),
+    "D4": VargaMethod("D4", "Chaturthamsha", 4, True),
+    "D7": VargaMethod("D7", "Saptamsa", 7, True),
+    "D9": VargaMethod("D9", "Navamsa", 9, True),
+    "D10": VargaMethod("D10", "Dashamsa", 10, True),
+    "D12": VargaMethod("D12", "Dvadashamsha", 12, True),
+    "D16": VargaMethod("D16", "Shodashamsha", 16, True),
+    "D20": VargaMethod("D20", "Vimshamsha", 20, True),
+    "D24": VargaMethod("D24", "Siddhamsha", 24, True),
+    "D27": VargaMethod("D27", "Bhamsha", 27),
+    "D30": VargaMethod("D30", "Trimsamsha", 30),
+    "D40": VargaMethod("D40", "Khavedamsha", 40),
+    "D45": VargaMethod("D45", "Akshavedamsha", 45),
+    "D60": VargaMethod("D60", "Shashtyamsha", 60),
 }
 
+SHODASHA_VARGA_CODES = tuple(VARGA_METHOD_REGISTRY)
+VARGA_NAMES = {code: method.name for code, method in VARGA_METHOD_REGISTRY.items()}
+
+
+def workbench_varga_codes() -> tuple[str, ...]:
+    return tuple(code for code, method in VARGA_METHOD_REGISTRY.items() if method.workbench_ready)
+
+
+def varga_first_last_cases(code: str) -> list[dict[str, object]]:
+    _require_varga_method(code)
+    cases = []
+    for sign_index in range(12):
+        start_longitude = sign_index * 30.0
+        last_longitude = start_longitude + 29.999999
+        cases.append(
+            {
+                "sign_index": sign_index,
+                "start_longitude": start_longitude,
+                "last_longitude": last_longitude,
+                "expected_start": divisional_placement(start_longitude, code),
+                "expected_last": divisional_placement(last_longitude, code),
+            }
+        )
+    return cases
+
+
+def varga_boundary_cases(code: str) -> list[dict[str, object]]:
+    method = _require_varga_method(code)
+    if method.divisions <= 1:
+        return []
+    span = 30.0 / method.divisions
+    cases = []
+    for boundary in range(1, method.divisions):
+        at_longitude = boundary * span
+        before_longitude = at_longitude - 0.000001
+        cases.append(
+            {
+                "boundary": boundary,
+                "before_longitude": before_longitude,
+                "at_longitude": at_longitude,
+                "expected_before": divisional_placement(before_longitude, code),
+                "expected_at": divisional_placement(at_longitude, code),
+            }
+        )
+    return cases
+
+
+def _require_varga_method(code: str) -> VargaMethod:
+    try:
+        return VARGA_METHOD_REGISTRY[code]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported varga code: {code}") from exc
 
 def divisional_chart(
     longitudes: dict[str, float],
