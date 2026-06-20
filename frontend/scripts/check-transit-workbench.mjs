@@ -34,12 +34,16 @@ assert(page.includes('type DisplayMode = "novice" | "astrologer"'), "/transits m
 assert(page.includes('useState<DisplayMode>("novice")'), "/transits must default display mode to novice");
 assert(page.includes('canShowGrahaDrishti'), "Graha Drishti must be gated by astrologer display mode");
 assert(page.includes('canShowRashiDrishti'), "Rashi Drishti must be gated by astrologer display mode");
+assert(page.includes('displayMode === "astrologer" && Boolean(aspectLayer?.availableInModes?.includes("astrologer"))'), "Graha Drishti gate must require current astrologer mode");
+assert(page.includes('displayMode === "astrologer" && Boolean(rashiAspectLayer?.availableInModes?.includes("astrologer"))'), "Rashi Drishti gate must require current astrologer mode");
 assert(page.includes("{canShowGrahaDrishti && aspectLayer ? ("), "Graha Drishti render condition must use the mode gate");
 assert(page.includes("{canShowRashiDrishti && rashiAspectLayer ? ("), "Rashi Drishti render condition must use the mode gate");
 assert(page.includes('aria-label="Режим отображения"'), "/transits mode switch must expose a readable UTF-8 aria label");
 assert(!page.includes("Р РµР¶РёРј РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ"), "/transits mode switch must not contain mojibake");
 assert(page.includes('onClick={() => switchDisplayMode("novice")}') && page.includes('onClick={() => switchDisplayMode("astrologer")}'), "/transits must expose novice/astrologer mode controls through switchDisplayMode");
 assert(!page.includes("sourceRuleIds.map") && !page.includes("sourceRuleIds.join"), "/transits normal UI must not render raw Rashi Drishti source IDs");
+assert(page.includes("displayAspectRef(item.sourceEntityRef)") && page.includes("displayAspectRef(item.targetEntityRef)") && page.includes("displayAspectKind(item.aspectKind)"), "/transits must render Rashi Drishti refs and kinds as human-readable labels");
+assert(!page.includes("{item.aspectKind}") || page.indexOf("{item.aspectKind}") < page.indexOf("Rashi Drishti aspect layer"), "/transits normal Rashi Drishti UI must not render raw aspectKind IDs");
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");
 assert(nav.includes("/transits"), "shared nav must include transits route");
 for (const forbidden of ["Спросить AI", "Сгенерировать", "source.pending", "rawEvidence", "eligibleItems", "Missing calculations"]) {

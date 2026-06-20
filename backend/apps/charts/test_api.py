@@ -1701,6 +1701,26 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["rashiDrishtiContract"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:rashi.")
     assert response.data["rashiDrishtiContract"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
     assert response.data["rashiDrishtiContract"]["sampleRefs"][0]["sourceRuleIds"]
+    assert response.data["aspectLayerContracts"]["schemaVersion"] == "transit-aspect-layer-contracts.v1"
+    assert sorted(response.data["aspectLayerContracts"]["layers"].keys()) == ["graha_drishti", "rashi_drishti"]
+    graha_layer = response.data["aspectLayerContracts"]["layers"]["graha_drishti"]
+    rashi_layer = response.data["aspectLayerContracts"]["layers"]["rashi_drishti"]
+    assert graha_layer["layerId"] == "graha_drishti"
+    assert rashi_layer["layerId"] == "rashi_drishti"
+    assert graha_layer["methodId"] == response.data["grahaDrishtiContract"]["methodId"]
+    assert rashi_layer["methodId"] == response.data["rashiDrishtiContract"]["methodId"]
+    assert graha_layer["methodId"] != rashi_layer["methodId"]
+    for layer in [graha_layer, rashi_layer]:
+        assert layer["sourceStatus"] == "verified"
+        assert layer["uiCapability"] is True
+        assert layer["enabledByDefault"] is False
+        assert layer["availableInModes"] == ["astrologer"]
+        assert layer["usesDegreeOrbs"] is False
+        assert layer["treatsConjunctionAsAspect"] is False
+        assert layer["aspectCount"] > 0
+        assert layer["safeForNormalUi"] is True
+        assert layer["rawEvidence"] is False
+        assert layer["ai"] is False
     assert response.data["capabilities"] == {
         "natalOverlay": True,
         "aspects": True,

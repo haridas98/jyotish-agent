@@ -259,6 +259,7 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
         "overlayContract": overlay,
         "grahaDrishtiContract": _graha_drishti_dev_contract(chart, chart),
         "rashiDrishtiContract": _rashi_drishti_dev_contract(chart, chart),
+        "aspectLayerContracts": _aspect_layer_contracts(chart, chart),
         "capabilities": {
             "natalOverlay": True,
             "aspects": True,
@@ -369,6 +370,39 @@ def _graha_drishti_dev_contract(transit_chart: dict, natal_chart: dict) -> dict[
 def _rashi_drishti_dev_contract(transit_chart: dict, natal_chart: dict) -> dict[str, object]:
     layer = _rashi_drishti_layer(transit_chart, natal_chart)
     return {key: value for key, value in layer.items() if key != "items"}
+
+
+def _aspect_layer_contracts(transit_chart: dict, natal_chart: dict) -> dict[str, object]:
+    return {
+        "schemaVersion": "transit-aspect-layer-contracts.v1",
+        "layers": {
+            "graha_drishti": _normal_ui_aspect_layer_contract(
+                "graha_drishti",
+                _graha_drishti_dev_contract(transit_chart, natal_chart),
+            ),
+            "rashi_drishti": _normal_ui_aspect_layer_contract(
+                "rashi_drishti",
+                _rashi_drishti_dev_contract(transit_chart, natal_chart),
+            ),
+        },
+    }
+
+
+def _normal_ui_aspect_layer_contract(layer_id: str, layer: dict[str, object]) -> dict[str, object]:
+    return {
+        "layerId": layer_id,
+        "methodId": layer["methodId"],
+        "sourceStatus": layer["sourceStatus"],
+        "uiCapability": layer["uiCapability"],
+        "enabledByDefault": layer["enabledByDefault"],
+        "availableInModes": layer["availableInModes"],
+        "usesDegreeOrbs": layer["usesDegreeOrbs"],
+        "treatsConjunctionAsAspect": layer["treatsConjunctionAsAspect"],
+        "aspectCount": layer["aspectCount"],
+        "safeForNormalUi": True,
+        "rawEvidence": False,
+        "ai": False,
+    }
 
 
 def _rashi_drishti_layer(transit_chart: dict, natal_chart: dict) -> dict[str, object]:

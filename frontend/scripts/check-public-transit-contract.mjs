@@ -41,6 +41,24 @@ assert((jsonResponse.headers.get("cache-control") || "").includes("no-store"), "
 const payload = await jsonResponse.json();
 const contract = payload.grahaDrishtiContract || {};
 const rashiContract = payload.rashiDrishtiContract || {};
+const aspectLayerContracts = payload.aspectLayerContracts || {};
+const aspectLayers = aspectLayerContracts.layers || {};
+const grahaLayer = aspectLayers.graha_drishti || {};
+const rashiLayer = aspectLayers.rashi_drishti || {};
+
+function assertUiAspectLayer(layer, methodId, label) {
+  assert(layer.methodId === methodId, `${label} methodId must match its aspect contract.`);
+  assert(layer.sourceStatus === "verified", `${label} sourceStatus must be verified.`);
+  assert(layer.uiCapability === true, `${label} UI capability must be enabled.`);
+  assert(layer.enabledByDefault === false, `${label} must be disabled by default.`);
+  assert(Array.isArray(layer.availableInModes) && layer.availableInModes.length === 1 && layer.availableInModes[0] === "astrologer", `${label} must be astrologer-only.`);
+  assert(layer.usesDegreeOrbs === false, `${label} must not use degree orbs.`);
+  assert(layer.treatsConjunctionAsAspect === false, `${label} must not treat conjunction as an aspect event.`);
+  assert(layer.aspectCount > 0, `${label} must expose calculated aspect count.`);
+  assert(layer.safeForNormalUi === true, `${label} must be marked safe for normal UI.`);
+  assert(layer.rawEvidence === false, `${label} must not expose raw evidence.`);
+  assert(layer.ai === false, `${label} must not enable AI.`);
+}
 
 assert(payload.schemaVersion === "transit-workbench-check.v6", "Unexpected transit workbench check schema.");
 if (expectedCommit) {
@@ -63,6 +81,12 @@ assert(Array.isArray(rashiContract.availableInModes) && rashiContract.availableI
 assert(rashiContract.aspectCount > 0, "Rashi Drishti contract must expose calculated aspect count.");
 assert(Array.isArray(rashiContract.sampleRefs) && rashiContract.sampleRefs.length > 0, "Rashi Drishti contract must expose safe sample refs.");
 assert(rashiContract.sampleRefs.every((item) => Array.isArray(item.sourceRuleIds) && item.sourceRuleIds.length > 0), "Each Rashi Drishti sampleRef needs sourceRuleIds.");
+assert(aspectLayerContracts.schemaVersion === "transit-aspect-layer-contracts.v1", "Aspect layer QA contract must be present.");
+assert(grahaLayer.layerId === "graha_drishti", "Graha Drishti QA layer must be present.");
+assert(rashiLayer.layerId === "rashi_drishti", "Rashi Drishti QA layer must be present.");
+assert(grahaLayer.methodId !== rashiLayer.methodId, "Graha and Rashi Drishti method IDs must stay separate.");
+assertUiAspectLayer(grahaLayer, contract.methodId, "Graha Drishti QA layer");
+assertUiAspectLayer(rashiLayer, rashiContract.methodId, "Rashi Drishti QA layer");
 
 const htmlUrl = withParam(url, "format", "");
 const htmlResponse = await fetch(htmlUrl, {
@@ -75,6 +99,9 @@ assert(html.includes("verified"), "HTML endpoint must include verified source st
 assert(requiredRuleIds.every((id) => html.includes(id)), "HTML endpoint must include all verified Graha Drishti rule IDs.");
 assert(html.includes("aspect.rashi_drishti.parashara.v1"), "HTML endpoint must include Rashi Drishti contract.");
 assert(requiredRashiRuleIds.every((id) => html.includes(id)), "HTML endpoint must include all verified Rashi Drishti rule IDs.");
+assert(html.includes("aspectLayerContracts"), "HTML endpoint must include aspect layer QA contracts.");
+assert(html.includes("graha_drishti") && html.includes("rashi_drishti"), "HTML endpoint must include both aspect layer IDs.");
+assert(html.includes("safeForNormalUi"), "HTML endpoint must expose normal-UI safety flags.");
 if (expectedCommit) {
   assert(html.includes(expectedCommit), `HTML endpoint must include deployCommit ${expectedCommit}.`);
 }
