@@ -60,6 +60,7 @@ def build_witness_summary(
     jhora_witness_case_path: str | Path = "",
     witness_review_batch_index_path: str | Path = "",
     witness_capture_queue_path: str | Path = "",
+    witness_core_parity_report_path: str | Path = "",
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
@@ -95,6 +96,7 @@ def build_witness_summary(
     )
     witness_review_batch = _witness_review_batch_index(witness_review_batch_index_path)
     witness_capture_queue = _witness_capture_queue(witness_capture_queue_path)
+    witness_core_parity = _witness_core_parity(witness_core_parity_report_path)
     open_items = _open_items(jhora, parashara_light)
     witness_contract = _witness_contract_summary(
         jhora_witness_case_path=jhora_witness_case_path,
@@ -110,10 +112,152 @@ def build_witness_summary(
         "witness_review": witness_review,
         "witness_review_batch": witness_review_batch,
         "witness_capture_queue": witness_capture_queue,
+        "witness_core_parity": witness_core_parity,
         "jhora": jhora,
         "parashara_light": parashara_light,
         "open_items": open_items,
     }
+
+
+def _witness_core_parity(path: str | Path) -> dict[str, Any]:
+    source_report = str(path or "")
+    if not source_report or not Path(source_report).exists():
+        return {
+            "available": False,
+            "status": "missing",
+            "source_report": source_report,
+            "schema_version": "",
+            "generated_at": "",
+            "summary": _empty_core_parity_summary(),
+            "target_met": False,
+            "tolerance_profile": {},
+            "next_actions": [],
+        }
+    try:
+        report = json.loads(Path(source_report).read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "available": False,
+            "status": "invalid",
+            "source_report": source_report,
+            "schema_version": "",
+            "generated_at": "",
+            "error": f"{type(exc).__name__}: {str(exc)[:160]}",
+            "summary": _empty_core_parity_summary(),
+            "target_met": False,
+            "tolerance_profile": {},
+            "next_actions": [],
+        }
+    if not isinstance(report, dict) or not isinstance(report.get("summary"), dict):
+        return {
+            "available": False,
+            "status": "invalid",
+            "source_report": source_report,
+            "schema_version": str(report.get("schema_version") if isinstance(report, dict) else ""),
+            "generated_at": "",
+            "error": "invalid core parity report schema",
+            "summary": _empty_core_parity_summary(),
+            "target_met": False,
+            "tolerance_profile": {},
+            "next_actions": [],
+        }
+
+    summary = _safe_core_parity_summary(report.get("summary"))
+    metadata = report.get("metadata") if isinstance(report.get("metadata"), dict) else {}
+    target_met = bool(summary.get("target_met"))
+    return {
+        "available": True,
+        "status": _core_parity_status(summary),
+        "source_report": source_report,
+        "schema_version": str(report.get("schema_version") or ""),
+        "generated_at": str(metadata.get("generated_at") or ""),
+        "summary": summary,
+        "target_met": target_met,
+        "tolerance_profile": _safe_float_map(metadata.get("tolerance_profile")),
+        "next_actions": _core_parity_next_actions(report.get("cases")),
+    }
+
+
+def _empty_core_parity_summary() -> dict[str, int | bool]:
+    return {
+        "case_count": 0,
+        "comparable_count": 0,
+        "passed_count": 0,
+        "failed_count": 0,
+        "missing_witness_count": 0,
+        "not_reviewed_count": 0,
+        "not_comparable_count": 0,
+        "target_reviewed_count": 0,
+        "target_met": False,
+    }
+
+
+def _safe_core_parity_summary(value: Any) -> dict[str, int | bool]:
+    source = value if isinstance(value, dict) else {}
+    summary = _empty_core_parity_summary()
+    for key in [
+        "case_count",
+        "comparable_count",
+        "passed_count",
+        "failed_count",
+        "missing_witness_count",
+        "not_reviewed_count",
+        "not_comparable_count",
+        "target_reviewed_count",
+    ]:
+        try:
+            summary[key] = int(source.get(key) or 0)
+        except (TypeError, ValueError):
+            summary[key] = 0
+    summary["target_met"] = bool(source.get("target_met"))
+    return summary
+
+
+def _safe_float_map(value: Any) -> dict[str, float]:
+    result: dict[str, float] = {}
+    if not isinstance(value, dict):
+        return result
+    for key, raw in value.items():
+        try:
+            result[str(key)] = float(raw)
+        except (TypeError, ValueError):
+            continue
+    return result
+
+
+def _core_parity_status(summary: dict[str, Any]) -> str:
+    if summary.get("target_met"):
+        return "target_met"
+    if int(summary.get("failed_count") or 0) > 0:
+        return "diff_open"
+    if (
+        int(summary.get("missing_witness_count") or 0) > 0
+        or int(summary.get("not_reviewed_count") or 0) > 0
+        or int(summary.get("not_comparable_count") or 0) > 0
+    ):
+        return "blocked"
+    return "pending"
+
+
+def _core_parity_next_actions(cases: Any, *, limit: int = 5) -> list[dict[str, Any]]:
+    if not isinstance(cases, list):
+        return []
+    actions: list[dict[str, Any]] = []
+    for row in cases:
+        if not isinstance(row, dict) or row.get("comparison_status") == "passed":
+            continue
+        actions.append(
+            {
+                "case_id": str(row.get("case_id") or ""),
+                "status": str(row.get("comparison_status") or "unknown"),
+                "sources_present": _string_list(row.get("sources_present")),
+                "missing_fields": _string_list(row.get("missing_fields"))[:12],
+                "failed_fields": _string_list(row.get("failed_fields"))[:12],
+            }
+        )
+        if len(actions) >= limit:
+            break
+    return actions
 
 
 def _witness_contract_summary(

@@ -881,3 +881,128 @@ def test_birth_timezone_audit_reports_unknown_timezone_source(tmp_path):
     assert audit["timezone_source"] == "unknown"
     assert audit["expected_utc_offset"] == "+06:00"
     assert audit["status"] == "matched"
+
+
+def _write_core_parity_report(path, *, status: str = "failed", case_id: str = "case-a"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-core-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-20T12:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "tolerance_profile": {"planet_longitude_arcseconds": 1.0, "lagna_arcseconds": 5.0},
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 1,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 0,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "field": "grahas.Surya.longitude",
+                                "expected": 10.0,
+                                "actual": 10.1,
+                                "delta_arcseconds": 360.0,
+                                "passed": False,
+                            }
+                        ],
+                        "missing_fields": ["jhora.grahas.Chandra.longitude"],
+                        "failed_fields": ["grahas.Surya.longitude"],
+                        "max_abs_delta_arcseconds": 360.0,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_core_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "core-parity-report.json"
+    _write_core_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_core_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_core_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-core-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["target_met"] is False
+    assert parity["tolerance_profile"]["planet_longitude_arcseconds"] == 1.0
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-a",
+            "status": "failed",
+            "sources_present": ["jhora"],
+            "missing_fields": ["jhora.grahas.Chandra.longitude"],
+            "failed_fields": ["grahas.Surya.longitude"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False)
+    for forbidden in ["field_results", '"expected"', '"actual"', "mark_", "seal_witness_case", "--ack-diff-open"]:
+        assert forbidden not in serialized
+    for forbidden in ["source_anchor", "method_authority", "scriptural_authority"]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_core_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_core_parity_report_path=tmp_path / "missing-core-parity.json",
+    )
+    assert missing_summary["witness_core_parity"]["available"] is False
+    assert missing_summary["witness_core_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-core-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_core_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_core_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_core_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-core-parity.json"
+    second_path = tmp_path / "second-core-parity.json"
+    _write_core_parity_report(first_path, case_id="first-case")
+    _write_core_parity_report(second_path, case_id="second-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_CORE_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_CORE_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_core_parity"]["next_actions"][0]["case_id"] == "first-case"
+    assert second_response.data["witness_core_parity"]["next_actions"][0]["case_id"] == "second-case"
