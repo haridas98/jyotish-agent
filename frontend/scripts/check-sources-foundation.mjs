@@ -54,6 +54,8 @@ assert(passageRegistry.includes('chapter: "7", verseStart: "1", verseEnd: "8"'),
 assert(passageRegistry.includes('chapter: "46", verseStart: "2", verseEnd: "16"'), "Vimshottari pilot needs exact BPHS chapter/verse locator.");
 assert(passageRegistry.includes("passage.bphs.aspect.graha_drishti"), "Graha Drishti pilot passage is missing.");
 assert(passageRegistry.includes('chapter: "26", verseStart: "2", verseEnd: "5"'), "Graha Drishti pilot needs exact BPHS chapter/verse locator.");
+assert(passageRegistry.includes("passage.bphs.aspect.rashi_drishti"), "Rashi Drishti pilot passage is missing.");
+assert(passageRegistry.includes('chapter: "8", verseStart: "1", verseEnd: "5"'), "Rashi Drishti pilot needs exact BPHS chapter/verse locator.");
 assert(ruleRegistry.includes("bphs.house.1"), "House 1 pilot rule is missing.");
 assert(ruleRegistry.includes("bphs.graha.mo"), "Moon pilot rule is missing.");
 assert(ruleRegistry.includes("bphs.graha.su"), "Sun pilot rule is missing.");
@@ -64,6 +66,10 @@ assert(ruleRegistry.includes("bphs.aspect.graha_drishti.general_7th"), "General 
 assert(ruleRegistry.includes("bphs.aspect.graha_drishti.mars_special"), "Mars special Graha Drishti rule is missing.");
 assert(ruleRegistry.includes("bphs.aspect.graha_drishti.jupiter_special"), "Jupiter special Graha Drishti rule is missing.");
 assert(ruleRegistry.includes("bphs.aspect.graha_drishti.saturn_special"), "Saturn special Graha Drishti rule is missing.");
+assert(ruleRegistry.includes("bphs.aspect.rashi_drishti.movable_to_fixed"), "Movable to fixed Rashi Drishti rule is missing.");
+assert(ruleRegistry.includes("bphs.aspect.rashi_drishti.fixed_to_movable"), "Fixed to movable Rashi Drishti rule is missing.");
+assert(ruleRegistry.includes("bphs.aspect.rashi_drishti.dual_to_dual"), "Dual to dual Rashi Drishti rule is missing.");
+assert(ruleRegistry.includes("bphs.aspect.rashi_drishti.graha_participation"), "Graha participation Rashi Drishti rule is missing.");
 assert(/id:\s*"bphs\.house\.1"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "House 1 rule must be verified after exact citation mapping.");
 assert(/id:\s*"bphs\.graha\.mo"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Moon rule must be verified after exact citation mapping.");
 assert(/id:\s*"bphs\.graha\.su"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Sun rule must be verified after exact citation mapping.");
@@ -80,6 +86,10 @@ assert(/id:\s*"bphs\.aspect\.graha_drishti\.general_7th"[\s\S]*?status:\s*"verif
 assert(/id:\s*"bphs\.aspect\.graha_drishti\.mars_special"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Mars special Graha Drishti rule must be verified.");
 assert(/id:\s*"bphs\.aspect\.graha_drishti\.jupiter_special"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Jupiter special Graha Drishti rule must be verified.");
 assert(/id:\s*"bphs\.aspect\.graha_drishti\.saturn_special"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Saturn special Graha Drishti rule must be verified.");
+assert(/id:\s*"bphs\.aspect\.rashi_drishti\.movable_to_fixed"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Movable to fixed Rashi Drishti rule must be verified.");
+assert(/id:\s*"bphs\.aspect\.rashi_drishti\.fixed_to_movable"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Fixed to movable Rashi Drishti rule must be verified.");
+assert(/id:\s*"bphs\.aspect\.rashi_drishti\.dual_to_dual"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Dual to dual Rashi Drishti rule must be verified.");
+assert(/id:\s*"bphs\.aspect\.rashi_drishti\.graha_participation"[\s\S]*?status:\s*"verified"/.test(ruleRegistry), "Graha participation Rashi Drishti rule must be verified.");
 
 assert(sourceValidation.includes("validateSourceRegistry"), "Source validation is missing.");
 assert(sourceValidation.includes("needs file SHA-256"), "Verified source SHA-256 validation is missing.");

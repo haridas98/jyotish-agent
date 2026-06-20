@@ -91,6 +91,21 @@ export const passageDefinitions: PassageDefinition[] = [
     status: "verified",
     verificationNotes: "Verified against the selected BPHS Santhanam OCR/PDF anchor: chapter 26, verses 2-5, page 199.",
   },
+  {
+    id: "passage.bphs.aspect.rashi_drishti",
+    sourceId: "source.bphs",
+    locator: { chapter: "8", verseStart: "1", verseEnd: "5", page: 23 },
+    citationLabel: {
+      ru: "БПХШ 8.1-5",
+      en: "BPHS 8.1-5",
+    },
+    shortExcerpt: {
+      ru: "Описывает Раши-дришти: подвижные знаки аспектируют неподвижные, кроме соседнего; неподвижные — подвижные, кроме соседнего; двойственные — другие двойственные; грахи в этих знаках участвуют.",
+      en: "Defines Rashi Drishti: movable signs aspect fixed signs except the adjacent one; fixed signs aspect movable signs except the adjacent one; dual signs aspect the other dual signs; grahas in those signs participate.",
+    },
+    status: "verified",
+    verificationNotes: "Verified against the selected BPHS Santhanam OCR/PDF anchor: chapter 8, verses 1-5, PDF pages 23-24.",
+  },
 ];
 
 const passageMap = new Map(passageDefinitions.map((passage) => [passage.id, passage]));

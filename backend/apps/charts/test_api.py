@@ -1672,8 +1672,13 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["rashiDrishtiContract"]["methodVersion"] == 1
     assert response.data["rashiDrishtiContract"]["sourceContext"] == "transit"
     assert response.data["rashiDrishtiContract"]["targetContext"] == "natal"
-    assert response.data["rashiDrishtiContract"]["sourceStatus"] == "needs_source"
-    assert response.data["rashiDrishtiContract"]["sourceRuleIds"] == []
+    assert response.data["rashiDrishtiContract"]["sourceStatus"] == "verified"
+    assert response.data["rashiDrishtiContract"]["sourceRuleIds"] == [
+        "bphs.aspect.rashi_drishti.movable_to_fixed",
+        "bphs.aspect.rashi_drishti.fixed_to_movable",
+        "bphs.aspect.rashi_drishti.dual_to_dual",
+        "bphs.aspect.rashi_drishti.graha_participation",
+    ]
     assert response.data["rashiDrishtiContract"]["uiCapability"] is False
     assert response.data["rashiDrishtiContract"]["enabledByDefault"] is False
     assert response.data["rashiDrishtiContract"]["usesDegreeOrbs"] is False
@@ -1681,6 +1686,7 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["rashiDrishtiContract"]["aspectCount"] > 0
     assert response.data["rashiDrishtiContract"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:rashi.")
     assert response.data["rashiDrishtiContract"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
+    assert response.data["rashiDrishtiContract"]["sampleRefs"][0]["sourceRuleIds"]
     assert response.data["capabilities"] == {
         "natalOverlay": True,
         "aspects": True,

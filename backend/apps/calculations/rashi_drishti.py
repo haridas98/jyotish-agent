@@ -5,6 +5,16 @@ from typing import Any
 RASHI_DRISHTI_METHOD_ID = "aspect.rashi_drishti.parashara.v1"
 RASHI_DRISHTI_METHOD_VERSION = 1
 RASHI_DRISHTI_SOURCE_ANCHOR = "parashara_rashi_drishti"
+RASHI_DRISHTI_RULE_MOVABLE_TO_FIXED = "bphs.aspect.rashi_drishti.movable_to_fixed"
+RASHI_DRISHTI_RULE_FIXED_TO_MOVABLE = "bphs.aspect.rashi_drishti.fixed_to_movable"
+RASHI_DRISHTI_RULE_DUAL_TO_DUAL = "bphs.aspect.rashi_drishti.dual_to_dual"
+RASHI_DRISHTI_RULE_GRAHA_PARTICIPATION = "bphs.aspect.rashi_drishti.graha_participation"
+RASHI_DRISHTI_SOURCE_RULE_IDS = [
+    RASHI_DRISHTI_RULE_MOVABLE_TO_FIXED,
+    RASHI_DRISHTI_RULE_FIXED_TO_MOVABLE,
+    RASHI_DRISHTI_RULE_DUAL_TO_DUAL,
+    RASHI_DRISHTI_RULE_GRAHA_PARTICIPATION,
+]
 
 RASHI_ENTITY_NAMES = [
     "Aries",
@@ -35,8 +45,8 @@ def rashi_drishti_method_contract(method_id: str = RASHI_DRISHTI_METHOD_ID) -> d
         "usesSignRelationship": True,
         "usesDegreeOrbs": False,
         "treatsConjunctionAsAspect": False,
-        "sourceRuleIds": [],
-        "sourceStatus": "needs_source",
+        "sourceRuleIds": RASHI_DRISHTI_SOURCE_RULE_IDS,
+        "sourceStatus": "verified",
     }
 
 
@@ -74,10 +84,22 @@ def build_rashi_drishti_aspects(
                     "aspectKind": aspect_kind,
                     "sourceRashiIndex": source["rashiIndex"],
                     "targetRashiIndex": target["rashiIndex"],
-                    "sourceRuleIds": [],
+                    "sourceRuleIds": _source_rule_ids(aspect_kind, target["kind"]),
                 }
             )
     return aspects
+
+
+def _source_rule_ids(aspect_kind: str, target_kind: str) -> list[str]:
+    rule_by_kind = {
+        "movable_to_fixed": RASHI_DRISHTI_RULE_MOVABLE_TO_FIXED,
+        "fixed_to_movable": RASHI_DRISHTI_RULE_FIXED_TO_MOVABLE,
+        "dual_to_dual": RASHI_DRISHTI_RULE_DUAL_TO_DUAL,
+    }
+    rules = [rule_by_kind[aspect_kind]] if aspect_kind in rule_by_kind else []
+    if target_kind == "graha":
+        rules.append(RASHI_DRISHTI_RULE_GRAHA_PARTICIPATION)
+    return rules
 
 
 def _aspected_rashi_indices(source_rashi_index: int) -> tuple[set[int], str]:
