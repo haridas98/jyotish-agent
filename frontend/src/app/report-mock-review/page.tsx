@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import {
   buildAiEligibilityPack,
+  buildAiHumanReviewWorkspace,
   buildAiReportRequest,
   buildReportEvidencePack,
   resolveEvidenceProvenance,
@@ -8,6 +9,28 @@ import {
   runMockAiDryRun,
 } from "@/astrology";
 import { debugRoutesEnabled } from "@/app/debug-route-guard";
+
+const pageStyle = {
+  background: "#eef5f4",
+  minHeight: "100vh",
+  padding: 24,
+} satisfies React.CSSProperties;
+
+const shellStyle = {
+  background: "#fff",
+  border: "1px solid #d5e3e0",
+  borderRadius: 8,
+  margin: "0 auto",
+  maxWidth: 1120,
+  padding: 24,
+} satisfies React.CSSProperties;
+
+const gridStyle = {
+  display: "grid",
+  gap: 12,
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  margin: "20px 0",
+} satisfies React.CSSProperties;
 
 export default function ReportMockReviewPage() {
   if (!debugRoutesEnabled()) redirect("/charts");
@@ -26,45 +49,60 @@ export default function ReportMockReviewPage() {
   const eligibility = buildAiEligibilityPack(enriched);
   const request = buildAiReportRequest(eligibility);
   const dryRun = runMockAiDryRun(request);
+  const workspace = buildAiHumanReviewWorkspace({ eligibility, request, dryRun });
 
   return (
-    <main style={{ background: "#eef5f4", minHeight: "100vh", padding: 24 }}>
-      <section style={{ background: "#fff", border: "1px solid #d5e3e0", borderRadius: 12, margin: "0 auto", maxWidth: 1120, padding: 24 }}>
+    <main style={pageStyle}>
+      <section style={shellStyle}>
         <p style={{ color: "#00665f", fontWeight: 700, margin: 0 }}>Internal mock review</p>
-        <h1 style={{ margin: "6px 0 8px" }}>Human-review экран mock-отчёта</h1>
+        <h1 style={{ margin: "6px 0 8px" }}>Внутреннее ревью mock-отчета</h1>
         <p style={{ color: "#53656b", marginTop: 0 }}>
-          Только offline mock: проверяем request/response/citation gate без реальной модели, без API-вызова и без сохранения ответа.
+          Offline mock проверяет request, response и citation gate без реальной модели, сетевого вызова и сохранения ответа.
         </p>
 
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", margin: "20px 0" }}>
-          <Metric label="Response gate" value={dryRun.validation.ok ? "passed" : "failed"} />
-          <Metric label="Provider" value={dryRun.response.provider} />
-          <Metric label="Eligible items" value={String(request.items.length)} />
-          <Metric label="Excluded items" value={String(request.excludedSummary.total)} />
-          <Metric label="Theses" value={String(dryRun.response.theses.length)} />
-        </div>
+        <section aria-label="Gate status" style={gridStyle}>
+          <Metric label="Gate status" value={workspace.status === "review_ready" ? "review ready" : "blocked"} />
+          <Metric label="Provider mock" value={workspace.provider} />
+          <Metric label="Report type" value={workspace.gateSummary.reportTypeId} />
+          <Metric label="Recipe" value={workspace.gateSummary.reportRecipeId} />
+        </section>
 
-        {dryRun.validation.ok ? null : (
-          <section style={{ border: "1px solid #f2b8b5", borderRadius: 10, padding: 12 }}>
-            <h2>Validation errors</h2>
+        <section aria-label="Evidence readiness" style={gridStyle}>
+          <Metric label="Eligible evidence" value={String(workspace.evidenceSummary.eligibleCount)} />
+          <Metric label="Excluded evidence" value={String(workspace.evidenceSummary.excludedCount)} />
+          <Metric label="Blocked evidence" value={String(workspace.evidenceSummary.blockedCount)} />
+          <Metric label="Review items" value={String(workspace.reviewItems.length)} />
+        </section>
+
+        <section aria-label="Validation summary" style={{ border: "1px solid #d5e3e0", borderRadius: 8, padding: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Validation summary</h2>
+          <p>{workspace.validationSummary.passed ? "Response contract passed." : "Response contract blocked."}</p>
+          {workspace.validationSummary.errors.length > 0 ? (
             <ul>
-              {dryRun.validation.errors.map((error) => (
+              {workspace.validationSummary.errors.map((error) => (
                 <li key={error}>{error}</li>
               ))}
             </ul>
-          </section>
-        )}
+          ) : null}
+          <div style={gridStyle}>
+            <Metric label="Offline only" value={workspace.safetyFlags.offlineMockOnly ? "yes" : "no"} />
+            <Metric label="Real provider call" value={workspace.safetyFlags.realProviderCalled ? "yes" : "no"} />
+            <Metric label="Stored content" value={workspace.safetyFlags.rawContentStored ? "yes" : "no"} />
+          </div>
+        </section>
 
-        <section style={{ display: "grid", gap: 16, gridTemplateColumns: "minmax(0, 1fr)", marginTop: 20 }}>
-          {dryRun.response.theses.map((thesis) => (
-            <article key={thesis.id} style={{ border: "1px solid #d5e3e0", borderRadius: 10, padding: 16 }}>
-              <strong>{thesis.title}</strong>
-              <p>{thesis.body}</p>
-              <small>Evidence: {thesis.evidenceItemIds.join(", ")}</small>
+        <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>
+          <h2 style={{ margin: 0 }}>Review items</h2>
+          {workspace.reviewItems.map((item) => (
+            <article key={item.id} style={{ border: "1px solid #d5e3e0", borderRadius: 8, padding: 16 }}>
+              <strong>{item.label}</strong>
+              <p>{item.body}</p>
+              <p style={{ color: "#53656b", marginBottom: 8 }}>Confidence: {item.confidence}</p>
+              <p style={{ marginBottom: 8 }}>Evidence ids: {item.evidenceItemIds.join(", ")}</p>
               <ul>
-                {thesis.citations.map((citation) => (
-                  <li key={`${thesis.id}-${citation.evidenceItemId}-${citation.ruleId}-${citation.passageId}`}>
-                    {citation.evidenceItemId} → {citation.ruleId} → {citation.passageId} → {citation.sourceId}
+                {item.citationLabels.map((citation) => (
+                  <li key={`${item.id}-${citation.evidenceItemId}`}>
+                    {citation.evidenceItemId}: {citation.labels.join("; ")}
                   </li>
                 ))}
               </ul>
@@ -78,7 +116,7 @@ export default function ReportMockReviewPage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 10, padding: 12 }}>
+    <div style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
       <span style={{ color: "#60747a", display: "block", fontSize: 12 }}>{label}</span>
       <strong>{value}</strong>
     </div>

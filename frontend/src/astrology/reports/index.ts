@@ -4,6 +4,7 @@ export * from "./reportEvidenceTypes";
 export * from "./reportEvidenceValidation";
 export * from "./reportGenerationWorkspace";
 export * from "./reportModePolicy";
+export * from "./reportReviewWorkspace";
 export * from "./reportRecipeRegistry";
 export * from "./reportRecipeResolver";
 export * from "./reportRecipeTypes";
