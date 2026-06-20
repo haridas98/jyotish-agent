@@ -121,6 +121,15 @@ def test_audit_jhora_pl_witness_batch_matches_draft_jhora_and_pl_by_birth_key(tm
         "reviewed_at",
         "expected_or_jhora_expected",
     ]
+    jhora_contract = case["jhora_records"][0]["witness_contract"]
+    pl_contract = case["pl_records"][0]["witness_contract"]
+    assert jhora_contract["source_type"] == "jhora"
+    assert jhora_contract["unified_status"] == "draft"
+    assert "review" in jhora_contract["missing_evidence_groups"]
+    assert "diffs" in jhora_contract["missing_evidence_groups"]
+    assert pl_contract["source_type"] == "parashara_light"
+    assert pl_contract["unified_status"] == "draft"
+    assert "settings_evidence" in pl_contract["missing_evidence_groups"]
     assert payload["summary"]["capture_started_count"] == 1
     assert payload["summary"]["pl_witness_count"] == 1
     assert payload["summary"]["pl_reviewed_count"] == 0
@@ -166,6 +175,7 @@ def test_audit_jhora_pl_witness_batch_counts_authoritative_reviewed_case(tmp_pat
     assert case["status"] == "authoritative_ready"
     assert case["authoritative_ready"] is True
     assert case["batch_review_ready"] is False
+    assert case["jhora_records"][0]["witness_contract"]["unified_status"] == "promoted"
     assert case["missing_for_authoritative_review"] == []
     assert payload["summary"]["authoritative_ready_count"] == 1
 
@@ -275,6 +285,10 @@ def test_audit_jhora_pl_witness_batch_counts_fully_reviewed_jhora_and_pl_case(tm
     assert case["authoritative_ready"] is True
     assert case["secondary_witness_ready"] is True
     assert case["batch_review_ready"] is True
+    assert case["jhora_records"][0]["witness_contract"]["unified_status"] == "promoted"
+    assert case["pl_records"][0]["witness_contract"]["unified_status"] == "reviewed"
+    assert case["witness_contract"]["status_counts"]["promoted"] == 1
+    assert case["witness_contract"]["status_counts"]["reviewed"] == 1
     assert case["missing_secondary_witness"] == []
     assert payload["summary"]["pl_reviewed_count"] == 1
     assert payload["summary"]["batch_review_ready_count"] == 1
@@ -307,6 +321,7 @@ def test_audit_jhora_pl_witness_batch_can_include_review_preflight_ack_requireme
                     "capture_status": "export_parsed",
                     "ayanamsa": "Lahiri",
                     "timezone_offset": "+06:00",
+                    "accuracy_status": "diff_open",
                 },
                 "capture_files": {
                     "complete_calculations_text": "complete-calculations.txt",
@@ -358,6 +373,9 @@ def test_audit_jhora_pl_witness_batch_can_include_review_preflight_ack_requireme
     assert first_action["review_preflight"]["overall"]["ack_required"] is True
     assert first_action["review_preflight"]["jhora"]["status"] == "diff_open"
     assert first_action["review_preflight"]["parashara_light"]["status"] == "diff_open"
+    case = next(row for row in payload["cases"] if row["id"] == "sterlitamak-1998-04-30-1345")
+    assert case["jhora_records"][0]["witness_contract"]["unified_status"] == "diff_open"
+    assert case["jhora_records"][0]["witness_contract"]["has_open_diffs"] is True
 
 
 def test_audit_jhora_witness_batch_command_outputs_json_and_can_fail(tmp_path):

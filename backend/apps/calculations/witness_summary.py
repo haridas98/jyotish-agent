@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from .jhora_accuracy_report import load_jhora_accuracy_report
 from .parashara_light_packet_report import load_parashara_light_packet_report
 from .witness_action_labels import suggested_action_label, suggested_action_labels
+from .witness_contract import summarize_witness_contracts, witness_contract_from_path
 
 TIMEZONE_OFFSET_RE = re.compile(r"^(?:UTC|GMT)?\s*([+-])\s*(\d{1,2})(?::?(\d{2}))?$", re.IGNORECASE)
 JHORA_EXPORT_TIMEZONE_RE = re.compile(
@@ -95,9 +96,17 @@ def build_witness_summary(
     witness_review_batch = _witness_review_batch_index(witness_review_batch_index_path)
     witness_capture_queue = _witness_capture_queue(witness_capture_queue_path)
     open_items = _open_items(jhora, parashara_light)
+    witness_contract = _witness_contract_summary(
+        jhora_witness_case_path=jhora_witness_case_path,
+        jhora_report_path=jhora_report_path,
+        jhora_status=jhora["status"],
+        parashara_light_packet_path=parashara_light_packet_path,
+        parashara_light_status=parashara_light["status"],
+    )
     return {
         "overall_status": _overall_status(jhora, parashara_light),
         "birth_timezone_audit": _birth_timezone_audit(parashara_light_packet_path),
+        "witness_contract": witness_contract,
         "witness_review": witness_review,
         "witness_review_batch": witness_review_batch,
         "witness_capture_queue": witness_capture_queue,
@@ -105,6 +114,31 @@ def build_witness_summary(
         "parashara_light": parashara_light,
         "open_items": open_items,
     }
+
+
+def _witness_contract_summary(
+    *,
+    jhora_witness_case_path: str | Path,
+    jhora_report_path: str | Path,
+    jhora_status: str,
+    parashara_light_packet_path: str | Path,
+    parashara_light_status: str,
+) -> dict[str, Any]:
+    contracts = []
+    if jhora_status != "missing":
+        jhora_path = _resolve_jhora_witness_case_path(jhora_witness_case_path, jhora_report_path)
+        jhora_contract = witness_contract_from_path(jhora_path, source_type="jhora", diff_status=jhora_status)
+        if jhora_contract:
+            contracts.append(jhora_contract)
+    if parashara_light_status != "missing":
+        pl_contract = witness_contract_from_path(
+            parashara_light_packet_path,
+            source_type="parashara_light",
+            diff_status=parashara_light_status,
+        )
+        if pl_contract:
+            contracts.append(pl_contract)
+    return summarize_witness_contracts(contracts)
 
 
 def _jhora_summary(path: str | Path) -> dict[str, Any]:

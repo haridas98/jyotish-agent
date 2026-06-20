@@ -8,6 +8,7 @@ from typing import Any
 from .fixture_runner import AUTHORITATIVE_REVIEW_STATUSES
 from .jhora_parity_suite import jhora_parity_suite_manifest
 from .witness_action_labels import suggested_action_labels
+from .witness_contract import build_witness_contract, summarize_witness_contracts
 
 SCHEMA_VERSION = "jyotish-witness-batch-audit-v1"
 DEFAULT_TARGET_REVIEWED_COUNT = 20
@@ -108,6 +109,7 @@ def _fixture_record(fixture: dict[str, Any], source: str, path: Path) -> dict[st
     capture_files = fixture.get("capture_files") if isinstance(fixture.get("capture_files"), dict) else {}
     artifacts = _artifact_flags(fixture, metadata, capture_files, source)
     promotion_blockers = _promotion_blockers(fixture, source)
+    diff_status = _diff_status(fixture, metadata, promotion_blockers)
     return {
         "id": str(fixture.get("id") or ""),
         "source": source,
@@ -119,6 +121,7 @@ def _fixture_record(fixture: dict[str, Any], source: str, path: Path) -> dict[st
         "reviewed_at": str(metadata.get("reviewed_at") or ""),
         "artifacts": artifacts,
         "promotion_blockers": promotion_blockers,
+        "witness_contract": build_witness_contract(fixture, source_type=source, diff_status=diff_status),
     }
 
 
@@ -206,6 +209,9 @@ def _case_row(case: dict[str, Any], jhora_records: list[dict[str, Any]], pl_reco
         "missing_secondary_witness": missing_secondary_witness,
         "jhora_records": [_public_record(record) for record in jhora_records],
         "pl_records": [_public_record(record) for record in pl_records],
+        "witness_contract": summarize_witness_contracts(
+            [record["witness_contract"] for record in [*jhora_records, *pl_records]]
+        ),
     }
 
 
@@ -273,6 +279,7 @@ def _public_record(record: dict[str, Any]) -> dict[str, Any]:
         "capture_status": record["capture_status"],
         "artifacts": record["artifacts"],
         "promotion_blockers": record.get("promotion_blockers", []),
+        "witness_contract": record["witness_contract"],
     }
 
 
@@ -286,6 +293,15 @@ def _promotion_blockers(fixture: dict[str, Any], source: str) -> list[str]:
     except Exception as exc:  # noqa: BLE001 - batch audit should expose bad captures instead of crashing.
         return [f"promotion_gate_error:{exc}"]
     return blockers
+
+
+def _diff_status(fixture: dict[str, Any], metadata: dict[str, Any], promotion_blockers: list[str]) -> str:
+    status = str(metadata.get("accuracy_status") or metadata.get("manual_diff_status") or "")
+    if status:
+        return status
+    if "accuracy_diff_acknowledgement" in promotion_blockers:
+        return "diff_open"
+    return ""
 
 
 def _summary(

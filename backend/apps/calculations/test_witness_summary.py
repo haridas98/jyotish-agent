@@ -616,6 +616,18 @@ def test_witness_summary_api_combines_jhora_and_parashara_light(settings, tmp_pa
     assert response.data["open_items"][0]["source"] == "jhora"
     assert response.data["open_items"][1]["source"] == "parashara_light"
     assert response.data["open_items"][1]["next_action"] == "capture_pl_native_export_or_internal_ephemeris_mode"
+    contract = response.data["witness_contract"]
+    assert contract["schema_version"] == "jyotish-witness-contract-summary-v1"
+    assert contract["source_counts"] == {"jhora": 1, "parashara_light": 1}
+    assert contract["status_counts"]["diff_open"] == 2
+    assert contract["sources"]["jhora"]["unified_status"] == "diff_open"
+    assert contract["sources"]["parashara_light"]["unified_status"] == "diff_open"
+    assert contract["sources"]["jhora"]["has_open_diffs"] is True
+    assert contract["sources"]["parashara_light"]["has_open_diffs"] is True
+    assert "diffs" not in contract["sources"]["jhora"]["missing_evidence_groups"]
+    assert "next_missing_evidence_groups" in contract
+    assert "next_command" not in contract
+    assert "manual_review_command" not in contract
 
 
 def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
@@ -653,6 +665,8 @@ def test_witness_summary_api_reports_missing_sources(settings, tmp_path):
     assert response.data["parashara_light"]["option_store_diff"]["available"] is False
     assert response.data["parashara_light"]["internal_settings_audit"]["available"] is False
     assert response.data["witness_capture_queue"]["available"] is False
+    assert response.data["witness_contract"]["source_counts"] == {"jhora": 0, "parashara_light": 0}
+    assert response.data["witness_contract"]["next_missing_evidence_groups"] == ["birth_data"]
 
 
 def test_witness_summary_api_reports_pl_profile_load_error(settings, tmp_path):
