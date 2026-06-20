@@ -497,3 +497,111 @@ def test_build_mundane_report_returns_event_chart_anchors():
     assert "slow_planets" in result["interpretation_plan"]["required_factors"]
     assert result["indicators"]["tenth_house_rashi"] == "Mesha"
     assert result["indicators"]["slow_planets"][0]["body"] == "Guru"
+
+
+def _collect_values_for_key(value, key):
+    if isinstance(value, dict):
+        collected = []
+        for item_key, item_value in value.items():
+            if item_key == key:
+                collected.append(item_value)
+            collected.extend(_collect_values_for_key(item_value, key))
+        return collected
+    if isinstance(value, list):
+        collected = []
+        for item in value:
+            collected.extend(_collect_values_for_key(item, key))
+        return collected
+    return []
+
+
+def test_workflow_source_anchors_do_not_use_jhora_or_pl_as_authority():
+    from apps.calculations.workflows import (
+        build_mundane_report,
+        build_prashna_report,
+        build_tithi_pravesha_report,
+    )
+
+    reports = [
+        build_tithi_pravesha_report(
+            {
+                "birth_date": "2000-01-01",
+                "birth_time": "10:00",
+                "place_name": "Vrindavan",
+                "target_year": 2026,
+                "search_days": 3,
+            },
+            provider=TithiPraveshaProvider(),
+        ),
+        build_prashna_report(
+            {
+                "question": "Should I travel?",
+                "question_date": "2026-06-04",
+                "question_time": "09:30",
+                "place_name": "Vrindavan",
+            },
+            provider=WorkflowProvider(),
+        ),
+        build_mundane_report(
+            {
+                "event_type": "ingress",
+                "event_date": "2026-06-04",
+                "event_time": "09:30",
+                "place_name": "Vrindavan",
+            },
+            provider=WorkflowProvider(),
+        ),
+    ]
+
+    forbidden_authorities = {"jhora", "pl", "parashara_light", "parashara light", "pl7"}
+    source_anchors = [
+        str(anchor).strip().lower()
+        for report in reports
+        for anchors in _collect_values_for_key(report, "source_anchors")
+        for anchor in anchors
+    ]
+
+    assert not (set(source_anchors) & forbidden_authorities)
+
+
+def test_workflow_keeps_jhora_as_external_witness_not_source_authority():
+    from apps.calculations.workflows import (
+        build_mundane_report,
+        build_prashna_report,
+        build_tithi_pravesha_report,
+    )
+
+    reports = [
+        build_tithi_pravesha_report(
+            {
+                "birth_date": "2000-01-01",
+                "birth_time": "10:00",
+                "place_name": "Vrindavan",
+                "target_year": 2026,
+                "search_days": 3,
+            },
+            provider=TithiPraveshaProvider(),
+        ),
+        build_prashna_report(
+            {
+                "question": "Should I travel?",
+                "question_date": "2026-06-04",
+                "question_time": "09:30",
+                "place_name": "Vrindavan",
+            },
+            provider=WorkflowProvider(),
+        ),
+        build_mundane_report(
+            {
+                "event_type": "ingress",
+                "event_date": "2026-06-04",
+                "event_time": "09:30",
+                "place_name": "Vrindavan",
+            },
+            provider=WorkflowProvider(),
+        ),
+    ]
+
+    for report in reports:
+        assert "jhora" in report["audit"]["external_witnesses"]
+        assert "jhora" not in report["audit"]["source_anchors"]

@@ -614,7 +614,8 @@ def build_tithi_pravesha_report(
         },
         "audit": {
             "review_status": "research_only",
-            "source_anchors": ["jhora", "tajaka-tradition-review", "teacher-review"],
+            "source_anchors": ["tajaka-tradition-review", "teacher-review"],
+            "external_witnesses": ["jhora"],
             "public_interpretation_status": "blocked_until_jhora_and_shastra_review",
         },
     }
@@ -713,7 +714,8 @@ def build_prashna_report(
         },
         "audit": {
             "review_status": "research_only",
-            "source_anchors": ["prashna-marga", "jhora", "teacher-review"],
+            "source_anchors": ["prashna-marga", "teacher-review"],
+            "external_witnesses": ["jhora"],
             "public_interpretation_status": "blocked_until_prashna_text_review",
         },
     }
@@ -775,7 +777,8 @@ def build_mundane_report(
         },
         "audit": {
             "review_status": "research_only",
-            "source_anchors": ["brhat-samhita", "jhora", "teacher-review"],
+            "source_anchors": ["brhat-samhita", "teacher-review"],
+            "external_witnesses": ["jhora"],
             "public_interpretation_status": "blocked_until_mundane_text_review",
         },
     }
