@@ -905,6 +905,33 @@ export type WitnessSummary = {
     manual_review_command: string;
     error?: string;
   };
+  witness_core_parity: {
+    available: boolean;
+    status: string;
+    schema_version: string;
+    generated_at: string;
+    summary: {
+      case_count: number;
+      comparable_count: number;
+      passed_count: number;
+      failed_count: number;
+      missing_witness_count: number;
+      not_reviewed_count: number;
+      not_comparable_count: number;
+      target_reviewed_count: number;
+      target_met: boolean;
+    };
+    target_met: boolean;
+    tolerance_profile: Record<string, number>;
+    next_actions: Array<{
+      case_id: string;
+      status: string;
+      sources_present: string[];
+      missing_fields: string[];
+      failed_fields: string[];
+    }>;
+    error?: string;
+  };
   jhora: {
     available: boolean;
     status: string;

@@ -5214,7 +5214,7 @@ function AccuracyReportPanel({
 }) {
   const witnessState = witnessSummary
     ? witnessSummary.open_items.length
-      ? "есть вопросы"
+      ? "требует внимания"
       : "сверено"
     : "ожидает";
   const jhoraState = witnessSummary?.jhora.available
@@ -5234,17 +5234,35 @@ function AccuracyReportPanel({
       witnessSummary.birth_timezone_audit.local_datetime_utc_offset ||
       "сверено"
     : "ожидает";
-  const jhoraDelta = report?.summary.longitude?.max_delta_arcseconds;
+  const coreParity = witnessSummary?.witness_core_parity;
+  const coreParitySummary = coreParity?.summary;
+  const coreParityActions = coreParity?.next_actions.slice(0, 3) ?? [];
+  const coreParityTargetMet = Boolean(coreParity?.target_met);
+  const coreParityNeedsAttention =
+    Boolean(coreParity?.available) &&
+    (!coreParityTargetMet ||
+      Boolean(coreParitySummary?.failed_count) ||
+      Boolean(coreParitySummary?.missing_witness_count) ||
+      Boolean(coreParitySummary?.not_reviewed_count) ||
+      Boolean(coreParitySummary?.not_comparable_count));
+  const coreParityState = coreParity?.available
+    ? coreParityTargetMet
+      ? "цель достигнута"
+      : coreParity.status === "diff_open"
+        ? "есть расхождения"
+        : "нужны witness-данные"
+    : "ожидает";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
+    coreParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
       <div className="panel-heading">
-        <h2>Точность расчёта</h2>
+        <h2>Точность расчета</h2>
         <span>{witnessState}</span>
       </div>
       <div className="accuracy-content">
@@ -5252,12 +5270,12 @@ function AccuracyReportPanel({
           <div>
             <span>JHora</span>
             <strong>{jhoraState}</strong>
-            {typeof jhoraDelta === "number" ? <small>до {jhoraDelta.toFixed(2)}"</small> : null}
+            {witnessSummary?.jhora.available ? <small>{witnessSummary.jhora.failed_checks} проверок с вопросами</small> : null}
           </div>
           <div>
             <span>Parashara Light</span>
             <strong>{plState}</strong>
-            {typeof plFailedCount === "number" ? <small>{plFailedCount ? `${plFailedCount} расх.` : "без расхождений"}</small> : null}
+            {typeof plFailedCount === "number" ? <small>{plFailedCount ? String(plFailedCount) + " несовп." : "без расхождений"}</small> : null}
           </div>
           <div>
             <span>Часовой пояс</span>
@@ -5267,18 +5285,51 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Core parity</span>
+            <strong>{coreParityState}</strong>
+            {coreParitySummary ? (
+              <small>
+                {coreParitySummary.passed_count}/{coreParitySummary.target_reviewed_count} принято, {coreParitySummary.failed_count} расх.
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Итог</span>
-            <strong>{hasOpenAccuracyItems ? "проверить расхождения" : "можно читать карту"}</strong>
+            <strong>{hasOpenAccuracyItems ? "проверить witness-сверку" : "можно читать карту"}</strong>
           </div>
         </div>
         {hasOpenAccuracyItems ? (
           <div className="accuracy-list witness-open-items">
             <h3>Что требует внимания</h3>
+            {coreParityNeedsAttention && coreParitySummary ? (
+              <div>
+                <span>Сверка ядра</span>
+                <strong>
+                  {coreParitySummary.comparable_count} сравнимых, {coreParitySummary.failed_count} расхождений
+                </strong>
+                <small>цель: {coreParitySummary.target_reviewed_count} reviewed witness cases</small>
+              </div>
+            ) : null}
+            {coreParityActions.map((item) => (
+              <div key={"core-parity-" + item.case_id}>
+                <span>Core parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
             {report && !report.passed ? (
               <div>
-                <span>Долготы грах</span>
+                <span>JHora</span>
                 <strong>есть расхождения</strong>
-                {typeof jhoraDelta === "number" ? <small>макс. {jhoraDelta.toFixed(2)}"</small> : null}
+                <small>нужна проверка witness-пакета</small>
               </div>
             ) : null}
             {typeof plFailedCount === "number" && plFailedCount > 0 ? (
@@ -5289,7 +5340,7 @@ function AccuracyReportPanel({
               </div>
             ) : null}
             {witnessSummary?.open_items.slice(0, 4).map((item) => (
-              <div key={`${item.source}-${item.label}`}>
+              <div key={item.source + "-" + item.label}>
                 <span>{item.source}</span>
                 <strong>{item.label}</strong>
                 {item.next_action ? <small>{item.next_action}</small> : null}

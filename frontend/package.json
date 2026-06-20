@@ -33,6 +33,7 @@
     "test:dasha-workbench": "node scripts/check-dasha-workbench.mjs",
     "test:charts-dashboard": "node scripts/check-charts-dashboard.mjs",
     "test:product-workspace": "node scripts/check-product-workspace-bridge.mjs",
+    "test:accuracy-core-parity": "node scripts/check-accuracy-core-parity-ui.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",
