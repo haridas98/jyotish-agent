@@ -1280,6 +1280,9 @@ def test_dev_dasha_workbench_check_returns_vimshottari_contract(user):
     assert response.data["currentMahadashaLord"] == "Ketu"
     assert response.data["currentAntardashaLord"] == "Ketu"
     assert response.data["currentAntardashaParentLord"] == "Ketu"
+    assert response.data["pratyantardashaCount"] == 9
+    assert response.data["currentPratyantardashaLord"] == "Ketu"
+    assert response.data["currentPratyantardashaParentLord"] == "Ketu"
     assert response.data["entityInspectorCount"] == 1
     assert response.data["supportedModes"] == ["novice", "astrologer"]
     assert response.data["forbiddenScopesPresent"] == {"AI": False, "rawEvidence": False}
@@ -1328,3 +1331,6 @@ def test_dev_dasha_workbench_check_derives_antardashas_for_legacy_payload(user):
     assert response.data["antardashaCount"] == 9
     assert response.data["currentAntardashaLord"] == "Ketu"
     assert response.data["currentAntardashaParentLord"] == "Ketu"
+    assert response.data["pratyantardashaCount"] == 9
+    assert response.data["currentPratyantardashaLord"] == "Ketu"
+    assert response.data["currentPratyantardashaParentLord"] == "Ketu"

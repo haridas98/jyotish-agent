@@ -131,6 +131,15 @@ def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: 
     if not antardashas:
         antardashas = _legacy_dasha_antardashas(current_mahadasha)
     current_antardasha = antardashas[0] if antardashas and isinstance(antardashas[0], dict) else {}
+    pratyantardashas = current_antardasha.get("pratyantardashas") if isinstance(current_antardasha.get("pratyantardashas"), list) else []
+    if not pratyantardashas:
+        pratyantardashas = _legacy_dasha_subperiods(
+            current_antardasha,
+            level=3,
+            parent_lord=str(current_antardasha.get("lord") or ""),
+            mahadasha_lord=str(current_mahadasha.get("lord") or ""),
+        )
+    current_pratyantardasha = pratyantardashas[0] if pratyantardashas and isinstance(pratyantardashas[0], dict) else {}
     return {
         "status": "ok",
         "schemaVersion": "dasha-workbench-check.v2",
@@ -144,10 +153,13 @@ def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: 
         "boundaryPolicy": str(vimshottari.get("boundary_policy") or "start_inclusive_end_exclusive"),
         "mahadashaCount": len(mahadashas),
         "antardashaCount": len(antardashas),
+        "pratyantardashaCount": len(pratyantardashas),
         "yearLengthDays": vimshottari.get("year_length_days") or 365.25,
         "currentMahadashaLord": str(current_mahadasha.get("lord") or ""),
         "currentAntardashaLord": str(current_antardasha.get("lord") or ""),
         "currentAntardashaParentLord": str(current_antardasha.get("parent_lord") or current_mahadasha.get("lord") or ""),
+        "currentPratyantardashaLord": str(current_pratyantardasha.get("lord") or ""),
+        "currentPratyantardashaParentLord": str(current_pratyantardasha.get("parent_lord") or current_antardasha.get("lord") or ""),
         "entityInspectorCount": 1,
         "supportedModes": ["novice", "astrologer"],
         "forbiddenScopesPresent": {"AI": False, "rawEvidence": False},
@@ -155,14 +167,26 @@ def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: 
 
 
 def _legacy_dasha_antardashas(mahadasha: dict) -> list[dict[str, object]]:
-    lord = str(mahadasha.get("lord") or "")
-    starts_at = parse_datetime(str(mahadasha.get("starts_at") or ""))
-    ends_at = parse_datetime(str(mahadasha.get("ends_at") or ""))
-    if lord not in VIMSHOTTARI_SEQUENCE or starts_at is None or ends_at is None or starts_at >= ends_at:
+    return _legacy_dasha_subperiods(
+        mahadasha,
+        level=2,
+        parent_lord=str(mahadasha.get("lord") or ""),
+    )
+
+
+def _legacy_dasha_subperiods(
+    parent: dict,
+    level: int,
+    parent_lord: str,
+    mahadasha_lord: str = "",
+) -> list[dict[str, object]]:
+    starts_at = parse_datetime(str(parent.get("starts_at") or ""))
+    ends_at = parse_datetime(str(parent.get("ends_at") or ""))
+    if parent_lord not in VIMSHOTTARI_SEQUENCE or starts_at is None or ends_at is None or starts_at >= ends_at:
         return []
 
     total_seconds = (ends_at - starts_at).total_seconds()
-    parent_index = VIMSHOTTARI_SEQUENCE.index(lord)
+    parent_index = VIMSHOTTARI_SEQUENCE.index(parent_lord)
     periods: list[dict[str, object]] = []
     current_start = starts_at
     for offset in range(len(VIMSHOTTARI_SEQUENCE)):
@@ -170,17 +194,18 @@ def _legacy_dasha_antardashas(mahadasha: dict) -> list[dict[str, object]]:
         period_lord = VIMSHOTTARI_SEQUENCE[sequence_index]
         duration_seconds = total_seconds * (VIMSHOTTARI_YEARS[period_lord] / 120.0)
         current_end = current_start + (ends_at - starts_at) * (duration_seconds / total_seconds)
-        periods.append(
-            {
-                "lord": period_lord,
-                "parent_lord": lord,
-                "level": 2,
-                "starts_at": current_start.isoformat(),
-                "ends_at": current_end.isoformat(),
-                "duration_years": round((current_end - current_start).total_seconds() / 86_400 / VIMSHOTTARI_YEAR_DAYS, 10),
-                "sequence_index": sequence_index,
-            }
-        )
+        period = {
+            "lord": period_lord,
+            "parent_lord": parent_lord,
+            "level": level,
+            "starts_at": current_start.isoformat(),
+            "ends_at": current_end.isoformat(),
+            "duration_years": round((current_end - current_start).total_seconds() / 86_400 / VIMSHOTTARI_YEAR_DAYS, 10),
+            "sequence_index": sequence_index,
+        }
+        if mahadasha_lord:
+            period["mahadasha_lord"] = mahadasha_lord
+        periods.append(period)
         current_start = current_end
     return periods
 

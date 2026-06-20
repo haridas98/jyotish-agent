@@ -24,7 +24,7 @@ def test_vimshottari_balances_current_lord_by_remaining_nakshatra_fraction():
     assert periods[0].duration_years == 10.0
 
 
-def test_active_vimshottari_finds_current_mahadasha_and_antardasha():
+def test_active_vimshottari_finds_current_mahadasha_antardasha_and_pratyantardasha():
     birth_moment = datetime(2000, 1, 1, tzinfo=timezone.utc)
     as_of = datetime(2000, 7, 1, tzinfo=timezone.utc)
 
@@ -33,7 +33,11 @@ def test_active_vimshottari_finds_current_mahadasha_and_antardasha():
     assert active["mahadasha"]["lord"] == "Ketu"
     assert active["antardasha"]["lord"] == "Shukra"
     assert active["antardasha"]["parent_lord"] == "Ketu"
+    assert active["pratyantardasha"]["lord"] == "Shukra"
+    assert active["pratyantardasha"]["parent_lord"] == "Shukra"
+    assert active["pratyantardasha"]["mahadasha_lord"] == "Ketu"
     assert len(active["mahadasha_antardashas"]) == 9
+    assert len(active["antardasha_pratyantardashas"]) == 9
     assert active["mahadasha_antardashas"][0]["lord"] == "Ketu"
     assert active["mahadasha_antardashas"][1]["lord"] == "Shukra"
     assert active["mahadasha_antardashas"][1]["parent_lord"] == "Ketu"
@@ -48,10 +52,12 @@ def test_active_vimshottari_returns_none_when_date_is_outside_generated_range():
 
     assert active["mahadasha"] is None
     assert active["antardasha"] is None
+    assert active["pratyantardasha"] is None
     assert active["mahadasha_antardashas"] == []
+    assert active["antardasha_pratyantardashas"] == []
 
 
-def test_vimshottari_payload_exposes_method_balance_and_antardashas():
+def test_vimshottari_payload_exposes_method_balance_antardashas_and_pratyantardashas():
     birth_moment = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
     payload = vimshottari_payload(0.0, birth_moment, count=9)
@@ -81,3 +87,9 @@ def test_vimshottari_payload_exposes_method_balance_and_antardashas():
     assert [period["lord"] for period in first["antardashas"][:2]] == ["Ketu", "Shukra"]
     assert first["antardashas"][0]["parent_lord"] == "Ketu"
     assert first["antardashas"][0]["level"] == 2
+    first_ad = first["antardashas"][0]
+    assert len(first_ad["pratyantardashas"]) == 9
+    assert first_ad["pratyantardashas"][0]["lord"] == "Ketu"
+    assert first_ad["pratyantardashas"][0]["parent_lord"] == "Ketu"
+    assert first_ad["pratyantardashas"][0]["mahadasha_lord"] == "Ketu"
+    assert first_ad["pratyantardashas"][0]["level"] == 3

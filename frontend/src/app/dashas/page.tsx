@@ -6,9 +6,10 @@ import { calculateSavedProfile, listChartProfiles, type ChartCalculationRecord, 
 
 type SelectedEntity = {
   title: string;
-  kind: "mahadasha" | "antardasha" | "system";
+  kind: "mahadasha" | "antardasha" | "pratyantardasha" | "system";
   period?: DashaPeriod;
   parentLord?: string;
+  mahadashaLord?: string;
 };
 
 function formatProfileMeta(profile: ChartProfile) {
@@ -48,6 +49,7 @@ export default function DashasPage() {
   const [activeProfileId, setActiveProfileId] = useState<number | null>(null);
   const [calculation, setCalculation] = useState<ChartCalculationRecord | null>(null);
   const [activeMahadasha, setActiveMahadasha] = useState<DashaPeriod | null>(null);
+  const [activeAntardasha, setActiveAntardasha] = useState<DashaPeriod | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<SelectedEntity>({ title: "Вимшоттари", kind: "system" });
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [loadingCalculation, setLoadingCalculation] = useState(false);
@@ -76,16 +78,19 @@ export default function DashasPage() {
       .then((record) => {
         if (cancelled) return;
         const mahadashas = getMahadashas(record);
-        const current = selectCurrentPeriod(mahadashas);
+        const currentMd = selectCurrentPeriod(mahadashas);
+        const currentAd = selectCurrentPeriod(currentMd?.antardashas ?? []);
         setCalculation(record);
-        setActiveMahadasha(current);
-        setSelectedEntity(current ? { title: `${periodLabel(current)} махадаша`, kind: "mahadasha", period: current } : { title: "Вимшоттари", kind: "system" });
+        setActiveMahadasha(currentMd);
+        setActiveAntardasha(currentAd);
+        setSelectedEntity(currentMd ? { title: `${periodLabel(currentMd)} махадаша`, kind: "mahadasha", period: currentMd } : { title: "Вимшоттари", kind: "system" });
         setStatus(mahadashas.length ? "" : "Для карты пока нет расчёта Вимшоттари.");
       })
       .catch((error) => {
         if (cancelled) return;
         setCalculation(null);
         setActiveMahadasha(null);
+        setActiveAntardasha(null);
         setStatus(error instanceof Error ? error.message : "Не удалось загрузить расчёт даш.");
       })
       .finally(() => {
@@ -100,15 +105,30 @@ export default function DashasPage() {
   const vimshottari = calculation?.result.dashas?.vimshottari ?? null;
   const mahadashas = useMemo(() => getMahadashas(calculation), [calculation]);
   const selectedAntardashas = activeMahadasha?.antardashas ?? [];
+  const selectedPratyantardashas = activeAntardasha?.pratyantardashas ?? [];
   const currentAntardasha = selectCurrentPeriod(selectedAntardashas);
+  const currentPratyantardasha = selectCurrentPeriod(selectedPratyantardashas);
 
   function selectMahadasha(period: DashaPeriod) {
+    const nextAntardasha = selectCurrentPeriod(period.antardashas ?? []);
     setActiveMahadasha(period);
+    setActiveAntardasha(nextAntardasha);
     setSelectedEntity({ title: `${periodLabel(period)} махадаша`, kind: "mahadasha", period });
   }
 
   function selectAntardasha(period: DashaPeriod) {
+    setActiveAntardasha(period);
     setSelectedEntity({ title: `${periodLabel(period)} антардаша`, kind: "antardasha", period, parentLord: activeMahadasha?.lord });
+  }
+
+  function selectPratyantardasha(period: DashaPeriod) {
+    setSelectedEntity({
+      title: `${periodLabel(period)} пратьянтардаша`,
+      kind: "pratyantardasha",
+      period,
+      parentLord: activeAntardasha?.lord,
+      mahadashaLord: activeMahadasha?.lord,
+    });
   }
 
   return (
@@ -116,7 +136,7 @@ export default function DashasPage() {
       <header className="product-page-head">
         <div>
           <h1>Даши</h1>
-          <p>Вимшоттари по сохранённой карте: махадаши, антардаши и общий инспектор периода.</p>
+          <p>Вимшоттари по сохранённой карте: махадаши, антардаши, пратьянтардаши и общий инспектор периода.</p>
         </div>
       </header>
 
@@ -152,13 +172,7 @@ export default function DashasPage() {
               {mahadashas.map((period) => {
                 const active = activeMahadasha?.starts_at === period.starts_at && activeMahadasha?.lord === period.lord;
                 return (
-                  <button
-                    type="button"
-                    className={`dasha-period-row${active ? " active" : ""}`}
-                    key={`${period.lord}-${period.starts_at}`}
-                    aria-pressed={active}
-                    onClick={() => selectMahadasha(period)}
-                  >
+                  <button type="button" className={`dasha-period-row${active ? " active" : ""}`} key={`${period.lord}-${period.starts_at}`} aria-pressed={active} onClick={() => selectMahadasha(period)}>
                     <strong>{periodLabel(period)}</strong>
                     <span>{formatDate(period.starts_at)} — {formatDate(period.ends_at)}</span>
                     <em>{period.duration_years.toFixed(2)} лет</em>
@@ -175,15 +189,10 @@ export default function DashasPage() {
             </div>
             <div className="dasha-period-list">
               {selectedAntardashas.map((period) => {
-                const active = currentAntardasha?.starts_at === period.starts_at && currentAntardasha?.lord === period.lord;
+                const active = activeAntardasha?.starts_at === period.starts_at && activeAntardasha?.lord === period.lord;
+                const current = currentAntardasha?.starts_at === period.starts_at && currentAntardasha?.lord === period.lord;
                 return (
-                  <button
-                    type="button"
-                    className={`dasha-period-row${active ? " current" : ""}`}
-                    key={`${period.parent_lord ?? activeMahadasha?.lord}-${period.lord}-${period.starts_at}`}
-                    aria-pressed={selectedEntity.period?.starts_at === period.starts_at && selectedEntity.kind === "antardasha"}
-                    onClick={() => selectAntardasha(period)}
-                  >
+                  <button type="button" className={`dasha-period-row${active ? " active" : current ? " current" : ""}`} key={`${period.parent_lord ?? activeMahadasha?.lord}-${period.lord}-${period.starts_at}`} aria-pressed={active} onClick={() => selectAntardasha(period)}>
                     <strong>{periodLabel(period)}</strong>
                     <span>{formatDate(period.starts_at)} — {formatDate(period.ends_at)}</span>
                     <em>{period.duration_years.toFixed(2)} лет</em>
@@ -191,6 +200,27 @@ export default function DashasPage() {
                 );
               })}
               {!selectedAntardashas.length ? <p className="dasha-empty-note">Выберите махадашу с рассчитанными антардашами.</p> : null}
+            </div>
+          </section>
+
+          <section className="dasha-period-panel" aria-label="Пратьянтардаши">
+            <div className="source-explorer-card-head">
+              <span>Уровень 3</span>
+              <strong>Пратьянтардаша</strong>
+            </div>
+            <div className="dasha-period-list">
+              {selectedPratyantardashas.map((period) => {
+                const current = currentPratyantardasha?.starts_at === period.starts_at && currentPratyantardasha?.lord === period.lord;
+                const active = selectedEntity.kind === "pratyantardasha" && selectedEntity.period?.starts_at === period.starts_at && selectedEntity.period?.lord === period.lord;
+                return (
+                  <button type="button" className={`dasha-period-row${active ? " active" : current ? " current" : ""}`} key={`${period.parent_lord ?? activeAntardasha?.lord}-${period.lord}-${period.starts_at}`} aria-pressed={active} onClick={() => selectPratyantardasha(period)}>
+                    <strong>{periodLabel(period)}</strong>
+                    <span>{formatDate(period.starts_at)} — {formatDate(period.ends_at)}</span>
+                    <em>{period.duration_years.toFixed(2)} лет</em>
+                  </button>
+                );
+              })}
+              {!selectedPratyantardashas.length ? <p className="dasha-empty-note">Выберите антардашу с рассчитанными пратьянтардашами.</p> : null}
             </div>
           </section>
 
@@ -203,13 +233,14 @@ export default function DashasPage() {
             {selectedEntity.period ? (
               <dl>
                 <div><dt>Граха</dt><dd>{periodLabel(selectedEntity.period)}</dd></div>
+                {selectedEntity.mahadashaLord ? <div><dt>Махадаша</dt><dd>{selectedEntity.mahadashaLord}</dd></div> : null}
                 {selectedEntity.parentLord ? <div><dt>Внутри</dt><dd>{selectedEntity.parentLord}</dd></div> : null}
                 <div><dt>Начало</dt><dd>{formatDate(selectedEntity.period.starts_at)}</dd></div>
                 <div><dt>Конец</dt><dd>{formatDate(selectedEntity.period.ends_at)}</dd></div>
                 <div><dt>Длительность</dt><dd>{selectedEntity.period.duration_years.toFixed(2)} лет</dd></div>
               </dl>
             ) : (
-              <p>Нажмите махадашу или антардашу, чтобы увидеть параметры периода в одном общем инспекторе.</p>
+              <p>Нажмите махадашу, антардашу или пратьянтардашу, чтобы увидеть параметры периода в одном общем инспекторе.</p>
             )}
           </aside>
         </div>

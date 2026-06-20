@@ -17,6 +17,9 @@ assert(page.includes("calculateSavedProfile"), "/dashas must use saved chart cal
 assert(page.includes("mahadashas.map"), "/dashas must render real Mahadasha periods");
 assert(page.includes("activeMahadasha"), "/dashas must highlight the selected/current Mahadasha");
 assert(page.includes("selectedAntardashas.map"), "/dashas must render Antardashas for the selected Mahadasha");
+assert(page.includes("activeAntardasha"), "/dashas must keep selected/current Antardasha for the third level");
+assert(page.includes("selectedPratyantardashas.map"), "/dashas must render Pratyantardashas for the selected Antardasha");
+assert(page.includes("pratyantardasha"), "/dashas must route Pratyantardasha clicks through the same inspector state");
 assert(page.includes("selectedEntity"), "/dashas must use one EntityInspector state for period clicks");
 assert(page.includes("dasha-period-tree"), "/dashas must expose a period tree layout");
 assert(page.includes("dasha-period-row"), "/dashas must render clickable period rows");
@@ -24,6 +27,7 @@ assert(page.includes("aria-pressed"), "/dashas period rows must expose active st
 assert(page.includes("Вимшоттари"), "/dashas must expose Vimshottari as the active system");
 assert(page.includes("Махадаша"), "/dashas must show Mahadasha as primary reading layer");
 assert(page.includes("Антардаша"), "/dashas must show Antardasha as secondary reading layer");
+assert(page.includes("Пратьянтардаша"), "/dashas must show Pratyantardasha as the third reading layer");
 assert(page.includes("Объяснение"), "/dashas must keep one shared inspector area");
 
 for (const forbidden of ["Спросить AI", "Сгенерировать", "source.pending", "rawEvidence", "eligibleItems"]) {

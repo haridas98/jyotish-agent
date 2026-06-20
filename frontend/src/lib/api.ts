@@ -202,7 +202,9 @@ export type DashaPeriod = {
   duration_years: number;
   sequence_index: number;
   parent_lord?: string;
+  mahadasha_lord?: string;
   antardashas?: DashaPeriod[];
+  pratyantardashas?: DashaPeriod[];
   boundary_policy?: string;
 };
 

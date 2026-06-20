@@ -99,7 +99,17 @@ def vimshottari_payload(
                 **_period_payload(period),
                 "boundary_policy": DASHA_BOUNDARY_POLICY,
                 "antardashas": [
-                    _period_payload(antardasha, parent_lord=period.lord)
+                    {
+                        **_period_payload(antardasha, parent_lord=period.lord),
+                        "pratyantardashas": [
+                            _period_payload(
+                                pratyantardasha,
+                                parent_lord=antardasha.lord,
+                                mahadasha_lord=period.lord,
+                            )
+                            for pratyantardasha in _pratyantardashas_for(antardasha)
+                        ],
+                    }
                     for antardasha in _antardashas_for(period)
                 ],
             }
@@ -124,19 +134,34 @@ def active_vimshottari_periods(
             "as_of": as_of.isoformat(),
             "mahadasha": None,
             "antardasha": None,
+            "pratyantardasha": None,
             "mahadasha_antardashas": [],
+            "antardasha_pratyantardashas": [],
         }
 
     antardashas = _antardashas_for(mahadasha)
     antardasha = _active_period(antardashas, as_of)
+    pratyantardashas = _pratyantardashas_for(antardasha) if antardasha else []
+    pratyantardasha = _active_period(pratyantardashas, as_of)
     return {
         "as_of": as_of.isoformat(),
         "mahadasha": _period_payload(mahadasha),
         "antardasha": _period_payload(antardasha, parent_lord=mahadasha.lord)
         if antardasha
         else None,
+        "pratyantardasha": _period_payload(
+            pratyantardasha,
+            parent_lord=antardasha.lord if antardasha else None,
+            mahadasha_lord=mahadasha.lord,
+        )
+        if pratyantardasha
+        else None,
         "mahadasha_antardashas": [
             _period_payload(period, parent_lord=mahadasha.lord) for period in antardashas
+        ],
+        "antardasha_pratyantardashas": [
+            _period_payload(period, parent_lord=antardasha.lord, mahadasha_lord=mahadasha.lord)
+            for period in pratyantardashas
         ],
     }
 
@@ -167,10 +192,18 @@ def _active_period(
 
 
 def _antardashas_for(mahadasha: VimshottariPeriod) -> list[VimshottariPeriod]:
-    total_days = (mahadasha.ends_at - mahadasha.starts_at).total_seconds() / 86_400
+    return _subperiods_for(mahadasha, level=2)
+
+
+def _pratyantardashas_for(antardasha: VimshottariPeriod) -> list[VimshottariPeriod]:
+    return _subperiods_for(antardasha, level=3)
+
+
+def _subperiods_for(parent: VimshottariPeriod, level: int) -> list[VimshottariPeriod]:
+    total_days = (parent.ends_at - parent.starts_at).total_seconds() / 86_400
     periods: list[VimshottariPeriod] = []
-    starts_at = mahadasha.starts_at
-    parent_index = VIMSHOTTARI_SEQUENCE.index(mahadasha.lord)
+    starts_at = parent.starts_at
+    parent_index = VIMSHOTTARI_SEQUENCE.index(parent.lord)
     for offset in range(len(VIMSHOTTARI_SEQUENCE)):
         sequence_index = (parent_index + offset) % len(VIMSHOTTARI_SEQUENCE)
         lord = VIMSHOTTARI_SEQUENCE[sequence_index]
@@ -179,7 +212,7 @@ def _antardashas_for(mahadasha: VimshottariPeriod) -> list[VimshottariPeriod]:
         periods.append(
             VimshottariPeriod(
                 lord=lord,
-                level=2,
+                level=level,
                 starts_at=starts_at,
                 ends_at=ends_at,
                 duration_years=round(duration_days / VIMSHOTTARI_YEAR_DAYS, 10),
@@ -193,6 +226,7 @@ def _antardashas_for(mahadasha: VimshottariPeriod) -> list[VimshottariPeriod]:
 def _period_payload(
     period: VimshottariPeriod,
     parent_lord: str | None = None,
+    mahadasha_lord: str | None = None,
 ) -> dict[str, object]:
     payload = {
         "lord": period.lord,
@@ -204,4 +238,6 @@ def _period_payload(
     }
     if parent_lord:
         payload["parent_lord"] = parent_lord
+    if mahadasha_lord:
+        payload["mahadasha_lord"] = mahadasha_lord
     return payload
