@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import PrivateAppAccess
 from apps.calculations.chart import ChartInputError, build_birth_chart
 from apps.calculations.ephemeris import EphemerisUnavailable
+from apps.calculations.graha_drishti import graha_drishti_method_contract
 from apps.calculations.transit_coordinates import transit_coordinate_golden_metadata
 from apps.calculations.vargas import VARGA_METHOD_REGISTRY, varga_accuracy_contract, workbench_expert_varga_codes, workbench_varga_codes
 from apps.calculations.vimshottari import VIMSHOTTARI_SEQUENCE, VIMSHOTTARI_YEAR_DAYS, VIMSHOTTARI_YEARS
@@ -253,6 +254,7 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
         "supportsLocation": True,
         "supportsNowAction": True,
         "overlayContract": overlay,
+        "grahaDrishtiContract": _graha_drishti_dev_contract(),
         "capabilities": {
             "natalOverlay": True,
             "aspects": False,
@@ -326,6 +328,15 @@ def _transit_overlay_contract(natal_chart: dict, transit_chart: dict) -> dict[st
         "sadeSati": False,
         "ai": False,
         "rawEvidence": False,
+    }
+
+
+def _graha_drishti_dev_contract() -> dict[str, object]:
+    return {
+        **graha_drishti_method_contract(),
+        "sourceContext": "transit",
+        "targetContext": "natal",
+        "uiCapability": False,
     }
 
 

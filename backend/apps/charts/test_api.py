@@ -1633,6 +1633,14 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["supportsTimezone"] is True
     assert response.data["supportsLocation"] is True
     assert response.data["supportsNowAction"] is True
+    assert response.data["grahaDrishtiContract"]["methodId"] == "aspect.graha_drishti.parashara.v1"
+    assert response.data["grahaDrishtiContract"]["methodVersion"] == 1
+    assert response.data["grahaDrishtiContract"]["sourceContext"] == "transit"
+    assert response.data["grahaDrishtiContract"]["targetContext"] == "natal"
+    assert response.data["grahaDrishtiContract"]["uiCapability"] is False
+    assert response.data["grahaDrishtiContract"]["usesDegreeOrbs"] is False
+    assert response.data["grahaDrishtiContract"]["treatsConjunctionAsAspect"] is False
+    assert response.data["grahaDrishtiContract"]["includesRahuKetu"] is False
     assert response.data["capabilities"] == {
         "natalOverlay": True,
         "aspects": False,
