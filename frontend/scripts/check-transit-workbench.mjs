@@ -42,6 +42,7 @@ assert(page.includes('aria-label="Режим отображения"'), "/transi
 assert(!page.includes("Р РµР¶РёРј РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ"), "/transits mode switch must not contain mojibake");
 assert(page.includes('onClick={() => switchDisplayMode("novice")}') && page.includes('onClick={() => switchDisplayMode("astrologer")}'), "/transits must expose novice/astrologer mode controls through switchDisplayMode");
 assert(!page.includes("sourceRuleIds.map") && !page.includes("sourceRuleIds.join"), "/transits normal UI must not render raw Rashi Drishti source IDs");
+assert(page.includes("displayGrahaAspectKind(item.aspectKind)") && page.includes("displayAspectDistance(item.signDistance)"), "/transits must render Graha Drishti aspect kind and distance as human-readable labels");
 assert(page.includes("displayAspectRef(item.sourceEntityRef)") && page.includes("displayAspectRef(item.targetEntityRef)") && page.includes("displayAspectKind(item.aspectKind)"), "/transits must render Rashi Drishti refs and kinds as human-readable labels");
 assert(!page.includes("{item.aspectKind}") || page.indexOf("{item.aspectKind}") < page.indexOf("Rashi Drishti aspect layer"), "/transits normal Rashi Drishti UI must not render raw aspectKind IDs");
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");

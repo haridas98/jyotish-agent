@@ -44,6 +44,21 @@ function displayAspectKind(kind: string | undefined) {
   return "знаковый аспект";
 }
 
+function displayGrahaAspectKind(kind: string | undefined) {
+  if (kind === "opposition_7th" || kind === "general_7th") return "общий 7-й";
+  if (kind === "special_3rd") return "особый 3-й";
+  if (kind === "special_4th") return "особый 4-й";
+  if (kind === "special_5th") return "особый 5-й";
+  if (kind === "special_8th") return "особый 8-й";
+  if (kind === "special_9th") return "особый 9-й";
+  if (kind === "special_10th") return "особый 10-й";
+  return "аспект грахи";
+}
+
+function displayAspectDistance(distance: number | undefined) {
+  return typeof distance === "number" ? `расстояние: ${distance}` : "расстояние не указано";
+}
+
 type TransitViewMode = "transit_only" | "overlay" | "side_by_side";
 type DisplayMode = "novice" | "astrologer";
 
@@ -250,7 +265,7 @@ export default function TransitsPage() {
                 <div className="transit-aspect-lines" aria-label="Линии аспектов Graha Drishti">
                   {aspectRefs.slice(0, 24).map((item, index) => (
                     <span key={`${item.sourceEntityRef}-${item.targetEntityRef}-${item.aspectKind}-${index}`}>
-                      {item.sourceEntityRef} → {item.targetEntityRef} · {item.aspectKind} · {item.signDistance}
+                      {displayAspectRef(item.sourceEntityRef)} → {displayAspectRef(item.targetEntityRef)} · {displayGrahaAspectKind(item.aspectKind)} · {displayAspectDistance(item.signDistance)}
                     </span>
                   ))}
                 </div>

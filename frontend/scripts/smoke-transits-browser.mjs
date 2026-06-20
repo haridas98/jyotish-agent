@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 const explicitTargetUrl = process.env.TRANSITS_BROWSER_SMOKE_URL || "";
 const browserPath = process.env.BROWSER_EXECUTABLE_PATH || findBrowserExecutable();
 const forbiddenMarkers = ["source.pending", "rawEvidence", "Missing calculations", "sourceRuleIds", "movable_to_fixed", "fixed_to_movable", "dual_to_dual"];
+const forbiddenGrahaRowMarkers = ["transit:", "natal:", "special_", "general_", "sourceRuleIds", "rawEvidence"];
 
 if (!browserPath) {
   console.error("No Chrome/Edge/Chromium executable found. Set BROWSER_EXECUTABLE_PATH to run this browser smoke.");
@@ -121,6 +122,19 @@ try {
   assert(expertState.hasGrahaLayer === true, "Graha Drishti control must appear in astrologer mode.");
   assert(expertState.hasRashiLayer === true, "Rashi Drishti control must appear in astrologer mode.");
   assert(expertState.linesVisibleByDefault === false, "Aspect layers must stay collapsed by default in astrologer mode.");
+
+  await evaluate(pageCdp, `document.querySelector('[aria-label="Graha Drishti aspect layer"] button').click()`);
+  await waitForPageCondition(pageCdp, "Boolean(document.querySelector('[aria-label=\"Graha Drishti aspect layer\"] .transit-aspect-lines'))", "expanded Graha Drishti lines");
+
+  const grahaExpanded = await evaluate(pageCdp, `(() => {
+    const text = document.querySelector('[aria-label="Graha Drishti aspect layer"]')?.innerText || "";
+    return {
+      textLength: text.length,
+      forbiddenHits: ${JSON.stringify(forbiddenGrahaRowMarkers)}.filter((marker) => text.includes(marker)),
+    };
+  })()`);
+  assert(grahaExpanded.textLength > 0, "Expanded Graha Drishti layer must render aspect rows.");
+  assert(grahaExpanded.forbiddenHits.length === 0, `Expanded Graha Drishti leaked raw markers: ${grahaExpanded.forbiddenHits.join(", ")}`);
 
   await evaluate(pageCdp, `document.querySelector('[aria-label="Rashi Drishti aspect layer"] button').click()`);
   await waitForPageCondition(pageCdp, "Boolean(document.querySelector('[aria-label=\"Rashi Drishti aspect layer\"] .transit-aspect-lines'))", "expanded Rashi Drishti lines");
