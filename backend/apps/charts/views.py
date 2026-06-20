@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
@@ -143,6 +145,7 @@ def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: 
     return {
         "status": "ok",
         "schemaVersion": "dasha-workbench-check.v3",
+        "deployCommit": _current_deploy_commit(),
         "chartId": chart_id,
         "hasCalculation": has_calculation,
         "supportedSystems": ["vimshottari"],
@@ -171,6 +174,14 @@ def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: 
         "forbiddenScopesPresent": {"AI": False, "rawEvidence": False},
     }
 
+def _current_deploy_commit() -> str:
+    value = os.getenv("JYOTISH_DEPLOY_COMMIT", "").strip()
+    if value:
+        return value
+    try:
+        return (settings.ROOT_DIR / ".deploy-commit").read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
 
 def _legacy_dasha_antardashas(mahadasha: dict) -> list[dict[str, object]]:
     return _legacy_dasha_subperiods(

@@ -1225,7 +1225,8 @@ def test_dev_d1_workbench_check_rejects_bad_token(user):
 
 @pytest.mark.django_db
 @override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
-def test_dev_dasha_workbench_check_returns_vimshottari_contract(user):
+def test_dev_dasha_workbench_check_returns_vimshottari_contract(user, monkeypatch):
+    monkeypatch.setenv("JYOTISH_DEPLOY_COMMIT", "test-dasha-commit")
     client = APIClient()
     client.force_authenticate(user=user)
     create_response = client.post(
@@ -1266,6 +1267,7 @@ def test_dev_dasha_workbench_check_returns_vimshottari_contract(user):
     assert response["Cache-Control"] == "no-store"
     assert response.data["status"] == "ok"
     assert response.data["schemaVersion"] == "dasha-workbench-check.v3"
+    assert response.data["deployCommit"] == "test-dasha-commit"
     assert response.data["supportedViews"] == ["tree", "table", "timeline"]
     assert response.data["defaultView"] == "tree"
     assert response.data["supportsControlDate"] is True
