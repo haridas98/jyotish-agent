@@ -4,6 +4,18 @@ from collections import Counter
 from typing import Any
 
 SCHEMA_VERSION = "jyotish-jhora-parity-suite-v1"
+REVIEW_BATCH_CONTRACT_SCHEMA_VERSION = "jyotish-review-batch-contract-v1"
+P2_TARGET_REVIEWED_COUNT = 20
+REQUIRED_REVIEW_GROUPS = ("dst_sensitive", "historical", "boundary_sensitive", "modern_exact_timezone")
+REQUIRED_REVIEW_FOCUS = (
+    "timezone_dst",
+    "historical_timezone",
+    "panchanga",
+    "vargas",
+    "dashas",
+    "lagna",
+    "sunrise",
+)
 
 JHORA_PARITY_CASES: tuple[dict[str, Any], ...] = (
     {
@@ -306,6 +318,16 @@ JHORA_PARITY_CASES: tuple[dict[str, Any], ...] = (
 
 def jhora_parity_suite_manifest() -> dict[str, Any]:
     groups = Counter(str(case["group"]) for case in JHORA_PARITY_CASES)
+    cases = [
+        {
+            "id": str(case["id"]),
+            "group": str(case["group"]),
+            "label": str(case["label"]),
+            "focus": list(case["focus"]),
+            "input": dict(case["input"]),
+        }
+        for case in JHORA_PARITY_CASES
+    ]
     return {
         "schema_version": SCHEMA_VERSION,
         "case_count": len(JHORA_PARITY_CASES),
@@ -316,16 +338,8 @@ def jhora_parity_suite_manifest() -> dict[str, Any]:
             }
             for group, count in sorted(groups.items())
         },
-        "cases": [
-            {
-                "id": str(case["id"]),
-                "group": str(case["group"]),
-                "label": str(case["label"]),
-                "focus": list(case["focus"]),
-                "input": dict(case["input"]),
-            }
-            for case in JHORA_PARITY_CASES
-        ],
+        "cases": cases,
+        "review_batch_contract": assess_review_batch_coverage(cases),
         "capture_policy": {
             "status": "capture_queue_ready",
             "required_artifacts": [
@@ -343,4 +357,27 @@ def jhora_parity_suite_manifest() -> dict[str, Any]:
                 "timezone_offset",
             ],
         },
+    }
+
+
+def assess_review_batch_coverage(cases: list[dict[str, Any]] | tuple[dict[str, Any], ...]) -> dict[str, Any]:
+    group_counts = Counter(str(case.get("group") or "") for case in cases)
+    focus_counts: Counter[str] = Counter()
+    for case in cases:
+        focus_counts.update(str(item) for item in case.get("focus", []) if str(item).strip())
+
+    missing_groups = [group for group in REQUIRED_REVIEW_GROUPS if group_counts[group] <= 0]
+    missing_focus = [focus for focus in REQUIRED_REVIEW_FOCUS if focus_counts[focus] <= 0]
+    suite_case_count = len(cases)
+    return {
+        "schema_version": REVIEW_BATCH_CONTRACT_SCHEMA_VERSION,
+        "target_reviewed_count": P2_TARGET_REVIEWED_COUNT,
+        "suite_case_count": suite_case_count,
+        "required_groups": list(REQUIRED_REVIEW_GROUPS),
+        "required_focus": list(REQUIRED_REVIEW_FOCUS),
+        "group_counts": {group: int(group_counts[group]) for group in REQUIRED_REVIEW_GROUPS},
+        "focus_counts": {focus: int(focus_counts[focus]) for focus in REQUIRED_REVIEW_FOCUS},
+        "missing_required_groups": missing_groups,
+        "missing_required_focus": missing_focus,
+        "coverage_target_met": suite_case_count >= P2_TARGET_REVIEWED_COUNT and not missing_groups and not missing_focus,
     }

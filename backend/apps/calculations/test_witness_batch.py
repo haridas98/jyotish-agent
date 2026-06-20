@@ -17,6 +17,11 @@ def test_audit_jhora_pl_witness_batch_reports_missing_queue(tmp_path):
 
     assert payload["schema_version"] == "jyotish-witness-batch-audit-v1"
     assert payload["summary"]["suite_case_count"] >= 20
+    assert payload["summary"]["review_batch_contract"]["coverage_target_met"] is True
+    assert payload["summary"]["review_batch_contract"]["target_reviewed_count"] == 20
+    assert payload["summary"]["review_batch_contract"]["missing_required_groups"] == []
+    assert payload["summary"]["review_batch_contract"]["missing_required_focus"] == []
+    assert payload["review_batch_contract"] == payload["summary"]["review_batch_contract"]
     assert payload["summary"]["authoritative_ready_count"] == 0
     assert payload["summary"]["target_met"] is False
     assert "sterlitamak-1998-04-30-1345" in payload["summary"]["next_case_ids"]

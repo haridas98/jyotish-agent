@@ -101,6 +101,7 @@ def build_witness_capture_queue(
         for index, row in enumerate(audit["next_actions"][: max(limit, 0)])
     ]
     next_item = items[0] if items else None
+    review_batch_contract = dict(audit.get("review_batch_contract") or audit.get("summary", {}).get("review_batch_contract") or {})
     output_path = Path(output)
     markdown_path = Path(markdown_output) if str(markdown_output or "").strip() else None
     payload = {
@@ -111,6 +112,7 @@ def build_witness_capture_queue(
             "pl_root": str(pl_root),
             "target_reviewed_count": target_reviewed_count,
             "limit": limit,
+            "review_batch_contract": review_batch_contract,
         },
         "summary": {
             "queue_count": len(items),
@@ -122,6 +124,7 @@ def build_witness_capture_queue(
             "batch_review_ready_count": int(audit["summary"].get("batch_review_ready_count") or 0),
             "capture_started_count": int(audit["summary"].get("capture_started_count") or 0),
             "pl_witness_count": int(audit["summary"].get("pl_witness_count") or 0),
+            "review_batch_contract": review_batch_contract,
             "output": str(output_path),
             "markdown_output": str(markdown_path or ""),
         },
@@ -246,6 +249,8 @@ def _markdown_queue(payload: dict[str, Any]) -> str:
     lines = [
         "# Witness Capture Queue",
         "",
+        f"- Target reviewed count: {summary.get('review_batch_contract', {}).get('target_reviewed_count', summary.get('target_reviewed_count', 20))}",
+        f"- Coverage target met: {'yes' if summary.get('review_batch_contract', {}).get('coverage_target_met') else 'no'}",
         f"- Queue count: {summary['queue_count']}",
         f"- Batch review ready: {summary['batch_review_ready_count']}",
         f"- Remaining to target: {summary['remaining_to_target_count']}",

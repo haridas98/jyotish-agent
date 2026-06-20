@@ -20,6 +20,10 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     )
 
     assert payload["schema_version"] == "jyotish-witness-capture-queue-v1"
+    assert payload["metadata"]["review_batch_contract"]["coverage_target_met"] is True
+    assert payload["summary"]["review_batch_contract"]["target_reviewed_count"] == 20
+    assert payload["summary"]["review_batch_contract"]["missing_required_groups"] == []
+    assert payload["summary"]["review_batch_contract"]["missing_required_focus"] == []
     assert payload["summary"]["queue_count"] == 2
     assert payload["summary"]["remaining_to_target_count"] == 20
     first = payload["items"][0]
@@ -49,6 +53,8 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     assert json.loads(output.read_text(encoding="utf-8"))["summary"]["queue_count"] == 2
     markdown = markdown_output.read_text(encoding="utf-8")
     assert "# Witness Capture Queue" in markdown
+    assert "Target reviewed count: 20" in markdown
+    assert "Coverage target met: yes" in markdown
     assert "sterlitamak-1998-04-30-1345" in markdown
     assert "PL blockers: pl_witness_packet" in markdown
     assert "Suggested actions: Build JHora witness packet" in markdown

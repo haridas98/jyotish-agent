@@ -59,10 +59,14 @@ def audit_jhora_pl_witness_batch(
         case_rows.append(_case_row(case, case_jhora_records, case_pl_records))
 
     summary = _summary(case_rows, target_reviewed_count, manifest["case_count"], load_errors)
+    review_batch_contract = dict(manifest.get("review_batch_contract") or {})
+    review_batch_contract["target_reviewed_count"] = target_reviewed_count
+    summary["review_batch_contract"] = review_batch_contract
     return {
         "schema_version": SCHEMA_VERSION,
         "target_reviewed_count": target_reviewed_count,
         "suite_case_count": manifest["case_count"],
+        "review_batch_contract": review_batch_contract,
         "summary": summary,
         "groups": _group_summary(case_rows),
         "next_actions": _next_actions(
