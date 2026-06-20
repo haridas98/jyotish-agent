@@ -36,7 +36,9 @@ assert(page.includes('canShowGrahaDrishti'), "Graha Drishti must be gated by ast
 assert(page.includes('canShowRashiDrishti'), "Rashi Drishti must be gated by astrologer display mode");
 assert(page.includes("{canShowGrahaDrishti && aspectLayer ? ("), "Graha Drishti render condition must use the mode gate");
 assert(page.includes("{canShowRashiDrishti && rashiAspectLayer ? ("), "Rashi Drishti render condition must use the mode gate");
-assert(page.includes('setDisplayMode("novice")') && page.includes('setDisplayMode("astrologer")'), "/transits must expose novice/astrologer mode controls");
+assert(page.includes('aria-label="Режим отображения"'), "/transits mode switch must expose a readable UTF-8 aria label");
+assert(!page.includes("Р РµР¶РёРј РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ"), "/transits mode switch must not contain mojibake");
+assert(page.includes('onClick={() => switchDisplayMode("novice")}') && page.includes('onClick={() => switchDisplayMode("astrologer")}'), "/transits must expose novice/astrologer mode controls through switchDisplayMode");
 assert(!page.includes("sourceRuleIds.map") && !page.includes("sourceRuleIds.join"), "/transits normal UI must not render raw Rashi Drishti source IDs");
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");
 assert(nav.includes("/transits"), "shared nav must include transits route");

@@ -222,11 +222,11 @@ export default function TransitsPage() {
               </button>
             ))}
           </div>
-          <div className="dasha-control-bar transit-view-switch" aria-label="Р РµР¶РёРј РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ">
-            <button type="button" className={displayMode === "novice" ? "active" : ""} onClick={() => { setDisplayMode("novice"); switchDisplayMode("novice"); }}>
+          <div className="dasha-control-bar transit-view-switch" aria-label="Режим отображения">
+            <button type="button" className={displayMode === "novice" ? "active" : ""} onClick={() => switchDisplayMode("novice")}>
               Новичок
             </button>
-            <button type="button" className={displayMode === "astrologer" ? "active" : ""} onClick={() => { setDisplayMode("astrologer"); switchDisplayMode("astrologer"); }}>
+            <button type="button" className={displayMode === "astrologer" ? "active" : ""} onClick={() => switchDisplayMode("astrologer")}>
               Астролог
             </button>
           </div>
