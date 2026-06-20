@@ -17,7 +17,7 @@ def build_witness_artifact_plan(
     normalized_case_id = str(case_id)
     jhora_dir = _case_dir(Path(jhora_root), normalized_case_id)
     pl_dir = _case_dir(Path(pl_root), normalized_case_id)
-    review_path = Path(review_output_root) / f"{normalized_case_id}.json" if review_output_root else None
+    review_path = Path(review_output_root) / f"{normalized_case_id}.md" if review_output_root else None
     jhora_checks = _jhora_checks(jhora_dir)
     pl_checks = _pl_checks(pl_dir)
     jhora_missing = _missing_required_groups(jhora_checks)
@@ -64,7 +64,7 @@ def _jhora_checks(packet_dir: Path) -> list[dict[str, Any]]:
             "jhora_settings_evidence",
             "record_jhora_settings_and_timezone_dst_evidence",
         ),
-        _check(packet_dir / "screenshots", "screenshots", "jhora_screenshots", "attach_jhora_screenshots"),
+        _screenshot_check(packet_dir / "screenshots", "jhora_screenshots", "attach_jhora_screenshots"),
     ]
 
 
@@ -97,7 +97,7 @@ def _pl_checks(packet_dir: Path) -> list[dict[str, Any]]:
             "pl_settings_evidence",
             "record_pl_settings_and_timezone_dst_evidence",
         ),
-        _check(packet_dir / "screenshots", "screenshots", "pl_screenshots", "attach_pl_screenshots"),
+        _screenshot_check(packet_dir / "screenshots", "pl_screenshots", "attach_pl_screenshots"),
     ]
 
 
@@ -117,6 +117,30 @@ def _check(
         "evidence_group": evidence_group,
         "next_action_key": next_action_key,
     }
+
+
+def _screenshot_check(path: Path, evidence_group: str, next_action_key: str) -> dict[str, Any]:
+    files = _screenshot_files(path)
+    return {
+        "name": "screenshots",
+        "path": str(path),
+        "exists": bool(files),
+        "files": files,
+        "required_for_review": True,
+        "evidence_group": evidence_group,
+        "next_action_key": next_action_key,
+    }
+
+
+def _screenshot_files(path: Path) -> list[str]:
+    if not path.is_dir():
+        return []
+    allowed = {".png", ".jpg", ".jpeg", ".webp"}
+    return [
+        str(item)
+        for item in sorted(path.iterdir(), key=lambda candidate: candidate.name.lower())
+        if item.is_file() and item.suffix.lower() in allowed
+    ]
 
 
 def _missing_required_groups(checks: list[dict[str, Any]]) -> list[str]:
