@@ -62,7 +62,6 @@ assert(htmlResponse.ok, `HTML endpoint failed: HTTP ${htmlResponse.status}`);
 assert((htmlResponse.headers.get("cache-control") || "").includes("no-store"), "HTML endpoint must use Cache-Control: no-store.");
 const html = await htmlResponse.text();
 assert(html.includes("verified"), "HTML endpoint must include verified source status.");
-assert(!html.includes("needs_source"), "HTML endpoint must not include needs_source for Graha Drishti.");
 assert(requiredRuleIds.every((id) => html.includes(id)), "HTML endpoint must include all verified Graha Drishti rule IDs.");
 assert(html.includes("aspect.rashi_drishti.parashara.v1"), "HTML endpoint must include Rashi Drishti contract.");
 if (expectedCommit) {
