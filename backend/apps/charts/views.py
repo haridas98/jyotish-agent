@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.utils.dateparse import parse_datetime
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import PrivateAppAccess
 from apps.calculations.vargas import VARGA_METHOD_REGISTRY, varga_accuracy_contract, workbench_expert_varga_codes, workbench_varga_codes
+from apps.calculations.vimshottari import VIMSHOTTARI_SEQUENCE, VIMSHOTTARI_YEAR_DAYS, VIMSHOTTARI_YEARS
 
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation, ChartRelationship
 from .services import (
@@ -123,24 +125,64 @@ def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: 
     vimshottari = ((chart.get("dashas") or {}).get("vimshottari") or {}) if isinstance(chart, dict) else {}
     mahadashas = vimshottari.get("mahadashas") if isinstance(vimshottari.get("mahadashas"), list) else []
     current_mahadasha = mahadashas[0] if mahadashas and isinstance(mahadashas[0], dict) else {}
-    antardashas = vimshottari.get("antardashas") if isinstance(vimshottari.get("antardashas"), list) else []
+    antardashas = current_mahadasha.get("antardashas") if isinstance(current_mahadasha.get("antardashas"), list) else []
+    if not antardashas:
+        antardashas = vimshottari.get("antardashas") if isinstance(vimshottari.get("antardashas"), list) else []
+    if not antardashas:
+        antardashas = _legacy_dasha_antardashas(current_mahadasha)
     current_antardasha = antardashas[0] if antardashas and isinstance(antardashas[0], dict) else {}
     return {
         "status": "ok",
-        "schemaVersion": "dasha-workbench-check.v1",
+        "schemaVersion": "dasha-workbench-check.v2",
         "chartId": chart_id,
         "hasCalculation": has_calculation,
         "supportedSystems": ["vimshottari"],
         "activeSystem": "vimshottari",
+        "methodId": str(vimshottari.get("methodId") or "dasha.vimshottari.parashara.v1"),
+        "methodVersion": str(vimshottari.get("methodVersion") or "1"),
+        "sourceAnchor": str(vimshottari.get("sourceAnchor") or "BPHS 46.2-16"),
+        "boundaryPolicy": str(vimshottari.get("boundary_policy") or "start_inclusive_end_exclusive"),
         "mahadashaCount": len(mahadashas),
         "antardashaCount": len(antardashas),
         "yearLengthDays": vimshottari.get("year_length_days") or 365.25,
         "currentMahadashaLord": str(current_mahadasha.get("lord") or ""),
         "currentAntardashaLord": str(current_antardasha.get("lord") or ""),
+        "currentAntardashaParentLord": str(current_antardasha.get("parent_lord") or current_mahadasha.get("lord") or ""),
         "entityInspectorCount": 1,
         "supportedModes": ["novice", "astrologer"],
         "forbiddenScopesPresent": {"AI": False, "rawEvidence": False},
     }
+
+
+def _legacy_dasha_antardashas(mahadasha: dict) -> list[dict[str, object]]:
+    lord = str(mahadasha.get("lord") or "")
+    starts_at = parse_datetime(str(mahadasha.get("starts_at") or ""))
+    ends_at = parse_datetime(str(mahadasha.get("ends_at") or ""))
+    if lord not in VIMSHOTTARI_SEQUENCE or starts_at is None or ends_at is None or starts_at >= ends_at:
+        return []
+
+    total_seconds = (ends_at - starts_at).total_seconds()
+    parent_index = VIMSHOTTARI_SEQUENCE.index(lord)
+    periods: list[dict[str, object]] = []
+    current_start = starts_at
+    for offset in range(len(VIMSHOTTARI_SEQUENCE)):
+        sequence_index = (parent_index + offset) % len(VIMSHOTTARI_SEQUENCE)
+        period_lord = VIMSHOTTARI_SEQUENCE[sequence_index]
+        duration_seconds = total_seconds * (VIMSHOTTARI_YEARS[period_lord] / 120.0)
+        current_end = current_start + (ends_at - starts_at) * (duration_seconds / total_seconds)
+        periods.append(
+            {
+                "lord": period_lord,
+                "parent_lord": lord,
+                "level": 2,
+                "starts_at": current_start.isoformat(),
+                "ends_at": current_end.isoformat(),
+                "duration_years": round((current_end - current_start).total_seconds() / 86_400 / VIMSHOTTARI_YEAR_DAYS, 10),
+                "sequence_index": sequence_index,
+            }
+        )
+        current_start = current_end
+    return periods
 
 def _workbench_supported_scopes(profile: BirthProfile | None = None) -> tuple[str, ...]:
     codes = tuple(workbench_varga_codes())

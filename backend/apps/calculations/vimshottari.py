@@ -18,6 +18,10 @@ VIMSHOTTARI_YEARS = {
     "Budha": 17.0,
 }
 VIMSHOTTARI_YEAR_DAYS = 365.25
+VIMSHOTTARI_METHOD_ID = "dasha.vimshottari.parashara.v1"
+VIMSHOTTARI_METHOD_VERSION = "1"
+VIMSHOTTARI_SOURCE_ANCHOR = "BPHS 46.2-16"
+DASHA_BOUNDARY_POLICY = "start_inclusive_end_exclusive"
 
 
 @dataclass(frozen=True)
@@ -30,6 +34,14 @@ class VimshottariPeriod:
     sequence_index: int
 
 
+@dataclass(frozen=True)
+class VimshottariBirthBalance:
+    moon_nakshatra_index: int
+    lord_index: int
+    elapsed_fraction: float
+    remaining_fraction: float
+
+
 def vimshottari_mahadashas(
     moon_longitude: float,
     birth_moment: datetime,
@@ -40,20 +52,14 @@ def vimshottari_mahadashas(
     if count < 1:
         return []
 
-    normalized = normalize_degrees(moon_longitude)
-    nak_idx = nakshatra_index(normalized)
-    lord_index = nak_idx % len(VIMSHOTTARI_SEQUENCE)
-    nakshatra_start = nak_idx * DEGREES_PER_NAKSHATRA
-    elapsed_fraction = (normalized - nakshatra_start) / DEGREES_PER_NAKSHATRA
-    remaining_fraction = max(0.0, min(1.0, 1.0 - elapsed_fraction))
-
+    balance = _birth_balance(moon_longitude)
     periods: list[VimshottariPeriod] = []
     starts_at = birth_moment
     for offset in range(count):
-        sequence_index = (lord_index + offset) % len(VIMSHOTTARI_SEQUENCE)
+        sequence_index = (balance.lord_index + offset) % len(VIMSHOTTARI_SEQUENCE)
         lord = VIMSHOTTARI_SEQUENCE[sequence_index]
         years = VIMSHOTTARI_YEARS[lord]
-        duration_years = years * remaining_fraction if offset == 0 else years
+        duration_years = years * balance.remaining_fraction if offset == 0 else years
         ends_at = starts_at + timedelta(days=duration_years * VIMSHOTTARI_YEAR_DAYS)
         periods.append(
             VimshottariPeriod(
@@ -75,20 +81,29 @@ def vimshottari_payload(
     birth_moment: datetime,
     count: int = 9,
 ) -> dict[str, object]:
+    balance = _birth_balance(moon_longitude)
+    mahadashas = vimshottari_mahadashas(moon_longitude, birth_moment, count=count)
     return {
         "system": "vimshottari",
         "level": "mahadasha",
+        "methodId": VIMSHOTTARI_METHOD_ID,
+        "methodVersion": VIMSHOTTARI_METHOD_VERSION,
+        "sourceAnchor": VIMSHOTTARI_SOURCE_ANCHOR,
+        "boundary_policy": DASHA_BOUNDARY_POLICY,
         "year_length_days": VIMSHOTTARI_YEAR_DAYS,
+        "moon_nakshatra_index": balance.moon_nakshatra_index,
+        "birth_elapsed_fraction": round(balance.elapsed_fraction, 10),
+        "birth_balance_fraction": round(balance.remaining_fraction, 10),
         "mahadashas": [
             {
-                "lord": period.lord,
-                "level": period.level,
-                "starts_at": period.starts_at.isoformat(),
-                "ends_at": period.ends_at.isoformat(),
-                "duration_years": period.duration_years,
-                "sequence_index": period.sequence_index,
+                **_period_payload(period),
+                "boundary_policy": DASHA_BOUNDARY_POLICY,
+                "antardashas": [
+                    _period_payload(antardasha, parent_lord=period.lord)
+                    for antardasha in _antardashas_for(period)
+                ],
             }
-            for period in vimshottari_mahadashas(moon_longitude, birth_moment, count=count)
+            for period in mahadashas
         ],
     }
 
@@ -124,6 +139,21 @@ def active_vimshottari_periods(
             _period_payload(period, parent_lord=mahadasha.lord) for period in antardashas
         ],
     }
+
+
+def _birth_balance(moon_longitude: float) -> VimshottariBirthBalance:
+    normalized = normalize_degrees(moon_longitude)
+    nak_idx = nakshatra_index(normalized)
+    lord_index = nak_idx % len(VIMSHOTTARI_SEQUENCE)
+    nakshatra_start = nak_idx * DEGREES_PER_NAKSHATRA
+    elapsed_fraction = (normalized - nakshatra_start) / DEGREES_PER_NAKSHATRA
+    remaining_fraction = max(0.0, min(1.0, 1.0 - elapsed_fraction))
+    return VimshottariBirthBalance(
+        moon_nakshatra_index=nak_idx,
+        lord_index=lord_index,
+        elapsed_fraction=elapsed_fraction,
+        remaining_fraction=remaining_fraction,
+    )
 
 
 def _active_period(

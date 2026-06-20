@@ -1251,7 +1251,7 @@ def test_dev_dasha_workbench_check_returns_vimshottari_contract(user):
                     "level": "mahadasha",
                     "year_length_days": 365.25,
                     "mahadashas": [
-                        {"lord": "Ketu", "level": 1, "starts_at": "1990-08-15T10:24:00+00:00", "ends_at": "1995-01-01T00:00:00+00:00", "duration_years": 4.4, "sequence_index": 0},
+                        {"lord": "Ketu", "level": 1, "starts_at": "1990-08-15T10:24:00+00:00", "ends_at": "1995-01-01T00:00:00+00:00", "duration_years": 4.4, "sequence_index": 0, "boundary_policy": "start_inclusive_end_exclusive", "antardashas": [{"lord": "Ketu", "parent_lord": "Ketu", "level": 2, "starts_at": "1990-08-15T10:24:00+00:00", "ends_at": "1991-01-01T00:00:00+00:00", "duration_years": 0.38, "sequence_index": 0}, {"lord": "Shukra", "parent_lord": "Ketu", "level": 2, "starts_at": "1991-01-01T00:00:00+00:00", "ends_at": "1991-10-01T00:00:00+00:00", "duration_years": 0.73, "sequence_index": 1}]},
                         {"lord": "Shukra", "level": 1, "starts_at": "1995-01-01T00:00:00+00:00", "ends_at": "2015-01-01T00:00:00+00:00", "duration_years": 20.0, "sequence_index": 1},
                     ],
                 }
@@ -1264,19 +1264,67 @@ def test_dev_dasha_workbench_check_returns_vimshottari_contract(user):
 
     assert response.status_code == 200
     assert response["Cache-Control"] == "no-store"
-    assert response.data == {
-        "status": "ok",
-        "schemaVersion": "dasha-workbench-check.v1",
-        "chartId": profile.id,
-        "hasCalculation": True,
-        "supportedSystems": ["vimshottari"],
-        "activeSystem": "vimshottari",
-        "mahadashaCount": 2,
-        "antardashaCount": 0,
-        "yearLengthDays": 365.25,
-        "currentMahadashaLord": "Ketu",
-        "currentAntardashaLord": "",
-        "entityInspectorCount": 1,
-        "supportedModes": ["novice", "astrologer"],
-        "forbiddenScopesPresent": {"AI": False, "rawEvidence": False},
-    }
+    assert response.data["status"] == "ok"
+    assert response.data["schemaVersion"] == "dasha-workbench-check.v2"
+    assert response.data["chartId"] == profile.id
+    assert response.data["hasCalculation"] is True
+    assert response.data["supportedSystems"] == ["vimshottari"]
+    assert response.data["activeSystem"] == "vimshottari"
+    assert response.data["methodId"] == "dasha.vimshottari.parashara.v1"
+    assert response.data["methodVersion"] == "1"
+    assert response.data["sourceAnchor"] == "BPHS 46.2-16"
+    assert response.data["boundaryPolicy"] == "start_inclusive_end_exclusive"
+    assert response.data["yearLengthDays"] == 365.25
+    assert response.data["mahadashaCount"] == 2
+    assert response.data["antardashaCount"] == 2
+    assert response.data["currentMahadashaLord"] == "Ketu"
+    assert response.data["currentAntardashaLord"] == "Ketu"
+    assert response.data["currentAntardashaParentLord"] == "Ketu"
+    assert response.data["entityInspectorCount"] == 1
+    assert response.data["supportedModes"] == ["novice", "astrologer"]
+    assert response.data["forbiddenScopesPresent"] == {"AI": False, "rawEvidence": False}
+
+
+@pytest.mark.django_db
+@override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
+def test_dev_dasha_workbench_check_derives_antardashas_for_legacy_payload(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Legacy dasha check",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result={
+            "dashas": {
+                "vimshottari": {
+                    "system": "vimshottari",
+                    "level": "mahadasha",
+                    "year_length_days": 365.25,
+                    "mahadashas": [
+                        {"lord": "Ketu", "level": 1, "starts_at": "2000-01-01T00:00:00+00:00", "ends_at": "2006-12-31T18:00:00+00:00", "duration_years": 7.0, "sequence_index": 0},
+                    ],
+                }
+            },
+            "birth": {},
+        },
+    )
+
+    response = APIClient().get(f"/api/dev/dasha-workbench-check?token=dev-token&chart_id={profile.id}")
+
+    assert response.status_code == 200
+    assert response.data["schemaVersion"] == "dasha-workbench-check.v2"
+    assert response.data["antardashaCount"] == 9
+    assert response.data["currentAntardashaLord"] == "Ketu"
+    assert response.data["currentAntardashaParentLord"] == "Ketu"
