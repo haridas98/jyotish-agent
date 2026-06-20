@@ -1,4 +1,5 @@
 import pytest
+from django.core.management import call_command
 
 
 JHORA_EXPORT_TEXT = """Natal Chart
@@ -108,3 +109,30 @@ def test_capture_jhora_witness_batch_exports_skips_existing_file(tmp_path):
 
     assert payload["summary"] == {"selected": 1, "captured": 0, "skipped": 1, "failed": 0}
     assert payload["results"][0]["status"] == "skipped"
+
+
+def test_build_jhora_witness_batch_packets_includes_artifact_plan(tmp_path):
+    from io import StringIO
+    import json
+
+    output_root = tmp_path / "jhora" / "batch-queue"
+    stdout = StringIO()
+
+    call_command(
+        "build_jhora_witness_batch_packets",
+        "--output-root",
+        str(output_root),
+        "--case-id",
+        "sterlitamak-1998-04-30-1345",
+        "--json",
+        stdout=stdout,
+    )
+
+    payload = json.loads(stdout.getvalue())
+    result = payload["results"][0]
+
+    assert result["status"] == "written"
+    assert result["paths"]["packet"].endswith("packet.json")
+    assert result["paths"]["fixture"].endswith("fixture.json")
+    assert result["artifact_plan"]["jhora"]["packet_dir"] == str(output_root / "sterlitamak-1998-04-30-1345")
+    assert result["artifact_plan"]["jhora"]["checks"][0]["path"].endswith("packet.json")

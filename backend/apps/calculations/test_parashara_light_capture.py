@@ -132,3 +132,31 @@ def test_parashara_light_capture_controls_respects_limit():
     controls = _capture_controls(FakeWindow(), max_controls=2)
 
     assert [control["text"] for control in controls] == ["one", "two"]
+
+
+def test_build_parashara_light_witness_batch_packets_includes_artifact_plan(tmp_path):
+    from apps.calculations.management.commands.build_parashara_light_witness_batch_packets import (
+        build_parashara_light_witness_batch_packets,
+    )
+
+    output_root = tmp_path / "pl7" / "batch-queue"
+
+    payload = build_parashara_light_witness_batch_packets(
+        output_root=output_root,
+        case_ids=["sterlitamak-1998-04-30-1345"],
+        force=True,
+    )
+
+    row = payload["created"][0]
+
+    assert row["paths"]["packet"].endswith("packet.json")
+    assert row["paths"]["manual_values_template"].endswith("manual-values-template.json")
+    assert row["artifact_plan"]["parashara_light"]["packet_dir"] == str(
+        output_root / "sterlitamak-1998-04-30-1345"
+    )
+    assert any(
+        check["name"] == "manual_values_template" and check["exists"] is True
+        for check in row["artifact_plan"]["parashara_light"]["checks"]
+    )
+    index = (output_root / "_index.json").read_text(encoding="utf-8")
+    assert "artifact_plan" in index

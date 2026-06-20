@@ -44,7 +44,16 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     assert first["next_command"].endswith(
         "manage.py build_jhora_witness_batch_packets --case-id 'sterlitamak-1998-04-30-1345'"
     )
+    assert first["artifact_plan"]["schema_version"] == "jyotish-witness-artifact-plan-v1"
+    assert first["artifact_plan"]["jhora"]["packet_dir"].endswith(
+        "missing-jhora\\batch-queue\\sterlitamak-1998-04-30-1345"
+    ) or first["artifact_plan"]["jhora"]["packet_dir"].endswith(
+        "missing-jhora/batch-queue/sterlitamak-1998-04-30-1345"
+    )
+    assert "jhora_complete_calculations_text" in first["artifact_plan"]["jhora"]["missing_required_evidence_groups"]
+    assert "manual_witness_values" in first["artifact_plan"]["parashara_light"]["missing_required_evidence_groups"]
     assert payload["next_item"]["id"] == "sterlitamak-1998-04-30-1345"
+    assert payload["next_item"]["artifact_plan"] == first["artifact_plan"]
     assert payload["next_action_key"] == "build_jhora_witness_batch_packets"
     assert payload["next_command_kind"] == "auto_capture"
     assert payload["next_step_label"] == "Run capture command"
@@ -60,6 +69,12 @@ def test_build_witness_capture_queue_writes_json_and_markdown(tmp_path):
     assert "Suggested actions: Build JHora witness packet" in markdown
     assert "Next step: Run capture command" in markdown
     assert "Next command:" in markdown
+    assert "JHora packet dir:" in markdown
+    assert "PL packet dir:" in markdown
+    assert "Missing evidence:" in markdown
+    assert "mark_jhora_witness_reviewed" not in markdown
+    assert "seal_witness_case" not in markdown
+    assert "--ack-diff-open" not in markdown
 
 
 def test_build_witness_capture_queue_command_outputs_json(tmp_path):

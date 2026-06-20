@@ -14,6 +14,7 @@ from apps.calculations.parashara_light_verification_packet import (
     build_parashara_light_verification_packet,
     write_parashara_light_verification_packet,
 )
+from apps.calculations.witness_artifact_plan import build_witness_artifact_plan
 
 
 SCHEMA_VERSION = "jyotish-parashara-light-witness-batch-packets-v1"
@@ -204,6 +205,11 @@ def _build_case_packet(
         "review_status": packet["fixture"]["review_status"],
         "manual_template_count": len(manual_template),
         "paths": paths,
+        "artifact_plan": build_witness_artifact_plan(
+            case_id=case_id,
+            jhora_root=case_dir.parent,
+            pl_root=case_dir.parent,
+        ),
     }
 
 

@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.calculations.jhora_parity_suite import jhora_parity_suite_manifest
+from apps.calculations.witness_artifact_plan import build_witness_artifact_plan
 from apps.calculations.jhora_verification_packet import (
     build_jhora_verification_packet,
     write_jhora_verification_packet,
@@ -122,6 +123,11 @@ def _build_case_packet(case: dict[str, Any], output_root: Path, options: dict[st
         "review_status": packet["fixture"]["review_status"],
         "output_dir": str(output_dir),
         "paths": paths,
+        "artifact_plan": build_witness_artifact_plan(
+            case_id=case_id,
+            jhora_root=output_dir.parent,
+            pl_root=output_dir.parent,
+        ),
     }
 
 

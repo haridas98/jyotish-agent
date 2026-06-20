@@ -9,6 +9,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.calculations.witness_action_labels import suggested_action_labels
+from apps.calculations.witness_artifact_plan import build_witness_artifact_plan
 from apps.calculations.witness_batch import audit_jhora_pl_witness_batch
 from apps.calculations.witness_powershell import ps_quote
 
@@ -97,7 +98,13 @@ def build_witness_capture_queue(
     )
     case_rows = {str(row.get("id") or ""): row for row in audit.get("cases", []) if isinstance(row, dict)}
     items = [
-        _queue_item(index + 1, _with_case_records(row, case_rows))
+        _queue_item(
+            index + 1,
+            _with_case_records(row, case_rows),
+            jhora_root=jhora_root,
+            pl_root=pl_root,
+            review_output_root=Path(output).parent,
+        )
         for index, row in enumerate(audit["next_actions"][: max(limit, 0)])
     ]
     next_item = items[0] if items else None
@@ -145,7 +152,14 @@ def build_witness_capture_queue(
     return payload
 
 
-def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
+def _queue_item(
+    priority: int,
+    row: dict[str, Any],
+    *,
+    jhora_root: str | Path | None = None,
+    pl_root: str | Path | None = None,
+    review_output_root: str | Path | None = None,
+) -> dict[str, Any]:
     missing_jhora = _string_list(row.get("missing_for_authoritative_review"))
     missing_pl = _string_list(row.get("missing_secondary_witness"))
     suggested_actions = _string_list(row.get("suggested_actions"))
@@ -156,7 +170,7 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
     auto_command = _next_auto_command(case_id, next_action)
     manual_command = _next_manual_review_command(row, next_action)
     command_kind = "auto_capture" if auto_command else "manual_review" if manual_command else "manual"
-    return {
+    item = {
         "priority": priority,
         "id": case_id,
         "group": str(row.get("group") or ""),
@@ -176,6 +190,14 @@ def _queue_item(priority: int, row: dict[str, Any]) -> dict[str, Any]:
         "manual_review_command": manual_command,
         "blocker_count": len(missing_jhora) + len(missing_pl),
     }
+    if jhora_root is not None and pl_root is not None:
+        item["artifact_plan"] = build_witness_artifact_plan(
+            case_id=case_id,
+            jhora_root=jhora_root,
+            pl_root=pl_root,
+            review_output_root=review_output_root,
+        )
+    return item
 
 
 def _with_case_records(action: dict[str, Any], case_rows: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -267,6 +289,7 @@ def _markdown_queue(payload: dict[str, Any]) -> str:
                 f"- Status: {item['status']}",
                 f"- JHora blockers: {', '.join(item['capture_targets']['jhora']) or 'none'}",
                 f"- PL blockers: {', '.join(item['capture_targets']['parashara_light']) or 'none'}",
+                *_artifact_plan_markdown(item),
                 f"- Suggested actions: {', '.join(item.get('suggested_action_labels') or item['suggested_actions']) or 'review'}",
                 f"- Next step: {item['next_step_label']}",
                 f"- Next command: {item['next_command'] or 'manual review required'}",
@@ -275,6 +298,23 @@ def _markdown_queue(payload: dict[str, Any]) -> str:
             ]
         )
     return "\n".join(lines)
+
+
+def _artifact_plan_markdown(item: dict[str, Any]) -> list[str]:
+    plan = item.get("artifact_plan") if isinstance(item.get("artifact_plan"), dict) else {}
+    if not plan:
+        return []
+    jhora = plan.get("jhora") if isinstance(plan.get("jhora"), dict) else {}
+    pl = plan.get("parashara_light") if isinstance(plan.get("parashara_light"), dict) else {}
+    missing = sorted(
+        set(jhora.get("missing_required_evidence_groups") or [])
+        | set(pl.get("missing_required_evidence_groups") or [])
+    )
+    return [
+        f"- JHora packet dir: {jhora.get('packet_dir', '')}",
+        f"- PL packet dir: {pl.get('packet_dir', '')}",
+        f"- Missing evidence: {', '.join(missing) or 'none'}",
+    ]
 
 
 def _text_summary(payload: dict[str, Any]) -> str:
