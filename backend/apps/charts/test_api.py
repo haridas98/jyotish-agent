@@ -1458,7 +1458,7 @@ def test_transit_workbench_builds_chart_for_control_moment(user, monkeypatch):
     assert response.data["overlay"]["housesRelativeTo"] == "natal"
     assert response.data["overlay"]["natalObjectCount"] == 0
     assert response.data["overlay"]["transitObjectCount"] == 10
-    assert response.data["overlay"]["aspects"] is False
+    assert response.data["overlay"]["aspects"] is True
     assert response.data["overlay"]["ai"] is False
     assert response.data["capabilities"]["ai"] is False
     assert "raw" not in response.data
@@ -1639,6 +1639,7 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["transitObjectCount"] == 10
     assert response.data["overlayContract"]["housesRelativeTo"] == "natal"
     assert response.data["overlayContract"]["legendRequired"] is True
+    assert response.data["overlayContract"]["aspects"] is True
     assert response.data["overlayContract"]["natalObjectRefs"][0] == "natal:point.LAGNA"
     assert response.data["overlayContract"]["transitObjectRefs"][0] == "transit:point.LAGNA"
     assert response.data["supportsControlDate"] is True

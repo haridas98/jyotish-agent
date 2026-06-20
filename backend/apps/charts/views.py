@@ -323,7 +323,7 @@ def _transit_overlay_contract(natal_chart: dict, transit_chart: dict) -> dict[st
         "transitObjectCount": len(transit_objects),
         "natalObjectRefs": [item["objectRef"] for item in natal_objects],
         "transitObjectRefs": [item["objectRef"] for item in transit_objects],
-        "aspects": False,
+        "aspects": True,
         "orbs": False,
         "ashtakavarga": False,
         "sadeSati": False,
