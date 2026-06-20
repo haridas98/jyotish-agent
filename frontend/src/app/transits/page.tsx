@@ -26,6 +26,14 @@ function compactNumber(value: unknown) {
   return typeof value === "number" ? Number(value.toFixed(6)) : value;
 }
 
+type TransitViewMode = "transit_only" | "overlay" | "side_by_side";
+
+const TRANSIT_VIEW_MODES: Array<{ id: TransitViewMode; label: string }> = [
+  { id: "transit_only", label: "Только транзиты" },
+  { id: "overlay", label: "Натал + транзиты" },
+  { id: "side_by_side", label: "Две карты рядом" },
+];
+
 export default function TransitsPage() {
   const initialNow = useMemo(() => nowParts(), []);
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
@@ -36,6 +44,7 @@ export default function TransitsPage() {
   const [latitude, setLatitude] = useState("53.6304");
   const [longitude, setLongitude] = useState("55.9308");
   const [model, setModel] = useState<Record<string, unknown> | null>(null);
+  const [viewMode, setViewMode] = useState<TransitViewMode>("transit_only");
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [loading, setLoading] = useState(false);
 
@@ -90,6 +99,9 @@ export default function TransitsPage() {
     setTime(parts.time);
   };
 
+  const overlay = (model?.overlay as { natalObjectCount?: number; transitObjectCount?: number; housesRelativeTo?: string } | undefined) ?? null;
+  const natalModel = (model?.natal as { hasCalculation?: boolean; grahas?: unknown[]; specialPoints?: unknown[] } | undefined) ?? null;
+
   const d1Model = useMemo(() => {
     if (!model || !selectedProfile) return null;
     const calculation = {
@@ -142,10 +154,22 @@ export default function TransitsPage() {
             <span>Термины: RU / EN / SA / Кратко</span>
             <span>Слои: дома, знаки, грахи, Лагна, градусы, накшатры, пады</span>
           </div>
+          <div className="dasha-control-bar transit-view-switch" aria-label="Режим наложения транзитов">
+            {TRANSIT_VIEW_MODES.map((item) => (
+              <button key={item.id} type="button" className={viewMode === item.id ? "active" : ""} onClick={() => setViewMode(item.id)}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="product-status transit-overlay-contract">
+            <strong>Легенда:</strong> Натал = сохранённая D1, Транзит = контрольный момент. Дома в overlay читаются от натальной карты; аспекты, орбисы, прогнозы и AI не строятся.
+            {overlay ? <span> Контракт: {overlay.natalObjectCount ?? 0} натальных объектов, {overlay.transitObjectCount ?? 0} транзитных объектов, один EntityInspector.</span> : null}
+            {natalModel?.hasCalculation === false ? <span> Для overlay нужен сохранённый D1-расчёт.</span> : null}
+          </div>
           {selectedProfile ? <p className="dasha-empty-note">{profileMeta(selectedProfile)}</p> : <a href="/charts/new">Создать карту</a>}
           {status ? <div className="product-status">{status}</div> : null}
           {loading && !d1Model ? <D1ChartWorkbenchShell status="Открываю транзитную D1..." /> : null}
-          {d1Model ? <D1ChartWorkbench model={d1Model} status="Транзитная карта D1: факты без прогнозов, аспектов и AI." /> : null}
+          {d1Model ? <D1ChartWorkbench model={d1Model} status={viewMode === "transit_only" ? "Транзитная карта D1: факты без прогнозов, аспектов и AI." : "Режим overlay: натальные и транзитные refs разделены; открываются в одном EntityInspector."} /> : null}
         </section>
       </section>
     </ProductShell>

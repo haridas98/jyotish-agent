@@ -1443,17 +1443,23 @@ def test_transit_workbench_builds_chart_for_control_moment(user, monkeypatch):
 
     assert response.status_code == 200
     assert len(seen_inputs) == 1
-    assert response.data["schemaVersion"] == "transit-workbench.v2"
+    assert response.data["schemaVersion"] == "transit-workbench.v3"
     assert response.data["transitMoment"] == {"isoDateTime": "2026-06-20T12:30:00+02:00", "timezone": "Europe/Berlin"}
     assert response.data["location"] == {"label": "Berlin", "latitude": 52.5, "longitude": 13.4}
     assert response.data["method"]["methodId"] == "transit.d1.drik.v1"
     assert response.data["method"]["methodVersion"] == "1"
     assert response.data["method"]["positionContext"] == "transit"
-    assert response.data["calculationContract"]["usesNatalOverlay"] is False
+    assert response.data["calculationContract"]["usesNatalOverlay"] is True
     assert response.data["calculationContract"]["usesAspects"] is False
     assert response.data["grahas"][0]["objectRef"] == "transit:graha.SU"
     assert response.data["grahas"][0]["context"] == "transit"
     assert response.data["specialPoints"][0]["objectRef"] == "transit:point.LAGNA"
+    assert response.data["overlay"]["supportedViews"] == ["transit_only", "overlay", "side_by_side"]
+    assert response.data["overlay"]["housesRelativeTo"] == "natal"
+    assert response.data["overlay"]["natalObjectCount"] == 0
+    assert response.data["overlay"]["transitObjectCount"] == 10
+    assert response.data["overlay"]["aspects"] is False
+    assert response.data["overlay"]["ai"] is False
     assert response.data["capabilities"]["ai"] is False
     assert "raw" not in response.data
 
@@ -1492,6 +1498,59 @@ def test_transit_workbench_contract_matches_snapshot(user, monkeypatch):
     }
     expected = json.loads(Path("backend/apps/charts/fixtures/transit_workbench_contract_v1.json").read_text(encoding="utf-8"))
     assert summary == expected
+
+@pytest.mark.django_db
+def test_transit_overlay_keeps_natal_and_transit_contexts_separate(user, monkeypatch):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    profile_id = client.post(
+        "/api/charts/profiles",
+        {"display_name": "Transit overlay", "birth_date": "1990-08-15", "birth_time": "10:24", "place_name": "Vrindavan"},
+        format="json",
+    ).data["profile"]["id"]
+    profile = BirthProfile.objects.select_related("place").get(id=profile_id)
+    bodies = ["Surya", "Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Rahu", "Ketu"]
+    ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result={
+            "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3},
+            "grahas": [{"body": body, "longitude": 20.0 + index, "rashi": "Aries", "rashi_index": 0} for index, body in enumerate(bodies)],
+            "houses": [{"house": item, "rashi": f"Natal Rashi {item}", "rashi_index": item - 1} for item in range(1, 13)],
+            "settings": {"ayanamsa": "lahiri", "node_type": "true", "calculation_model": "drik_siddhanta"},
+        },
+    )
+
+    def fake_build_birth_chart(data):
+        sun_longitude = 100.0 if data["birth_date"] == "2026-06-20" else 130.0
+        return {
+            "ascendant": {"body": "Lagna", "longitude": 180.0, "rashi": "Libra", "rashi_index": 6},
+            "grahas": [
+                {"body": body, "longitude": sun_longitude + index, "rashi": "Leo", "rashi_index": 4}
+                for index, body in enumerate(bodies)
+            ],
+            "houses": [{"house": item, "rashi": f"Transit Rashi {item}", "rashi_index": item - 1} for item in range(1, 13)],
+            "settings": {"ayanamsa": "lahiri", "node_type": "true", "calculation_model": "drik_siddhanta"},
+        }
+
+    monkeypatch.setattr("apps.charts.views.build_birth_chart", fake_build_birth_chart)
+    first = client.get(f"/api/charts/{profile_id}/transit-workbench?at=2026-06-20T12:30:00&timezone=UTC")
+    second = client.get(f"/api/charts/{profile_id}/transit-workbench?at=2026-06-21T12:30:00&timezone=UTC")
+
+    assert first.status_code == 200
+    assert first.data["overlay"]["natalObjectRefs"][0] == "natal:point.LAGNA"
+    assert first.data["overlay"]["transitObjectRefs"][0] == "transit:point.LAGNA"
+    assert "graha.TRANSIT_SU" not in json.dumps(first.data)
+    assert first.data["natal"]["grahas"][0]["objectRef"] == "natal:graha.SU"
+    assert first.data["grahas"][0]["objectRef"] == "transit:graha.SU"
+    assert first.data["natal"]["grahas"][0]["longitude"] == second.data["natal"]["grahas"][0]["longitude"]
+    assert first.data["grahas"][0]["longitude"] != second.data["grahas"][0]["longitude"]
+    assert first.data["overlay"]["natalObjectCount"] == 10
+    assert first.data["overlay"]["transitObjectCount"] == 10
+    assert first.data["entityInspectorCount"] == 1
+
 
 @pytest.mark.django_db
 @override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
@@ -1533,7 +1592,7 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.status_code == 200
     assert response["Cache-Control"] == "no-store"
     assert response.data["status"] == "ok"
-    assert response.data["schemaVersion"] == "transit-workbench-check.v3"
+    assert response.data["schemaVersion"] == "transit-workbench-check.v4"
     assert response.data["deployCommit"] == "transit-test-commit"
     assert response.data["scopeId"] == "D1"
     assert response.data["methodId"] == "transit.d1.drik.v1"
@@ -1541,7 +1600,7 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["boundaryPolicy"] == "instant_exact"
     assert response.data["positionContext"] == "transit"
     assert response.data["objectRefPrefix"] == "transit:"
-    assert response.data["calculationContract"]["usesNatalOverlay"] is False
+    assert response.data["calculationContract"]["usesNatalOverlay"] is True
     assert response.data["calculationContract"]["usesAi"] is False
     assert response.data["coordinateGolden"]["schemaVersion"] == "transit-coordinate-golden.v1"
     assert response.data["coordinateGolden"]["caseCount"] == 3
@@ -1561,13 +1620,21 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["supportedModes"] == ["novice", "astrologer"]
     assert response.data["tabIds"] == ["overview", "grahas", "houses", "nakshatras"]
     assert response.data["entityInspectorCount"] == 1
+    assert response.data["supportsNatalOverlay"] is True
+    assert response.data["supportedViews"] == ["transit_only", "overlay", "side_by_side"]
+    assert response.data["natalObjectCount"] == 10
+    assert response.data["transitObjectCount"] == 10
+    assert response.data["overlayContract"]["housesRelativeTo"] == "natal"
+    assert response.data["overlayContract"]["legendRequired"] is True
+    assert response.data["overlayContract"]["natalObjectRefs"][0] == "natal:point.LAGNA"
+    assert response.data["overlayContract"]["transitObjectRefs"][0] == "transit:point.LAGNA"
     assert response.data["supportsControlDate"] is True
     assert response.data["supportsControlTime"] is True
     assert response.data["supportsTimezone"] is True
     assert response.data["supportsLocation"] is True
     assert response.data["supportsNowAction"] is True
     assert response.data["capabilities"] == {
-        "natalOverlay": False,
+        "natalOverlay": True,
         "aspects": False,
         "ashtakavarga": False,
         "sadeSati": False,

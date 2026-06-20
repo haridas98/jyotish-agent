@@ -23,6 +23,8 @@ assert(page.includes("Сейчас") && page.includes("Применить") && p
 assert(page.includes("Стиль: Северный / Южный") && page.includes("Режим: Новичок / Астролог"), "/transits must expose chart style and mode affordances");
 assert(page.includes("Термины: RU / EN / SA / Кратко"), "/transits must expose terminology modes");
 assert(page.includes("Транзитная карта D1: факты без прогнозов, аспектов и AI."), "/transits must state factual-only scope");
+assert(page.includes("Только транзиты") && page.includes("Натал + транзиты") && page.includes("Две карты рядом"), "/transits must expose overlay view modes");
+assert(page.includes("Легенда:") && page.includes("один EntityInspector"), "/transits must expose overlay legend and single inspector contract");
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");
 assert(nav.includes("/transits"), "shared nav must include transits route");
 for (const forbidden of ["Спросить AI", "Сгенерировать", "source.pending", "rawEvidence", "eligibleItems", "Missing calculations"]) {

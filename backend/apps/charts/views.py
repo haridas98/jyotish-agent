@@ -45,6 +45,7 @@ from .services import (
 TRANSIT_WORKBENCH_METHOD_ID = "transit.d1.drik.v1"
 TRANSIT_WORKBENCH_METHOD_VERSION = "1"
 TRANSIT_WORKBENCH_BOUNDARY_POLICY = "instant_exact"
+TRANSIT_WORKBENCH_VIEWS = ["transit_only", "overlay", "side_by_side"]
 
 
 class TransitWorkbenchDevCheckView(APIView):
@@ -90,7 +91,9 @@ class BirthProfileTransitWorkbenchView(APIView):
             return Response({"error": str(exc)}, status=400)
         except EphemerisUnavailable as exc:
             return Response({"error": str(exc)}, status=503)
-        return Response(_transit_workbench_model(profile.id, chart, True, control))
+        calculation = _latest_complete_calculation(profile)
+        natal_chart = calculation.result if calculation and isinstance(calculation.result, dict) else {}
+        return Response(_transit_workbench_model(profile.id, chart, True, control, natal_chart))
 
 
 def _latest_complete_calculation(profile: BirthProfile) -> ChartCalculation | None:
@@ -169,13 +172,17 @@ def _transit_chart_from_profile(profile: BirthProfile, control: dict[str, object
     return chart
 
 
-def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, control: dict[str, object]) -> dict[str, object]:
+def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, control: dict[str, object], natal_chart: dict | None = None) -> dict[str, object]:
+    natal_chart = natal_chart if isinstance(natal_chart, dict) else {}
     houses = _transit_houses(chart)
     grahas = _transit_grahas(chart)
     special_points = _transit_special_points(chart)
+    natal_houses = _transit_houses(natal_chart)
+    natal_grahas = _contextual_grahas(natal_chart, "natal")
+    natal_special_points = _contextual_special_points(natal_chart, "natal")
     settings_data = chart.get("settings") if isinstance(chart.get("settings"), dict) else {}
     return {
-        "schemaVersion": "transit-workbench.v2",
+        "schemaVersion": "transit-workbench.v3",
         "chartId": chart_id,
         "hasCalculation": has_calculation,
         "transitMoment": {"isoDateTime": control["isoDateTime"], "timezone": control["timezone"]},
@@ -185,6 +192,15 @@ def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, 
         "specialPoints": special_points,
         "houses": houses,
         "rashis": _transit_rashis(houses),
+        "natal": {
+            "hasCalculation": bool(natal_chart),
+            "grahas": natal_grahas,
+            "specialPoints": natal_special_points,
+            "houses": natal_houses,
+            "rashis": _transit_rashis(natal_houses),
+        },
+        "overlay": _transit_overlay_contract(natal_chart, chart),
+        "entityInspectorCount": 1,
         "method": {
             "methodId": TRANSIT_WORKBENCH_METHOD_ID,
             "methodVersion": TRANSIT_WORKBENCH_METHOD_VERSION,
@@ -196,7 +212,7 @@ def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, 
         },
         "calculationContract": _transit_calculation_contract(),
         "capabilities": _transit_capabilities(grahas, special_points),
-        "warnings": [] if has_calculation else [{"code": "calculation_absent", "severity": "warning", "message": "Для карты ещё нет сохранённого D1 расчёта."}],
+        "warnings": [] if has_calculation else [{"code": "calculation_absent", "severity": "warning", "message": "Saved D1 calculation is absent for this chart."}],
     }
 
 
@@ -204,9 +220,10 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
     houses = _transit_houses(chart)
     grahas = _transit_grahas(chart)
     special_points = _transit_special_points(chart)
+    overlay = _transit_overlay_contract(chart, chart)
     return {
         "status": "ok",
-        "schemaVersion": "transit-workbench-check.v3",
+        "schemaVersion": "transit-workbench-check.v4",
         "deployCommit": _current_deploy_commit(),
         "scopeId": "D1",
         "methodId": TRANSIT_WORKBENCH_METHOD_ID,
@@ -222,17 +239,22 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
         "grahaCount": len(grahas),
         "specialPointCount": len(special_points),
         "chartObjectCount": len(grahas) + len(special_points),
+        "natalObjectCount": overlay["natalObjectCount"],
+        "transitObjectCount": overlay["transitObjectCount"],
         "supportedStyles": ["north", "south"],
         "supportedModes": ["novice", "astrologer"],
+        "supportedViews": TRANSIT_WORKBENCH_VIEWS,
         "tabIds": ["overview", "grahas", "houses", "nakshatras"],
         "entityInspectorCount": 1,
+        "supportsNatalOverlay": True,
         "supportsControlDate": True,
         "supportsControlTime": True,
         "supportsTimezone": True,
         "supportsLocation": True,
         "supportsNowAction": True,
+        "overlayContract": overlay,
         "capabilities": {
-            "natalOverlay": False,
+            "natalOverlay": True,
             "aspects": False,
             "ashtakavarga": False,
             "sadeSati": False,
@@ -248,18 +270,26 @@ def _transit_houses(chart: dict) -> list[dict[str, object]]:
 
 
 def _transit_grahas(chart: dict) -> list[dict[str, object]]:
+    return _contextual_grahas(chart, "transit")
+
+
+def _contextual_grahas(chart: dict, context: str) -> list[dict[str, object]]:
     grahas = chart.get("grahas") if isinstance(chart, dict) else []
     if not isinstance(grahas, list):
         return []
-    return [_transit_object(item, "graha") for item in grahas if isinstance(item, dict)]
+    return [_transit_object(item, "graha", context) for item in grahas if isinstance(item, dict)]
 
 
 def _transit_special_points(chart: dict) -> list[dict[str, object]]:
+    return _contextual_special_points(chart, "transit")
+
+
+def _contextual_special_points(chart: dict, context: str) -> list[dict[str, object]]:
     ascendant = chart.get("ascendant") if isinstance(chart, dict) else None
-    return [_transit_object(ascendant, "point")] if isinstance(ascendant, dict) else []
+    return [_transit_object(ascendant, "point", context)] if isinstance(ascendant, dict) else []
 
 
-def _transit_object(item: dict[str, object], entity_type: str) -> dict[str, object]:
+def _transit_object(item: dict[str, object], entity_type: str, context: str) -> dict[str, object]:
     body = str(item.get("body") or "")
     if entity_type == "point":
         entity_id = "point.LAGNA"
@@ -267,9 +297,35 @@ def _transit_object(item: dict[str, object], entity_type: str) -> dict[str, obje
         entity_id = f"graha.{_graha_code(body)}"
     return {
         **item,
-        "context": "transit",
+        "context": context,
         "entityId": entity_id,
-        "objectRef": f"transit:{entity_id}",
+        "objectRef": f"{context}:{entity_id}",
+    }
+
+
+def _transit_overlay_contract(natal_chart: dict, transit_chart: dict) -> dict[str, object]:
+    natal_objects = [*_contextual_special_points(natal_chart, "natal"), *_contextual_grahas(natal_chart, "natal")]
+    transit_objects = [*_contextual_special_points(transit_chart, "transit"), *_contextual_grahas(transit_chart, "transit")]
+    return {
+        "supportsNatalOverlay": True,
+        "supportedViews": TRANSIT_WORKBENCH_VIEWS,
+        "defaultView": "transit_only",
+        "housesRelativeTo": "natal",
+        "legendRequired": True,
+        "legend": [
+            {"context": "natal", "label": "Натал", "objectRefPrefix": "natal:"},
+            {"context": "transit", "label": "Транзит", "objectRefPrefix": "transit:"},
+        ],
+        "natalObjectCount": len(natal_objects),
+        "transitObjectCount": len(transit_objects),
+        "natalObjectRefs": [item["objectRef"] for item in natal_objects],
+        "transitObjectRefs": [item["objectRef"] for item in transit_objects],
+        "aspects": False,
+        "orbs": False,
+        "ashtakavarga": False,
+        "sadeSati": False,
+        "ai": False,
+        "rawEvidence": False,
     }
 
 
@@ -280,7 +336,7 @@ def _transit_calculation_contract() -> dict[str, object]:
         "methodVersion": TRANSIT_WORKBENCH_METHOD_VERSION,
         "boundaryPolicy": TRANSIT_WORKBENCH_BOUNDARY_POLICY,
         "positionContext": "transit",
-        "usesNatalOverlay": False,
+        "usesNatalOverlay": True,
         "usesAspects": False,
         "usesAshtakavarga": False,
         "usesSadeSati": False,
@@ -308,13 +364,12 @@ def _transit_capabilities(grahas: list[dict[str, object]], special_points: list[
         "southChart": True,
         "nakshatras": any(item.get("nakshatra") for item in placements),
         "padas": any(item.get("pada") for item in placements),
-        "natalOverlay": False,
+        "natalOverlay": True,
         "aspects": False,
         "ashtakavarga": False,
         "sadeSati": False,
         "ai": False,
     }
-
 class D1WorkbenchDevCheckView(APIView):
     authentication_classes: list = []
     permission_classes: list = []

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "transit-workbench.v2",
+  "schemaVersion": "transit-workbench.v3",
   "scopeId": "D1",
   "method": {
     "methodId": "transit.d1.drik.v1",
@@ -16,7 +16,7 @@
     "methodVersion": "1",
     "boundaryPolicy": "instant_exact",
     "positionContext": "transit",
-    "usesNatalOverlay": false,
+    "usesNatalOverlay": true,
     "usesAspects": false,
     "usesAshtakavarga": false,
     "usesSadeSati": false,
@@ -38,7 +38,7 @@
     "transit:point.LAGNA"
   ],
   "capabilityFlags": {
-    "natalOverlay": false,
+    "natalOverlay": true,
     "aspects": false,
     "ashtakavarga": false,
     "sadeSati": false,
