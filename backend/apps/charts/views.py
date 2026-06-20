@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import PrivateAppAccess
 from apps.calculations.chart import ChartInputError, build_birth_chart
 from apps.calculations.ephemeris import EphemerisUnavailable
+from apps.calculations.transit_coordinates import transit_coordinate_golden_metadata
 from apps.calculations.vargas import VARGA_METHOD_REGISTRY, varga_accuracy_contract, workbench_expert_varga_codes, workbench_varga_codes
 from apps.calculations.vimshottari import VIMSHOTTARI_SEQUENCE, VIMSHOTTARI_YEAR_DAYS, VIMSHOTTARI_YEARS
 
@@ -205,7 +206,7 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
     special_points = _transit_special_points(chart)
     return {
         "status": "ok",
-        "schemaVersion": "transit-workbench-check.v2",
+        "schemaVersion": "transit-workbench-check.v3",
         "deployCommit": _current_deploy_commit(),
         "scopeId": "D1",
         "methodId": TRANSIT_WORKBENCH_METHOD_ID,
@@ -214,6 +215,7 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
         "positionContext": "transit",
         "objectRefPrefix": "transit:",
         "calculationContract": _transit_calculation_contract(),
+        "coordinateGolden": transit_coordinate_golden_metadata(),
         "hasCalculation": has_calculation,
         "houseCount": len(houses),
         "rashiCount": len(_transit_rashis(houses)),

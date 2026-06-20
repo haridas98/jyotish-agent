@@ -1533,7 +1533,7 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.status_code == 200
     assert response["Cache-Control"] == "no-store"
     assert response.data["status"] == "ok"
-    assert response.data["schemaVersion"] == "transit-workbench-check.v2"
+    assert response.data["schemaVersion"] == "transit-workbench-check.v3"
     assert response.data["deployCommit"] == "transit-test-commit"
     assert response.data["scopeId"] == "D1"
     assert response.data["methodId"] == "transit.d1.drik.v1"
@@ -1543,6 +1543,14 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["objectRefPrefix"] == "transit:"
     assert response.data["calculationContract"]["usesNatalOverlay"] is False
     assert response.data["calculationContract"]["usesAi"] is False
+    assert response.data["coordinateGolden"]["schemaVersion"] == "transit-coordinate-golden.v1"
+    assert response.data["coordinateGolden"]["caseCount"] == 3
+    assert response.data["coordinateGolden"]["independentOfBuildBirthChart"] is True
+    assert response.data["coordinateGolden"]["utcMoments"] == [
+        "2026-06-20T08:30:00+00:00",
+        "1998-04-30T07:45:00+00:00",
+        "2026-01-15T17:30:00+00:00",
+    ]
     assert response.data["hasCalculation"] is True
     assert response.data["houseCount"] == 12
     assert response.data["rashiCount"] == 12

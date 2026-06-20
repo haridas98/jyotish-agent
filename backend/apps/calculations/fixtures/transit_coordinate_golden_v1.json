@@ -1,0 +1,378 @@
+{
+  "schemaVersion": "transit-coordinate-golden.v1",
+  "generator": "direct SwissEphemerisProvider planet_positions + ascendant_position, not build_birth_chart",
+  "cases": [
+    {
+      "id": "mayapur_2026_utc0830",
+      "input": {
+        "birth_date": "2026-06-20",
+        "birth_time": "14:00",
+        "birth_time_accuracy": "exact",
+        "place_name": "Mayapur, West Bengal, IN",
+        "timezone": "Asia/Kolkata",
+        "latitude": 23.4241,
+        "longitude": 88.3883,
+        "zodiac": "sidereal",
+        "calculation_model": "drik_siddhanta",
+        "ayanamsa": "lahiri",
+        "node_type": "true",
+        "ephemeris": "swiss"
+      },
+      "expected": {
+        "schemaVersion": "transit-coordinate-snapshot.v1",
+        "methodId": "transit.coordinates.swiss_lahiri.v1",
+        "methodVersion": "1",
+        "calculationPreset": "drik_siddhanta",
+        "ayanamshaId": "lahiri",
+        "nodeType": "true",
+        "timezone": "Asia/Kolkata",
+        "localDateTime": "2026-06-20T14:00:00+05:30",
+        "utcDateTime": "2026-06-20T08:30:00+00:00",
+        "location": {
+          "latitude": 23.4241,
+          "longitude": 88.3883
+        },
+        "lagna": {
+          "body": "Lagna",
+          "longitude": 187.120892,
+          "rashi": "Tula",
+          "rashiIndex": 6,
+          "nakshatra": "Swati",
+          "nakshatraIndex": 14,
+          "pada": 1
+        },
+        "grahas": [
+          {
+            "body": "Surya",
+            "longitude": 64.820112,
+            "rashi": "Mithuna",
+            "rashiIndex": 2,
+            "nakshatra": "Mrigashira",
+            "nakshatraIndex": 4,
+            "pada": 4
+          },
+          {
+            "body": "Chandra",
+            "longitude": 135.894181,
+            "rashi": "Simha",
+            "rashiIndex": 4,
+            "nakshatra": "Purva Phalguni",
+            "nakshatraIndex": 10,
+            "pada": 1
+          },
+          {
+            "body": "Mangala",
+            "longitude": 29.699325,
+            "rashi": "Mesha",
+            "rashiIndex": 0,
+            "nakshatra": "Krittika",
+            "nakshatraIndex": 2,
+            "pada": 1
+          },
+          {
+            "body": "Budha",
+            "longitude": 88.732123,
+            "rashi": "Mithuna",
+            "rashiIndex": 2,
+            "nakshatra": "Punarvasu",
+            "nakshatraIndex": 6,
+            "pada": 3
+          },
+          {
+            "body": "Guru",
+            "longitude": 93.686298,
+            "rashi": "Karka",
+            "rashiIndex": 3,
+            "nakshatra": "Pushya",
+            "nakshatraIndex": 7,
+            "pada": 1
+          },
+          {
+            "body": "Shukra",
+            "longitude": 103.780054,
+            "rashi": "Karka",
+            "rashiIndex": 3,
+            "nakshatra": "Pushya",
+            "nakshatraIndex": 7,
+            "pada": 4
+          },
+          {
+            "body": "Shani",
+            "longitude": 349.413532,
+            "rashi": "Meena",
+            "rashiIndex": 11,
+            "nakshatra": "Revati",
+            "nakshatraIndex": 26,
+            "pada": 1
+          },
+          {
+            "body": "Rahu",
+            "longitude": 307.67874,
+            "rashi": "Kumbha",
+            "rashiIndex": 10,
+            "nakshatra": "Shatabhisha",
+            "nakshatraIndex": 23,
+            "pada": 1
+          },
+          {
+            "body": "Ketu",
+            "longitude": 127.67874,
+            "rashi": "Simha",
+            "rashiIndex": 4,
+            "nakshatra": "Magha",
+            "nakshatraIndex": 9,
+            "pada": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "sterlitamak_dst_1998_utc0745",
+      "input": {
+        "birth_date": "1998-04-30",
+        "birth_time": "13:45",
+        "birth_time_accuracy": "exact",
+        "place_name": "Sterlitamak, Bashkortostan, RU",
+        "timezone": "Asia/Yekaterinburg",
+        "latitude": 53.6304,
+        "longitude": 55.9308,
+        "zodiac": "sidereal",
+        "calculation_model": "drik_siddhanta",
+        "ayanamsa": "lahiri",
+        "node_type": "true",
+        "ephemeris": "swiss"
+      },
+      "expected": {
+        "schemaVersion": "transit-coordinate-snapshot.v1",
+        "methodId": "transit.coordinates.swiss_lahiri.v1",
+        "methodVersion": "1",
+        "calculationPreset": "drik_siddhanta",
+        "ayanamshaId": "lahiri",
+        "nodeType": "true",
+        "timezone": "Asia/Yekaterinburg",
+        "localDateTime": "1998-04-30T13:45:00+06:00",
+        "utcDateTime": "1998-04-30T07:45:00+00:00",
+        "location": {
+          "latitude": 53.6304,
+          "longitude": 55.9308
+        },
+        "lagna": {
+          "body": "Lagna",
+          "longitude": 115.401188,
+          "rashi": "Karka",
+          "rashiIndex": 3,
+          "nakshatra": "Ashlesha",
+          "nakshatraIndex": 8,
+          "pada": 3
+        },
+        "grahas": [
+          {
+            "body": "Surya",
+            "longitude": 15.942392,
+            "rashi": "Mesha",
+            "rashiIndex": 0,
+            "nakshatra": "Bharani",
+            "nakshatraIndex": 1,
+            "pada": 1
+          },
+          {
+            "body": "Chandra",
+            "longitude": 68.368275,
+            "rashi": "Mithuna",
+            "rashiIndex": 2,
+            "nakshatra": "Ardra",
+            "nakshatraIndex": 5,
+            "pada": 1
+          },
+          {
+            "body": "Mangala",
+            "longitude": 18.95466,
+            "rashi": "Mesha",
+            "rashiIndex": 0,
+            "nakshatra": "Bharani",
+            "nakshatraIndex": 1,
+            "pada": 2
+          },
+          {
+            "body": "Budha",
+            "longitude": 349.859605,
+            "rashi": "Meena",
+            "rashiIndex": 11,
+            "nakshatra": "Revati",
+            "nakshatraIndex": 26,
+            "pada": 1
+          },
+          {
+            "body": "Guru",
+            "longitude": 325.573657,
+            "rashi": "Kumbha",
+            "rashiIndex": 10,
+            "nakshatra": "Purva Bhadrapada",
+            "nakshatraIndex": 24,
+            "pada": 2
+          },
+          {
+            "body": "Shukra",
+            "longitude": 332.266493,
+            "rashi": "Meena",
+            "rashiIndex": 11,
+            "nakshatra": "Purva Bhadrapada",
+            "nakshatraIndex": 24,
+            "pada": 4
+          },
+          {
+            "body": "Shani",
+            "longitude": 1.633975,
+            "rashi": "Mesha",
+            "rashiIndex": 0,
+            "nakshatra": "Ashwini",
+            "nakshatraIndex": 0,
+            "pada": 1
+          },
+          {
+            "body": "Rahu",
+            "longitude": 134.621602,
+            "rashi": "Simha",
+            "rashiIndex": 4,
+            "nakshatra": "Purva Phalguni",
+            "nakshatraIndex": 10,
+            "pada": 1
+          },
+          {
+            "body": "Ketu",
+            "longitude": 314.621602,
+            "rashi": "Kumbha",
+            "rashiIndex": 10,
+            "nakshatra": "Shatabhisha",
+            "nakshatraIndex": 23,
+            "pada": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "new_york_2026_winter_utc1730",
+      "input": {
+        "birth_date": "2026-01-15",
+        "birth_time": "12:30",
+        "birth_time_accuracy": "exact",
+        "place_name": "New York, NY, US",
+        "timezone": "America/New_York",
+        "latitude": 40.7128,
+        "longitude": -74.006,
+        "zodiac": "sidereal",
+        "calculation_model": "drik_siddhanta",
+        "ayanamsa": "lahiri",
+        "node_type": "true",
+        "ephemeris": "swiss"
+      },
+      "expected": {
+        "schemaVersion": "transit-coordinate-snapshot.v1",
+        "methodId": "transit.coordinates.swiss_lahiri.v1",
+        "methodVersion": "1",
+        "calculationPreset": "drik_siddhanta",
+        "ayanamshaId": "lahiri",
+        "nodeType": "true",
+        "timezone": "America/New_York",
+        "localDateTime": "2026-01-15T12:30:00-05:00",
+        "utcDateTime": "2026-01-15T17:30:00+00:00",
+        "location": {
+          "latitude": 40.7128,
+          "longitude": -74.006
+        },
+        "lagna": {
+          "body": "Lagna",
+          "longitude": 28.551731,
+          "rashi": "Mesha",
+          "rashiIndex": 0,
+          "nakshatra": "Krittika",
+          "nakshatraIndex": 2,
+          "pada": 1
+        },
+        "grahas": [
+          {
+            "body": "Surya",
+            "longitude": 271.353169,
+            "rashi": "Makara",
+            "rashiIndex": 9,
+            "nakshatra": "Uttara Ashadha",
+            "nakshatraIndex": 20,
+            "pada": 2
+          },
+          {
+            "body": "Chandra",
+            "longitude": 236.595259,
+            "rashi": "Vrischika",
+            "rashiIndex": 7,
+            "nakshatra": "Jyeshtha",
+            "nakshatraIndex": 17,
+            "pada": 3
+          },
+          {
+            "body": "Mangala",
+            "longitude": 269.82302,
+            "rashi": "Dhanu",
+            "rashiIndex": 8,
+            "nakshatra": "Uttara Ashadha",
+            "nakshatraIndex": 20,
+            "pada": 1
+          },
+          {
+            "body": "Budha",
+            "longitude": 267.591655,
+            "rashi": "Dhanu",
+            "rashiIndex": 8,
+            "nakshatra": "Uttara Ashadha",
+            "nakshatraIndex": 20,
+            "pada": 1
+          },
+          {
+            "body": "Guru",
+            "longitude": 85.163622,
+            "rashi": "Mithuna",
+            "rashiIndex": 2,
+            "nakshatra": "Punarvasu",
+            "nakshatraIndex": 6,
+            "pada": 2
+          },
+          {
+            "body": "Shukra",
+            "longitude": 273.51259,
+            "rashi": "Makara",
+            "rashiIndex": 9,
+            "nakshatra": "Uttara Ashadha",
+            "nakshatraIndex": 20,
+            "pada": 3
+          },
+          {
+            "body": "Shani",
+            "longitude": 332.963176,
+            "rashi": "Meena",
+            "rashiIndex": 11,
+            "nakshatra": "Purva Bhadrapada",
+            "nakshatraIndex": 24,
+            "pada": 4
+          },
+          {
+            "body": "Rahu",
+            "longitude": 315.698502,
+            "rashi": "Kumbha",
+            "rashiIndex": 10,
+            "nakshatra": "Shatabhisha",
+            "nakshatraIndex": 23,
+            "pada": 3
+          },
+          {
+            "body": "Ketu",
+            "longitude": 135.698502,
+            "rashi": "Simha",
+            "rashiIndex": 4,
+            "nakshatra": "Purva Phalguni",
+            "nakshatraIndex": 10,
+            "pada": 1
+          }
+        ]
+      }
+    }
+  ]
+}
