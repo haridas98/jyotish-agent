@@ -238,7 +238,7 @@ export default function TransitsPage() {
             </section>
           ) : null}
           {rashiAspectLayer ? (
-            <section className="product-status transit-aspect-layer" aria-label="Rashi Drishti aspect layer" data-method-id={RASHI_DRISHTI_METHOD_ID}>
+            <section className="product-status transit-aspect-layer" aria-label="Rashi Drishti aspect layer">
               <div className="transit-aspect-head">
                 <strong>Раши-дришти</strong>
                 <span>Проверенный источник · {rashiAspectLayer.aspectCount ?? rashiAspectRefs.length} связей · только режим астролога</span>
