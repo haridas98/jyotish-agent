@@ -142,7 +142,7 @@ def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: 
     current_pratyantardasha = pratyantardashas[0] if pratyantardashas and isinstance(pratyantardashas[0], dict) else {}
     return {
         "status": "ok",
-        "schemaVersion": "dasha-workbench-check.v2",
+        "schemaVersion": "dasha-workbench-check.v3",
         "chartId": chart_id,
         "hasCalculation": has_calculation,
         "supportedSystems": ["vimshottari"],
@@ -151,6 +151,12 @@ def _dasha_workbench_check_payload(chart_id: int, chart: dict, has_calculation: 
         "methodVersion": str(vimshottari.get("methodVersion") or "1"),
         "sourceAnchor": str(vimshottari.get("sourceAnchor") or "BPHS 46.2-16"),
         "boundaryPolicy": str(vimshottari.get("boundary_policy") or "start_inclusive_end_exclusive"),
+        "boundaryDisplayPolicy": str(vimshottari.get("boundary_policy") or "start_inclusive_end_exclusive"),
+        "supportedViews": ["tree", "table", "timeline"],
+        "defaultView": "tree",
+        "supportsControlDate": True,
+        "supportsGoToCurrentPeriod": True,
+        "collapsibleLevels": ["mahadasha", "antardasha", "pratyantardasha"],
         "mahadashaCount": len(mahadashas),
         "antardashaCount": len(antardashas),
         "pratyantardashaCount": len(pratyantardashas),

@@ -1265,7 +1265,13 @@ def test_dev_dasha_workbench_check_returns_vimshottari_contract(user):
     assert response.status_code == 200
     assert response["Cache-Control"] == "no-store"
     assert response.data["status"] == "ok"
-    assert response.data["schemaVersion"] == "dasha-workbench-check.v2"
+    assert response.data["schemaVersion"] == "dasha-workbench-check.v3"
+    assert response.data["supportedViews"] == ["tree", "table", "timeline"]
+    assert response.data["defaultView"] == "tree"
+    assert response.data["supportsControlDate"] is True
+    assert response.data["supportsGoToCurrentPeriod"] is True
+    assert response.data["collapsibleLevels"] == ["mahadasha", "antardasha", "pratyantardasha"]
+    assert response.data["boundaryDisplayPolicy"] == "start_inclusive_end_exclusive"
     assert response.data["chartId"] == profile.id
     assert response.data["hasCalculation"] is True
     assert response.data["supportedSystems"] == ["vimshottari"]
@@ -1327,7 +1333,13 @@ def test_dev_dasha_workbench_check_derives_antardashas_for_legacy_payload(user):
     response = APIClient().get(f"/api/dev/dasha-workbench-check?token=dev-token&chart_id={profile.id}")
 
     assert response.status_code == 200
-    assert response.data["schemaVersion"] == "dasha-workbench-check.v2"
+    assert response.data["schemaVersion"] == "dasha-workbench-check.v3"
+    assert response.data["supportedViews"] == ["tree", "table", "timeline"]
+    assert response.data["defaultView"] == "tree"
+    assert response.data["supportsControlDate"] is True
+    assert response.data["supportsGoToCurrentPeriod"] is True
+    assert response.data["collapsibleLevels"] == ["mahadasha", "antardasha", "pratyantardasha"]
+    assert response.data["boundaryDisplayPolicy"] == "start_inclusive_end_exclusive"
     assert response.data["antardashaCount"] == 9
     assert response.data["currentAntardashaLord"] == "Ketu"
     assert response.data["currentAntardashaParentLord"] == "Ketu"
