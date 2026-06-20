@@ -17,7 +17,7 @@
     "boundaryPolicy": "instant_exact",
     "positionContext": "transit",
     "usesNatalOverlay": true,
-    "usesAspects": false,
+    "usesAspects": true,
     "usesAshtakavarga": false,
     "usesSadeSati": false,
     "usesAi": false,
@@ -39,7 +39,7 @@
   ],
   "capabilityFlags": {
     "natalOverlay": true,
-    "aspects": false,
+    "aspects": true,
     "ashtakavarga": false,
     "sadeSati": false,
     "ai": false

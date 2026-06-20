@@ -28,6 +28,23 @@ function compactNumber(value: unknown) {
 
 type TransitViewMode = "transit_only" | "overlay" | "side_by_side";
 
+type GrahaDrishtiRef = {
+  sourceEntityRef?: string;
+  targetEntityRef?: string;
+  aspectKind?: string;
+  signDistance?: number;
+};
+
+type GrahaDrishtiLayer = {
+  methodId?: string;
+  sourceStatus?: string;
+  enabledByDefault?: boolean;
+  availableInModes?: string[];
+  aspectCount?: number;
+  sampleRefs?: GrahaDrishtiRef[];
+  items?: GrahaDrishtiRef[];
+};
+
 const TRANSIT_VIEW_MODES: Array<{ id: TransitViewMode; label: string }> = [
   { id: "transit_only", label: "Только транзиты" },
   { id: "overlay", label: "Натал + транзиты" },
@@ -45,6 +62,7 @@ export default function TransitsPage() {
   const [longitude, setLongitude] = useState("55.9308");
   const [model, setModel] = useState<Record<string, unknown> | null>(null);
   const [viewMode, setViewMode] = useState<TransitViewMode>("transit_only");
+  const [showGrahaDrishti, setShowGrahaDrishti] = useState(false);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [loading, setLoading] = useState(false);
 
@@ -81,6 +99,8 @@ export default function TransitsPage() {
         scope: "d1",
       });
       setModel(payload);
+      const aspectLayer = payload.aspectLayer as GrahaDrishtiLayer | undefined;
+      setShowGrahaDrishti(Boolean(aspectLayer?.enabledByDefault));
       setStatus("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Проверьте координаты и часовой пояс.");
@@ -101,6 +121,8 @@ export default function TransitsPage() {
 
   const overlay = (model?.overlay as { natalObjectCount?: number; transitObjectCount?: number; housesRelativeTo?: string } | undefined) ?? null;
   const natalModel = (model?.natal as { hasCalculation?: boolean; grahas?: unknown[]; specialPoints?: unknown[] } | undefined) ?? null;
+  const aspectLayer = (model?.aspectLayer as GrahaDrishtiLayer | undefined) ?? null;
+  const aspectRefs = (aspectLayer?.items?.length ? aspectLayer.items : aspectLayer?.sampleRefs) ?? [];
 
   const d1Model = useMemo(() => {
     if (!model || !selectedProfile) return null;
@@ -162,14 +184,36 @@ export default function TransitsPage() {
             ))}
           </div>
           <div className="product-status transit-overlay-contract">
-            <strong>Легенда:</strong> Натал = сохранённая D1, Транзит = контрольный момент. Дома в overlay читаются от натальной карты; аспекты, орбисы, прогнозы и AI не строятся.
+            <strong>Легенда:</strong> Натал = сохранённая D1, Транзит = контрольный момент. Дома в overlay читаются от натальной карты; орбисы, прогнозы и AI не строятся.
             {overlay ? <span> Контракт: {overlay.natalObjectCount ?? 0} натальных объектов, {overlay.transitObjectCount ?? 0} транзитных объектов, один EntityInspector.</span> : null}
             {natalModel?.hasCalculation === false ? <span> Для overlay нужен сохранённый D1-расчёт.</span> : null}
           </div>
+          {aspectLayer ? (
+            <section className="product-status transit-aspect-layer" aria-label="Graha Drishti aspect layer">
+              <div className="transit-aspect-head">
+                <strong>Граха-дришти</strong>
+                <span>{aspectLayer.methodId} · источник: {aspectLayer.sourceStatus === "needs_source" ? "нужен" : aspectLayer.sourceStatus ?? "нужен"} · {aspectLayer.aspectCount ?? aspectRefs.length} связей</span>
+                <button type="button" onClick={() => setShowGrahaDrishti((value) => !value)}>
+                  {showGrahaDrishti ? "Скрыть аспекты" : "Показать аспекты"}
+                </button>
+              </div>
+              <p>Слой доступен в режиме астролога и выключен по умолчанию: транзит → натал, без орбисов, соединений, Раху/Кету и трактовок.</p>
+              <span className="transit-aspect-meta">По умолчанию: {aspectLayer.enabledByDefault ? "включено" : "выключено"} · режим: {(aspectLayer.availableInModes ?? []).includes("astrologer") ? "астролог" : "-"}</span>
+              {showGrahaDrishti ? (
+                <div className="transit-aspect-lines" aria-label="Линии аспектов Graha Drishti">
+                  {aspectRefs.slice(0, 24).map((item, index) => (
+                    <span key={`${item.sourceEntityRef}-${item.targetEntityRef}-${item.aspectKind}-${index}`}>
+                      {item.sourceEntityRef} → {item.targetEntityRef} · {item.aspectKind} · {item.signDistance}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
           {selectedProfile ? <p className="dasha-empty-note">{profileMeta(selectedProfile)}</p> : <a href="/charts/new">Создать карту</a>}
           {status ? <div className="product-status">{status}</div> : null}
           {loading && !d1Model ? <D1ChartWorkbenchShell status="Открываю транзитную D1..." /> : null}
-          {d1Model ? <D1ChartWorkbench model={d1Model} status={viewMode === "transit_only" ? "Транзитная карта D1: факты без прогнозов, аспектов и AI." : "Режим overlay: натальные и транзитные refs разделены; открываются в одном EntityInspector."} /> : null}
+          {d1Model ? <D1ChartWorkbench model={d1Model} status={viewMode === "transit_only" ? "Транзитная карта D1: факты без прогнозов и AI; аспекты выключены по умолчанию." : "Режим overlay: натальные и транзитные refs разделены; открываются в одном EntityInspector."} /> : null}
         </section>
       </section>
     </ProductShell>

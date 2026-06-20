@@ -1450,7 +1450,7 @@ def test_transit_workbench_builds_chart_for_control_moment(user, monkeypatch):
     assert response.data["method"]["methodVersion"] == "1"
     assert response.data["method"]["positionContext"] == "transit"
     assert response.data["calculationContract"]["usesNatalOverlay"] is True
-    assert response.data["calculationContract"]["usesAspects"] is False
+    assert response.data["calculationContract"]["usesAspects"] is True
     assert response.data["grahas"][0]["objectRef"] == "transit:graha.SU"
     assert response.data["grahas"][0]["context"] == "transit"
     assert response.data["specialPoints"][0]["objectRef"] == "transit:point.LAGNA"
@@ -1549,6 +1549,19 @@ def test_transit_overlay_keeps_natal_and_transit_contexts_separate(user, monkeyp
     assert first.data["grahas"][0]["longitude"] != second.data["grahas"][0]["longitude"]
     assert first.data["overlay"]["natalObjectCount"] == 10
     assert first.data["overlay"]["transitObjectCount"] == 10
+    assert first.data["aspectLayer"]["methodId"] == "aspect.graha_drishti.parashara.v1"
+    assert first.data["aspectLayer"]["sourceContext"] == "transit"
+    assert first.data["aspectLayer"]["targetContext"] == "natal"
+    assert first.data["aspectLayer"]["enabledByDefault"] is False
+    assert first.data["aspectLayer"]["availableInModes"] == ["astrologer"]
+    assert first.data["aspectLayer"]["usesDegreeOrbs"] is False
+    assert first.data["aspectLayer"]["treatsConjunctionAsAspect"] is False
+    assert first.data["aspectLayer"]["includesRahuKetu"] is False
+    assert first.data["aspectLayer"]["aspectCount"] > 0
+    assert first.data["aspectLayer"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:graha.")
+    assert first.data["aspectLayer"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
+    assert not any(item["sourceEntityRef"] in {"transit:graha.RA", "transit:graha.KE"} for item in first.data["aspectLayer"]["sampleRefs"])
+    assert first.data["capabilities"]["aspects"] is True
     assert first.data["entityInspectorCount"] == 1
 
 
@@ -1592,7 +1605,7 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.status_code == 200
     assert response["Cache-Control"] == "no-store"
     assert response.data["status"] == "ok"
-    assert response.data["schemaVersion"] == "transit-workbench-check.v4"
+    assert response.data["schemaVersion"] == "transit-workbench-check.v5"
     assert response.data["deployCommit"] == "transit-test-commit"
     assert response.data["scopeId"] == "D1"
     assert response.data["methodId"] == "transit.d1.drik.v1"
@@ -1637,13 +1650,19 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["grahaDrishtiContract"]["methodVersion"] == 1
     assert response.data["grahaDrishtiContract"]["sourceContext"] == "transit"
     assert response.data["grahaDrishtiContract"]["targetContext"] == "natal"
-    assert response.data["grahaDrishtiContract"]["uiCapability"] is False
+    assert response.data["grahaDrishtiContract"]["uiCapability"] is True
     assert response.data["grahaDrishtiContract"]["usesDegreeOrbs"] is False
     assert response.data["grahaDrishtiContract"]["treatsConjunctionAsAspect"] is False
     assert response.data["grahaDrishtiContract"]["includesRahuKetu"] is False
+    assert response.data["grahaDrishtiContract"]["enabledByDefault"] is False
+    assert response.data["grahaDrishtiContract"]["availableInModes"] == ["astrologer"]
+    assert response.data["grahaDrishtiContract"]["sourceStatus"] == "needs_source"
+    assert response.data["grahaDrishtiContract"]["aspectCount"] > 0
+    assert response.data["grahaDrishtiContract"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:graha.")
+    assert response.data["grahaDrishtiContract"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
     assert response.data["capabilities"] == {
         "natalOverlay": True,
-        "aspects": False,
+        "aspects": True,
         "ashtakavarga": False,
         "sadeSati": False,
         "ai": False,

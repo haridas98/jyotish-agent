@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import PrivateAppAccess
 from apps.calculations.chart import ChartInputError, build_birth_chart
 from apps.calculations.ephemeris import EphemerisUnavailable
-from apps.calculations.graha_drishti import graha_drishti_method_contract
+from apps.calculations.graha_drishti import build_graha_drishti_aspects, graha_drishti_method_contract
 from apps.calculations.transit_coordinates import transit_coordinate_golden_metadata
 from apps.calculations.vargas import VARGA_METHOD_REGISTRY, varga_accuracy_contract, workbench_expert_varga_codes, workbench_varga_codes
 from apps.calculations.vimshottari import VIMSHOTTARI_SEQUENCE, VIMSHOTTARI_YEAR_DAYS, VIMSHOTTARI_YEARS
@@ -201,6 +201,7 @@ def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, 
             "rashis": _transit_rashis(natal_houses),
         },
         "overlay": _transit_overlay_contract(natal_chart, chart),
+        "aspectLayer": _graha_drishti_layer(chart, natal_chart),
         "entityInspectorCount": 1,
         "method": {
             "methodId": TRANSIT_WORKBENCH_METHOD_ID,
@@ -224,7 +225,7 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
     overlay = _transit_overlay_contract(chart, chart)
     return {
         "status": "ok",
-        "schemaVersion": "transit-workbench-check.v4",
+        "schemaVersion": "transit-workbench-check.v5",
         "deployCommit": _current_deploy_commit(),
         "scopeId": "D1",
         "methodId": TRANSIT_WORKBENCH_METHOD_ID,
@@ -254,10 +255,10 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
         "supportsLocation": True,
         "supportsNowAction": True,
         "overlayContract": overlay,
-        "grahaDrishtiContract": _graha_drishti_dev_contract(),
+        "grahaDrishtiContract": _graha_drishti_dev_contract(chart, chart),
         "capabilities": {
             "natalOverlay": True,
-            "aspects": False,
+            "aspects": True,
             "ashtakavarga": False,
             "sadeSati": False,
             "ai": False,
@@ -331,13 +332,34 @@ def _transit_overlay_contract(natal_chart: dict, transit_chart: dict) -> dict[st
     }
 
 
-def _graha_drishti_dev_contract() -> dict[str, object]:
+def _graha_drishti_layer(transit_chart: dict, natal_chart: dict) -> dict[str, object]:
+    aspects = build_graha_drishti_aspects(transit_chart, natal_chart, source_context="transit", target_context="natal")
+    sample_refs = [
+        {
+            "sourceEntityRef": item["sourceEntityRef"],
+            "targetEntityRef": item["targetEntityRef"],
+            "aspectKind": item["aspectKind"],
+            "signDistance": item["signDistance"],
+        }
+        for item in aspects[:12]
+    ]
     return {
         **graha_drishti_method_contract(),
         "sourceContext": "transit",
         "targetContext": "natal",
-        "uiCapability": False,
+        "availableInModes": ["astrologer"],
+        "enabledByDefault": False,
+        "sourceStatus": "needs_source",
+        "uiCapability": True,
+        "aspectCount": len(aspects),
+        "sampleRefs": sample_refs,
+        "items": aspects,
     }
+
+
+def _graha_drishti_dev_contract(transit_chart: dict, natal_chart: dict) -> dict[str, object]:
+    layer = _graha_drishti_layer(transit_chart, natal_chart)
+    return {key: value for key, value in layer.items() if key != "items"}
 
 
 def _transit_calculation_contract() -> dict[str, object]:
@@ -348,7 +370,7 @@ def _transit_calculation_contract() -> dict[str, object]:
         "boundaryPolicy": TRANSIT_WORKBENCH_BOUNDARY_POLICY,
         "positionContext": "transit",
         "usesNatalOverlay": True,
-        "usesAspects": False,
+        "usesAspects": True,
         "usesAshtakavarga": False,
         "usesSadeSati": False,
         "usesAi": False,
@@ -376,7 +398,7 @@ def _transit_capabilities(grahas: list[dict[str, object]], special_points: list[
         "nakshatras": any(item.get("nakshatra") for item in placements),
         "padas": any(item.get("pada") for item in placements),
         "natalOverlay": True,
-        "aspects": False,
+        "aspects": True,
         "ashtakavarga": False,
         "sadeSati": False,
         "ai": False,
