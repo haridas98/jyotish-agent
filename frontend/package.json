@@ -30,6 +30,7 @@
     "test:d1-workbench": "node scripts/check-d1-workbench.mjs",
     "test:dasha-workbench": "node scripts/check-dasha-workbench.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
+    "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",
     "smoke:ai-staging": "node scripts/smoke-ai-staging.mjs",
     "production-check": "node scripts/production-check.mjs",
     "build:prod": "next build && npm run production-check",
