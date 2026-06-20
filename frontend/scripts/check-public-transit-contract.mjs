@@ -1,6 +1,7 @@
 const url = process.env.PUBLIC_TRANSIT_CHECK_URL || process.argv[2];
 const expectedCommit = process.env.EXPECTED_DEPLOY_COMMIT || process.argv[3] || "";
-const requestTimeoutMs = Number.parseInt(process.env.PUBLIC_TRANSIT_CHECK_TIMEOUT_MS || "20000", 10);
+const configuredTimeoutMs = Number.parseInt(process.env.PUBLIC_TRANSIT_CHECK_TIMEOUT_MS || "", 10);
+const requestTimeoutMs = Number.isFinite(configuredTimeoutMs) && configuredTimeoutMs > 0 ? configuredTimeoutMs : 20000;
 const requiredRuleIds = [
   "bphs.aspect.graha_drishti.general_7th",
   "bphs.aspect.graha_drishti.mars_special",
@@ -34,24 +35,17 @@ function redactUrl(value) {
   return next.toString();
 }
 
-async function responseSnippet(response) {
-  try {
-    return (await response.text()).slice(0, 500).replace(/\s+/g, " ").trim();
-  } catch {
-    return "";
-  }
-}
-
-async function fetchWithTimeout(endpointLabel, endpointUrl, options = {}) {
+async function fetchTextWithTimeout(endpointLabel, endpointUrl, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
   try {
     const response = await fetch(endpointUrl, { ...options, signal: controller.signal });
+    const text = await response.text();
     if (!response.ok) {
-      const snippet = await responseSnippet(response);
+      const snippet = text.slice(0, 500).replace(/\s+/g, " ").trim();
       throw new Error(`${endpointLabel} failed: HTTP ${response.status}${snippet ? ` body: ${snippet}` : ""}`);
     }
-    return response;
+    return { response, text };
   } catch (error) {
     if (error?.name === "AbortError") {
       throw new Error(`${endpointLabel} timed out after ${requestTimeoutMs}ms: ${redactUrl(endpointUrl)}`);
@@ -68,11 +62,11 @@ if (!url) {
 }
 
 const jsonUrl = withParam(url, "format", "json");
-const jsonResponse = await fetchWithTimeout("JSON endpoint", jsonUrl, {
+const { response: jsonResponse, text: jsonText } = await fetchTextWithTimeout("JSON endpoint", jsonUrl, {
   headers: { Accept: "application/json", "Cache-Control": "no-cache", Pragma: "no-cache" },
 });
 assert((jsonResponse.headers.get("cache-control") || "").includes("no-store"), "JSON endpoint must use Cache-Control: no-store.");
-const payload = await jsonResponse.json();
+const payload = JSON.parse(jsonText);
 const contract = payload.grahaDrishtiContract || {};
 const rashiContract = payload.rashiDrishtiContract || {};
 const aspectLayerContracts = payload.aspectLayerContracts || {};
@@ -123,11 +117,10 @@ assertUiAspectLayer(grahaLayer, contract.methodId, "Graha Drishti QA layer");
 assertUiAspectLayer(rashiLayer, rashiContract.methodId, "Rashi Drishti QA layer");
 
 const htmlUrl = withParam(url, "format", "");
-const htmlResponse = await fetchWithTimeout("HTML endpoint", htmlUrl, {
+const { response: htmlResponse, text: html } = await fetchTextWithTimeout("HTML endpoint", htmlUrl, {
   headers: { Accept: "text/html", "Cache-Control": "no-cache", Pragma: "no-cache" },
 });
 assert((htmlResponse.headers.get("cache-control") || "").includes("no-store"), "HTML endpoint must use Cache-Control: no-store.");
-const html = await htmlResponse.text();
 assert(html.includes("verified"), "HTML endpoint must include verified source status.");
 assert(requiredRuleIds.every((id) => html.includes(id)), "HTML endpoint must include all verified Graha Drishti rule IDs.");
 assert(html.includes("aspect.rashi_drishti.parashara.v1"), "HTML endpoint must include Rashi Drishti contract.");

@@ -58,9 +58,12 @@ assert(!page.includes("{item.aspectKind}") || page.indexOf("{item.aspectKind}") 
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");
 assert(nav.includes("/transits"), "shared nav must include transits route");
 assert(publicTransitSmoke.includes("PUBLIC_TRANSIT_CHECK_TIMEOUT_MS"), "public transit smoke must expose a timeout env var");
-assert(publicTransitSmoke.includes("fetchWithTimeout"), "public transit smoke must use a shared timeout fetch helper");
+assert(publicTransitSmoke.includes("fetchTextWithTimeout"), "public transit smoke must use a shared timeout helper that reads response bodies");
 assert(publicTransitSmoke.includes("AbortController") || publicTransitSmoke.includes("AbortSignal.timeout"), "public transit smoke must abort hung fetches");
 assert(publicTransitSmoke.includes("JSON endpoint") && publicTransitSmoke.includes("HTML endpoint"), "public transit smoke timeout errors must identify JSON and HTML endpoints");
+assert(publicTransitSmoke.includes("await response.text()"), "public transit smoke must read response body inside the timeout helper");
+assert(!publicTransitSmoke.includes("jsonResponse.json()"), "public transit smoke must not read JSON body outside the timeout helper");
+assert(!publicTransitSmoke.includes("htmlResponse.text()"), "public transit smoke must not read HTML body outside the timeout helper");
 for (const forbidden of ["Спросить AI", "Сгенерировать", "source.pending", "rawEvidence", "eligibleItems", "Missing calculations"]) {
   assert(!page.includes(forbidden), `/transits leaks forbidden marker: ${forbidden}`);
 }
