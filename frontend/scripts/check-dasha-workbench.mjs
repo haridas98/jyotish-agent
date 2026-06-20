@@ -14,6 +14,14 @@ assert(!page.includes("redirect("), "/dashas must be a real page, not a redirect
 assert(page.includes("ProductShell"), "/dashas must use the shared product shell");
 assert(page.includes("listChartProfiles"), "/dashas must load saved charts instead of static placeholders");
 assert(page.includes("calculateSavedProfile"), "/dashas must use saved chart calculations as the data source");
+assert(page.includes("viewMode"), "/dashas must support tree/table/timeline view mode");
+assert(page.includes('"tree"') && page.includes('"table"') && page.includes('"timeline"'), "/dashas must expose tree, table, and timeline modes");
+assert(page.includes("controlDate"), "/dashas must support a control date");
+assert(page.includes("jumpToCurrentPeriod"), "/dashas must jump to the current period chain");
+assert(page.includes("collapsedLevels"), "/dashas must support collapsing levels");
+assert(page.includes("dasha-boundary"), "/dashas must render stable period boundaries");
+assert(page.includes("dasha-period-table"), "/dashas must render table mode");
+assert(page.includes("dasha-timeline"), "/dashas must render timeline mode");
 assert(page.includes("mahadashas.map"), "/dashas must render real Mahadasha periods");
 assert(page.includes("activeMahadasha"), "/dashas must highlight the selected/current Mahadasha");
 assert(page.includes("selectedAntardashas.map"), "/dashas must render Antardashas for the selected Mahadasha");
