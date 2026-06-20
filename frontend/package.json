@@ -29,6 +29,7 @@
     "test:ai-human-review-mock": "node scripts/check-ai-human-review-mock.mjs",
     "test:d1-workbench": "node scripts/check-d1-workbench.mjs",
     "test:dasha-workbench": "node scripts/check-dasha-workbench.mjs",
+    "test:charts-dashboard": "node scripts/check-charts-dashboard.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",

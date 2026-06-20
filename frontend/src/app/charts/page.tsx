@@ -1,11 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
 import { deleteChartProfile, fetchCurrentUser, listChartProfiles, type ChartProfile } from "@/lib/api";
 
+const quickActions = [
+  { label: "Создать карту", href: "/charts/new", kind: "primary" },
+  { label: "Люди", href: "/people" },
+  { label: "Обзор", href: "/reports" },
+  { label: "Взаимодействия", href: "/interactions" },
+  { label: "Транзиты", href: "/transits" },
+];
+
 function formatTime(profile: ChartProfile) {
-  if (!profile.birth_time) return "время неизвестно";
+  if (!profile.birth_time) return "время не указано";
   return profile.birth_time.slice(0, 5);
 }
 
@@ -23,6 +31,10 @@ function profileMeta(profile: ChartProfile) {
   return `${profile.birth_date} · ${formatTime(profile)} · ${profile.place.label}`;
 }
 
+function latestProfile(profiles: ChartProfile[]) {
+  return [...profiles].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0] ?? null;
+}
+
 export default function ChartsPage() {
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
   const [status, setStatus] = useState("Загружаю карты...");
@@ -34,7 +46,7 @@ export default function ChartsPage() {
       if (!user) {
         setNeedsAuth(true);
         setProfiles([]);
-        setStatus("Войдите, чтобы открыть кабинет карт.");
+        setStatus("");
         return;
       }
       const rows = await listChartProfiles();
@@ -50,6 +62,16 @@ export default function ChartsPage() {
     void loadProfiles();
   }, [loadProfiles]);
 
+  const selfProfile = useMemo(() => profiles.find((profile) => profile.is_self_profile) ?? null, [profiles]);
+  const lastUpdated = useMemo(() => latestProfile(profiles), [profiles]);
+  const readiness = profiles.length
+    ? selfProfile
+      ? "Кабинет готов"
+      : "Нужна моя карта"
+    : needsAuth
+      ? "Требуется вход"
+      : "Карт пока нет";
+
   async function handleDelete(profile: ChartProfile) {
     if (!window.confirm(`Удалить карту "${profile.display_name}"?`)) return;
     await deleteChartProfile(profile.id);
@@ -61,25 +83,64 @@ export default function ChartsPage() {
       <section className="charts-dashboard-head">
         <div>
           <h1>Кабинет карт</h1>
-          <span>Сохранённые карты текущего пользователя.</span>
+          <span>Сохранённые карты, связи и рабочие переходы.</span>
         </div>
-        {!needsAuth ? <a className="primary-link-button" href="/charts/new">Создать карту</a> : null}
+        <nav className="charts-quick-actions" aria-label="Быстрые действия кабинета карт">
+          {quickActions.map((action) => (
+            <a className={action.kind === "primary" ? "primary-link-button" : "secondary-button"} href={action.href} key={action.href}>
+              {action.label}
+            </a>
+          ))}
+        </nav>
+      </section>
+
+      <section className="charts-summary-grid" aria-label="Сводка кабинета карт">
+        <div>
+          <span>Всего карт</span>
+          <strong>{profiles.length}</strong>
+        </div>
+        <div>
+          <span>Моя карта</span>
+          <strong>{selfProfile ? selfProfile.display_name : "не выбрана"}</strong>
+        </div>
+        <div>
+          <span>Последнее обновление</span>
+          <strong>{lastUpdated ? formatDateTime(lastUpdated.updated_at) : "нет данных"}</strong>
+        </div>
+        <div>
+          <span>Статус</span>
+          <strong>{readiness}</strong>
+        </div>
       </section>
 
       {status ? <div className="product-status">{status}</div> : null}
 
-      {!needsAuth && !status && !profiles.length ? (
+      {needsAuth ? (
         <section className="charts-empty-state">
           <div>
-            <strong>Карт ещё нет</strong>
-            <span>Создайте первую карту, затем её можно будет открыть, изменить или удалить.</span>
+            <strong>Войдите в аккаунт</strong>
+            <span>После входа здесь появятся ваши сохранённые карты.</span>
           </div>
           <a className="primary-link-button" href="/charts/new">Создать карту</a>
         </section>
       ) : null}
 
+      {!needsAuth && !status && !profiles.length ? (
+        <section className="charts-empty-state">
+          <div>
+            <strong>Карт пока нет</strong>
+            <span>Создайте первую карту или откройте раздел людей для будущих связей.</span>
+          </div>
+          <div className="charts-empty-actions">
+            <a className="primary-link-button" href="/charts/new">Создать карту</a>
+            <a className="secondary-button" href="/people">Люди</a>
+            <a className="secondary-button" href="/transits">Транзиты</a>
+          </div>
+        </section>
+      ) : null}
+
       {!needsAuth && profiles.length ? (
-        <section className="charts-dashboard-list">
+        <section className="charts-dashboard-list" aria-label="Сохранённые карты">
           {profiles.map((profile) => (
             <article className="chart-profile-card" key={profile.id}>
               <div>
@@ -95,6 +156,8 @@ export default function ChartsPage() {
               <div className="chart-profile-card-actions">
                 <a href={`/charts/${profile.id}`}>Открыть</a>
                 <a href={`/charts/${profile.id}/edit`}>Редактировать</a>
+                <a href="/reports">Обзор</a>
+                <a href="/interactions">Взаимодействия</a>
                 <button type="button" onClick={() => void handleDelete(profile)}>Удалить</button>
               </div>
             </article>

@@ -116,6 +116,46 @@ body .charts-dashboard-head {
   padding: 16px 18px;
 }
 
+body .charts-quick-actions,
+body .charts-empty-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+body .charts-summary-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+body .charts-summary-grid > div {
+  background: #fff;
+  border: 1px solid #d7e4e8;
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+body .charts-summary-grid span {
+  color: #60727c;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+body .charts-summary-grid strong {
+  color: #102832;
+  font-size: 15px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
 body .charts-dashboard-head h1,
 body .chart-profile-form h2,
 body .chart-detail-head h1 {
@@ -466,6 +506,10 @@ body .chart-profile-form textarea {
     flex-direction: column;
   }
 
+  body .charts-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
   body .chart-profile-form-grid,
   body .chart-detail-grid,
   body .chart-settings-summary,
@@ -478,9 +522,19 @@ body .chart-profile-form textarea {
   }
 
   body .chart-profile-card-actions,
+  body .charts-quick-actions,
+  body .charts-empty-actions,
   body .chart-detail-actions,
   body .chart-profile-form-actions {
     justify-content: stretch;
+  }
+
+  body .chart-profile-card-actions a,
+  body .chart-profile-card-actions button,
+  body .charts-quick-actions a,
+  body .charts-empty-actions a {
+    justify-content: center;
+    text-align: center;
   }
 }
 /* Stage 5C interactions workspace */
