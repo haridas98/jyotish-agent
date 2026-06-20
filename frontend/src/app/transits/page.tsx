@@ -1,17 +1,153 @@
-import { PrivateHistoryPage } from "@/app/private-history-page";
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ProductShell } from "@/app/product-shell";
+import { buildD1WorkbenchModel } from "@/astrology/d1-workbench";
+import { D1ChartWorkbench, D1ChartWorkbenchShell } from "@/ui/d1-workbench";
+import { fetchTransitWorkbench, listChartProfiles, type ChartCalculationRecord, type ChartProfile } from "@/lib/api";
+
+function nowParts() {
+  const now = new Date();
+  return {
+    date: now.toISOString().slice(0, 10),
+    time: now.toTimeString().slice(0, 5),
+  };
+}
+
+function profileMeta(profile: ChartProfile) {
+  return `${profile.birth_date} · ${profile.birth_time?.slice(0, 5) ?? "время неизвестно"} · ${profile.place.label}`;
+}
+
+function transitMomentIso(date: string, time: string) {
+  return `${date}T${time || "12:00"}:00`;
+}
+
+function compactNumber(value: unknown) {
+  return typeof value === "number" ? Number(value.toFixed(6)) : value;
+}
 
 export default function TransitsPage() {
+  const initialNow = useMemo(() => nowParts(), []);
+  const [profiles, setProfiles] = useState<ChartProfile[]>([]);
+  const [selectedChartId, setSelectedChartId] = useState<number | null>(null);
+  const [date, setDate] = useState(initialNow.date);
+  const [time, setTime] = useState(initialNow.time);
+  const [timezone, setTimezone] = useState("Asia/Yekaterinburg");
+  const [latitude, setLatitude] = useState("53.6304");
+  const [longitude, setLongitude] = useState("55.9308");
+  const [model, setModel] = useState<Record<string, unknown> | null>(null);
+  const [status, setStatus] = useState("Загружаю сохранённые карты...");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    listChartProfiles()
+      .then((rows) => {
+        setProfiles(rows);
+        const first = rows[0] ?? null;
+        setSelectedChartId((current) => current ?? first?.id ?? null);
+        if (first) {
+          setTimezone(first.timezone);
+          setLatitude(String(compactNumber(first.place.latitude)));
+          setLongitude(String(compactNumber(first.place.longitude)));
+          setStatus("");
+        } else {
+          setStatus("Для работы с транзитами сначала создайте натальную карту.");
+        }
+      })
+      .catch((error) => setStatus(error instanceof Error ? error.message : "Не удалось загрузить карты."));
+  }, []);
+
+  const selectedProfile = profiles.find((profile) => profile.id === selectedChartId) ?? null;
+
+  const loadTransit = useCallback(async () => {
+    if (!selectedChartId) return;
+    setLoading(true);
+    setStatus("Загружаю транзитную модель...");
+    try {
+      const payload = await fetchTransitWorkbench(selectedChartId, {
+        at: transitMomentIso(date, time),
+        timezone,
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+        scope: "d1",
+      });
+      setModel(payload);
+      setStatus("");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Проверьте координаты и часовой пояс.");
+    } finally {
+      setLoading(false);
+    }
+  }, [date, latitude, longitude, selectedChartId, time, timezone]);
+
+  useEffect(() => {
+    if (selectedChartId) void loadTransit();
+  }, [selectedChartId]);
+
+  const setNow = () => {
+    const parts = nowParts();
+    setDate(parts.date);
+    setTime(parts.time);
+  };
+
+  const d1Model = useMemo(() => {
+    if (!model || !selectedProfile) return null;
+    const calculation = {
+      id: 0,
+      status: "complete",
+      calculation_version: "transit-workbench.v1",
+      updated_at: String((model.transitMoment as { isoDateTime?: string } | undefined)?.isoDateTime ?? ""),
+      result: {
+        ascendant: (model.specialPoints as unknown[])?.[0] ?? null,
+        grahas: (model.grahas as unknown[]) ?? [],
+        houses: (model.houses as unknown[]) ?? [],
+        settings: (model.method as Record<string, unknown>) ?? {},
+        birth: {},
+        place: model.location ?? {},
+      },
+    } as ChartCalculationRecord;
+    return buildD1WorkbenchModel(selectedProfile, null, calculation, "D1");
+  }, [model, selectedProfile]);
+
   return (
-    <PrivateHistoryPage
-      active="transits"
-      title="Транзиты"
-      actionHref="/?analysis=transits#reports"
-      actionLabel="Создать"
-      historyKind="current_day_transit_overview"
-      basePath="/transits"
-      emptyText="Обзоров текущего дня пока нет."
-      authText="Войдите, чтобы видеть свои обзоры дня."
-      errorText="История временно недоступна."
-    />
+    <ProductShell active="transits">
+      <section className="product-main">
+        <header className="product-page-head">
+          <div>
+            <h1>Транзиты</h1>
+            <p>Выберите карту и контрольный момент.</p>
+          </div>
+        </header>
+
+        <section className="product-page-card dasha-workbench-shell" aria-label="Transit Workbench">
+          <div className="dasha-toolbar">
+            <label>Натальная карта
+              <select value={selectedChartId ?? ""} onChange={(event) => setSelectedChartId(Number(event.target.value) || null)}>
+                {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.display_name}</option>)}
+              </select>
+            </label>
+            <label>Дата<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+            <label>Время<input type="time" value={time} onChange={(event) => setTime(event.target.value)} /></label>
+            <label>Часовой пояс<input value={timezone} onChange={(event) => setTimezone(event.target.value)} /></label>
+            <label>Место<input value={selectedProfile?.place.label ?? ""} readOnly /></label>
+            <label>Широта<input value={latitude} onChange={(event) => setLatitude(event.target.value)} /></label>
+            <label>Долгота<input value={longitude} onChange={(event) => setLongitude(event.target.value)} /></label>
+          </div>
+          <div className="dasha-control-bar" aria-label="Управление транзитами">
+            <button type="button" onClick={setNow}>Сейчас</button>
+            <button type="button" onClick={() => void loadTransit()}>Применить</button>
+            <button type="button" onClick={setNow}>Вернуться к текущему моменту</button>
+            <span>Стиль: Северный / Южный</span>
+            <span>Режим: Новичок / Астролог</span>
+            <span>Термины: RU / EN / SA / Кратко</span>
+            <span>Слои: дома, знаки, грахи, Лагна, градусы, накшатры, пады</span>
+          </div>
+          {selectedProfile ? <p className="dasha-empty-note">{profileMeta(selectedProfile)}</p> : <a href="/charts/new">Создать карту</a>}
+          {status ? <div className="product-status">{status}</div> : null}
+          {loading && !d1Model ? <D1ChartWorkbenchShell status="Открываю транзитную D1..." /> : null}
+          {d1Model ? <D1ChartWorkbench model={d1Model} status="Транзитная карта D1: факты без прогнозов, аспектов и AI." /> : null}
+        </section>
+      </section>
+    </ProductShell>
   );
 }

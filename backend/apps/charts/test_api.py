@@ -1348,3 +1348,123 @@ def test_dev_dasha_workbench_check_derives_antardashas_for_legacy_payload(user):
     assert response.data["pratyantardashaCount"] == 9
     assert response.data["currentPratyantardashaLord"] == "Ketu"
     assert response.data["currentPratyantardashaParentLord"] == "Ketu"
+
+@pytest.mark.django_db
+def test_transit_workbench_requires_authentication():
+    response = APIClient().get("/api/charts/1/transit-workbench")
+
+    assert response.status_code in {401, 403}
+
+
+@pytest.mark.django_db
+def test_transit_workbench_rejects_other_users_chart(user):
+    other_user = get_user_model().objects.create_user(username="transit-other", password="strong-pass-108")
+    owner_client = APIClient()
+    owner_client.force_authenticate(user=user)
+    response = owner_client.post(
+        "/api/charts/profiles",
+        {"display_name": "Transit private", "birth_date": "1990-08-15", "birth_time": "10:24", "place_name": "Vrindavan"},
+        format="json",
+    )
+    profile_id = response.data["profile"]["id"]
+    other_client = APIClient()
+    other_client.force_authenticate(user=other_user)
+
+    response = other_client.get(f"/api/charts/{profile_id}/transit-workbench")
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_transit_workbench_validates_query(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    profile = client.post(
+        "/api/charts/profiles",
+        {"display_name": "Transit validation", "birth_date": "1990-08-15", "birth_time": "10:24", "place_name": "Vrindavan"},
+        format="json",
+    ).data["profile"]
+
+    assert client.get(f"/api/charts/{profile['id']}/transit-workbench?at=not-date").status_code == 400
+    assert client.get(f"/api/charts/{profile['id']}/transit-workbench?timezone=Bad/Zone").status_code == 400
+    assert client.get(f"/api/charts/{profile['id']}/transit-workbench?latitude=91").status_code == 400
+    assert client.get(f"/api/charts/{profile['id']}/transit-workbench?longitude=181").status_code == 400
+    assert client.get(f"/api/charts/{profile['id']}/transit-workbench?scope=d9").status_code == 400
+
+
+@pytest.mark.django_db
+@override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
+def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypatch):
+    monkeypatch.setenv("JYOTISH_DEPLOY_COMMIT", "transit-test-commit")
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Transit external check",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result={
+            "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1},
+            "grahas": [
+                {"body": body, "longitude": 120.0 + index, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1}
+                for index, body in enumerate(["Surya", "Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Rahu", "Ketu"])
+            ],
+            "houses": [{"house": item, "rashi": "Cancer", "rashi_index": item - 1} for item in range(1, 13)],
+            "settings": {"ayanamsa": "lahiri", "node_type": "true", "calculation_model": "drik_siddhanta"},
+            "birth": {},
+            "place": {},
+        },
+    )
+
+    response = APIClient().get(f"/api/dev/transit-workbench-check?token=dev-token&chart_id={profile.id}")
+
+    assert response.status_code == 200
+    assert response["Cache-Control"] == "no-store"
+    assert response.data["status"] == "ok"
+    assert response.data["schemaVersion"] == "transit-workbench-check.v1"
+    assert response.data["deployCommit"] == "transit-test-commit"
+    assert response.data["scopeId"] == "D1"
+    assert response.data["hasCalculation"] is True
+    assert response.data["houseCount"] == 12
+    assert response.data["rashiCount"] == 12
+    assert response.data["grahaCount"] == 9
+    assert response.data["specialPointCount"] == 1
+    assert response.data["chartObjectCount"] == 10
+    assert response.data["supportedStyles"] == ["north", "south"]
+    assert response.data["supportedModes"] == ["novice", "astrologer"]
+    assert response.data["tabIds"] == ["overview", "grahas", "houses", "nakshatras"]
+    assert response.data["entityInspectorCount"] == 1
+    assert response.data["supportsControlDate"] is True
+    assert response.data["supportsControlTime"] is True
+    assert response.data["supportsTimezone"] is True
+    assert response.data["supportsLocation"] is True
+    assert response.data["supportsNowAction"] is True
+    assert response.data["capabilities"] == {
+        "natalOverlay": False,
+        "aspects": False,
+        "ashtakavarga": False,
+        "sadeSati": False,
+        "ai": False,
+        "rawEvidence": False,
+    }
+    assert "birth_date" not in response.data
+    assert "raw" not in response.data
+
+
+@pytest.mark.django_db
+@override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
+def test_dev_transit_workbench_check_rejects_bad_token():
+    response = APIClient().get("/api/dev/transit-workbench-check?token=bad&chart_id=1")
+
+    assert response.status_code == 403

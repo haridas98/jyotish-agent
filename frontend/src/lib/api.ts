@@ -2694,6 +2694,30 @@ export async function fetchD1ChartWorkbench(profileId: number, scope: ChartWorkb
   return data;
 }
 
+
+export type TransitWorkbenchQuery = {
+  at?: string;
+  timezone?: string;
+  latitude?: number;
+  longitude?: number;
+  scope?: "d1";
+};
+
+export async function fetchTransitWorkbench(profileId: number, query: TransitWorkbenchQuery = {}): Promise<Record<string, unknown>> {
+  const params = new URLSearchParams();
+  if (query.at) params.set("at", query.at);
+  if (query.timezone) params.set("timezone", query.timezone);
+  if (typeof query.latitude === "number") params.set("latitude", String(query.latitude));
+  if (typeof query.longitude === "number") params.set("longitude", String(query.longitude));
+  if (query.scope) params.set("scope", query.scope);
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const response = await apiFetch(`/api/charts/${profileId}/transit-workbench${suffix}`, { cache: "no-store" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Request failed");
+  }
+  return data;
+}
 export async function createChartProfile(payload: BirthChartRequest & { display_name: string; is_self_profile?: boolean; birth_time_accuracy?: string; gender?: "male" | "female" | "unknown"; notes?: string }): Promise<ChartProfile> {
   const birthTimeAccuracy = payload.birth_time_accuracy ?? (payload.birth_time?.trim() ? "exact" : "unknown");
   const response = await apiFetch("/api/charts", {

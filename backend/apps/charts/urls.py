@@ -4,6 +4,7 @@ from .views import (
     BirthProfileCalculateView,
     BirthProfileDetailView,
     BirthProfileListView,
+    BirthProfileTransitWorkbenchView,
     BirthProfileRelationshipActionView,
     BirthProfileRelationshipDetailView,
     BirthProfileRelationshipInboxView,
@@ -13,15 +14,18 @@ from .views import (
     ChartRelationshipListView,
     D1WorkbenchDevCheckView,
     DashaWorkbenchDevCheckView,
+    TransitWorkbenchDevCheckView,
 )
 
 urlpatterns = [
     path("dev/d1-workbench-check", D1WorkbenchDevCheckView.as_view(), name="dev-d1-workbench-check"),
     path("dev/varga-workbench-check", D1WorkbenchDevCheckView.as_view(), name="dev-varga-workbench-check"),
     path("dev/dasha-workbench-check", DashaWorkbenchDevCheckView.as_view(), name="dev-dasha-workbench-check"),
+    path("dev/transit-workbench-check", TransitWorkbenchDevCheckView.as_view(), name="dev-transit-workbench-check"),
     path("charts", BirthProfileListView.as_view(), name="chart-list"),
     path("charts/<int:profile_id>", BirthProfileDetailView.as_view(), name="chart-detail"),
     path("charts/<int:profile_id>/workbench", BirthProfileWorkbenchView.as_view(), name="chart-workbench"),
+    path("charts/<int:profile_id>/transit-workbench", BirthProfileTransitWorkbenchView.as_view(), name="chart-transit-workbench"),
     path("charts/profiles", BirthProfileListView.as_view(), name="chart-profile-list"),
     path("charts/profiles/<int:profile_id>", BirthProfileDetailView.as_view(), name="chart-profile-detail"),
     path("charts/profile-relationships", BirthProfileRelationshipListView.as_view(), name="chart-profile-relationship-list"),

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, time
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.utils import timezone as django_timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -35,6 +38,200 @@ from .services import (
 )
 
 
+
+
+class TransitWorkbenchDevCheckView(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
+    def get(self, request):
+        if not settings.ENABLE_DEV_LOGIN:
+            return Response({"error": "not found"}, status=404)
+        token = str(request.query_params.get("token") or "").strip()
+        if not settings.DEV_LOGIN_TOKEN or token != settings.DEV_LOGIN_TOKEN:
+            return Response({"error": "forbidden"}, status=403)
+        try:
+            chart_id = int(request.query_params.get("chart_id") or request.query_params.get("profile_id") or 0)
+        except (TypeError, ValueError):
+            return Response({"error": "chart_id is invalid"}, status=400)
+        if chart_id <= 0:
+            return Response({"error": "chart_id is required"}, status=400)
+        profile = get_object_or_404(BirthProfile.objects.select_related("place"), id=chart_id)
+        calculation = _latest_complete_calculation(profile)
+        chart = calculation.result if calculation and isinstance(calculation.result, dict) else {}
+        response = Response(_transit_workbench_check_payload(profile.id, chart, calculation is not None))
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+class BirthProfileTransitWorkbenchView(APIView):
+    permission_classes = [PrivateAppAccess, IsAuthenticated]
+
+    def get(self, request, profile_id: int):
+        profile = get_object_or_404(
+            BirthProfile.objects.select_related("place"),
+            id=profile_id,
+            user=request.user,
+        )
+        try:
+            control = _transit_control_from_query(profile, request.query_params)
+        except ValueError as exc:
+            return Response({"error": str(exc)}, status=400)
+        calculation = _latest_complete_calculation(profile)
+        chart = calculation.result if calculation and isinstance(calculation.result, dict) else {}
+        return Response(_transit_workbench_model(profile.id, chart, calculation is not None, control))
+
+
+def _latest_complete_calculation(profile: BirthProfile) -> ChartCalculation | None:
+    return profile.calculations.filter(status=ChartCalculation.Status.COMPLETE).order_by("-created_at", "-id").first()
+
+
+def _transit_control_from_query(profile: BirthProfile, query) -> dict[str, object]:
+    scope = str(query.get("scope") or "d1").strip().lower()
+    if scope != "d1":
+        raise ValueError("only D1 transit scope is supported")
+    timezone_name = str(query.get("timezone") or profile.timezone_name).strip()
+    try:
+        tz = ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError as exc:
+        raise ValueError("timezone is invalid") from exc
+    raw_at = str(query.get("at") or "").strip()
+    if raw_at:
+        moment = parse_datetime(raw_at)
+        if moment is None:
+            raise ValueError("at is invalid")
+    else:
+        moment = django_timezone.now()
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=tz)
+    else:
+        moment = moment.astimezone(tz)
+    latitude = _transit_float(query.get("latitude"), float(profile.place.latitude), -90, 90, "latitude")
+    longitude = _transit_float(query.get("longitude"), float(profile.place.longitude), -180, 180, "longitude")
+    return {
+        "isoDateTime": moment.isoformat(),
+        "timezone": timezone_name,
+        "location": {
+            "label": str(query.get("location") or profile.place.metadata.get("label") or profile.place.name),
+            "latitude": latitude,
+            "longitude": longitude,
+        },
+    }
+
+
+def _transit_float(value: object, default: float, minimum: float, maximum: float, label: str) -> float:
+    if value in (None, ""):
+        return default
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} is invalid") from exc
+    if number < minimum or number > maximum:
+        raise ValueError(f"{label} is invalid")
+    return number
+
+
+def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, control: dict[str, object]) -> dict[str, object]:
+    houses = _transit_houses(chart)
+    grahas = _transit_grahas(chart)
+    special_points = _transit_special_points(chart)
+    settings_data = chart.get("settings") if isinstance(chart.get("settings"), dict) else {}
+    return {
+        "schemaVersion": "transit-workbench.v1",
+        "chartId": chart_id,
+        "hasCalculation": has_calculation,
+        "transitMoment": {"isoDateTime": control["isoDateTime"], "timezone": control["timezone"]},
+        "location": control["location"],
+        "scopeId": "D1",
+        "grahas": grahas,
+        "specialPoints": special_points,
+        "houses": houses,
+        "rashis": _transit_rashis(houses),
+        "method": {
+            "ayanamshaId": str(settings_data.get("ayanamsa") or "lahiri"),
+            "nodesMode": str(settings_data.get("node_type") or "true"),
+            "calculationPreset": str(settings_data.get("calculation_model") or "drik_siddhanta"),
+        },
+        "capabilities": _transit_capabilities(grahas, special_points),
+        "warnings": [] if has_calculation else [{"code": "calculation_absent", "severity": "warning", "message": "Для карты ещё нет сохранённого D1 расчёта."}],
+    }
+
+
+def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation: bool) -> dict[str, object]:
+    houses = _transit_houses(chart)
+    grahas = _transit_grahas(chart)
+    special_points = _transit_special_points(chart)
+    return {
+        "status": "ok",
+        "schemaVersion": "transit-workbench-check.v1",
+        "deployCommit": _current_deploy_commit(),
+        "scopeId": "D1",
+        "hasCalculation": has_calculation,
+        "houseCount": len(houses),
+        "rashiCount": len(_transit_rashis(houses)),
+        "grahaCount": len(grahas),
+        "specialPointCount": len(special_points),
+        "chartObjectCount": len(grahas) + len(special_points),
+        "supportedStyles": ["north", "south"],
+        "supportedModes": ["novice", "astrologer"],
+        "tabIds": ["overview", "grahas", "houses", "nakshatras"],
+        "entityInspectorCount": 1,
+        "supportsControlDate": True,
+        "supportsControlTime": True,
+        "supportsTimezone": True,
+        "supportsLocation": True,
+        "supportsNowAction": True,
+        "capabilities": {
+            "natalOverlay": False,
+            "aspects": False,
+            "ashtakavarga": False,
+            "sadeSati": False,
+            "ai": False,
+            "rawEvidence": False,
+        },
+    }
+
+
+def _transit_houses(chart: dict) -> list[dict[str, object]]:
+    houses = chart.get("houses") if isinstance(chart, dict) else []
+    return [item for item in houses if isinstance(item, dict)] if isinstance(houses, list) else []
+
+
+def _transit_grahas(chart: dict) -> list[dict[str, object]]:
+    grahas = chart.get("grahas") if isinstance(chart, dict) else []
+    return [item for item in grahas if isinstance(item, dict)] if isinstance(grahas, list) else []
+
+
+def _transit_special_points(chart: dict) -> list[dict[str, object]]:
+    ascendant = chart.get("ascendant") if isinstance(chart, dict) else None
+    return [ascendant] if isinstance(ascendant, dict) else []
+
+
+def _transit_rashis(houses: list[dict[str, object]]) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    seen: set[object] = set()
+    for house in houses:
+        key = house.get("rashi_index") if house.get("rashi_index") is not None else house.get("rashi")
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append({"rashiIndex": house.get("rashi_index"), "rashiName": house.get("rashi"), "house": house.get("house")})
+    return rows
+
+
+def _transit_capabilities(grahas: list[dict[str, object]], special_points: list[dict[str, object]]) -> dict[str, bool]:
+    placements = [*grahas, *special_points]
+    return {
+        "northChart": True,
+        "southChart": True,
+        "nakshatras": any(item.get("nakshatra") for item in placements),
+        "padas": any(item.get("pada") for item in placements),
+        "natalOverlay": False,
+        "aspects": False,
+        "ashtakavarga": False,
+        "sadeSati": False,
+        "ai": False,
+    }
 
 class D1WorkbenchDevCheckView(APIView):
     authentication_classes: list = []
