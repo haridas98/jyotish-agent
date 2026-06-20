@@ -30,6 +30,13 @@ assert(page.includes("aspectLayer") && page.includes("sampleRefs"), "/transits m
 assert(page.includes("enabledByDefault") && page.includes("availableInModes"), "/transits must keep aspect layer off by default and astrologer-only");
 assert(page.includes("rashiAspectLayer") && page.includes("showRashiDrishti"), "/transits must expose an astrologer-only rashi drishti toggle");
 assert(page.includes("aspect.rashi_drishti.parashara.v1"), "/transits must keep Rashi Drishti separate from Graha Drishti");
+assert(page.includes('type DisplayMode = "novice" | "astrologer"'), "/transits must define a real display mode type");
+assert(page.includes('useState<DisplayMode>("novice")'), "/transits must default display mode to novice");
+assert(page.includes('canShowGrahaDrishti'), "Graha Drishti must be gated by astrologer display mode");
+assert(page.includes('canShowRashiDrishti'), "Rashi Drishti must be gated by astrologer display mode");
+assert(page.includes("{canShowGrahaDrishti && aspectLayer ? ("), "Graha Drishti render condition must use the mode gate");
+assert(page.includes("{canShowRashiDrishti && rashiAspectLayer ? ("), "Rashi Drishti render condition must use the mode gate");
+assert(page.includes('setDisplayMode("novice")') && page.includes('setDisplayMode("astrologer")'), "/transits must expose novice/astrologer mode controls");
 assert(!page.includes("sourceRuleIds.map") && !page.includes("sourceRuleIds.join"), "/transits normal UI must not render raw Rashi Drishti source IDs");
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");
 assert(nav.includes("/transits"), "shared nav must include transits route");

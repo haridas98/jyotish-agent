@@ -45,6 +45,7 @@ function displayAspectKind(kind: string | undefined) {
 }
 
 type TransitViewMode = "transit_only" | "overlay" | "side_by_side";
+type DisplayMode = "novice" | "astrologer";
 
 type GrahaDrishtiRef = {
   sourceEntityRef?: string;
@@ -84,6 +85,7 @@ export default function TransitsPage() {
   const [longitude, setLongitude] = useState("55.9308");
   const [model, setModel] = useState<Record<string, unknown> | null>(null);
   const [viewMode, setViewMode] = useState<TransitViewMode>("transit_only");
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("novice");
   const [showGrahaDrishti, setShowGrahaDrishti] = useState(false);
   const [showRashiDrishti, setShowRashiDrishti] = useState(false);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
@@ -144,12 +146,22 @@ export default function TransitsPage() {
     setTime(parts.time);
   };
 
+  const switchDisplayMode = (mode: DisplayMode) => {
+    setDisplayMode(mode);
+    if (mode === "novice") {
+      setShowGrahaDrishti(false);
+      setShowRashiDrishti(false);
+    }
+  };
+
   const overlay = (model?.overlay as { natalObjectCount?: number; transitObjectCount?: number; housesRelativeTo?: string } | undefined) ?? null;
   const natalModel = (model?.natal as { hasCalculation?: boolean; grahas?: unknown[]; specialPoints?: unknown[] } | undefined) ?? null;
   const aspectLayer = (model?.aspectLayer as GrahaDrishtiLayer | undefined) ?? null;
   const aspectRefs = (aspectLayer?.items?.length ? aspectLayer.items : aspectLayer?.sampleRefs) ?? [];
   const rashiAspectLayer = (model?.rashiAspectLayer as GrahaDrishtiLayer | undefined) ?? null;
   const rashiAspectRefs = (rashiAspectLayer?.items?.length ? rashiAspectLayer.items : rashiAspectLayer?.sampleRefs) ?? [];
+  const canShowGrahaDrishti = displayMode === "astrologer" && Boolean(aspectLayer?.availableInModes?.includes("astrologer"));
+  const canShowRashiDrishti = displayMode === "astrologer" && Boolean(rashiAspectLayer?.availableInModes?.includes("astrologer"));
 
   const d1Model = useMemo(() => {
     if (!model || !selectedProfile) return null;
@@ -210,12 +222,20 @@ export default function TransitsPage() {
               </button>
             ))}
           </div>
+          <div className="dasha-control-bar transit-view-switch" aria-label="Р РµР¶РёРј РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ">
+            <button type="button" className={displayMode === "novice" ? "active" : ""} onClick={() => { setDisplayMode("novice"); switchDisplayMode("novice"); }}>
+              Новичок
+            </button>
+            <button type="button" className={displayMode === "astrologer" ? "active" : ""} onClick={() => { setDisplayMode("astrologer"); switchDisplayMode("astrologer"); }}>
+              Астролог
+            </button>
+          </div>
           <div className="product-status transit-overlay-contract">
             <strong>Легенда:</strong> Натал = сохранённая D1, Транзит = контрольный момент. Дома в overlay читаются от натальной карты; орбисы, прогнозы и AI не строятся.
             {overlay ? <span> Контракт: {overlay.natalObjectCount ?? 0} натальных объектов, {overlay.transitObjectCount ?? 0} транзитных объектов, один EntityInspector.</span> : null}
             {natalModel?.hasCalculation === false ? <span> Для overlay нужен сохранённый D1-расчёт.</span> : null}
           </div>
-          {aspectLayer ? (
+          {canShowGrahaDrishti && aspectLayer ? (
             <section className="product-status transit-aspect-layer" aria-label="Graha Drishti aspect layer">
               <div className="transit-aspect-head">
                 <strong>Граха-дришти</strong>
@@ -237,7 +257,7 @@ export default function TransitsPage() {
               ) : null}
             </section>
           ) : null}
-          {rashiAspectLayer ? (
+          {canShowRashiDrishti && rashiAspectLayer ? (
             <section className="product-status transit-aspect-layer" aria-label="Rashi Drishti aspect layer">
               <div className="transit-aspect-head">
                 <strong>Раши-дришти</strong>
