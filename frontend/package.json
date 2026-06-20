@@ -27,6 +27,7 @@
     "test:ai-staging-gateway": "node scripts/check-ai-staging-gateway.mjs",
     "test:ai-staging-smoke": "node scripts/check-ai-staging-smoke.mjs",
     "test:ai-human-review-mock": "node scripts/check-ai-human-review-mock.mjs",
+    "test:ai-report-workspace": "node scripts/check-ai-report-workspace.mjs",
     "test:d1-workbench": "node scripts/check-d1-workbench.mjs",
     "test:chart-workbench-ux": "node scripts/check-chart-workbench-ux.mjs",
     "test:dasha-workbench": "node scripts/check-dasha-workbench.mjs",

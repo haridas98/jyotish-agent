@@ -2,6 +2,7 @@ export * from "./reportAccuracyPolicy";
 export * from "./reportEvidenceBuilder";
 export * from "./reportEvidenceTypes";
 export * from "./reportEvidenceValidation";
+export * from "./reportGenerationWorkspace";
 export * from "./reportModePolicy";
 export * from "./reportRecipeRegistry";
 export * from "./reportRecipeResolver";

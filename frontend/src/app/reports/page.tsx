@@ -11,13 +11,18 @@ import {
   type ChartRelationship,
 } from "@/lib/api";
 import {
+  buildReportWorkspaceReadiness,
   getRelationshipType,
   getReportType,
+  guidanceModes,
   listReportTypes,
+  reportIntents,
   resolveReportRecipe,
   type EntityId,
+  type GuidanceModeId,
   type RelationshipTypeId,
   type RelationshipUiMode,
+  type ReportIntentId,
   type ReportTypeId,
 } from "@/astrology";
 import { EntityInspector, ReportRecipeRenderer } from "@/ui";
@@ -37,6 +42,12 @@ function accuracyLabel(value: string): string {
   return "время не указано";
 }
 
+function readinessLabel(status: string): string {
+  if (status === "ready") return "Готов";
+  if (status === "not_available") return "Недоступно";
+  return "Нужно дополнить";
+}
+
 export default function ReportBuilderPage() {
   const [mode, setMode] = useState<RelationshipUiMode>("novice");
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
@@ -44,18 +55,22 @@ export default function ReportBuilderPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<number | null>(null);
   const [reportTypeId, setReportTypeId] = useState<ReportTypeId>(reportTypes[0].id);
+  const [selectedIntentId, setSelectedIntentId] = useState<ReportIntentId>("short_report");
+  const [guidanceModeId, setGuidanceModeId] = useState<GuidanceModeId>("general");
+  const [questionText, setQuestionText] = useState("");
   const [activeEntityId, setActiveEntityId] = useState<EntityId | null>(null);
-  const [status, setStatus] = useState("Загружаю сохранённые карты...");
+  const [status, setStatus] = useState("Загружаю сохраненные карты...");
   const [needsAuth, setNeedsAuth] = useState(false);
 
   const reportType = getReportType(reportTypeId) ?? reportTypes[0];
+  const selectedIntent = reportIntents.find((intent) => intent.id === selectedIntentId) ?? reportIntents[0];
+  const selectedGuidanceMode = guidanceModes.find((item) => item.id === guidanceModeId) ?? guidanceModes[0];
   const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? null;
   const relatedRelationships = relationships.filter(
     (relationship) => selectedProfileId && (relationship.chart_a_id === selectedProfileId || relationship.chart_b_id === selectedProfileId),
   );
   const selectedRelationship = relatedRelationships.find((relationship) => relationship.id === selectedRelationshipId) ?? null;
   const selectedRelationshipType = selectedRelationship ? getRelationshipType(selectedRelationship.relationship_type_id as RelationshipTypeId) : null;
-  const reportReadiness = profiles.length ? "Структура готова" : "Нужна сохранённая карта";
 
   const resolvedRecipe = useMemo(
     () =>
@@ -72,6 +87,20 @@ export default function ReportBuilderPage() {
     [mode, reportTypeId, selectedProfile?.birth_time_accuracy, selectedRelationship],
   );
 
+  const readiness = useMemo(
+    () =>
+      buildReportWorkspaceReadiness({
+        selectedChartId: selectedProfileId,
+        selectedRelationshipId,
+        selectedReportTypeId: reportTypeId,
+        selectedRecipeId: resolvedRecipe.recipeId,
+        intentId: selectedIntentId,
+        guidanceMode: guidanceModeId,
+        questionText,
+      }),
+    [guidanceModeId, questionText, reportTypeId, resolvedRecipe.recipeId, selectedIntentId, selectedProfileId, selectedRelationshipId],
+  );
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -80,7 +109,7 @@ export default function ReportBuilderPage() {
         if (!user) {
           if (!cancelled) {
             setNeedsAuth(true);
-            setStatus("Войдите, чтобы собрать отчёт по своим картам.");
+            setStatus("Войдите, чтобы собрать отчет по своим картам.");
           }
           return;
         }
@@ -89,9 +118,9 @@ export default function ReportBuilderPage() {
         setProfiles(profileList);
         setRelationships(relationshipList);
         setSelectedProfileId((current) => current ?? profileList[0]?.id ?? null);
-        setStatus(profileList.length ? "Выберите карту, тип отчёта и контекст." : "Сначала создайте сохранённую карту.");
+        setStatus(profileList.length ? "Выберите карту, намерение и контекст." : "Сначала создайте сохраненную карту.");
       } catch (error) {
-        if (!cancelled) setStatus(error instanceof Error ? error.message : "Не удалось загрузить конструктор отчёта.");
+        if (!cancelled) setStatus(error instanceof Error ? error.message : "Не удалось загрузить конструктор отчета.");
       }
     }
     load();
@@ -110,8 +139,8 @@ export default function ReportBuilderPage() {
     <ProductShell active="reports">
       <header className="product-page-head reports-workspace-head">
         <div>
-          <h1>Конструктор отчёта</h1>
-          <p>Соберите структуру будущего отчёта из карты, сохранённых связей, рецептов и сущностей. AI-генерация здесь не запускается.</p>
+          <h1>Конструктор отчета</h1>
+          <p>Подготовьте структуру будущего обзора из карты, сохраненных связей, рецептов и сущностей. AI-генерация здесь не запускается.</p>
         </div>
         <div className="interaction-mode-toggle" aria-label="Режим просмотра">
           <button type="button" className={mode === "novice" ? "active" : ""} onClick={() => setMode("novice")}>
@@ -126,7 +155,7 @@ export default function ReportBuilderPage() {
 
       <p className="interaction-status-line">{status}</p>
 
-      <section className="workspace-bridge-summary" aria-label="Сводка конструктора отчёта">
+      <section className="workspace-bridge-summary" aria-label="Сводка конструктора отчета">
         <div>
           <span>Карт</span>
           <strong>{profiles.length}</strong>
@@ -140,12 +169,12 @@ export default function ReportBuilderPage() {
           <strong>{selectedProfile?.display_name ?? "не выбрана"}</strong>
         </div>
         <div className="report-readiness">
-          <span>Тип отчёта</span>
-          <strong>{reportType.label.ru} · {reportReadiness}</strong>
+          <span>Готовность</span>
+          <strong>{selectedIntent.label} · {readinessLabel(readiness.status)}</strong>
         </div>
       </section>
 
-      <nav className="workspace-bridge-actions" aria-label="Быстрые действия отчётов">
+      <nav className="workspace-bridge-actions" aria-label="Быстрые действия отчетов">
         <Link className="primary-link-button" href="/charts/new">Создать карту</Link>
         <Link className="secondary-button" href="/people">Люди</Link>
         <Link className="secondary-button" href="/interactions">Взаимодействия</Link>
@@ -155,14 +184,14 @@ export default function ReportBuilderPage() {
       {needsAuth ? (
         <section className="interaction-empty panel">
           <h2>Нужен вход</h2>
-          <p>После входа здесь будут доступны только ваши карты, связи и заготовки отчётов.</p>
+          <p>После входа здесь будут доступны только ваши карты, связи и заготовки отчетов.</p>
           <div className="workspace-bridge-actions">
             <Link className="primary-link-button" href="/charts/new">Создать карту</Link>
             <Link className="secondary-button" href="/people">Люди</Link>
           </div>
         </section>
       ) : (
-        <section className="reports-workspace" aria-label="Рабочее место конструктора отчётов">
+        <section className="reports-workspace" aria-label="Рабочее место конструктора отчетов">
           <aside className="reports-setup-panel panel">
             <h2>Основа</h2>
             {profiles.length ? (
@@ -180,7 +209,7 @@ export default function ReportBuilderPage() {
                 <small>{profileMeta(selectedProfile)}</small>
 
                 <label>
-                  Тип отчёта
+                  Тип отчета
                   <select value={reportTypeId} onChange={(event) => setReportTypeId(event.target.value as ReportTypeId)}>
                     {reportTypes.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -188,6 +217,45 @@ export default function ReportBuilderPage() {
                       </option>
                     ))}
                   </select>
+                </label>
+
+                <fieldset className="report-workspace-choice">
+                  <legend>Намерение</legend>
+                  {reportIntents.map((intent) => (
+                    <button
+                      key={intent.id}
+                      type="button"
+                      className={selectedIntentId === intent.id ? "active" : ""}
+                      onClick={() => setSelectedIntentId(intent.id)}
+                    >
+                      <strong>{intent.label}</strong>
+                      <span>{intent.summary}</span>
+                    </button>
+                  ))}
+                </fieldset>
+
+                <fieldset className="report-workspace-choice compact">
+                  <legend>Режим наставления</legend>
+                  {guidanceModes.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={guidanceModeId === item.id ? "active" : ""}
+                      onClick={() => setGuidanceModeId(item.id)}
+                    >
+                      <strong>{item.label}</strong>
+                      <span>{item.summary}</span>
+                    </button>
+                  ))}
+                </fieldset>
+
+                <label>
+                  Вопрос
+                  <textarea
+                    value={questionText}
+                    onChange={(event) => setQuestionText(event.target.value)}
+                    placeholder="Коротко сформулируйте вопрос для режима Вопрос."
+                  />
                 </label>
 
                 <label>
@@ -205,7 +273,7 @@ export default function ReportBuilderPage() {
               </>
             ) : (
               <div className="interaction-empty">
-                <strong>Сохранённых карт пока нет.</strong>
+                <strong>Сохраненных карт пока нет.</strong>
                 <div className="workspace-bridge-actions">
                   <Link className="primary-link-button" href="/charts/new">Создать карту</Link>
                   <Link className="secondary-button" href="/people">Люди</Link>
@@ -223,6 +291,36 @@ export default function ReportBuilderPage() {
               </div>
               <em>{selectedRelationshipType?.label.ru ?? "одна карта"}</em>
             </div>
+
+            <section className="workspace-readiness-panel" aria-label="Готовность запроса">
+              <div>
+                <span>Готовность запроса</span>
+                <strong>{readinessLabel(readiness.status)}</strong>
+              </div>
+              <div>
+                <span>Намерение</span>
+                <strong>{selectedIntent.label}</strong>
+              </div>
+              <div>
+                <span>Режим</span>
+                <strong>{selectedGuidanceMode.label}</strong>
+              </div>
+              <div>
+                <span>Контекст</span>
+                <strong>{readiness.requiredContext.join(", ")}</strong>
+              </div>
+              {readiness.blockedReasons.length ? (
+                <p>{readiness.blockedReasons.join(" ")}</p>
+              ) : (
+                <p>Черновик запроса готов к внутренней проверке. Реальная генерация не запускается.</p>
+              )}
+              {selectedIntentId === "business_timing" ? (
+                <div className="workspace-bridge-actions">
+                  <Link className="secondary-button" href="/transits">Транзиты</Link>
+                  <Link className="secondary-button" href="/muhurta">Мухурта</Link>
+                </div>
+              ) : null}
+            </section>
 
             <ReportRecipeRenderer resolvedRecipe={resolvedRecipe} activeEntityId={activeEntityId} onEntitySelect={setActiveEntityId} />
 
