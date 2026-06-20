@@ -127,13 +127,14 @@ try {
   await waitForPageCondition(pageCdp, "Boolean(document.querySelector('[aria-label=\"Graha Drishti aspect layer\"] .transit-aspect-lines'))", "expanded Graha Drishti lines");
 
   const grahaExpanded = await evaluate(pageCdp, `(() => {
-    const text = document.querySelector('[aria-label="Graha Drishti aspect layer"]')?.innerText || "";
+    const lines = document.querySelector('[aria-label="Graha Drishti aspect layer"] .transit-aspect-lines');
+    const text = lines?.innerText || "";
     return {
-      textLength: text.length,
+      rowCount: lines?.querySelectorAll("span").length || 0,
       forbiddenHits: ${JSON.stringify(forbiddenGrahaRowMarkers)}.filter((marker) => text.includes(marker)),
     };
   })()`);
-  assert(grahaExpanded.textLength > 0, "Expanded Graha Drishti layer must render aspect rows.");
+  assert(grahaExpanded.rowCount > 0, "Expanded Graha Drishti layer must render aspect rows.");
   assert(grahaExpanded.forbiddenHits.length === 0, `Expanded Graha Drishti leaked raw markers: ${grahaExpanded.forbiddenHits.join(", ")}`);
 
   await evaluate(pageCdp, `document.querySelector('[aria-label="Rashi Drishti aspect layer"] button').click()`);

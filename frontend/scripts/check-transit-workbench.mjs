@@ -11,6 +11,9 @@ function assert(condition, message) {
 const page = read("src/app/transits/page.tsx");
 const api = read("src/lib/api.ts");
 const nav = read("src/app/app-navigation.tsx");
+const grahaLayerStart = page.indexOf('aria-label="Graha Drishti aspect layer"');
+const grahaLayerEnd = page.indexOf('aria-label="Rashi Drishti aspect layer"', grahaLayerStart);
+const grahaLayerBlock = grahaLayerStart >= 0 && grahaLayerEnd > grahaLayerStart ? page.slice(grahaLayerStart, grahaLayerEnd) : "";
 
 assert(page.includes('<ProductShell active="transits"'), "/transits must use shared ProductShell with active transits");
 assert(!page.includes("PrivateHistoryPage"), "/transits must not be the old history page");
@@ -42,7 +45,13 @@ assert(page.includes('aria-label="Режим отображения"'), "/transi
 assert(!page.includes("Р РµР¶РёРј РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ"), "/transits mode switch must not contain mojibake");
 assert(page.includes('onClick={() => switchDisplayMode("novice")}') && page.includes('onClick={() => switchDisplayMode("astrologer")}'), "/transits must expose novice/astrologer mode controls through switchDisplayMode");
 assert(!page.includes("sourceRuleIds.map") && !page.includes("sourceRuleIds.join"), "/transits normal UI must not render raw Rashi Drishti source IDs");
-assert(page.includes("displayGrahaAspectKind(item.aspectKind)") && page.includes("displayAspectDistance(item.signDistance)"), "/transits must render Graha Drishti aspect kind and distance as human-readable labels");
+assert(grahaLayerBlock.includes("displayAspectRef(item.sourceEntityRef)"), "/transits Graha Drishti rows must render source refs as human-readable labels");
+assert(grahaLayerBlock.includes("displayAspectRef(item.targetEntityRef)"), "/transits Graha Drishti rows must render target refs as human-readable labels");
+assert(grahaLayerBlock.includes("displayGrahaAspectKind(item.aspectKind)"), "/transits Graha Drishti rows must render aspect kind as a human-readable label");
+assert(grahaLayerBlock.includes("displayAspectDistance(item.signDistance)"), "/transits Graha Drishti rows must render sign distance as a human-readable label");
+for (const rawPattern of ["{item.sourceEntityRef} →", "{item.targetEntityRef} ·", "{item.aspectKind} ·", "· {item.signDistance}"]) {
+  assert(!grahaLayerBlock.includes(rawPattern), `/transits Graha Drishti rows must not render raw pattern: ${rawPattern}`);
+}
 assert(page.includes("displayAspectRef(item.sourceEntityRef)") && page.includes("displayAspectRef(item.targetEntityRef)") && page.includes("displayAspectKind(item.aspectKind)"), "/transits must render Rashi Drishti refs and kinds as human-readable labels");
 assert(!page.includes("{item.aspectKind}") || page.indexOf("{item.aspectKind}") < page.indexOf("Rashi Drishti aspect layer"), "/transits normal Rashi Drishti UI must not render raw aspectKind IDs");
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");
