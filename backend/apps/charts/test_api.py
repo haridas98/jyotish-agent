@@ -1605,7 +1605,7 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.status_code == 200
     assert response["Cache-Control"] == "no-store"
     assert response.data["status"] == "ok"
-    assert response.data["schemaVersion"] == "transit-workbench-check.v5"
+    assert response.data["schemaVersion"] == "transit-workbench-check.v6"
     assert response.data["deployCommit"] == "transit-test-commit"
     assert response.data["scopeId"] == "D1"
     assert response.data["methodId"] == "transit.d1.drik.v1"
@@ -1668,6 +1668,19 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["grahaDrishtiContract"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:graha.")
     assert response.data["grahaDrishtiContract"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
     assert response.data["grahaDrishtiContract"]["sampleRefs"][0]["sourceRuleIds"]
+    assert response.data["rashiDrishtiContract"]["methodId"] == "aspect.rashi_drishti.parashara.v1"
+    assert response.data["rashiDrishtiContract"]["methodVersion"] == 1
+    assert response.data["rashiDrishtiContract"]["sourceContext"] == "transit"
+    assert response.data["rashiDrishtiContract"]["targetContext"] == "natal"
+    assert response.data["rashiDrishtiContract"]["sourceStatus"] == "needs_source"
+    assert response.data["rashiDrishtiContract"]["sourceRuleIds"] == []
+    assert response.data["rashiDrishtiContract"]["uiCapability"] is False
+    assert response.data["rashiDrishtiContract"]["enabledByDefault"] is False
+    assert response.data["rashiDrishtiContract"]["usesDegreeOrbs"] is False
+    assert response.data["rashiDrishtiContract"]["treatsConjunctionAsAspect"] is False
+    assert response.data["rashiDrishtiContract"]["aspectCount"] > 0
+    assert response.data["rashiDrishtiContract"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:rashi.")
+    assert response.data["rashiDrishtiContract"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
     assert response.data["capabilities"] == {
         "natalOverlay": True,
         "aspects": True,

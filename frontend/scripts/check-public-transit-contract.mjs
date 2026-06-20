@@ -34,8 +34,9 @@ assert(jsonResponse.ok, `JSON endpoint failed: HTTP ${jsonResponse.status}`);
 assert((jsonResponse.headers.get("cache-control") || "").includes("no-store"), "JSON endpoint must use Cache-Control: no-store.");
 const payload = await jsonResponse.json();
 const contract = payload.grahaDrishtiContract || {};
+const rashiContract = payload.rashiDrishtiContract || {};
 
-assert(payload.schemaVersion === "transit-workbench-check.v5", "Unexpected transit workbench check schema.");
+assert(payload.schemaVersion === "transit-workbench-check.v6", "Unexpected transit workbench check schema.");
 if (expectedCommit) {
   assert(payload.deployCommit === expectedCommit, `Expected deployCommit ${expectedCommit}, got ${payload.deployCommit}.`);
 }
@@ -45,6 +46,13 @@ assert(requiredRuleIds.every((id) => contract.sourceRuleIds.includes(id)), "Grah
 assert(Array.isArray(contract.sampleRefs) && contract.sampleRefs.length > 0, "Graha Drishti sampleRefs must be present.");
 assert(contract.sampleRefs.every((item) => Array.isArray(item.sourceRuleIds) && item.sourceRuleIds.length > 0), "Each Graha Drishti sampleRef needs sourceRuleIds.");
 assert(contract.sourceRuleIds.length === requiredRuleIds.length, "Graha Drishti contract must expose exactly four source rules.");
+assert(rashiContract.methodId === "aspect.rashi_drishti.parashara.v1", "Rashi Drishti contract is missing.");
+assert(rashiContract.sourceStatus === "needs_source", "Rashi Drishti sourceStatus must stay needs_source until citation verification.");
+assert(Array.isArray(rashiContract.sourceRuleIds) && rashiContract.sourceRuleIds.length === 0, "Rashi Drishti sourceRuleIds must stay empty before source verification.");
+assert(rashiContract.uiCapability === false, "Rashi Drishti UI capability must stay disabled in 9E-A.");
+assert(rashiContract.enabledByDefault === false, "Rashi Drishti must stay disabled by default.");
+assert(rashiContract.aspectCount > 0, "Rashi Drishti contract must expose calculated aspect count.");
+assert(Array.isArray(rashiContract.sampleRefs) && rashiContract.sampleRefs.length > 0, "Rashi Drishti contract must expose safe sample refs.");
 
 const htmlUrl = withParam(url, "format", "");
 const htmlResponse = await fetch(htmlUrl, {
@@ -56,6 +64,7 @@ const html = await htmlResponse.text();
 assert(html.includes("verified"), "HTML endpoint must include verified source status.");
 assert(!html.includes("needs_source"), "HTML endpoint must not include needs_source for Graha Drishti.");
 assert(requiredRuleIds.every((id) => html.includes(id)), "HTML endpoint must include all verified Graha Drishti rule IDs.");
+assert(html.includes("aspect.rashi_drishti.parashara.v1"), "HTML endpoint must include Rashi Drishti contract.");
 if (expectedCommit) {
   assert(html.includes(expectedCommit), `HTML endpoint must include deployCommit ${expectedCommit}.`);
 }

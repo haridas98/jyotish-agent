@@ -16,6 +16,7 @@ from apps.accounts.permissions import PrivateAppAccess
 from apps.calculations.chart import ChartInputError, build_birth_chart
 from apps.calculations.ephemeris import EphemerisUnavailable
 from apps.calculations.graha_drishti import build_graha_drishti_aspects, graha_drishti_method_contract
+from apps.calculations.rashi_drishti import build_rashi_drishti_aspects, rashi_drishti_method_contract
 from apps.calculations.transit_coordinates import transit_coordinate_golden_metadata
 from apps.calculations.vargas import VARGA_METHOD_REGISTRY, varga_accuracy_contract, workbench_expert_varga_codes, workbench_varga_codes
 from apps.calculations.vimshottari import VIMSHOTTARI_SEQUENCE, VIMSHOTTARI_YEAR_DAYS, VIMSHOTTARI_YEARS
@@ -225,7 +226,7 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
     overlay = _transit_overlay_contract(chart, chart)
     return {
         "status": "ok",
-        "schemaVersion": "transit-workbench-check.v5",
+        "schemaVersion": "transit-workbench-check.v6",
         "deployCommit": _current_deploy_commit(),
         "scopeId": "D1",
         "methodId": TRANSIT_WORKBENCH_METHOD_ID,
@@ -256,6 +257,7 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
         "supportsNowAction": True,
         "overlayContract": overlay,
         "grahaDrishtiContract": _graha_drishti_dev_contract(chart, chart),
+        "rashiDrishtiContract": _rashi_drishti_dev_contract(chart, chart),
         "capabilities": {
             "natalOverlay": True,
             "aspects": True,
@@ -361,6 +363,31 @@ def _graha_drishti_layer(transit_chart: dict, natal_chart: dict) -> dict[str, ob
 def _graha_drishti_dev_contract(transit_chart: dict, natal_chart: dict) -> dict[str, object]:
     layer = _graha_drishti_layer(transit_chart, natal_chart)
     return {key: value for key, value in layer.items() if key != "items"}
+
+
+def _rashi_drishti_dev_contract(transit_chart: dict, natal_chart: dict) -> dict[str, object]:
+    aspects = build_rashi_drishti_aspects(transit_chart, natal_chart, source_context="transit", target_context="natal")
+    sample_refs = [
+        {
+            "sourceEntityRef": item["sourceEntityRef"],
+            "targetEntityRef": item["targetEntityRef"],
+            "aspectKind": item["aspectKind"],
+            "sourceRashiIndex": item["sourceRashiIndex"],
+            "targetRashiIndex": item["targetRashiIndex"],
+            "sourceRuleIds": item["sourceRuleIds"],
+        }
+        for item in aspects[:12]
+    ]
+    return {
+        **rashi_drishti_method_contract(),
+        "sourceContext": "transit",
+        "targetContext": "natal",
+        "availableInModes": [],
+        "enabledByDefault": False,
+        "uiCapability": False,
+        "aspectCount": len(aspects),
+        "sampleRefs": sample_refs,
+    }
 
 
 def _transit_calculation_contract() -> dict[str, object]:
