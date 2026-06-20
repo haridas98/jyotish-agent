@@ -202,6 +202,8 @@ export type DashaPeriod = {
   duration_years: number;
   sequence_index: number;
   parent_lord?: string;
+  antardashas?: DashaPeriod[];
+  boundary_policy?: string;
 };
 
 export type ClassicalStatus = {
