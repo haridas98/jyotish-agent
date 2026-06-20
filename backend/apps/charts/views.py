@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import PrivateAppAccess
+from apps.calculations.chart import ChartInputError, build_birth_chart
+from apps.calculations.ephemeris import EphemerisUnavailable
 from apps.calculations.vargas import VARGA_METHOD_REGISTRY, varga_accuracy_contract, workbench_expert_varga_codes, workbench_varga_codes
 from apps.calculations.vimshottari import VIMSHOTTARI_SEQUENCE, VIMSHOTTARI_YEAR_DAYS, VIMSHOTTARI_YEARS
 
@@ -31,6 +33,7 @@ from .services import (
     profile_payload,
     profiles_payload,
     profile_relationship_payload,
+    _profile_input,
     update_chart_relationship,
     update_birth_profile_flags,
     update_incoming_profile_relationship_request,
@@ -38,6 +41,9 @@ from .services import (
 )
 
 
+TRANSIT_WORKBENCH_METHOD_ID = "transit.d1.drik.v1"
+TRANSIT_WORKBENCH_METHOD_VERSION = "1"
+TRANSIT_WORKBENCH_BOUNDARY_POLICY = "instant_exact"
 
 
 class TransitWorkbenchDevCheckView(APIView):
@@ -77,9 +83,13 @@ class BirthProfileTransitWorkbenchView(APIView):
             control = _transit_control_from_query(profile, request.query_params)
         except ValueError as exc:
             return Response({"error": str(exc)}, status=400)
-        calculation = _latest_complete_calculation(profile)
-        chart = calculation.result if calculation and isinstance(calculation.result, dict) else {}
-        return Response(_transit_workbench_model(profile.id, chart, calculation is not None, control))
+        try:
+            chart = _transit_chart_from_profile(profile, control)
+        except ChartInputError as exc:
+            return Response({"error": str(exc)}, status=400)
+        except EphemerisUnavailable as exc:
+            return Response({"error": str(exc)}, status=503)
+        return Response(_transit_workbench_model(profile.id, chart, True, control))
 
 
 def _latest_complete_calculation(profile: BirthProfile) -> ChartCalculation | None:
@@ -131,13 +141,40 @@ def _transit_float(value: object, default: float, minimum: float, maximum: float
     return number
 
 
+def _transit_chart_from_profile(profile: BirthProfile, control: dict[str, object]) -> dict[str, object]:
+    moment = parse_datetime(str(control["isoDateTime"]))
+    if moment is None:
+        raise ChartInputError("transit moment is invalid")
+    location = control["location"] if isinstance(control.get("location"), dict) else {}
+    input_snapshot = {
+        **_profile_input(profile),
+        "birth_date": moment.date().isoformat(),
+        "birth_time": moment.time().replace(microsecond=0).isoformat(),
+        "birth_time_accuracy": "exact",
+        "place_id": f"transit:{profile.place.external_id or profile.place.id}",
+        "place_name": str(location.get("label") or profile.place.metadata.get("label") or profile.place.name),
+        "timezone": str(control["timezone"]),
+        "latitude": float(location.get("latitude")),
+        "longitude": float(location.get("longitude")),
+    }
+    chart = build_birth_chart(input_snapshot)
+    chart["transit_input"] = {
+        "date": input_snapshot["birth_date"],
+        "time": input_snapshot["birth_time"],
+        "timezone": input_snapshot["timezone"],
+        "latitude": input_snapshot["latitude"],
+        "longitude": input_snapshot["longitude"],
+    }
+    return chart
+
+
 def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, control: dict[str, object]) -> dict[str, object]:
     houses = _transit_houses(chart)
     grahas = _transit_grahas(chart)
     special_points = _transit_special_points(chart)
     settings_data = chart.get("settings") if isinstance(chart.get("settings"), dict) else {}
     return {
-        "schemaVersion": "transit-workbench.v1",
+        "schemaVersion": "transit-workbench.v2",
         "chartId": chart_id,
         "hasCalculation": has_calculation,
         "transitMoment": {"isoDateTime": control["isoDateTime"], "timezone": control["timezone"]},
@@ -148,10 +185,15 @@ def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, 
         "houses": houses,
         "rashis": _transit_rashis(houses),
         "method": {
+            "methodId": TRANSIT_WORKBENCH_METHOD_ID,
+            "methodVersion": TRANSIT_WORKBENCH_METHOD_VERSION,
             "ayanamshaId": str(settings_data.get("ayanamsa") or "lahiri"),
             "nodesMode": str(settings_data.get("node_type") or "true"),
             "calculationPreset": str(settings_data.get("calculation_model") or "drik_siddhanta"),
+            "boundaryPolicy": TRANSIT_WORKBENCH_BOUNDARY_POLICY,
+            "positionContext": "transit",
         },
+        "calculationContract": _transit_calculation_contract(),
         "capabilities": _transit_capabilities(grahas, special_points),
         "warnings": [] if has_calculation else [{"code": "calculation_absent", "severity": "warning", "message": "Для карты ещё нет сохранённого D1 расчёта."}],
     }
@@ -163,9 +205,15 @@ def _transit_workbench_check_payload(chart_id: int, chart: dict, has_calculation
     special_points = _transit_special_points(chart)
     return {
         "status": "ok",
-        "schemaVersion": "transit-workbench-check.v1",
+        "schemaVersion": "transit-workbench-check.v2",
         "deployCommit": _current_deploy_commit(),
         "scopeId": "D1",
+        "methodId": TRANSIT_WORKBENCH_METHOD_ID,
+        "methodVersion": TRANSIT_WORKBENCH_METHOD_VERSION,
+        "boundaryPolicy": TRANSIT_WORKBENCH_BOUNDARY_POLICY,
+        "positionContext": "transit",
+        "objectRefPrefix": "transit:",
+        "calculationContract": _transit_calculation_contract(),
         "hasCalculation": has_calculation,
         "houseCount": len(houses),
         "rashiCount": len(_transit_rashis(houses)),
@@ -199,12 +247,44 @@ def _transit_houses(chart: dict) -> list[dict[str, object]]:
 
 def _transit_grahas(chart: dict) -> list[dict[str, object]]:
     grahas = chart.get("grahas") if isinstance(chart, dict) else []
-    return [item for item in grahas if isinstance(item, dict)] if isinstance(grahas, list) else []
+    if not isinstance(grahas, list):
+        return []
+    return [_transit_object(item, "graha") for item in grahas if isinstance(item, dict)]
 
 
 def _transit_special_points(chart: dict) -> list[dict[str, object]]:
     ascendant = chart.get("ascendant") if isinstance(chart, dict) else None
-    return [ascendant] if isinstance(ascendant, dict) else []
+    return [_transit_object(ascendant, "point")] if isinstance(ascendant, dict) else []
+
+
+def _transit_object(item: dict[str, object], entity_type: str) -> dict[str, object]:
+    body = str(item.get("body") or "")
+    if entity_type == "point":
+        entity_id = "point.LAGNA"
+    else:
+        entity_id = f"graha.{_graha_code(body)}"
+    return {
+        **item,
+        "context": "transit",
+        "entityId": entity_id,
+        "objectRef": f"transit:{entity_id}",
+    }
+
+
+def _transit_calculation_contract() -> dict[str, object]:
+    return {
+        "scopeId": "D1",
+        "methodId": TRANSIT_WORKBENCH_METHOD_ID,
+        "methodVersion": TRANSIT_WORKBENCH_METHOD_VERSION,
+        "boundaryPolicy": TRANSIT_WORKBENCH_BOUNDARY_POLICY,
+        "positionContext": "transit",
+        "usesNatalOverlay": False,
+        "usesAspects": False,
+        "usesAshtakavarga": False,
+        "usesSadeSati": False,
+        "usesAi": False,
+        "rawEvidence": False,
+    }
 
 
 def _transit_rashis(houses: list[dict[str, object]]) -> list[dict[str, object]]:

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "transit-workbench.v2",
+  "scopeId": "D1",
+  "method": {
+    "methodId": "transit.d1.drik.v1",
+    "methodVersion": "1",
+    "ayanamshaId": "lahiri",
+    "nodesMode": "true",
+    "calculationPreset": "drik_siddhanta",
+    "boundaryPolicy": "instant_exact",
+    "positionContext": "transit"
+  },
+  "calculationContract": {
+    "scopeId": "D1",
+    "methodId": "transit.d1.drik.v1",
+    "methodVersion": "1",
+    "boundaryPolicy": "instant_exact",
+    "positionContext": "transit",
+    "usesNatalOverlay": false,
+    "usesAspects": false,
+    "usesAshtakavarga": false,
+    "usesSadeSati": false,
+    "usesAi": false,
+    "rawEvidence": false
+  },
+  "grahaObjectRefs": [
+    "transit:graha.SU",
+    "transit:graha.MO",
+    "transit:graha.MA",
+    "transit:graha.ME",
+    "transit:graha.JU",
+    "transit:graha.VE",
+    "transit:graha.SA",
+    "transit:graha.RA",
+    "transit:graha.KE"
+  ],
+  "specialPointObjectRefs": [
+    "transit:point.LAGNA"
+  ],
+  "capabilityFlags": {
+    "natalOverlay": false,
+    "aspects": false,
+    "ashtakavarga": false,
+    "sadeSati": false,
+    "ai": false
+  }
+}

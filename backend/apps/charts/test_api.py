@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import connection
@@ -1392,6 +1395,104 @@ def test_transit_workbench_validates_query(user):
     assert client.get(f"/api/charts/{profile['id']}/transit-workbench?scope=d9").status_code == 400
 
 
+
+
+@pytest.mark.django_db
+def test_transit_workbench_builds_chart_for_control_moment(user, monkeypatch):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Transit calculation contract",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+            "calculation_model": "drik_siddhanta",
+        },
+        format="json",
+    )
+    profile_id = create_response.data["profile"]["id"]
+    seen_inputs = []
+
+    def fake_build_birth_chart(data):
+        seen_inputs.append(data)
+        assert data["birth_date"] == "2026-06-20"
+        assert data["birth_time"] == "12:30:00"
+        assert data["birth_time_accuracy"] == "exact"
+        assert data["timezone"] == "Europe/Berlin"
+        assert data["latitude"] == 52.5
+        assert data["longitude"] == 13.4
+        bodies = ["Surya", "Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Rahu", "Ketu"]
+        return {
+            "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1},
+            "grahas": [
+                {"body": body, "longitude": 10.0 + index, "rashi": "Aries", "rashi_index": 0, "nakshatra": "Ashwini", "pada": 1}
+                for index, body in enumerate(bodies)
+            ],
+            "houses": [{"house": item, "rashi": f"Rashi {item}", "rashi_index": item - 1} for item in range(1, 13)],
+            "settings": {"ayanamsa": "lahiri", "node_type": "true", "calculation_model": "drik_siddhanta"},
+        }
+
+    monkeypatch.setattr("apps.charts.views.build_birth_chart", fake_build_birth_chart)
+
+    response = client.get(
+        f"/api/charts/{profile_id}/transit-workbench"
+        "?at=2026-06-20T12:30:00&timezone=Europe/Berlin&latitude=52.5&longitude=13.4&location=Berlin"
+    )
+
+    assert response.status_code == 200
+    assert len(seen_inputs) == 1
+    assert response.data["schemaVersion"] == "transit-workbench.v2"
+    assert response.data["transitMoment"] == {"isoDateTime": "2026-06-20T12:30:00+02:00", "timezone": "Europe/Berlin"}
+    assert response.data["location"] == {"label": "Berlin", "latitude": 52.5, "longitude": 13.4}
+    assert response.data["method"]["methodId"] == "transit.d1.drik.v1"
+    assert response.data["method"]["methodVersion"] == "1"
+    assert response.data["method"]["positionContext"] == "transit"
+    assert response.data["calculationContract"]["usesNatalOverlay"] is False
+    assert response.data["calculationContract"]["usesAspects"] is False
+    assert response.data["grahas"][0]["objectRef"] == "transit:graha.SU"
+    assert response.data["grahas"][0]["context"] == "transit"
+    assert response.data["specialPoints"][0]["objectRef"] == "transit:point.LAGNA"
+    assert response.data["capabilities"]["ai"] is False
+    assert "raw" not in response.data
+
+
+@pytest.mark.django_db
+def test_transit_workbench_contract_matches_snapshot(user, monkeypatch):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    profile_id = client.post(
+        "/api/charts/profiles",
+        {"display_name": "Transit snapshot", "birth_date": "1990-08-15", "birth_time": "10:24", "place_name": "Vrindavan"},
+        format="json",
+    ).data["profile"]["id"]
+
+    def fake_build_birth_chart(data):
+        bodies = ["Surya", "Chandra", "Mangala", "Budha", "Guru", "Shukra", "Shani", "Rahu", "Ketu"]
+        return {
+            "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3},
+            "grahas": [{"body": body, "longitude": 10.0, "rashi": "Aries", "rashi_index": 0} for body in bodies],
+            "houses": [{"house": item, "rashi": f"Rashi {item}", "rashi_index": item - 1} for item in range(1, 13)],
+            "settings": {"ayanamsa": "lahiri", "node_type": "true", "calculation_model": "drik_siddhanta"},
+        }
+
+    monkeypatch.setattr("apps.charts.views.build_birth_chart", fake_build_birth_chart)
+    response = client.get(f"/api/charts/{profile_id}/transit-workbench?at=2026-06-20T12:30:00&timezone=UTC")
+
+    assert response.status_code == 200
+    summary = {
+        "schemaVersion": response.data["schemaVersion"],
+        "scopeId": response.data["scopeId"],
+        "method": response.data["method"],
+        "calculationContract": response.data["calculationContract"],
+        "grahaObjectRefs": [item["objectRef"] for item in response.data["grahas"]],
+        "specialPointObjectRefs": [item["objectRef"] for item in response.data["specialPoints"]],
+        "capabilityFlags": {key: response.data["capabilities"][key] for key in ["natalOverlay", "aspects", "ashtakavarga", "sadeSati", "ai"]},
+    }
+    expected = json.loads(Path("backend/apps/charts/fixtures/transit_workbench_contract_v1.json").read_text(encoding="utf-8"))
+    assert summary == expected
+
 @pytest.mark.django_db
 @override_settings(ENABLE_DEV_LOGIN=True, DEV_LOGIN_TOKEN="dev-token")
 def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypatch):
@@ -1432,9 +1533,16 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.status_code == 200
     assert response["Cache-Control"] == "no-store"
     assert response.data["status"] == "ok"
-    assert response.data["schemaVersion"] == "transit-workbench-check.v1"
+    assert response.data["schemaVersion"] == "transit-workbench-check.v2"
     assert response.data["deployCommit"] == "transit-test-commit"
     assert response.data["scopeId"] == "D1"
+    assert response.data["methodId"] == "transit.d1.drik.v1"
+    assert response.data["methodVersion"] == "1"
+    assert response.data["boundaryPolicy"] == "instant_exact"
+    assert response.data["positionContext"] == "transit"
+    assert response.data["objectRefPrefix"] == "transit:"
+    assert response.data["calculationContract"]["usesNatalOverlay"] is False
+    assert response.data["calculationContract"]["usesAi"] is False
     assert response.data["hasCalculation"] is True
     assert response.data["houseCount"] == 12
     assert response.data["rashiCount"] == 12
