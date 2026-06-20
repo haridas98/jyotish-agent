@@ -1006,3 +1006,9 @@ def test_witness_summary_api_cache_fingerprint_includes_core_parity_path(setting
     assert second_response.status_code == 200
     assert first_response.data["witness_core_parity"]["next_actions"][0]["case_id"] == "first-case"
     assert second_response.data["witness_core_parity"]["next_actions"][0]["case_id"] == "second-case"
+
+
+def test_witness_core_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_CORE_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/core-parity-report.json")

@@ -263,7 +263,7 @@ WITNESS_CAPTURE_QUEUE_PATH = os.getenv(
 )
 WITNESS_CORE_PARITY_REPORT_PATH = os.getenv(
     "WITNESS_CORE_PARITY_REPORT_PATH",
-    str(ROOT_DIR / ".tmp" / "witness-core-parity" / "core-parity-report.json"),
+    str(ROOT_DIR / ".tmp" / "witness-review" / "core-parity-report.json"),
 )
 PARASHARA_LIGHT_PACKET_PATH = os.getenv(
     "PARASHARA_LIGHT_PACKET_PATH",
