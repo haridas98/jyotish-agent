@@ -340,6 +340,7 @@ def _graha_drishti_layer(transit_chart: dict, natal_chart: dict) -> dict[str, ob
             "targetEntityRef": item["targetEntityRef"],
             "aspectKind": item["aspectKind"],
             "signDistance": item["signDistance"],
+            "sourceRuleIds": item["sourceRuleIds"],
         }
         for item in aspects[:12]
     ]
@@ -349,7 +350,7 @@ def _graha_drishti_layer(transit_chart: dict, natal_chart: dict) -> dict[str, ob
         "targetContext": "natal",
         "availableInModes": ["astrologer"],
         "enabledByDefault": False,
-        "sourceStatus": "needs_source",
+        "sourceStatus": "verified",
         "uiCapability": True,
         "aspectCount": len(aspects),
         "sampleRefs": sample_refs,

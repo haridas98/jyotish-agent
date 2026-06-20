@@ -5,6 +5,16 @@ from typing import Any
 GRAHA_DRISHTI_METHOD_ID = "aspect.graha_drishti.parashara.v1"
 GRAHA_DRISHTI_METHOD_VERSION = 1
 GRAHA_DRISHTI_SOURCE_ANCHOR = "parashara_graha_drishti"
+GRAHA_DRISHTI_RULE_GENERAL_7TH = "bphs.aspect.graha_drishti.general_7th"
+GRAHA_DRISHTI_RULE_MARS_SPECIAL = "bphs.aspect.graha_drishti.mars_special"
+GRAHA_DRISHTI_RULE_JUPITER_SPECIAL = "bphs.aspect.graha_drishti.jupiter_special"
+GRAHA_DRISHTI_RULE_SATURN_SPECIAL = "bphs.aspect.graha_drishti.saturn_special"
+GRAHA_DRISHTI_SOURCE_RULE_IDS = [
+    GRAHA_DRISHTI_RULE_GENERAL_7TH,
+    GRAHA_DRISHTI_RULE_MARS_SPECIAL,
+    GRAHA_DRISHTI_RULE_JUPITER_SPECIAL,
+    GRAHA_DRISHTI_RULE_SATURN_SPECIAL,
+]
 GRAHA_CODES = {
     "Sun": "SU",
     "Surya": "SU",
@@ -43,7 +53,8 @@ def graha_drishti_method_contract(method_id: str = GRAHA_DRISHTI_METHOD_ID) -> d
         "usesDegreeOrbs": False,
         "treatsConjunctionAsAspect": False,
         "includesRahuKetu": False,
-        "sourceRuleIds": [],
+        "sourceRuleIds": GRAHA_DRISHTI_SOURCE_RULE_IDS,
+        "sourceStatus": "verified",
     }
 
 
@@ -82,10 +93,22 @@ def build_graha_drishti_aspects(
                     "targetKind": target["kind"],
                     "aspectKind": aspect_kind,
                     "signDistance": distance,
-                    "sourceRuleIds": [],
+                    "sourceRuleIds": _source_rule_ids(source["code"], aspect_kind),
                 }
             )
     return aspects
+
+
+def _source_rule_ids(source_code: str, aspect_kind: str) -> list[str]:
+    if aspect_kind == "opposition_7th":
+        return [GRAHA_DRISHTI_RULE_GENERAL_7TH]
+    if source_code == "MA" and aspect_kind in {"special_4th", "special_8th"}:
+        return [GRAHA_DRISHTI_RULE_MARS_SPECIAL]
+    if source_code == "JU" and aspect_kind in {"special_5th", "special_9th"}:
+        return [GRAHA_DRISHTI_RULE_JUPITER_SPECIAL]
+    if source_code == "SA" and aspect_kind in {"special_3rd", "special_10th"}:
+        return [GRAHA_DRISHTI_RULE_SATURN_SPECIAL]
+    return [GRAHA_DRISHTI_RULE_GENERAL_7TH]
 
 
 def sign_distance(source_rashi_index: int, target_rashi_index: int) -> int:

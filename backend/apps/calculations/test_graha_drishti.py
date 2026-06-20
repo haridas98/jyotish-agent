@@ -2,6 +2,7 @@ import pytest
 
 from apps.calculations.graha_drishti import (
     GRAHA_DRISHTI_METHOD_ID,
+    GRAHA_DRISHTI_SOURCE_RULE_IDS,
     build_graha_drishti_aspects,
     graha_drishti_method_contract,
 )
@@ -33,7 +34,14 @@ def test_parashara_graha_drishti_builds_transit_to_natal_house_and_graha_refs():
     assert ("transit:graha.SU", "natal:graha.MO", 5, "opposition_7th") not in refs
     assert all(item["methodId"] == GRAHA_DRISHTI_METHOD_ID for item in aspects)
     assert all(item["sourceContext"] == "transit" and item["targetContext"] == "natal" for item in aspects)
-    assert all(item["sourceRuleIds"] == [] for item in aspects)
+    assert all(item["sourceRuleIds"] for item in aspects)
+    assert set(graha_drishti_method_contract()["sourceRuleIds"]) == set(GRAHA_DRISHTI_SOURCE_RULE_IDS)
+    assert next(item for item in aspects if item["sourceEntityRef"] == "transit:graha.SA" and item["signDistance"] == 3)["sourceRuleIds"] == [
+        "bphs.aspect.graha_drishti.saturn_special"
+    ]
+    assert next(item for item in aspects if item["sourceEntityRef"] == "transit:graha.SA" and item["signDistance"] == 7)["sourceRuleIds"] == [
+        "bphs.aspect.graha_drishti.general_7th"
+    ]
 
 
 def test_parashara_graha_drishti_excludes_rahu_ketu_and_deduplicates_targets():

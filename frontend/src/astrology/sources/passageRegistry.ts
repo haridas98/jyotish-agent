@@ -76,6 +76,21 @@ export const passageDefinitions: PassageDefinition[] = [
     status: "verified",
     verificationNotes: "Verified against the selected BPHS public PDF anchor.",
   },
+  {
+    id: "passage.bphs.aspect.graha_drishti",
+    sourceId: "source.bphs",
+    locator: { chapter: "26", verseStart: "2", verseEnd: "5", page: 199 },
+    citationLabel: {
+      ru: "БПХШ 26.2-5",
+      en: "BPHS 26.2-5",
+    },
+    shortExcerpt: {
+      ru: "Раздел задаёт общий 7-й аспект и особые аспекты Марса, Юпитера и Сатурна.",
+      en: "The section gives the general 7th aspect and special aspects of Mars, Jupiter, and Saturn.",
+    },
+    status: "verified",
+    verificationNotes: "Verified against the selected BPHS Santhanam OCR/PDF anchor: chapter 26, verses 2-5, page 199.",
+  },
 ];
 
 const passageMap = new Map(passageDefinitions.map((passage) => [passage.id, passage]));

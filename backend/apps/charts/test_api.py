@@ -1657,10 +1657,17 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
     assert response.data["grahaDrishtiContract"]["includesRahuKetu"] is False
     assert response.data["grahaDrishtiContract"]["enabledByDefault"] is False
     assert response.data["grahaDrishtiContract"]["availableInModes"] == ["astrologer"]
-    assert response.data["grahaDrishtiContract"]["sourceStatus"] == "needs_source"
+    assert response.data["grahaDrishtiContract"]["sourceStatus"] == "verified"
+    assert response.data["grahaDrishtiContract"]["sourceRuleIds"] == [
+        "bphs.aspect.graha_drishti.general_7th",
+        "bphs.aspect.graha_drishti.mars_special",
+        "bphs.aspect.graha_drishti.jupiter_special",
+        "bphs.aspect.graha_drishti.saturn_special",
+    ]
     assert response.data["grahaDrishtiContract"]["aspectCount"] > 0
     assert response.data["grahaDrishtiContract"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:graha.")
     assert response.data["grahaDrishtiContract"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
+    assert response.data["grahaDrishtiContract"]["sampleRefs"][0]["sourceRuleIds"]
     assert response.data["capabilities"] == {
         "natalOverlay": True,
         "aspects": True,
