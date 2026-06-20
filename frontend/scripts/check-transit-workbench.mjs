@@ -11,6 +11,7 @@ function assert(condition, message) {
 const page = read("src/app/transits/page.tsx");
 const api = read("src/lib/api.ts");
 const nav = read("src/app/app-navigation.tsx");
+const publicTransitSmoke = read("scripts/check-public-transit-contract.mjs");
 const grahaLayerStart = page.indexOf('aria-label="Graha Drishti aspect layer"');
 const grahaLayerEnd = page.indexOf('aria-label="Rashi Drishti aspect layer"', grahaLayerStart);
 const grahaLayerBlock = grahaLayerStart >= 0 && grahaLayerEnd > grahaLayerStart ? page.slice(grahaLayerStart, grahaLayerEnd) : "";
@@ -56,6 +57,10 @@ assert(page.includes("displayAspectRef(item.sourceEntityRef)") && page.includes(
 assert(!page.includes("{item.aspectKind}") || page.indexOf("{item.aspectKind}") < page.indexOf("Rashi Drishti aspect layer"), "/transits normal Rashi Drishti UI must not render raw aspectKind IDs");
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");
 assert(nav.includes("/transits"), "shared nav must include transits route");
+assert(publicTransitSmoke.includes("PUBLIC_TRANSIT_CHECK_TIMEOUT_MS"), "public transit smoke must expose a timeout env var");
+assert(publicTransitSmoke.includes("fetchWithTimeout"), "public transit smoke must use a shared timeout fetch helper");
+assert(publicTransitSmoke.includes("AbortController") || publicTransitSmoke.includes("AbortSignal.timeout"), "public transit smoke must abort hung fetches");
+assert(publicTransitSmoke.includes("JSON endpoint") && publicTransitSmoke.includes("HTML endpoint"), "public transit smoke timeout errors must identify JSON and HTML endpoints");
 for (const forbidden of ["Спросить AI", "Сгенерировать", "source.pending", "rawEvidence", "eligibleItems", "Missing calculations"]) {
   assert(!page.includes(forbidden), `/transits leaks forbidden marker: ${forbidden}`);
 }
