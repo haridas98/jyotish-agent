@@ -293,3 +293,20 @@ Minimal expected data shape:
   }
 }
 ```
+
+## Core Parity Diagnostic Report
+
+P3-A adds a machine-readable diagnostic report for reviewed witness packets only. It compares the
+stored Jyotish Agent chart snapshot against external witness expected fields for Lagna and the nine
+grahas: longitude, rashi/rashi_index, nakshatra and pada.
+
+```powershell
+.\.venv\Scripts\python manage.py build_witness_core_parity_report `
+  --jhora-root .tmp\jhora `
+  --pl-root .tmp\pl7 `
+  --output .tmp\witness-review\core-parity-report.json `
+  --markdown-output .tmp\witness-review\core-parity-report.md
+```
+
+This report is a gate artifact, not a review action. It does not capture JHora/PL GUI data, mark
+packets reviewed, promote fixtures, seal cases or treat JHora/PL as source authority.
