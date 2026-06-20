@@ -15,6 +15,7 @@ class VargaMethod:
     method_version: str = "1"
     non_uniform: bool = False
     source_anchor: str = ""
+    parity_witness: str = ""
     expert_only: bool = False
     time_accuracy_required: str = ""
     category: str = "main"
@@ -30,9 +31,23 @@ VARGA_METHOD_REGISTRY = {
     "D10": VargaMethod("D10", "Dashamsa", 10, True, category="professional"),
     "D12": VargaMethod("D12", "Dvadashamsha", 12, True, category="family"),
     "D16": VargaMethod("D16", "Shodashamsha", 16, True),
-    "D20": VargaMethod("D20", "Vimshamsha", 20, True, category="spiritual"),
+    "D20": VargaMethod(
+        "D20",
+        "Vimshamsha",
+        20,
+        True,
+        source_anchor="D20 source review pending",
+        parity_witness="JHora fixture audit",
+        category="spiritual",
+    ),
     "D24": VargaMethod("D24", "Siddhamsha", 24, True, category="spiritual"),
-    "D27": VargaMethod("D27", "Bhamsha", 27),
+    "D27": VargaMethod(
+        "D27",
+        "Bhamsha",
+        27,
+        source_anchor="D27 source review pending",
+        parity_witness="JHora fixture audit",
+    ),
     "D30": VargaMethod(
         "D30",
         "Trimsamsha",
@@ -52,7 +67,8 @@ VARGA_METHOD_REGISTRY = {
         60,
         workbench_ready=True,
         method_id="varga.d60.parashara_shashtyamsha.v1",
-        source_anchor="JHora Sterlitamak 1998 D60 parity; BPHS Shashtyamsha source review pending",
+        source_anchor="BPHS Shashtyamsha source review pending",
+        parity_witness="JHora Sterlitamak 1998 D60 parity",
         expert_only=True,
         time_accuracy_required="exact",
         category="expert",
@@ -257,10 +273,10 @@ def _method_note(code: str, scheme: str) -> str:
     if code == "D30":
         return "BPHS 6.27-28 Parashara unequal Trimsamsha segments."
     if code == "D60":
-        return "Parashara Shashtyamsha: 60 equal half-degree divisions; JHora Sterlitamak parity locked."
+        return "Parashara Shashtyamsha: 60 equal half-degree divisions; source review pending."
     if code == "D2" and _normalize_scheme(scheme) == "jhora_uma_shambhu":
-        return "JHora D-2 (US): Uma-Shambhu Hora with two zodiac cycles and reversed even-sign halves."
-    return "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit."
+        return "Uma-Shambhu Hora with two zodiac cycles and reversed even-sign halves."
+    return "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts; source review pending for these starts."
 
 
 def _hora(sign_index: int, sign_degrees: float) -> int:

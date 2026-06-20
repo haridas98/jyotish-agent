@@ -128,6 +128,26 @@ def test_d30_method_registry_is_non_uniform_and_source_anchored():
     assert method.expert_only is True
 
 
+def test_varga_method_authority_keeps_black_box_witnesses_separate():
+    forbidden_authorities = ("JHora", "Parashara Light", "PL")
+
+    for method in VARGA_METHOD_REGISTRY.values():
+        authority_text = " ".join(
+            str(value or "")
+            for value in (
+                method.source_anchor,
+                varga_module._method_note(method.code, "parashara"),
+            )
+        )
+        for forbidden in forbidden_authorities:
+            assert forbidden not in authority_text
+
+    d60 = VARGA_METHOD_REGISTRY["D60"]
+    assert d60.source_anchor == "BPHS Shashtyamsha source review pending"
+    assert d60.parity_witness == "JHora Sterlitamak 1998 D60 parity"
+    assert VARGA_METHOD_REGISTRY["D30"].source_anchor == "BPHS 6.27-28"
+
+
 def test_d30_chart_contract_uses_parashara_unequal_method():
     chart = divisional_chart({"Surya": 5.0}, ascendant_longitude=4.999999, codes=("D30",))
 
@@ -294,7 +314,7 @@ def test_d9_chart_snapshot_keeps_lagna_and_graha_order():
     assert chart["D9"] == {
         "code": "D9",
         "name": "Navamsa",
-        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts; source review pending for these starts.",
         "methodId": "varga.parashara_shodasha.v1",
         "methodVersion": "1",
         "calculationPreset": "parashara",
@@ -353,7 +373,7 @@ def test_d10_chart_snapshot_keeps_lagna_and_graha_order():
     assert chart["D10"] == {
         "code": "D10",
         "name": "Dashamsa",
-        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts; source review pending for these starts.",
         "methodId": "varga.parashara_shodasha.v1",
         "methodVersion": "1",
         "calculationPreset": "parashara",
@@ -398,7 +418,7 @@ def test_d12_chart_snapshot_keeps_lagna_and_graha_order():
     assert chart["D12"] == {
         "code": "D12",
         "name": "Dvadashamsha",
-        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts; source review pending for these starts.",
         "methodId": "varga.parashara_shodasha.v1",
         "methodVersion": "1",
         "calculationPreset": "parashara",
@@ -443,7 +463,7 @@ def test_d3_chart_snapshot_keeps_lagna_and_graha_order():
     assert chart["D3"] == {
         "code": "D3",
         "name": "Drekkana",
-        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts; source review pending for these starts.",
         "methodId": "varga.parashara_shodasha.v1",
         "methodVersion": "1",
         "calculationPreset": "parashara",
@@ -502,7 +522,7 @@ def test_d7_chart_snapshot_keeps_lagna_and_graha_order():
     assert chart["D7"] == {
         "code": "D7",
         "name": "Saptamsa",
-        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts per JHora fixture audit.",
+        "method": "Parashara shodasha varga rules; D20 uses movable/fixed/dual starts and D27 uses elemental starts; source review pending for these starts.",
         "methodId": "varga.parashara_shodasha.v1",
         "methodVersion": "1",
         "calculationPreset": "parashara",
@@ -519,7 +539,7 @@ def test_d60_method_registry_is_time_sensitive_and_expert_only_in_workbench():
 
     assert method.method_id == "varga.d60.parashara_shashtyamsha.v1"
     assert method.method_version == "1"
-    assert method.source_anchor == "JHora Sterlitamak 1998 D60 parity; BPHS Shashtyamsha source review pending"
+    assert method.source_anchor == "BPHS Shashtyamsha source review pending"
     assert method.time_accuracy_required == "exact"
     assert method.workbench_ready is True
     assert method.expert_only is True
@@ -578,7 +598,7 @@ def test_d60_chart_snapshot_keeps_lagna_and_nine_grahas_order():
         "scopeId": "D60",
         "code": "D60",
         "name": "Shashtyamsha",
-        "method": "Parashara Shashtyamsha: 60 equal half-degree divisions; JHora Sterlitamak parity locked.",
+        "method": "Parashara Shashtyamsha: 60 equal half-degree divisions; source review pending.",
         "methodId": "varga.d60.parashara_shashtyamsha.v1",
         "methodVersion": "1",
         "calculationPreset": "parashara",
