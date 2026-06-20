@@ -26,6 +26,24 @@ function compactNumber(value: unknown) {
   return typeof value === "number" ? Number(value.toFixed(6)) : value;
 }
 
+function displayAspectRef(ref: string | undefined) {
+  if (!ref) return "-";
+  const [, entity = ref] = ref.split(":");
+  const [kind = "", value = entity] = entity.split(".");
+  if (kind === "house") return `дом ${value}`;
+  if (kind === "rashi") return `знак ${value}`;
+  if (kind === "graha") return `граха ${value}`;
+  if (kind === "point") return value;
+  return value;
+}
+
+function displayAspectKind(kind: string | undefined) {
+  if (kind === "movable_to_fixed") return "подвижный → неподвижный";
+  if (kind === "fixed_to_movable") return "неподвижный → подвижный";
+  if (kind === "dual_to_dual") return "двойственный → двойственный";
+  return "знаковый аспект";
+}
+
 type TransitViewMode = "transit_only" | "overlay" | "side_by_side";
 
 type GrahaDrishtiRef = {
@@ -33,6 +51,8 @@ type GrahaDrishtiRef = {
   targetEntityRef?: string;
   aspectKind?: string;
   signDistance?: number;
+  sourceRashiIndex?: number;
+  targetRashiIndex?: number;
 };
 
 type GrahaDrishtiLayer = {
@@ -44,6 +64,8 @@ type GrahaDrishtiLayer = {
   sampleRefs?: GrahaDrishtiRef[];
   items?: GrahaDrishtiRef[];
 };
+
+const RASHI_DRISHTI_METHOD_ID = "aspect.rashi_drishti.parashara.v1";
 
 const TRANSIT_VIEW_MODES: Array<{ id: TransitViewMode; label: string }> = [
   { id: "transit_only", label: "Только транзиты" },
@@ -63,6 +85,7 @@ export default function TransitsPage() {
   const [model, setModel] = useState<Record<string, unknown> | null>(null);
   const [viewMode, setViewMode] = useState<TransitViewMode>("transit_only");
   const [showGrahaDrishti, setShowGrahaDrishti] = useState(false);
+  const [showRashiDrishti, setShowRashiDrishti] = useState(false);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [loading, setLoading] = useState(false);
 
@@ -100,7 +123,9 @@ export default function TransitsPage() {
       });
       setModel(payload);
       const aspectLayer = payload.aspectLayer as GrahaDrishtiLayer | undefined;
+      const rashiAspectLayer = payload.rashiAspectLayer as GrahaDrishtiLayer | undefined;
       setShowGrahaDrishti(Boolean(aspectLayer?.enabledByDefault));
+      setShowRashiDrishti(Boolean(rashiAspectLayer?.enabledByDefault));
       setStatus("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Проверьте координаты и часовой пояс.");
@@ -123,6 +148,8 @@ export default function TransitsPage() {
   const natalModel = (model?.natal as { hasCalculation?: boolean; grahas?: unknown[]; specialPoints?: unknown[] } | undefined) ?? null;
   const aspectLayer = (model?.aspectLayer as GrahaDrishtiLayer | undefined) ?? null;
   const aspectRefs = (aspectLayer?.items?.length ? aspectLayer.items : aspectLayer?.sampleRefs) ?? [];
+  const rashiAspectLayer = (model?.rashiAspectLayer as GrahaDrishtiLayer | undefined) ?? null;
+  const rashiAspectRefs = (rashiAspectLayer?.items?.length ? rashiAspectLayer.items : rashiAspectLayer?.sampleRefs) ?? [];
 
   const d1Model = useMemo(() => {
     if (!model || !selectedProfile) return null;
@@ -204,6 +231,28 @@ export default function TransitsPage() {
                   {aspectRefs.slice(0, 24).map((item, index) => (
                     <span key={`${item.sourceEntityRef}-${item.targetEntityRef}-${item.aspectKind}-${index}`}>
                       {item.sourceEntityRef} → {item.targetEntityRef} · {item.aspectKind} · {item.signDistance}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+          {rashiAspectLayer ? (
+            <section className="product-status transit-aspect-layer" aria-label="Rashi Drishti aspect layer" data-method-id={RASHI_DRISHTI_METHOD_ID}>
+              <div className="transit-aspect-head">
+                <strong>Раши-дришти</strong>
+                <span>Проверенный источник · {rashiAspectLayer.aspectCount ?? rashiAspectRefs.length} связей · только режим астролога</span>
+                <button type="button" onClick={() => setShowRashiDrishti((value) => !value)}>
+                  {showRashiDrishti ? "Скрыть Раши-дришти" : "Показать Раши-дришти"}
+                </button>
+              </div>
+              <p>Экспертный слой выключен по умолчанию: транзитный знак → натальная карта, без орбисов, соединений, прогнозов и AI. Граха-дришти считается отдельно.</p>
+              <span className="transit-aspect-meta">По умолчанию: {rashiAspectLayer.enabledByDefault ? "включено" : "выключено"} · режим: {(rashiAspectLayer.availableInModes ?? []).includes("astrologer") ? "астролог" : "-"}</span>
+              {showRashiDrishti ? (
+                <div className="transit-aspect-lines" aria-label="Линии аспектов Rashi Drishti">
+                  {rashiAspectRefs.slice(0, 24).map((item, index) => (
+                    <span key={`${item.sourceEntityRef}-${item.targetEntityRef}-${item.aspectKind}-${index}`}>
+                      {displayAspectRef(item.sourceEntityRef)} → {displayAspectRef(item.targetEntityRef)} · {displayAspectKind(item.aspectKind)}
                     </span>
                   ))}
                 </div>

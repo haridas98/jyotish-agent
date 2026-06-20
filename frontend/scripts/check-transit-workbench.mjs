@@ -28,6 +28,9 @@ assert(page.includes("Легенда:") && page.includes("один EntityInspect
 assert(page.includes("Граха-дришти") && page.includes("Показать аспекты"), "/transits must expose an astrologer-only graha drishti toggle");
 assert(page.includes("aspectLayer") && page.includes("sampleRefs"), "/transits must render aspect list from safe backend refs");
 assert(page.includes("enabledByDefault") && page.includes("availableInModes"), "/transits must keep aspect layer off by default and astrologer-only");
+assert(page.includes("rashiAspectLayer") && page.includes("showRashiDrishti"), "/transits must expose an astrologer-only rashi drishti toggle");
+assert(page.includes("aspect.rashi_drishti.parashara.v1"), "/transits must keep Rashi Drishti separate from Graha Drishti");
+assert(!page.includes("sourceRuleIds.map") && !page.includes("sourceRuleIds.join"), "/transits normal UI must not render raw Rashi Drishti source IDs");
 assert(api.includes("fetchTransitWorkbench") && api.includes("/api/charts/${profileId}/transit-workbench"), "API client must expose chart-scoped transit workbench fetch");
 assert(nav.includes("/transits"), "shared nav must include transits route");
 for (const forbidden of ["Спросить AI", "Сгенерировать", "source.pending", "rawEvidence", "eligibleItems", "Missing calculations"]) {

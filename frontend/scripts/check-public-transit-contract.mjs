@@ -57,8 +57,9 @@ assert(rashiContract.sourceStatus === "verified", "Rashi Drishti sourceStatus mu
 assert(Array.isArray(rashiContract.sourceRuleIds), "Rashi Drishti sourceRuleIds must be an array.");
 assert(requiredRashiRuleIds.every((id) => rashiContract.sourceRuleIds.includes(id)), "Rashi Drishti sourceRuleIds must include all verified BPHS rules.");
 assert(rashiContract.sourceRuleIds.length === requiredRashiRuleIds.length, "Rashi Drishti contract must expose exactly four source rules.");
-assert(rashiContract.uiCapability === false, "Rashi Drishti UI capability must stay disabled in 9E-A.");
+assert(rashiContract.uiCapability === true, "Rashi Drishti UI capability must be enabled for expert layer in 9E-C.");
 assert(rashiContract.enabledByDefault === false, "Rashi Drishti must stay disabled by default.");
+assert(Array.isArray(rashiContract.availableInModes) && rashiContract.availableInModes.length === 1 && rashiContract.availableInModes[0] === "astrologer", "Rashi Drishti must be astrologer-only.");
 assert(rashiContract.aspectCount > 0, "Rashi Drishti contract must expose calculated aspect count.");
 assert(Array.isArray(rashiContract.sampleRefs) && rashiContract.sampleRefs.length > 0, "Rashi Drishti contract must expose safe sample refs.");
 assert(rashiContract.sampleRefs.every((item) => Array.isArray(item.sourceRuleIds) && item.sourceRuleIds.length > 0), "Each Rashi Drishti sampleRef needs sourceRuleIds.");

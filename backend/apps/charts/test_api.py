@@ -1561,6 +1561,19 @@ def test_transit_overlay_keeps_natal_and_transit_contexts_separate(user, monkeyp
     assert first.data["aspectLayer"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:graha.")
     assert first.data["aspectLayer"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
     assert not any(item["sourceEntityRef"] in {"transit:graha.RA", "transit:graha.KE"} for item in first.data["aspectLayer"]["sampleRefs"])
+    assert first.data["rashiAspectLayer"]["methodId"] == "aspect.rashi_drishti.parashara.v1"
+    assert first.data["rashiAspectLayer"]["sourceStatus"] == "verified"
+    assert first.data["rashiAspectLayer"]["sourceContext"] == "transit"
+    assert first.data["rashiAspectLayer"]["targetContext"] == "natal"
+    assert first.data["rashiAspectLayer"]["uiCapability"] is True
+    assert first.data["rashiAspectLayer"]["enabledByDefault"] is False
+    assert first.data["rashiAspectLayer"]["availableInModes"] == ["astrologer"]
+    assert first.data["rashiAspectLayer"]["usesDegreeOrbs"] is False
+    assert first.data["rashiAspectLayer"]["treatsConjunctionAsAspect"] is False
+    assert first.data["rashiAspectLayer"]["aspectCount"] > 0
+    assert first.data["rashiAspectLayer"]["sampleRefs"][0]["sourceEntityRef"].startswith("transit:rashi.")
+    assert first.data["rashiAspectLayer"]["sampleRefs"][0]["targetEntityRef"].startswith("natal:")
+    assert first.data["rashiAspectLayer"]["sampleRefs"][0]["sourceRuleIds"]
     assert first.data["capabilities"]["aspects"] is True
     assert first.data["entityInspectorCount"] == 1
 
@@ -1679,8 +1692,9 @@ def test_dev_transit_workbench_check_returns_foundation_contract(user, monkeypat
         "bphs.aspect.rashi_drishti.dual_to_dual",
         "bphs.aspect.rashi_drishti.graha_participation",
     ]
-    assert response.data["rashiDrishtiContract"]["uiCapability"] is False
+    assert response.data["rashiDrishtiContract"]["uiCapability"] is True
     assert response.data["rashiDrishtiContract"]["enabledByDefault"] is False
+    assert response.data["rashiDrishtiContract"]["availableInModes"] == ["astrologer"]
     assert response.data["rashiDrishtiContract"]["usesDegreeOrbs"] is False
     assert response.data["rashiDrishtiContract"]["treatsConjunctionAsAspect"] is False
     assert response.data["rashiDrishtiContract"]["aspectCount"] > 0

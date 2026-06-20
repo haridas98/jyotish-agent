@@ -203,6 +203,7 @@ def _transit_workbench_model(chart_id: int, chart: dict, has_calculation: bool, 
         },
         "overlay": _transit_overlay_contract(natal_chart, chart),
         "aspectLayer": _graha_drishti_layer(chart, natal_chart),
+        "rashiAspectLayer": _rashi_drishti_layer(chart, natal_chart),
         "entityInspectorCount": 1,
         "method": {
             "methodId": TRANSIT_WORKBENCH_METHOD_ID,
@@ -366,6 +367,11 @@ def _graha_drishti_dev_contract(transit_chart: dict, natal_chart: dict) -> dict[
 
 
 def _rashi_drishti_dev_contract(transit_chart: dict, natal_chart: dict) -> dict[str, object]:
+    layer = _rashi_drishti_layer(transit_chart, natal_chart)
+    return {key: value for key, value in layer.items() if key != "items"}
+
+
+def _rashi_drishti_layer(transit_chart: dict, natal_chart: dict) -> dict[str, object]:
     aspects = build_rashi_drishti_aspects(transit_chart, natal_chart, source_context="transit", target_context="natal")
     sample_refs = [
         {
@@ -382,11 +388,12 @@ def _rashi_drishti_dev_contract(transit_chart: dict, natal_chart: dict) -> dict[
         **rashi_drishti_method_contract(),
         "sourceContext": "transit",
         "targetContext": "natal",
-        "availableInModes": [],
+        "availableInModes": ["astrologer"],
         "enabledByDefault": False,
-        "uiCapability": False,
+        "uiCapability": True,
         "aspectCount": len(aspects),
         "sampleRefs": sample_refs,
+        "items": aspects,
     }
 
 
