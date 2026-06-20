@@ -554,6 +554,10 @@ body .chart-profile-form textarea {
   gap: 16px;
 }
 
+.d1-workbench[data-density="compact"] {
+  gap: 10px;
+}
+
 .chart-detail-static-shell {
   position: absolute;
   width: 1px;
@@ -571,7 +575,7 @@ body .chart-profile-form textarea {
 .d1-warning-list {
   border: 1px solid rgba(15, 63, 72, 0.14);
   background: rgba(255, 255, 255, 0.92);
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 10px 28px rgba(15, 45, 55, 0.06);
 }
 
@@ -592,6 +596,41 @@ body .chart-profile-form textarea {
 .d1-header p {
   margin: 0;
   color: #526878;
+}
+
+.d1-workbench[data-density="compact"] .d1-header,
+.d1-workbench[data-density="compact"] .d1-chart-card,
+.d1-workbench[data-density="compact"] .d1-table-card,
+.d1-workbench[data-density="compact"] .d1-inspector-panel,
+.d1-workbench[data-density="compact"] .d1-warning-list {
+  padding: 10px;
+}
+
+.d1-workbench[data-density="compact"] .d1-header h1 {
+  font-size: 22px;
+}
+
+.d1-workbench[data-density="compact"] .d1-toolbar {
+  gap: 5px;
+  padding: 7px 8px;
+}
+
+.d1-workbench[data-density="compact"] .d1-toolbar button,
+.d1-workbench[data-density="compact"] .d1-actions a,
+.d1-workbench[data-density="compact"] .d1-actions button {
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.d1-workbench[data-density="compact"] .d1-chart-title {
+  margin-bottom: 6px;
+}
+
+.d1-workbench[data-density="compact"] .d1-table-card th,
+.d1-workbench[data-density="compact"] .d1-table-card td {
+  padding: 5px 6px;
+  font-size: 12px;
 }
 
 .d1-kicker {
@@ -713,7 +752,7 @@ body .chart-profile-form textarea {
 .d1-north-chart {
   position: relative;
   width: min(620px, 100%);
-  aspect-ratio: 1.32;
+  aspect-ratio: 1;
   margin: 0 auto;
   border: 2px solid #d49a3a;
   background: #fffaf3;
@@ -845,7 +884,7 @@ body .chart-profile-form textarea {
   place-items: center;
   border: 1px solid rgba(212, 154, 58, 0.6);
   background: #fffaf3;
-  border-radius: 10px;
+  border-radius: 8px;
   color: #6b7d87;
   font-weight: 700;
 }
@@ -865,6 +904,7 @@ body .chart-profile-form textarea {
   .d1-north-chart,
   .d1-south-chart {
     width: 100%;
+    max-width: calc(100vw - 32px);
   }
 }
 
@@ -875,12 +915,25 @@ body .chart-profile-form textarea {
 
   .d1-chart-cell {
     min-width: 68px;
+    max-width: 92px;
     font-size: 11px;
   }
 
   .d1-south-chart {
-    grid-template-columns: repeat(4, minmax(68px, 1fr));
-    grid-template-rows: repeat(4, minmax(78px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(64px, 1fr));
+  }
+
+  .d1-toolbar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+
+  .d1-table-card th,
+  .d1-table-card td {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }.dasha-workbench-shell{display:grid;gap:12px}.dasha-toolbar{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(260px,1.2fr) minmax(180px,.7fr);gap:10px;align-items:end}.dasha-toolbar>div{border:1px solid #d5e3e6;background:#fff;border-radius:8px;padding:9px 10px;display:grid;gap:3px;min-height:58px}.dasha-toolbar strong{color:var(--green);font-size:14px}.dasha-toolbar span{color:var(--muted);font-size:12px;line-height:1.35}.dasha-period-tree{display:grid;grid-template-columns:minmax(260px,.85fr) minmax(300px,1fr) minmax(280px,.9fr);gap:12px;align-items:start}.dasha-period-panel,.dasha-inspector{border:1px solid #d5e3e6;background:#fff;border-radius:8px;padding:12px;display:grid;gap:10px}.dasha-period-list{display:grid;gap:7px;max-height:560px;overflow:auto;padding-right:2px}.dasha-period-row{width:100%;text-align:left;border:1px solid #d5e3e6;background:#fbfdfd;border-radius:8px;padding:9px 10px;display:grid;grid-template-columns:minmax(68px,.55fr) minmax(150px,1fr) minmax(58px,.35fr);gap:8px;align-items:center}.dasha-period-row strong{color:var(--green);font-size:14px}.dasha-period-row span{color:#30444c;font-size:12px}.dasha-period-row em{color:var(--muted);font-style:normal;font-size:12px;text-align:right}.dasha-period-row.active{border-color:#0c7b83;background:#e8f7f5;box-shadow:inset 3px 0 #00747d}.dasha-period-row.current:not(.active){border-color:#efd19d;background:#fffaf0}.dasha-inspector h2{margin:0;color:#102832;font-size:18px}.dasha-inspector p{margin:0;color:var(--muted);line-height:1.45}.dasha-inspector dl{margin:0;display:grid;gap:7px}.dasha-inspector dl div{border-top:1px solid #e2edf0;padding-top:7px;display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px}.dasha-inspector dt{color:var(--muted);font-size:12px;font-weight:800}.dasha-inspector dd{margin:0;color:var(--green);font-weight:900;overflow-wrap:anywhere}.dasha-empty-note{margin:0;color:var(--muted);line-height:1.4}@media (max-width:1180px){.dasha-period-tree{grid-template-columns:1fr 1fr}.dasha-inspector{grid-column:1/-1}.dasha-toolbar{grid-template-columns:1fr 1fr}}@media (max-width:760px){.dasha-toolbar,.dasha-period-tree{grid-template-columns:1fr}.dasha-inspector{grid-column:auto}.dasha-period-row{grid-template-columns:1fr}.dasha-period-row em{text-align:left}}
 .dasha-control-bar{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.dasha-control-bar button{border:1px solid #c9dedc;background:#fff;color:#0c5962;border-radius:8px;min-height:34px;padding:7px 10px;font-weight:850}.dasha-control-bar button.active,.dasha-control-bar button[aria-pressed="true"]{background:#0c7b83;color:#fff;border-color:#0c7b83}.dasha-table-wrap{overflow:auto;border:1px solid #d5e3e6;border-radius:8px;background:#fff}.dasha-period-table{width:100%;border-collapse:collapse;min-width:760px}.dasha-period-table th,.dasha-period-table td{border-bottom:1px solid #e2edf0;text-align:left;padding:8px 10px;font-size:12px}.dasha-period-table th{color:var(--green);background:#f5fbfa;font-size:11px;text-transform:uppercase}.dasha-period-table td{color:#203944}.dasha-boundary{font-variant-numeric:tabular-nums}.dasha-timeline{border:1px solid #d5e3e6;background:#fff;border-radius:8px;padding:12px;display:flex;gap:4px;overflow:auto;min-height:92px}.dasha-timeline button{border:1px solid #c9dedc;background:#f5fbfa;color:#0c5962;border-radius:7px;min-width:78px;padding:8px;display:grid;gap:4px;align-content:center}.dasha-timeline strong{font-size:12px}.dasha-timeline span{font-size:10px;color:#48646c}@media (max-width:760px){.dasha-control-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.dasha-control-bar button{width:100%}}

@@ -26,6 +26,7 @@ type ChartWorkbenchState = {
   scopeId: ChartWorkbenchScopeId;
   mode: D1ReaderMode;
   chartStyle: D1ChartStyle;
+  density: D1DensityMode;
   activeEntityId: EntityId | null;
   activeTab: D1DataTab;
   terminologyMode: D1TerminologyMode;
@@ -41,6 +42,8 @@ type ChartWorkbenchState = {
     dignity: boolean;
   };
 };
+
+type D1DensityMode = "comfortable" | "compact";
 
 const NORTH_POSITIONS: Record<number, { x: number; y: number }> = {
   1: { x: 49, y: 47 },
@@ -98,6 +101,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
     scopeId: model.scopeId,
     mode: model.defaults.readerMode,
     chartStyle: model.defaults.chartStyle,
+    density: "comfortable",
     activeEntityId: null,
     activeTab: "overview",
     terminologyMode: model.defaults.terminologyMode,
@@ -120,6 +124,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
 
   const setActiveEntityId = (activeEntityId: EntityId | null) => setWorkbenchState((state) => ({ ...state, activeEntityId }));
   const setChartStyle = (chartStyle: D1ChartStyle) => setWorkbenchState((state) => ({ ...state, chartStyle }));
+  const setDensity = (density: D1DensityMode) => setWorkbenchState((state) => ({ ...state, density }));
   const setMode = (mode: D1ReaderMode) => {
     if (mode === "novice" && model.expertOnlyScopes.includes(model.scopeId)) {
       onScopeChange?.("D1");
@@ -130,7 +135,11 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
   const setActiveTab = (activeTab: D1DataTab) => setWorkbenchState((state) => ({ ...state, activeTab }));
 
   return (
-    <section className="d1-workbench" aria-label="Карта D1">
+    <section
+      className={workbenchState.density === "compact" ? "d1-workbench d1-workbench-compact" : "d1-workbench"}
+      data-density={workbenchState.density}
+      aria-label="Карта D1"
+    >
       <div className="d1-header">
         <div>
           <span className="d1-kicker">Карта D1</span>
@@ -174,9 +183,12 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
         <strong>Термины</strong>
         {(["ru", "en", "sa", "short"] as const).map((termMode) => (
           <button key={termMode} type="button" className={workbenchState.terminologyMode === termMode ? "active" : ""} onClick={() => setTerminologyMode(termMode)}>
-            {termMode === "short" ? "Кратко" : termMode.toUpperCase()}
+            {terminologyLabel(termMode)}
           </button>
         ))}
+        <strong>Плотность</strong>
+        <button type="button" className={workbenchState.density === "comfortable" ? "active" : ""} onClick={() => setDensity("comfortable")}>Обычный</button>
+        <button type="button" className={workbenchState.density === "compact" ? "active" : ""} onClick={() => setDensity("compact")}>Компактный</button>
       </div>
 
       {status ? <div className="product-status">{status}</div> : null}
@@ -418,6 +430,13 @@ function placementLabel(row: D1GrahaRow | D1SpecialPointRow, terminologyMode: D1
   if (terminologyMode === "en") return row.body === "Surya" ? "Sun" : row.body === "Chandra" ? "Moon" : row.body;
   if (terminologyMode === "sa") return row.body;
   return row.label;
+}
+
+function terminologyLabel(terminologyMode: D1TerminologyMode) {
+  if (terminologyMode === "ru") return "RU";
+  if (terminologyMode === "en") return "EN";
+  if (terminologyMode === "sa") return "SA";
+  return "Кратко";
 }
 
 function availableScopeGroupsForMode(model: D1WorkbenchModel, mode: D1ReaderMode) {
