@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
 import {
   fetchCurrentUser,
@@ -50,11 +50,27 @@ function relationshipDate(value: string) {
   return new Date(value).toLocaleDateString("ru-RU");
 }
 
+function relationshipLabelShort(relationship: ChartRelationship) {
+  return `${relationship.chart_a?.display_name ?? "A"} — ${relationship.chart_b?.display_name ?? "B"}`;
+}
+
+function latestPeopleObject(profiles: ChartProfile[], relationships: ChartRelationship[]) {
+  const profile = [...profiles].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0] ?? null;
+  const relationship = [...relationships].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0] ?? null;
+  if (!relationship) return profile ? `Карта: ${profile.display_name}` : "нет данных";
+  if (!profile) return `Связь: ${relationshipLabelShort(relationship)}`;
+  return Date.parse(relationship.updated_at) > Date.parse(profile.updated_at)
+    ? `Связь: ${relationshipLabelShort(relationship)}`
+    : `Карта: ${profile.display_name}`;
+}
+
 export default function PeoplePage() {
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
   const [relationships, setRelationships] = useState<ChartRelationship[]>([]);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [needsAuth, setNeedsAuth] = useState(false);
+
+  const selfProfile = useMemo(() => profiles.find((profile) => profile.is_self_profile) ?? null, [profiles]);
 
   useEffect(() => {
     let mounted = true;
@@ -87,17 +103,45 @@ export default function PeoplePage() {
 
   return (
     <ProductShell active="people">
-      {!needsAuth ? (
-        <div className="page-action-strip">
-          <a className="primary-link-button" href="/charts/new">Добавить карту</a>
+      <section className="charts-dashboard-head people-workspace-head">
+        <div>
+          <h1>Люди и профили</h1>
+          <span>Карты, роли и сохранённые связи для рабочих разборов.</span>
         </div>
-      ) : null}
+        <nav className="workspace-bridge-actions" aria-label="Быстрые действия людей">
+          <a className="primary-link-button" href="/charts/new">Создать карту</a>
+          <a className="secondary-button" href="/charts">Кабинет карт</a>
+          <a className="secondary-button" href="/interactions">Взаимодействия</a>
+          <a className="secondary-button" href="/reports">Обзор</a>
+          <a className="secondary-button" href="/transits">Транзиты</a>
+        </nav>
+      </section>
+
+      <section className="workspace-bridge-summary" aria-label="Сводка людей">
+        <div>
+          <span>Всего карт</span>
+          <strong>{profiles.length}</strong>
+        </div>
+        <div>
+          <span>Моя карта</span>
+          <strong>{selfProfile ? selfProfile.display_name : "не выбрана"}</strong>
+        </div>
+        <div>
+          <span>Связей</span>
+          <strong>{relationships.length}</strong>
+        </div>
+        <div>
+          <span>Последнее обновление</span>
+          <strong>{profiles.length || relationships.length ? latestPeopleObject(profiles, relationships) : "нет данных"}</strong>
+        </div>
+      </section>
 
       <div className="product-status">{status}</div>
 
       {needsAuth ? (
         <section className="history-empty private-history-gate">
           <span>Войдите для доступа.</span>
+          <a className="primary-link-button" href="/charts/new">Создать карту</a>
         </section>
       ) : (
         <>
@@ -110,7 +154,7 @@ export default function PeoplePage() {
             {profiles.length ? (
               <div className="history-list">
                 {profiles.map((profile) => (
-                  <a className="history-row" href={`/?profile=${profile.id}#chart`} key={profile.id}>
+                  <article className="history-row" key={profile.id}>
                     <div>
                       <strong>{profile.display_name}{profile.is_self_profile ? " · моя карта" : ""}</strong>
                       <span>{profile.birth_date} · {formatProfileTime(profile)} · {profile.place.label}</span>
@@ -120,11 +164,24 @@ export default function PeoplePage() {
                           : "расчёт ещё не сохранён"}
                       </small>
                     </div>
-                  </a>
+                    <div className="people-card-actions">
+                      <a href={`/charts/${profile.id}`}>Открыть</a>
+                      <a href={`/charts/${profile.id}/edit`}>Редактировать</a>
+                      <a href="/reports">Обзор</a>
+                      <a href="/interactions">Связи</a>
+                    </div>
+                  </article>
                 ))}
               </div>
             ) : (
-              <div className="history-empty">Сохранённых карт ещё нет.</div>
+              <div className="history-empty">
+                <span>Сохранённых карт пока нет.</span>
+                <div className="workspace-bridge-actions">
+                  <a className="primary-link-button" href="/charts/new">Создать карту</a>
+                  <a className="secondary-button" href="/charts">Кабинет карт</a>
+                  <a className="secondary-button" href="/transits">Транзиты</a>
+                </div>
+              </div>
             )}
           </section>
 
@@ -147,14 +204,21 @@ export default function PeoplePage() {
                       {relationship.chart_b?.display_name ?? "Карта B"} · {roleLabels[relationship.role_b_id] ?? relationship.role_b_id}
                     </strong>
                     {relationship.notes ? <small>{relationship.notes.slice(0, 140)}</small> : null}
-                    <a href="/interactions">Открыть во Взаимодействиях</a>
+                    <div className="people-relationship-actions">
+                      <a href="/interactions">Открыть</a>
+                      <a href="/reports">Обзор</a>
+                      <a href="/people">Люди</a>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="history-empty">
                 <span>Связей между картами ещё нет.</span>
-                <a href="/interactions">Создать связь</a>
+                <div className="workspace-bridge-actions">
+                  <a className="primary-link-button" href="/interactions">Создать связь</a>
+                  <a className="secondary-button" href="/charts/new">Создать карту</a>
+                </div>
               </div>
             )}
           </section>

@@ -219,6 +219,7 @@ export default function InteractionsPage() {
       selectedRecipe.status !== "draft" &&
       selectedRecipe.status !== "disabled",
   );
+  const readiness = profiles.length < 2 ? "Нужны две карты" : canSave ? "Можно сохранить связь" : "Выберите пару и тип";
 
   useEffect(() => {
     let cancelled = false;
@@ -340,6 +341,33 @@ export default function InteractionsPage() {
 
       <p className="interaction-status-line">{status}</p>
 
+      <section className="workspace-bridge-summary" aria-label="Сводка взаимодействий">
+        <div>
+          <span>Карт</span>
+          <strong>{profiles.length}</strong>
+        </div>
+        <div>
+          <span>Связей</span>
+          <strong>{relationships.length}</strong>
+        </div>
+        <div>
+          <span>Выбранная пара</span>
+          <strong>{profileTitle(profileA)} ↔ {profileTitle(profileB)}</strong>
+        </div>
+        <div className="interaction-readiness">
+          <span>Готовность</span>
+          <strong>{readiness}</strong>
+        </div>
+      </section>
+
+      <nav className="workspace-bridge-actions" aria-label="Быстрые действия взаимодействий">
+        <Link className="secondary-button" href="/people">Люди</Link>
+        <Link className="primary-link-button" href="/charts/new">Создать карту</Link>
+        <Link className="secondary-button" href="/reports">Обзор</Link>
+        <Link className="secondary-button" href="/compatibility">Совместимость</Link>
+        <Link className="secondary-button" href="/transits">Транзиты</Link>
+      </nav>
+
       {needsAuth ? (
         <section className="interaction-empty panel">
           <h2>Нужен вход</h2>
@@ -378,6 +406,7 @@ export default function InteractionsPage() {
                 <div className="interaction-actions">
                   <Link href="/charts/new">Создать карту</Link>
                   <Link href="/charts">Кабинет карт</Link>
+                  <Link href="/people">Люди</Link>
                 </div>
               </div>
             ) : (
@@ -460,6 +489,10 @@ export default function InteractionsPage() {
                     <button type="button" onClick={() => openRelationship(relationship)}>
                       Редактировать
                     </button>
+                    <div className="interaction-saved-actions">
+                      <Link href="/reports">Обзор</Link>
+                      <Link href="/people">Люди</Link>
+                    </div>
                     <button type="button" onClick={() => void deleteRelationship(relationship)}>
                       Удалить
                     </button>

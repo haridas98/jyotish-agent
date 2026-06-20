@@ -55,6 +55,7 @@ export default function ReportBuilderPage() {
   );
   const selectedRelationship = relatedRelationships.find((relationship) => relationship.id === selectedRelationshipId) ?? null;
   const selectedRelationshipType = selectedRelationship ? getRelationshipType(selectedRelationship.relationship_type_id as RelationshipTypeId) : null;
+  const reportReadiness = profiles.length ? "Структура готова" : "Нужна сохранённая карта";
 
   const resolvedRecipe = useMemo(
     () =>
@@ -125,10 +126,40 @@ export default function ReportBuilderPage() {
 
       <p className="interaction-status-line">{status}</p>
 
+      <section className="workspace-bridge-summary" aria-label="Сводка конструктора отчёта">
+        <div>
+          <span>Карт</span>
+          <strong>{profiles.length}</strong>
+        </div>
+        <div>
+          <span>Связей</span>
+          <strong>{relationships.length}</strong>
+        </div>
+        <div>
+          <span>Выбранная карта</span>
+          <strong>{selectedProfile?.display_name ?? "не выбрана"}</strong>
+        </div>
+        <div className="report-readiness">
+          <span>Тип отчёта</span>
+          <strong>{reportType.label.ru} · {reportReadiness}</strong>
+        </div>
+      </section>
+
+      <nav className="workspace-bridge-actions" aria-label="Быстрые действия отчётов">
+        <Link className="primary-link-button" href="/charts/new">Создать карту</Link>
+        <Link className="secondary-button" href="/people">Люди</Link>
+        <Link className="secondary-button" href="/interactions">Взаимодействия</Link>
+        <Link className="secondary-button" href="/transits">Транзиты</Link>
+      </nav>
+
       {needsAuth ? (
         <section className="interaction-empty panel">
           <h2>Нужен вход</h2>
           <p>После входа здесь будут доступны только ваши карты, связи и заготовки отчётов.</p>
+          <div className="workspace-bridge-actions">
+            <Link className="primary-link-button" href="/charts/new">Создать карту</Link>
+            <Link className="secondary-button" href="/people">Люди</Link>
+          </div>
         </section>
       ) : (
         <section className="reports-workspace" aria-label="Рабочее место конструктора отчётов">
@@ -175,7 +206,10 @@ export default function ReportBuilderPage() {
             ) : (
               <div className="interaction-empty">
                 <strong>Сохранённых карт пока нет.</strong>
-                <Link href="/charts/new">Создать карту</Link>
+                <div className="workspace-bridge-actions">
+                  <Link className="primary-link-button" href="/charts/new">Создать карту</Link>
+                  <Link className="secondary-button" href="/people">Люди</Link>
+                </div>
               </div>
             )}
           </aside>
