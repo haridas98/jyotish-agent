@@ -92,6 +92,24 @@ export type CollectionPlanSnapshotRunbook = {
   };
 };
 
+export type ArtifactAvailabilityCheckpoint = {
+  title: "Artifact availability checkpoint";
+  environmentCopy: "environment artifact availability";
+  localDevCopy: "local dev can show 19/7/12";
+  productionCopy: "production can show 19/5/14";
+  releaseGateStatus: "blocked" | "ready";
+  commandSmokeMatrixStatus: "ready";
+  commandSmokeMatrixText: "command smoke matrix: ready";
+  totals: {
+    domainCount: number;
+    availableReviewRows: number;
+    missingReports: number;
+    collectReports: number;
+    reviewRows: number;
+    readyDemo: number;
+  };
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -217,6 +235,31 @@ export function buildCollectionPlanSnapshotRunbook(
     totals: {
       domainCount: rows.length,
       collectReports: releaseGateActionSummary.totals.collectReports,
+      reviewRows: releaseGateActionSummary.totals.reviewRows,
+      readyDemo: releaseGateActionSummary.totals.readyDemo,
+    },
+  };
+}
+
+export function buildArtifactAvailabilityCheckpoint(
+  rows: ParityCollectionChecklistRow[],
+  releaseGateActionSummary: ReleaseGateActionSummary,
+): ArtifactAvailabilityCheckpoint {
+  const missingReports = releaseGateActionSummary.totals.collectReports;
+  const blocked = missingReports > 0 || releaseGateActionSummary.totals.reviewRows > 0;
+  return {
+    title: "Artifact availability checkpoint",
+    environmentCopy: "environment artifact availability",
+    localDevCopy: "local dev can show 19/7/12",
+    productionCopy: "production can show 19/5/14",
+    releaseGateStatus: blocked ? "blocked" : "ready",
+    commandSmokeMatrixStatus: "ready",
+    commandSmokeMatrixText: "command smoke matrix: ready",
+    totals: {
+      domainCount: rows.length,
+      availableReviewRows: rows.length - missingReports,
+      missingReports,
+      collectReports: missingReports,
       reviewRows: releaseGateActionSummary.totals.reviewRows,
       readyDemo: releaseGateActionSummary.totals.readyDemo,
     },

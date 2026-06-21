@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildCollectionPlanSnapshotRunbook, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5671,6 +5671,7 @@ function AccuracyReportPanel({
   const collectionChecklistTotals = buildParityCollectionChecklistTotals(parityRoadmapRows);
   const releaseGateActionSummary = buildReleaseGateActionSummary(parityCollectionChecklistRows);
   const collectionPlanRunbook = buildCollectionPlanSnapshotRunbook(parityCollectionChecklistRows, releaseGateActionSummary);
+  const artifactAvailabilityCheckpoint = buildArtifactAvailabilityCheckpoint(parityCollectionChecklistRows, releaseGateActionSummary);
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5759,6 +5760,25 @@ function AccuracyReportPanel({
             <span>blocked work</span>
             <strong>{collectionPlanRunbook.totals.collectReports + collectionPlanRunbook.totals.reviewRows}</strong>
             <small>Missing reports remain release blockers; this is an operator plan, not a parity-complete claim.</small>
+          </div>
+          <h3>Artifact availability checkpoint</h3>
+          <p>
+            {artifactAvailabilityCheckpoint.environmentCopy}: {artifactAvailabilityCheckpoint.localDevCopy}; {artifactAvailabilityCheckpoint.productionCopy}. Counts reflect environment artifacts, not product failure.
+          </p>
+          <small>
+            total witness domains: {artifactAvailabilityCheckpoint.totals.domainCount} - available/review rows: {artifactAvailabilityCheckpoint.totals.availableReviewRows} - missing reports: {artifactAvailabilityCheckpoint.totals.missingReports} - collect reports: {artifactAvailabilityCheckpoint.totals.collectReports}
+          </small>
+          <div>
+            <span>release gate</span>
+            <strong>{artifactAvailabilityCheckpoint.releaseGateStatus}</strong>
+            <small>release gate: {artifactAvailabilityCheckpoint.releaseGateStatus}; command smoke matrix: {artifactAvailabilityCheckpoint.commandSmokeMatrixStatus}; {artifactAvailabilityCheckpoint.commandSmokeMatrixText}</small>
+          </div>
+          <div>
+            <span>next safe action</span>
+            <strong>{artifactAvailabilityCheckpoint.totals.collectReports + artifactAvailabilityCheckpoint.totals.reviewRows}</strong>
+            <small>
+              collect reports: {artifactAvailabilityCheckpoint.totals.collectReports} - review witness rows: {artifactAvailabilityCheckpoint.totals.reviewRows} - ready/demo rows: {artifactAvailabilityCheckpoint.totals.readyDemo}
+            </small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">
