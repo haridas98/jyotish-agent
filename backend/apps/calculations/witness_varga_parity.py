@@ -114,7 +114,12 @@ def _case_report(case_row: dict[str, Any], codes: tuple[str, ...]) -> dict[str, 
     checked_vargas = sorted({str(item["varga"]) for item in field_results})
     failed_vargas = sorted({str(item["varga"]) for item in field_results if not item.get("passed")})
     missing_vargas = sorted({_varga_from_missing_field(item) for item in missing_fields if _varga_from_missing_field(item)})
-    comparison_status = "failed" if failed_fields or missing_fields else "passed"
+    if failed_fields:
+        comparison_status = "failed"
+    elif missing_fields:
+        comparison_status = "not_comparable"
+    else:
+        comparison_status = "passed"
     return {
         "case_id": str(case_row["id"]),
         "review_status": ",".join(review_statuses),
@@ -293,7 +298,7 @@ def _varga_summary(rows: list[dict[str, Any]], codes: tuple[str, ...]) -> dict[s
                 summary[code]["failed"] += 1
             elif code in row["missing_vargas"]:
                 summary[code]["missing"] += 1
-            elif code in row["checked_vargas"] and row["comparison_status"] == "passed":
+            elif code in row["checked_vargas"]:
                 summary[code]["passed"] += 1
             elif row["comparison_status"] in {"not_comparable", "not_reviewed", "missing_witness"}:
                 summary[code]["not_comparable"] += 1

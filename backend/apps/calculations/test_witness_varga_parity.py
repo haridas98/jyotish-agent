@@ -117,8 +117,12 @@ def test_varga_parity_report_missing_expected_or_actual_is_not_comparable(tmp_pa
 
     assert rows["sterlitamak-1998-04-30-1345"]["comparison_status"] == "not_comparable"
     assert "jhora.vargas.D7" in rows["sterlitamak-1998-04-30-1345"]["missing_fields"]
-    assert rows["mayapur-2001-02-03-0910"]["comparison_status"] == "failed"
+    assert rows["mayapur-2001-02-03-0910"]["comparison_status"] == "not_comparable"
     assert "calculated.vargas.D10" in rows["mayapur-2001-02-03-0910"]["missing_fields"]
+    assert report["varga_summary"]["D7"]["passed"] == 1
+    assert report["varga_summary"]["D9"]["passed"] == 1
+    assert report["varga_summary"]["D7"]["missing"] == 1
+    assert report["varga_summary"]["D10"]["missing"] == 2
 
 
 def test_varga_parity_report_keeps_draft_case_out_of_passed(tmp_path):
