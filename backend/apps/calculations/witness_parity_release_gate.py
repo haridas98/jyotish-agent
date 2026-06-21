@@ -32,7 +32,8 @@ def build_witness_parity_release_gate(
     high_priority_count = _safe_int(priority_totals.get("high"))
     smoke_matrix = command_smoke_matrix if isinstance(command_smoke_matrix, dict) else build_witness_parity_command_smoke_matrix()
     smoke_totals = smoke_matrix.get("totals") if isinstance(smoke_matrix.get("totals"), dict) else {}
-    command_smoke_blocked_count = _safe_int(smoke_totals.get("blocked_count"))
+    smoke_status_blocker = 0 if str(smoke_matrix.get("status") or "").lower() == "ready" else 1
+    command_smoke_blocked_count = max(_safe_int(smoke_totals.get("blocked_count")), smoke_status_blocker)
     command_smoke_missing_count = _safe_int(smoke_totals.get("missing_count"))
     full_actions = [_safe_required_action(row) for row in _required_action_rows(ops_bundle.get("next_actions"))]
     smoke_action = _command_smoke_action(command_smoke_blocked_count, command_smoke_missing_count)

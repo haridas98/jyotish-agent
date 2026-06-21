@@ -153,6 +153,28 @@ def test_release_gate_blocks_on_supplied_command_smoke_matrix_and_respects_limit
     ]
 
 
+def test_release_gate_blocks_on_command_smoke_status_even_when_counts_are_zero():
+    blocked_smoke_matrix = {
+        "schema_version": "witness-parity-command-smoke-matrix.v1",
+        "status": "blocked",
+        "totals": {
+            "domain_count": 19,
+            "smoke_ready_count": 19,
+            "blocked_count": 0,
+            "missing_count": 0,
+        },
+    }
+
+    gate = build_witness_parity_release_gate(_all_ready_summary(), command_smoke_matrix=blocked_smoke_matrix)
+
+    assert gate["status"] == "blocked"
+    assert gate["criteria"]["command_smoke_matrix"] == {"threshold": 0, "observed": 1}
+    assert gate["criteria"]["command_missing_contracts"] == {"threshold": 0, "observed": 0}
+    assert gate["blocker_totals"]["command_smoke_blocked_count"] == 1
+    assert gate["blocker_totals"]["command_smoke_missing_count"] == 0
+    assert [row["key"] for row in gate["required_actions"]] == ["witness_parity_command_smoke_matrix"]
+
+
 def test_release_gate_required_actions_are_ordered_and_limited():
     gate = build_witness_parity_release_gate(
         _all_ready_summary(
