@@ -34,6 +34,31 @@ BATCH_ARTIFACTS = {
         "path": ".tmp/witness-review/ashtakavarga-parity-report.json",
         "schema": "jyotish-ashtakavarga-parity-report-v1",
     },
+    "special_points": {
+        "command": "build_witness_special_points_parity_report",
+        "path": ".tmp/witness-review/special-points-parity-report.json",
+        "schema": "jyotish-special-points-parity-report-v1",
+    },
+    "argala": {
+        "command": "build_witness_argala_parity_report",
+        "path": ".tmp/witness-review/argala-parity-report.json",
+        "schema": "jyotish-argala-parity-report-v1",
+    },
+    "avastha": {
+        "command": "build_witness_avastha_parity_report",
+        "path": ".tmp/witness-review/avastha-parity-report.json",
+        "schema": "jyotish-avastha-parity-report-v1",
+    },
+    "drishti": {
+        "command": "build_witness_drishti_parity_report",
+        "path": ".tmp/witness-review/drishti-parity-report.json",
+        "schema": "jyotish-drishti-parity-report-v1",
+    },
+    "transit_coordinates": {
+        "command": "build_witness_transit_coordinates_parity_report",
+        "path": ".tmp/witness-review/transit-coordinate-parity-report.json",
+        "schema": "jyotish-transit-coordinate-parity-report-v1",
+    },
 }
 
 FORBIDDEN_KEYS = {
