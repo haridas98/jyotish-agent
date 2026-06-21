@@ -14,6 +14,7 @@
     "test:interactions": "node scripts/check-interactions-foundation.mjs",
     "test:interaction-scenario-presets": "node scripts/check-interaction-scenario-presets.mjs",
     "test:timing-scenario-presets": "node scripts/check-timing-scenario-presets.mjs",
+    "test:muhurta-planning-page": "node scripts/check-muhurta-planning-page.mjs",
     "test:compatibility": "node scripts/check-compatibility-foundation.mjs",
     "test:reports": "node scripts/check-reports-foundation.mjs",
     "test:report-recipes": "node scripts/check-report-recipes.mjs",
