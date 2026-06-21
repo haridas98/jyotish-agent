@@ -1,4 +1,5 @@
 import json
+import subprocess
 
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -3517,3 +3518,216 @@ def test_witness_tajaka_parity_default_path_matches_command_output(settings):
     normalized = str(settings.WITNESS_TAJAKA_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/tajaka-parity-report.json")
+
+
+def _write_prashna_parity_report(path, *, case_id="case-prashna-a", status="failed"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-prashna-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "tolerance_profile": {"degrees": 0.01},
+                    "layers": [
+                        "prashna_context",
+                        "question_chart",
+                        "question_lagna",
+                        "lagna_lord",
+                        "moon",
+                        "seventh_house",
+                        "panchanga",
+                        "review_gates",
+                    ],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 1,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 1,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 0,
+                    "target_reviewed_count": 20,
+                    "target_met": False,
+                },
+                "layer_summary": {
+                    "question_lagna": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "not_comparable": 0,
+                    },
+                    "moon": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "not_comparable": 0,
+                    },
+                    "review_gates": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "not_comparable": 0,
+                    },
+                },
+                "field_summary": {
+                    "question_lagna.rashi": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "skipped": 0,
+                    },
+                    "experimental_prashna_note": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "source": "jhora",
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["question_lagna", "moon", "review_gates"],
+                        "failed_layers": ["question_lagna"] if status == "failed" else [],
+                        "missing_layers": [],
+                        "checked_fields": ["question_lagna.rashi", "moon.rashi", "required_factors"],
+                        "failed_fields": ["question_lagna.rashi"] if status == "failed" else [],
+                        "missing_fields": ["calculated.prashna"] if status == "failed" else [],
+                        "skipped_fields": ["prashna.experimental_prashna_note"],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "question_lagna",
+                                "field": "question_lagna.rashi",
+                                "expected": "karka",
+                                "actual": "simha",
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_prashna_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "prashna-parity-report.json"
+    _write_prashna_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_prashna_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_prashna_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-prashna-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["question_lagna"]["failed"] == 1
+    assert parity["field_summary"]["question_lagna.rashi"]["failed"] == 1
+    assert parity["field_summary"]["experimental_prashna_note"]["skipped"] == 1
+    assert parity["tolerance_profile"] == {"degrees": 0.01}
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-prashna-a",
+            "status": "failed",
+            "checked_layers": ["question_lagna", "moon", "review_gates"],
+            "failed_layers": ["question_lagna"],
+            "missing_layers": [],
+            "checked_fields": ["question_lagna.rashi", "moon.rashi", "required_factors"],
+            "failed_fields": ["question_lagna.rashi"],
+            "missing_fields": ["calculated.prashna"],
+            "skipped_fields": ["prashna.experimental_prashna_note"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_prashna_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_prashna_parity_report_path=tmp_path / "missing-prashna-parity.json",
+    )
+    assert missing_summary["witness_prashna_parity"]["available"] is False
+    assert missing_summary["witness_prashna_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-prashna-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_prashna_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_prashna_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_prashna_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-prashna-parity.json"
+    second_path = tmp_path / "second-prashna-parity.json"
+    _write_prashna_parity_report(first_path, case_id="first-prashna-case")
+    _write_prashna_parity_report(second_path, case_id="second-prashna-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_PRASHNA_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_PRASHNA_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_prashna_parity"]["next_actions"][0]["case_id"] == "first-prashna-case"
+    assert second_response.data["witness_prashna_parity"]["next_actions"][0]["case_id"] == "second-prashna-case"
+
+
+def test_witness_prashna_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_PRASHNA_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/prashna-parity-report.json")
+
+
+def test_witness_summary_prashna_parity_stage_does_not_change_formula_workflow_or_report_builder_files():
+    changed = subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()
+    forbidden_files = {
+        "backend/apps/calculations/classical.py",
+        "backend/apps/calculations/chart.py",
+        "backend/apps/calculations/ephemeris.py",
+        "backend/apps/calculations/math.py",
+        "backend/apps/calculations/panchanga.py",
+        "backend/apps/calculations/vimshottari.py",
+        "backend/apps/calculations/dasha_systems.py",
+        "backend/apps/calculations/vargas.py",
+        "backend/apps/calculations/accuracy.py",
+        "backend/apps/calculations/graha_drishti.py",
+        "backend/apps/calculations/rashi_drishti.py",
+        "backend/apps/calculations/transit_coordinates.py",
+        "backend/apps/calculations/workflows.py",
+        "backend/apps/calculations/witness_prashna_parity.py",
+    }
+
+    assert not (forbidden_files & set(changed))

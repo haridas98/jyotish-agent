@@ -5565,6 +5565,28 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const prashnaParity = witnessSummary?.witness_prashna_parity;
+  const prashnaParitySummary = prashnaParity?.summary;
+  const prashnaParityLayers = Object.keys(prashnaParity?.layer_summary ?? {}).sort();
+  const prashnaParityFields = Object.keys(prashnaParity?.field_summary ?? {}).sort();
+  const prashnaParitySkippedCount = Object.values(prashnaParity?.field_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const prashnaParityActions = prashnaParity?.next_actions.slice(0, 3) ?? [];
+  const prashnaParityTolerance = prashnaParity?.tolerance_profile?.degrees;
+  const prashnaParityTargetMet = Boolean(prashnaParity?.target_met);
+  const prashnaParityNeedsAttention =
+    Boolean(prashnaParity?.available) &&
+    (!prashnaParityTargetMet ||
+      Boolean(prashnaParitySummary?.failed_count) ||
+      Boolean(prashnaParitySummary?.missing_witness_count) ||
+      Boolean(prashnaParitySummary?.not_reviewed_count) ||
+      Boolean(prashnaParitySummary?.not_comparable_count));
+  const prashnaParityState = prashnaParity?.available
+    ? prashnaParityTargetMet
+      ? "target met"
+      : prashnaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5584,6 +5606,7 @@ function AccuracyReportPanel({
     muhurtaParityNeedsAttention ||
     tithiPraveshaParityNeedsAttention ||
     tajakaParityNeedsAttention ||
+    prashnaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5767,6 +5790,18 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Prashna parity</span>
+            <strong>{prashnaParityState}</strong>
+            {prashnaParitySummary ? (
+              <small>
+                Horary baseline rows: {prashnaParitySummary.passed_count}/{prashnaParitySummary.target_reviewed_count} ready, {prashnaParitySummary.failed_count} diff
+                {prashnaParityFields.length ? `, fields: ${prashnaParityFields.length}` : ""}
+                {prashnaParitySkippedCount ? `, skipped: ${prashnaParitySkippedCount}` : ""}
+                {typeof prashnaParityTolerance === "number" ? `, tolerance: ${prashnaParityTolerance}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5944,6 +5979,18 @@ function AccuracyReportPanel({
                 <small>
                   {tajakaParityLayers.length ? tajakaParityLayers.join("/") : "Varshaphala baseline rows"}; fields: {tajakaParityFields.length}; skipped: {tajakaParitySkippedCount}; target: {tajakaParitySummary.target_reviewed_count} reviewed witness cases
                   {typeof tajakaParityTolerance === "number" ? `; tolerance: ${tajakaParityTolerance}` : ""}
+                </small>
+              </div>
+            ) : null}
+            {prashnaParityNeedsAttention && prashnaParitySummary ? (
+              <div>
+                <span>Prashna parity</span>
+                <strong>
+                  {prashnaParitySummary.comparable_count} comparable, {prashnaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {prashnaParityLayers.length ? prashnaParityLayers.join("/") : "Horary baseline rows"}; fields: {prashnaParityFields.length}; skipped: {prashnaParitySkippedCount}; target: {prashnaParitySummary.target_reviewed_count} reviewed witness cases
+                  {typeof prashnaParityTolerance === "number" ? `; tolerance: ${prashnaParityTolerance}` : ""}
                 </small>
               </div>
             ) : null}
@@ -6264,6 +6311,26 @@ function AccuracyReportPanel({
             {tajakaParityActions.map((item) => (
               <div key={"tajaka-parity-" + item.case_id}>
                 <span>Tajaka parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                  .join("; ")}
+                </small>
+              </div>
+            ))}
+            {prashnaParityActions.map((item) => (
+              <div key={"prashna-parity-" + item.case_id}>
+                <span>Prashna parity</span>
                 <strong>{item.case_id || "witness case"}</strong>
                 <small>
                   {[
