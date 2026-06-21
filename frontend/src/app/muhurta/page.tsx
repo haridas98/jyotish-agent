@@ -301,13 +301,13 @@ export default function MuhurtaPage() {
             <div className="interaction-layer">
               <strong>Selected action</strong>
               <p>
-                {planningBrief.actionDecisionBrief.label} В· {planningBrief.actionDecisionBrief.focus}
+                {planningBrief.actionDecisionBrief.label} - {planningBrief.actionDecisionBrief.focus}
               </p>
             </div>
             <div className="interaction-layer">
               <strong>Current window/context</strong>
               <p>
-                {planningBrief.actionDecisionBrief.contextWindow} В· {planningBrief.actionDecisionBrief.planningContext}
+                {planningBrief.actionDecisionBrief.contextWindow} - {planningBrief.actionDecisionBrief.planningContext}
               </p>
             </div>
             <div className="interaction-layer">

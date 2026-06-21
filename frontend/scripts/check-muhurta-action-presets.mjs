@@ -63,6 +63,10 @@ for (const forbidden of [
   "legal advice",
   "financial guarantee",
   "certain outcome",
+  "В·",
+  "Â·",
+  "Ð",
+  "�",
 ]) {
   assert(!page.includes(forbidden), `/muhurta action UI must not expose ${forbidden}`);
   assert(!timingPresets.includes(forbidden), `Timing presets must not expose ${forbidden}`);
