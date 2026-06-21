@@ -1,0 +1,696 @@
+{
+  "schema_version": "jyotish-core-review-preflight-v1",
+  "domain": "witness_core_parity",
+  "label": "Core parity",
+  "artifact_availability": {
+    "domain_count": 19,
+    "present_count": 19,
+    "missing_count": 0
+  },
+  "release_gate_status": "blocked",
+  "command_smoke_matrix_status": "ready",
+  "status": "blocked",
+  "blocked_reason": "witness_core_parity is blocked by not-reviewed witness rows",
+  "availability_note": "artifact availability is aligned at 19/19/0",
+  "release_note": "release gate remains blocked",
+  "claim_policy": "no parity success or release readiness is claimed",
+  "safe_command_families": [
+    "preflight_witness_review",
+    "mark_jhora_witness_reviewed",
+    "mark_parashara_light_witness_reviewed"
+  ],
+  "summary": {
+    "case_count": 21,
+    "not_reviewed_count": 21,
+    "blocked_by": "review_witness_rows",
+    "parity_success_claimed": false,
+    "release_ready_claimed": false
+  },
+  "rows": [
+    {
+      "case_id": "sterlitamak-1998-04-30-1345",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/sterlitamak-1998-04-30-1345/packet.json",
+        ".tmp/jhora/sterlitamak-1998/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/sterlitamak-1998-04-30-1345/packet.json",
+        ".tmp/pl7/haridas-current/verification-packet/packet.json",
+        ".tmp/pl7/haridas-verification-packet/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "vrindavan-1990-08-15-1024",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/vrindavan-1990-08-15-1024/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/vrindavan-1990-08-15-1024/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "delhi-india-1947-08-15-000001",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/delhi-india-1947-08-15-000001/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/delhi-india-1947-08-15-000001/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "mayapur-2001-02-03-0910",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/mayapur-2001-02-03-0910/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/mayapur-2001-02-03-0910/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "new-york-2026-03-08-0155",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/new-york-2026-03-08-0155/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/new-york-2026-03-08-0155/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "new-york-2026-11-01-0130",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/new-york-2026-11-01-0130/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/new-york-2026-11-01-0130/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "london-2026-03-29-0105",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/london-2026-03-29-0105/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/london-2026-03-29-0105/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_complete_calculations_text",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at",
+          "jhora_values"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "moscow-1899-12-31-2350",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/moscow-1899-12-31-2350/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/moscow-1899-12-31-2350/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_complete_calculations_text",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at",
+          "jhora_values"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "kolkata-1880-01-01-0600",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/kolkata-1880-01-01-0600/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/kolkata-1880-01-01-0600/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "jagannatha-puri-1922-07-01-1200",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/jagannatha-puri-1922-07-01-1200/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/jagannatha-puri-1922-07-01-1200/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_complete_calculations_text",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at",
+          "jhora_values"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "los-angeles-2026-06-21-0001",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/los-angeles-2026-06-21-0001/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/los-angeles-2026-06-21-0001/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "tokyo-2026-12-31-2359",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/tokyo-2026-12-31-2359/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/tokyo-2026-12-31-2359/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "reykjavik-2026-06-01-0005",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/reykjavik-2026-06-01-0005/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/reykjavik-2026-06-01-0005/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_complete_calculations_text",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at",
+          "jhora_values"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "sydney-2026-10-04-0205",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/sydney-2026-10-04-0205/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/sydney-2026-10-04-0205/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_complete_calculations_text",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at",
+          "jhora_values"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "cape-town-2026-04-14-0600",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/cape-town-2026-04-14-0600/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/cape-town-2026-04-14-0600/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "sao-paulo-2018-11-04-0030",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/sao-paulo-2018-11-04-0030/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/sao-paulo-2018-11-04-0030/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "anchorage-2026-01-15-1200",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/anchorage-2026-01-15-1200/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/anchorage-2026-01-15-1200/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_complete_calculations_text",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at",
+          "jhora_values"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "honolulu-2026-05-01-1200",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/honolulu-2026-05-01-1200/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/honolulu-2026-05-01-1200/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "paris-2026-10-25-0230",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/paris-2026-10-25-0230/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/paris-2026-10-25-0230/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "ujjain-2026-03-20-0600",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/ujjain-2026-03-20-0600/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/ujjain-2026-03-20-0600/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "case_id": "mayapur-2026-01-01-0000",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "source_family": "both",
+      "jhora_evidence_paths": [
+        ".tmp/jhora/batch-queue/mayapur-2026-01-01-0000/packet.json"
+      ],
+      "parashara_light_evidence_paths": [
+        ".tmp/pl7/batch-queue/mayapur-2026-01-01-0000/packet.json"
+      ],
+      "review_blockers": {
+        "jhora": [
+          "jhora_review_status",
+          "jhora_complete_calculations_text",
+          "jhora_screenshots",
+          "reviewer",
+          "reviewed_at",
+          "jhora_values"
+        ],
+        "parashara_light": [
+          "pl_screenshots",
+          "manual_witness_values",
+          "pl_reviewer_note",
+          "pl_review_status"
+        ]
+      },
+      "next_command_families": [
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    }
+  ]
+}
