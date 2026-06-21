@@ -78,6 +78,20 @@ export type ReleaseGateActionSummary = {
   readyRows: ParityCollectionChecklistRow[];
 };
 
+export type CollectionPlanSnapshotRunbook = {
+  schemaVersion: "witness-parity-collection-plan.v1";
+  commandHint: "manage.py build_witness_parity_collection_plan_report --output <report-json>";
+  dryRunCopy: "dry-run plan";
+  noCollectionCopy: "does not collect or generate reports";
+  releaseGateStatus: "blocked" | "ready";
+  totals: {
+    domainCount: number;
+    collectReports: number;
+    reviewRows: number;
+    readyDemo: number;
+  };
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -186,6 +200,26 @@ export function buildReleaseGateActionSummary(rows: ParityCollectionChecklistRow
     collectReportRows,
     reviewRows,
     readyRows,
+  };
+}
+
+export function buildCollectionPlanSnapshotRunbook(
+  rows: ParityCollectionChecklistRow[],
+  releaseGateActionSummary: ReleaseGateActionSummary,
+): CollectionPlanSnapshotRunbook {
+  const blocked = releaseGateActionSummary.totals.collectReports > 0 || releaseGateActionSummary.totals.reviewRows > 0;
+  return {
+    schemaVersion: "witness-parity-collection-plan.v1",
+    commandHint: "manage.py build_witness_parity_collection_plan_report --output <report-json>",
+    dryRunCopy: "dry-run plan",
+    noCollectionCopy: "does not collect or generate reports",
+    releaseGateStatus: blocked ? "blocked" : "ready",
+    totals: {
+      domainCount: rows.length,
+      collectReports: releaseGateActionSummary.totals.collectReports,
+      reviewRows: releaseGateActionSummary.totals.reviewRows,
+      readyDemo: releaseGateActionSummary.totals.readyDemo,
+    },
   };
 }
 

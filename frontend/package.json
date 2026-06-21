@@ -64,6 +64,7 @@
     "test:accuracy-parity-roadmap": "node scripts/check-accuracy-parity-roadmap-ui.mjs",
     "test:accuracy-parity-collection-checklist": "node scripts/check-accuracy-parity-collection-checklist.mjs",
     "test:accuracy-release-gate-actions": "node scripts/check-accuracy-release-gate-actions.mjs",
+    "test:accuracy-collection-plan-runbook": "node scripts/check-accuracy-collection-plan-runbook.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",

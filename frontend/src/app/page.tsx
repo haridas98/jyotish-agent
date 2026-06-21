@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildCollectionPlanSnapshotRunbook, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5670,6 +5670,7 @@ function AccuracyReportPanel({
   const parityCollectionChecklistRows = buildParityCollectionChecklistRows(parityRoadmapRows);
   const collectionChecklistTotals = buildParityCollectionChecklistTotals(parityRoadmapRows);
   const releaseGateActionSummary = buildReleaseGateActionSummary(parityCollectionChecklistRows);
+  const collectionPlanRunbook = buildCollectionPlanSnapshotRunbook(parityCollectionChecklistRows, releaseGateActionSummary);
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5736,6 +5737,28 @@ function AccuracyReportPanel({
             <small>
               {releaseGateActionSummary.readyRows.slice(0, 3).map((item) => `${item.label}: demo-ready diagnostic`).join(" | ") || "none"}
             </small>
+          </div>
+          <h3>Collection plan snapshot runbook</h3>
+          <p>{collectionPlanRunbook.dryRunCopy}; {collectionPlanRunbook.noCollectionCopy}.</p>
+          <small>
+            schema: {collectionPlanRunbook.schemaVersion} - release: {collectionPlanRunbook.releaseGateStatus}
+          </small>
+          <div>
+            <span>snapshot command</span>
+            <strong>{collectionPlanRunbook.releaseGateStatus}</strong>
+            <small>{collectionPlanRunbook.commandHint}</small>
+          </div>
+          <div>
+            <span>plan totals</span>
+            <strong>{collectionPlanRunbook.totals.domainCount}</strong>
+            <small>
+              domains: {collectionPlanRunbook.totals.domainCount} - collect reports: {collectionPlanRunbook.totals.collectReports} - review rows: {collectionPlanRunbook.totals.reviewRows} - ready/demo: {collectionPlanRunbook.totals.readyDemo}
+            </small>
+          </div>
+          <div>
+            <span>blocked work</span>
+            <strong>{collectionPlanRunbook.totals.collectReports + collectionPlanRunbook.totals.reviewRows}</strong>
+            <small>Missing reports remain release blockers; this is an operator plan, not a parity-complete claim.</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">
