@@ -98,6 +98,46 @@ def _write_jhora_case(
     return case_dir
 
 
+def _write_pl_case(
+    root,
+    case_id: str,
+    *,
+    review_status: str = "reviewed",
+    manual_vimshottari=None,
+    chart_vimshottari=None,
+):
+    case_dir = root / "batch-queue" / case_id
+    case_dir.mkdir(parents=True)
+    fixture = {
+        "id": case_id,
+        "source": "parashara_light_manual_values",
+        "review_status": review_status,
+        "input": _case_input(case_id),
+        "pl_metadata": {"capture_status": "manual_values_captured"},
+        "manual_witness_values": {
+            "dashas": {
+                "vimshottari": manual_vimshottari
+                if manual_vimshottari is not None
+                else _expected_vimshottari()
+            }
+        },
+    }
+    (case_dir / "fixture.json").write_text(json.dumps(fixture), encoding="utf-8")
+    (case_dir / "jyotish-agent-chart.json").write_text(
+        json.dumps(
+            {
+                "dashas": {
+                    "vimshottari": chart_vimshottari
+                    if chart_vimshottari is not None
+                    else _chart_vimshottari()
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    return case_dir
+
+
 def test_dasha_parity_report_passes_reviewed_matching_md_ad(tmp_path):
     from apps.calculations.witness_dasha_parity import build_witness_dasha_parity_report
 
@@ -158,6 +198,23 @@ def test_dasha_parity_missing_witness_or_actual_is_not_formula_failure(tmp_path)
     assert report["summary"]["failed_count"] == 0
 
 
+def test_dasha_parity_missing_one_source_does_not_hide_comparable_reviewed_source(tmp_path):
+    from apps.calculations.witness_dasha_parity import build_witness_dasha_parity_report
+
+    case_id = "sterlitamak-1998-04-30-1345"
+    _write_jhora_case(tmp_path / "jhora", case_id, expected_vimshottari={})
+    _write_pl_case(tmp_path / "pl7", case_id)
+
+    report = build_witness_dasha_parity_report(jhora_root=tmp_path / "jhora", pl_root=tmp_path / "pl7")
+    row = next(item for item in report["cases"] if item["case_id"] == case_id)
+
+    assert row["comparison_status"] == "passed"
+    assert row["checked_levels"] == ["antardasha", "mahadasha"]
+    assert "jhora.dashas.vimshottari" in row["missing_fields"]
+    assert report["summary"]["comparable_count"] == 1
+    assert report["summary"]["passed_count"] == 1
+
+
 def test_dasha_parity_report_keeps_unreviewed_case_out_of_passed(tmp_path):
     from apps.calculations.witness_dasha_parity import build_witness_dasha_parity_report
 
@@ -204,6 +261,7 @@ def test_dasha_parity_command_writes_json_and_markdown_without_unsafe_authority(
     assert "Vimshottari Dasha Parity Report" in markdown_text
     for forbidden in ["mark_jhora_witness_reviewed", "seal_witness_case", "--ack-diff-open"]:
         assert forbidden not in serialized
-    for forbidden in ["source_anchor", "method_authority", "scriptural_authority"]:
-        assert forbidden not in serialized
+    lowered = serialized.lower()
+    for forbidden in ["authority", "authoritative", "source_anchor", "method_authority", "scriptural_authority"]:
+        assert forbidden not in lowered
     assert "witness_sources" in serialized

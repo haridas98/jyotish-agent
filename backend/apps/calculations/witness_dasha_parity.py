@@ -61,7 +61,7 @@ def render_dasha_parity_markdown(report: dict[str, Any]) -> str:
         "# Vimshottari Dasha Parity Report",
         "",
         "Diagnostic comparison of reviewed witness packets against Jyotish Agent Vimshottari dasha payloads.",
-        "JHora and Parashara Light are treated as witness sources, not calculation authority.",
+        "JHora and Parashara Light are used only as witness sources for comparison.",
         "",
         f"- Case count: {summary['case_count']}",
         f"- Comparable: {summary['comparable_count']}",
@@ -117,6 +117,7 @@ def _case_report(
 
     field_results: list[dict[str, Any]] = []
     missing_fields: list[str] = []
+    witness_missing_records = 0
     for record in reviewed_records:
         source_results, source_missing, missing_kind = _compare_record(
             record,
@@ -126,9 +127,11 @@ def _case_report(
         field_results.extend(source_results)
         missing_fields.extend(source_missing)
         if missing_kind == "witness" and not source_results:
-            return _empty_case(case_row, "missing", sources_present, review_statuses, sorted(set(source_missing)))
+            witness_missing_records += 1
 
     if not field_results:
+        if witness_missing_records == len(reviewed_records):
+            return _empty_case(case_row, "missing", sources_present, review_statuses, sorted(set(missing_fields)))
         return _empty_case(case_row, "not_comparable", sources_present, review_statuses, sorted(set(missing_fields or ["dashas.vimshottari"])))
 
     failed_fields = sorted({item["field"] for item in field_results if not item.get("passed")})
@@ -137,8 +140,6 @@ def _case_report(
     missing_levels = sorted({_level_from_missing_field(item) for item in missing_fields if _level_from_missing_field(item)})
     if failed_fields:
         comparison_status = "failed"
-    elif missing_fields:
-        comparison_status = "not_comparable"
     else:
         comparison_status = "passed"
     return {
