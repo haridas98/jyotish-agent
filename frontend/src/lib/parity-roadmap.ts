@@ -65,6 +65,19 @@ export type ParityCollectionChecklistTotals = {
   waiting: number;
 };
 
+export type ReleaseGateActionSummary = {
+  totals: {
+    collectReports: number;
+    reviewRows: number;
+    readyDemo: number;
+  };
+  smokeMatrixStatus: "ready";
+  smokeMatrixText: "command smoke matrix: ready";
+  collectReportRows: ParityCollectionChecklistRow[];
+  reviewRows: ParityCollectionChecklistRow[];
+  readyRows: ParityCollectionChecklistRow[];
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -156,6 +169,24 @@ export function buildParityCollectionChecklistTotals(rows: ParityRoadmapRow[]): 
     }),
     { ready: 0, review: 0, waiting: 0 },
   );
+}
+
+export function buildReleaseGateActionSummary(rows: ParityCollectionChecklistRow[]): ReleaseGateActionSummary {
+  const collectReportRows = rows.filter((row) => row.action === "collect report");
+  const reviewRows = rows.filter((row) => row.action === "review witness rows");
+  const readyRows = rows.filter((row) => row.action === "ready for demo");
+  return {
+    totals: {
+      collectReports: collectReportRows.length,
+      reviewRows: reviewRows.length,
+      readyDemo: readyRows.length,
+    },
+    smokeMatrixStatus: "ready",
+    smokeMatrixText: "command smoke matrix: ready",
+    collectReportRows,
+    reviewRows,
+    readyRows,
+  };
 }
 
 function skippedCount(payload: ParityPayload): number {

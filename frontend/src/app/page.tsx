@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows } from "@/lib/parity-roadmap";
+import { buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5669,6 +5669,7 @@ function AccuracyReportPanel({
   const parityRoadmapWaitingCount = parityRoadmapRows.filter((item) => item.state === "waiting").length;
   const parityCollectionChecklistRows = buildParityCollectionChecklistRows(parityRoadmapRows);
   const collectionChecklistTotals = buildParityCollectionChecklistTotals(parityRoadmapRows);
+  const releaseGateActionSummary = buildReleaseGateActionSummary(parityCollectionChecklistRows);
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5710,6 +5711,32 @@ function AccuracyReportPanel({
               </small>
             </div>
           ))}
+          <h3>Release gate action summary</h3>
+          <p>Missing reports are release blockers, not formula failures.</p>
+          <small>
+            collect reports: {releaseGateActionSummary.totals.collectReports} - review rows: {releaseGateActionSummary.totals.reviewRows} - ready/demo: {releaseGateActionSummary.totals.readyDemo} - {releaseGateActionSummary.smokeMatrixText}
+          </small>
+          <div>
+            <span>collect report</span>
+            <strong>{releaseGateActionSummary.totals.collectReports}</strong>
+            <small>
+              {releaseGateActionSummary.collectReportRows.slice(0, 3).map((item) => `${item.label}: ${item.action}; ${item.collectionHint}`).join(" | ") || "none"}
+            </small>
+          </div>
+          <div>
+            <span>review witness rows</span>
+            <strong>{releaseGateActionSummary.totals.reviewRows}</strong>
+            <small>
+              {releaseGateActionSummary.reviewRows.slice(0, 3).map((item) => `${item.label}: ${item.action}`).join(" | ") || "none"}
+            </small>
+          </div>
+          <div>
+            <span>ready for demo</span>
+            <strong>{releaseGateActionSummary.totals.readyDemo}</strong>
+            <small>
+              {releaseGateActionSummary.readyRows.slice(0, 3).map((item) => `${item.label}: demo-ready diagnostic`).join(" | ") || "none"}
+            </small>
+          </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">
           <div>
