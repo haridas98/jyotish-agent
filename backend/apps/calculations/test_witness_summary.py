@@ -1301,3 +1301,149 @@ def test_witness_dasha_parity_default_path_matches_command_output(settings):
     normalized = str(settings.WITNESS_DASHA_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/dasha-parity-report.json")
+
+
+def _write_panchanga_parity_report(path, *, status: str = "failed", case_id: str = "case-panchanga-a"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-panchanga-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-20T12:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "fields": ["tithi", "vara", "yoga", "karana", "nakshatra"],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 1,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "field_summary": {
+                    "tithi": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                    "vara": {"passed": 1, "failed": 0, "missing": 1, "not_comparable": 0},
+                    "yoga": {"passed": 1, "failed": 0, "missing": 0, "not_comparable": 0},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_fields": ["tithi", "vara"],
+                        "failed_panchanga_fields": ["tithi"] if status == "failed" else [],
+                        "missing_panchanga_fields": ["vara"],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "panchanga_field": "tithi",
+                                "field": "panchanga.tithi",
+                                "expected": ["krishna_shashthi"],
+                                "actual": ["shukla_panchami"],
+                                "passed": False,
+                            }
+                        ],
+                        "missing_fields": ["jhora.panchanga.vara"],
+                        "failed_fields": ["panchanga.tithi"] if status == "failed" else [],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_panchanga_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "panchanga-parity-report.json"
+    _write_panchanga_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_panchanga_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_panchanga_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-panchanga-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["field_summary"]["tithi"]["failed"] == 1
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-panchanga-a",
+            "status": "failed",
+            "checked_fields": ["tithi", "vara"],
+            "missing_fields": ["jhora.panchanga.vara"],
+            "failed_fields": ["panchanga.tithi"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_panchanga_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_panchanga_parity_report_path=tmp_path / "missing-panchanga-parity.json",
+    )
+    assert missing_summary["witness_panchanga_parity"]["available"] is False
+    assert missing_summary["witness_panchanga_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-panchanga-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_panchanga_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_panchanga_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_panchanga_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-panchanga-parity.json"
+    second_path = tmp_path / "second-panchanga-parity.json"
+    _write_panchanga_parity_report(first_path, case_id="first-panchanga-case")
+    _write_panchanga_parity_report(second_path, case_id="second-panchanga-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_PANCHANGA_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_PANCHANGA_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_panchanga_parity"]["next_actions"][0]["case_id"] == "first-panchanga-case"
+    assert second_response.data["witness_panchanga_parity"]["next_actions"][0]["case_id"] == "second-panchanga-case"
+
+
+def test_witness_panchanga_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_PANCHANGA_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/panchanga-parity-report.json")

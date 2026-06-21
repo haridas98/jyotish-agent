@@ -5290,12 +5290,32 @@ function AccuracyReportPanel({
         ? "есть расхождения"
         : "нужны witness-данные"
     : "ожидает";
+  const panchangaParity = witnessSummary?.witness_panchanga_parity;
+  const panchangaParitySummary = panchangaParity?.summary;
+  const panchangaParityFields = Object.keys(panchangaParity?.field_summary ?? {}).sort();
+  const panchangaParityActions = panchangaParity?.next_actions.slice(0, 3) ?? [];
+  const panchangaParityTargetMet = Boolean(panchangaParity?.target_met);
+  const panchangaParityNeedsAttention =
+    Boolean(panchangaParity?.available) &&
+    (!panchangaParityTargetMet ||
+      Boolean(panchangaParitySummary?.failed_count) ||
+      Boolean(panchangaParitySummary?.missing_witness_count) ||
+      Boolean(panchangaParitySummary?.not_reviewed_count) ||
+      Boolean(panchangaParitySummary?.not_comparable_count));
+  const panchangaParityState = panchangaParity?.available
+    ? panchangaParityTargetMet
+      ? "цель достигнута"
+      : panchangaParity.status === "diff_open"
+        ? "есть расхождения"
+        : "нужны witness-данные"
+    : "ожидает";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
     coreParityNeedsAttention ||
     vargaParityNeedsAttention ||
     dashaParityNeedsAttention ||
+    panchangaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5352,6 +5372,15 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Panchanga parity</span>
+            <strong>{panchangaParityState}</strong>
+            {panchangaParitySummary ? (
+              <small>
+                Tithi / Vara / Yoga: {panchangaParitySummary.passed_count}/{panchangaParitySummary.target_reviewed_count} принято, {panchangaParitySummary.failed_count} расх.
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Итог</span>
             <strong>{hasOpenAccuracyItems ? "проверить witness-сверку" : "можно читать карту"}</strong>
           </div>
@@ -5384,6 +5413,15 @@ function AccuracyReportPanel({
                   {dashaParitySummary.comparable_count} сравнимых, {dashaParitySummary.failed_count} расхождений
                 </strong>
                 <small>{dashaParityLevels.length ? dashaParityLevels.join("/") : "Vimshottari MD-AD"} · цель: {dashaParitySummary.target_reviewed_count} reviewed witness cases</small>
+              </div>
+            ) : null}
+            {panchangaParityNeedsAttention && panchangaParitySummary ? (
+              <div>
+                <span>Panchanga parity</span>
+                <strong>
+                  {panchangaParitySummary.comparable_count} сравнимых, {panchangaParitySummary.failed_count} расхождений
+                </strong>
+                <small>{panchangaParityFields.length ? panchangaParityFields.join("/") : "Tithi / Vara / Yoga"} · цель: {panchangaParitySummary.target_reviewed_count} reviewed witness cases</small>
               </div>
             ) : null}
             {coreParityActions.map((item) => (
@@ -5427,6 +5465,22 @@ function AccuracyReportPanel({
                     item.status,
                     item.failed_levels.length ? "failed levels: " + item.failed_levels.join(", ") : "",
                     item.missing_levels.length ? "missing levels: " + item.missing_levels.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {panchangaParityActions.map((item) => (
+              <div key={"panchanga-parity-" + item.case_id}>
+                <span>Panchanga parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
                   ]
