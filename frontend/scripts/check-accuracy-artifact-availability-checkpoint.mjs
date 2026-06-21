@@ -34,8 +34,8 @@ for (const marker of [
   "review witness rows",
   "release gate: blocked",
   "command smoke matrix: ready",
-  "local dev can show 19/7/12",
-  "production can show 19/5/14",
+  "local dev can show 19/12/7",
+  "production can show 19/10/9",
 ]) {
   assert(checkpointSlice.includes(marker) || helperSlice.includes(marker) || accuracyRoute.includes(marker), `Artifact availability checkpoint marker missing: ${marker}`);
 }
@@ -49,6 +49,12 @@ for (const marker of [
   "artifactAvailabilityCheckpoint.commandSmokeMatrixStatus",
 ]) {
   assert(checkpointSlice.includes(marker), `Artifact checkpoint counts must render from helper totals/status: ${marker}`);
+}
+
+for (const stale of ["19/7/12", "19/5/14"]) {
+  assert(!page.includes(stale), `Artifact checkpoint source must not keep stale count ${stale}`);
+  assert(!roadmap.includes(stale), `Artifact checkpoint helper must not keep stale count ${stale}`);
+  assert(!accuracyRoute.includes(stale), `Artifact checkpoint route marker must not keep stale count ${stale}`);
 }
 
 for (const forbidden of [

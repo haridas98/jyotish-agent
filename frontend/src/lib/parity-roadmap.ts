@@ -95,8 +95,8 @@ export type CollectionPlanSnapshotRunbook = {
 export type ArtifactAvailabilityCheckpoint = {
   title: "Artifact availability checkpoint";
   environmentCopy: "environment artifact availability";
-  localDevCopy: "local dev can show 19/7/12";
-  productionCopy: "production can show 19/5/14";
+  localDevCopy: "local dev can show 19/12/7";
+  productionCopy: "production can show 19/10/9";
   releaseGateStatus: "blocked" | "ready";
   commandSmokeMatrixStatus: "ready";
   commandSmokeMatrixText: "command smoke matrix: ready";
@@ -250,8 +250,8 @@ export function buildArtifactAvailabilityCheckpoint(
   return {
     title: "Artifact availability checkpoint",
     environmentCopy: "environment artifact availability",
-    localDevCopy: "local dev can show 19/7/12",
-    productionCopy: "production can show 19/5/14",
+    localDevCopy: "local dev can show 19/12/7",
+    productionCopy: "production can show 19/10/9",
     releaseGateStatus: blocked ? "blocked" : "ready",
     commandSmokeMatrixStatus: "ready",
     commandSmokeMatrixText: "command smoke matrix: ready",
