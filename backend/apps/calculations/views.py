@@ -185,6 +185,7 @@ class WitnessSummaryView(APIView):
         witness_transit_coordinate_parity_report_path = getattr(settings, "WITNESS_TRANSIT_COORDINATE_PARITY_REPORT_PATH", "")
         witness_compatibility_parity_report_path = getattr(settings, "WITNESS_COMPATIBILITY_PARITY_REPORT_PATH", "")
         witness_muhurta_parity_report_path = getattr(settings, "WITNESS_MUHURTA_PARITY_REPORT_PATH", "")
+        witness_tithi_pravesha_parity_report_path = getattr(settings, "WITNESS_TITHI_PRAVESHA_PARITY_REPORT_PATH", "")
         parashara_light_manual_values_path = getattr(settings, "PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH", "")
         parashara_light_profile_report_path = getattr(settings, "PARASHARA_LIGHT_PROFILE_REPORT_PATH", "")
         parashara_light_forensic_report_path = getattr(settings, "PARASHARA_LIGHT_FORENSIC_REPORT_PATH", "")
@@ -230,6 +231,7 @@ class WitnessSummaryView(APIView):
                     witness_transit_coordinate_parity_report_path,
                     witness_compatibility_parity_report_path,
                     witness_muhurta_parity_report_path,
+                    witness_tithi_pravesha_parity_report_path,
                     pl_packet_path,
                     parashara_light_manual_values_path,
                     parashara_light_profile_report_path,
@@ -262,6 +264,7 @@ class WitnessSummaryView(APIView):
                     witness_transit_coordinate_parity_report_path=witness_transit_coordinate_parity_report_path,
                     witness_compatibility_parity_report_path=witness_compatibility_parity_report_path,
                     witness_muhurta_parity_report_path=witness_muhurta_parity_report_path,
+                    witness_tithi_pravesha_parity_report_path=witness_tithi_pravesha_parity_report_path,
                     parashara_light_packet_path=pl_packet_path,
                     parashara_light_manual_values_path=parashara_light_manual_values_path,
                     parashara_light_profile_report_path=parashara_light_profile_report_path,

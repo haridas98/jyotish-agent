@@ -317,6 +317,10 @@ WITNESS_MUHURTA_PARITY_REPORT_PATH = os.getenv(
     "WITNESS_MUHURTA_PARITY_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "witness-review" / "muhurta-parity-report.json"),
 )
+WITNESS_TITHI_PRAVESHA_PARITY_REPORT_PATH = os.getenv(
+    "WITNESS_TITHI_PRAVESHA_PARITY_REPORT_PATH",
+    str(ROOT_DIR / ".tmp" / "witness-review" / "tithi-pravesha-parity-report.json"),
+)
 PARASHARA_LIGHT_PACKET_PATH = os.getenv(
     "PARASHARA_LIGHT_PACKET_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"),

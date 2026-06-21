@@ -5521,6 +5521,28 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const tithiPraveshaParity = witnessSummary?.witness_tithi_pravesha_parity;
+  const tithiPraveshaParitySummary = tithiPraveshaParity?.summary;
+  const tithiPraveshaParityLayers = Object.keys(tithiPraveshaParity?.layer_summary ?? {}).sort();
+  const tithiPraveshaParityFields = Object.keys(tithiPraveshaParity?.field_summary ?? {}).sort();
+  const tithiPraveshaParitySkippedCount = Object.values(tithiPraveshaParity?.field_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const tithiPraveshaParityActions = tithiPraveshaParity?.next_actions.slice(0, 3) ?? [];
+  const tithiPraveshaParityTolerance = tithiPraveshaParity?.tolerance_profile?.degrees;
+  const tithiPraveshaParityTargetMet = Boolean(tithiPraveshaParity?.target_met);
+  const tithiPraveshaParityNeedsAttention =
+    Boolean(tithiPraveshaParity?.available) &&
+    (!tithiPraveshaParityTargetMet ||
+      Boolean(tithiPraveshaParitySummary?.failed_count) ||
+      Boolean(tithiPraveshaParitySummary?.missing_witness_count) ||
+      Boolean(tithiPraveshaParitySummary?.not_reviewed_count) ||
+      Boolean(tithiPraveshaParitySummary?.not_comparable_count));
+  const tithiPraveshaParityState = tithiPraveshaParity?.available
+    ? tithiPraveshaParityTargetMet
+      ? "target met"
+      : tithiPraveshaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5538,6 +5560,7 @@ function AccuracyReportPanel({
     transitCoordinateParityNeedsAttention ||
     compatibilityParityNeedsAttention ||
     muhurtaParityNeedsAttention ||
+    tithiPraveshaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5697,6 +5720,18 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Tithi Pravesha parity</span>
+            <strong>{tithiPraveshaParityState}</strong>
+            {tithiPraveshaParitySummary ? (
+              <small>
+                Annual return rows: {tithiPraveshaParitySummary.passed_count}/{tithiPraveshaParitySummary.target_reviewed_count} ready, {tithiPraveshaParitySummary.failed_count} diff
+                {tithiPraveshaParityFields.length ? `, fields: ${tithiPraveshaParityFields.length}` : ""}
+                {tithiPraveshaParitySkippedCount ? `, skipped: ${tithiPraveshaParitySkippedCount}` : ""}
+                {typeof tithiPraveshaParityTolerance === "number" ? `, tolerance: ${tithiPraveshaParityTolerance}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5850,6 +5885,18 @@ function AccuracyReportPanel({
                 <small>
                   {muhurtaParityLayers.length ? muhurtaParityLayers.join("/") : "Electional timing rows"}; fields: {muhurtaParityFields.length}; skipped: {muhurtaParitySkippedCount}; target: {muhurtaParitySummary.target_reviewed_count} reviewed witness cases
                   {typeof muhurtaParityTolerance === "number" ? `; tolerance: ${muhurtaParityTolerance}` : ""}
+                </small>
+              </div>
+            ) : null}
+            {tithiPraveshaParityNeedsAttention && tithiPraveshaParitySummary ? (
+              <div>
+                <span>Tithi Pravesha parity</span>
+                <strong>
+                  {tithiPraveshaParitySummary.comparable_count} comparable, {tithiPraveshaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {tithiPraveshaParityLayers.length ? tithiPraveshaParityLayers.join("/") : "Annual return rows"}; fields: {tithiPraveshaParityFields.length}; skipped: {tithiPraveshaParitySkippedCount}; target: {tithiPraveshaParitySummary.target_reviewed_count} reviewed witness cases
+                  {typeof tithiPraveshaParityTolerance === "number" ? `; tolerance: ${tithiPraveshaParityTolerance}` : ""}
                 </small>
               </div>
             ) : null}
@@ -6130,6 +6177,26 @@ function AccuracyReportPanel({
             {muhurtaParityActions.map((item) => (
               <div key={"muhurta-parity-" + item.case_id}>
                 <span>Muhurta parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {tithiPraveshaParityActions.map((item) => (
+              <div key={"tithi-pravesha-parity-" + item.case_id}>
+                <span>Tithi Pravesha parity</span>
                 <strong>{item.case_id || "witness case"}</strong>
                 <small>
                   {[
