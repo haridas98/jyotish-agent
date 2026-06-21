@@ -5676,9 +5676,10 @@ function AccuracyReportPanel({
       <div className="accuracy-content">
         <div className="accuracy-list parity-roadmap-ledger">
           <h3>Parity roadmap</h3>
-          <p>
-            JH/PL launch ledger · integrated: {parityRoadmapRows.length} · ready: {parityRoadmapReadyCount} · review: {parityRoadmapReviewCount} · waiting: {parityRoadmapWaitingCount}
-          </p>
+          <p>JH/PL launch ledger</p>
+          <small>
+            integrated: {parityRoadmapRows.length} · ready: {parityRoadmapReadyCount} · review: {parityRoadmapReviewCount} · waiting: {parityRoadmapWaitingCount}
+          </small>
           {parityRoadmapRows.map((item) => (
             <div key={item.key}>
               <span>{item.label}</span>

@@ -19,6 +19,13 @@ const roadmap = readFileSync(new URL("../src/lib/parity-roadmap.ts", import.meta
 const page = readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
 const panel = sliceBetween(page, "function AccuracyReportPanel", "export default function Home");
 const roadmapSlice = sliceBetween(panel, "Parity roadmap", "JHora");
+const subtitleMatch = roadmapSlice.match(/<p>\s*JH\/PL launch ledger\s*<\/p>/);
+assert(Boolean(subtitleMatch), "Parity roadmap subtitle must render exactly JH/PL launch ledger in its own paragraph");
+assert(
+  !roadmapSlice.includes("JH/PL launch ledger ·") && !roadmapSlice.includes("JH/PL launch ledger:"),
+  "Parity roadmap subtitle must not include counters or suffix text",
+);
+assert(roadmapSlice.includes("integrated:") && roadmapSlice.includes("ready:"), "Parity roadmap counters must render separately from subtitle");
 
 for (const marker of [
   "Parity roadmap",
