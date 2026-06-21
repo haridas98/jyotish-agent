@@ -5266,11 +5266,11 @@ function AccuracyReportPanel({
       Boolean(vargaParitySummary?.not_comparable_count));
   const vargaParityState = vargaParity?.available
     ? vargaParityTargetMet
-      ? "С†РµР»СЊ РґРѕСЃС‚РёРіРЅСѓС‚Р°"
+      ? "цель достигнута"
       : vargaParity.status === "diff_open"
-        ? "РµСЃС‚СЊ СЂР°СЃС…РѕР¶РґРµРЅРёСЏ"
-        : "РЅСѓР¶РЅС‹ witness-РґР°РЅРЅС‹Рµ"
-    : "РѕР¶РёРґР°РµС‚";
+        ? "есть расхождения"
+        : "нужны witness-данные"
+    : "ожидает";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||

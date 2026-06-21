@@ -961,7 +961,6 @@ export type WitnessSummary = {
     next_actions: Array<{
       case_id: string;
       status: string;
-      sources_present: string[];
       checked_vargas: string[];
       failed_vargas: string[];
       missing_vargas: string[];

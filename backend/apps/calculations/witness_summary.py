@@ -348,7 +348,6 @@ def _varga_parity_next_actions(cases: Any, *, limit: int = 5) -> list[dict[str, 
             {
                 "case_id": str(row.get("case_id") or ""),
                 "status": str(row.get("comparison_status") or "unknown"),
-                "sources_present": _string_list(row.get("sources_present")),
                 "checked_vargas": _string_list(row.get("checked_vargas")),
                 "failed_vargas": _string_list(row.get("failed_vargas")),
                 "missing_vargas": _string_list(row.get("missing_vargas")),

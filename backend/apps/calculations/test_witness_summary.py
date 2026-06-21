@@ -1093,7 +1093,6 @@ def test_witness_summary_exposes_safe_varga_parity_diagnostic(tmp_path):
         {
             "case_id": "case-varga-a",
             "status": "failed",
-            "sources_present": ["jhora"],
             "checked_vargas": ["D7", "D9"],
             "failed_vargas": ["D9"],
             "missing_vargas": ["D10"],

@@ -37,7 +37,7 @@ for (const marker of [
   assert(panel.includes(marker), `AccuracyReportPanel missing varga parity UI marker: ${marker}`);
 }
 
-for (const marker of ["Р РЋ", "Р Сџ", "Р Р†", "Р С›", "Р С™", "Р’В·", "пїЅ"]) {
+for (const marker of ["Рµ", "РЅ", "Рѕ", "Рґ", "СЃ", "С†", "В·", "�"]) {
   assert(!panel.includes(marker), `AccuracyReportPanel contains mojibake marker: ${marker}`);
 }
 
