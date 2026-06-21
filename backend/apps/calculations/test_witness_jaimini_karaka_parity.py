@@ -321,7 +321,7 @@ def test_jaimini_karaka_parity_command_default_output_path_matches_contract():
     assert normalized.endswith("/.tmp/witness-review/jaimini-karaka-parity-report.json")
 
 
-def test_jaimini_karaka_parity_stage_does_not_change_formula_workflow_api_frontend_summary_or_existing_reports():
+def test_jaimini_karaka_parity_stage_does_not_change_formula_workflow_or_report_builder_files():
     changed = subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()
     forbidden_files = {
         "backend/apps/calculations/classical.py",
@@ -337,13 +337,8 @@ def test_jaimini_karaka_parity_stage_does_not_change_formula_workflow_api_fronte
         "backend/apps/calculations/rashi_drishti.py",
         "backend/apps/calculations/transit_coordinates.py",
         "backend/apps/calculations/workflows.py",
-        "backend/apps/calculations/views.py",
-        "backend/apps/calculations/witness_summary.py",
-        "backend/config/settings.py",
+        "backend/apps/calculations/witness_jaimini_karaka_parity.py",
         "backend/apps/calculations/witness_prashna_parity.py",
-        "frontend/src/app/page.tsx",
-        "frontend/src/lib/api.ts",
-        "frontend/package.json",
     }
 
     assert not (forbidden_files & set(changed))

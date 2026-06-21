@@ -5587,6 +5587,28 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const jaiminiKarakaParity = witnessSummary?.witness_jaimini_karaka_parity;
+  const jaiminiKarakaParitySummary = jaiminiKarakaParity?.summary;
+  const jaiminiKarakaParityLayers = Object.keys(jaiminiKarakaParity?.layer_summary ?? {}).sort();
+  const jaiminiKarakaParityFields = Object.keys(jaiminiKarakaParity?.field_summary ?? {}).sort();
+  const jaiminiKarakaParitySkippedCount = Object.values(jaiminiKarakaParity?.field_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const jaiminiKarakaParityActions = jaiminiKarakaParity?.next_actions.slice(0, 3) ?? [];
+  const jaiminiKarakaParityTolerance = jaiminiKarakaParity?.tolerance_profile?.degrees;
+  const jaiminiKarakaParityTargetMet = Boolean(jaiminiKarakaParity?.target_met);
+  const jaiminiKarakaParityNeedsAttention =
+    Boolean(jaiminiKarakaParity?.available) &&
+    (!jaiminiKarakaParityTargetMet ||
+      Boolean(jaiminiKarakaParitySummary?.failed_count) ||
+      Boolean(jaiminiKarakaParitySummary?.missing_witness_count) ||
+      Boolean(jaiminiKarakaParitySummary?.not_reviewed_count) ||
+      Boolean(jaiminiKarakaParitySummary?.not_comparable_count));
+  const jaiminiKarakaParityState = jaiminiKarakaParity?.available
+    ? jaiminiKarakaParityTargetMet
+      ? "target met"
+      : jaiminiKarakaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5607,6 +5629,7 @@ function AccuracyReportPanel({
     tithiPraveshaParityNeedsAttention ||
     tajakaParityNeedsAttention ||
     prashnaParityNeedsAttention ||
+    jaiminiKarakaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5802,6 +5825,18 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Jaimini karaka parity</span>
+            <strong>{jaiminiKarakaParityState}</strong>
+            {jaiminiKarakaParitySummary ? (
+              <small>
+                Chara karaka rows: {jaiminiKarakaParitySummary.passed_count}/{jaiminiKarakaParitySummary.target_reviewed_count} ready, {jaiminiKarakaParitySummary.failed_count} diff
+                {jaiminiKarakaParityFields.length ? `, fields: ${jaiminiKarakaParityFields.length}` : ""}
+                {jaiminiKarakaParitySkippedCount ? `, skipped: ${jaiminiKarakaParitySkippedCount}` : ""}
+                {typeof jaiminiKarakaParityTolerance === "number" ? `, tolerance: ${jaiminiKarakaParityTolerance}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5991,6 +6026,18 @@ function AccuracyReportPanel({
                 <small>
                   {prashnaParityLayers.length ? prashnaParityLayers.join("/") : "Horary baseline rows"}; fields: {prashnaParityFields.length}; skipped: {prashnaParitySkippedCount}; target: {prashnaParitySummary.target_reviewed_count} reviewed witness cases
                   {typeof prashnaParityTolerance === "number" ? `; tolerance: ${prashnaParityTolerance}` : ""}
+                </small>
+              </div>
+            ) : null}
+            {jaiminiKarakaParityNeedsAttention && jaiminiKarakaParitySummary ? (
+              <div>
+                <span>Jaimini karaka parity</span>
+                <strong>
+                  {jaiminiKarakaParitySummary.comparable_count} comparable, {jaiminiKarakaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {jaiminiKarakaParityLayers.length ? jaiminiKarakaParityLayers.join("/") : "Chara karaka rows"}; fields: {jaiminiKarakaParityFields.length}; skipped: {jaiminiKarakaParitySkippedCount}; target: {jaiminiKarakaParitySummary.target_reviewed_count} reviewed witness cases
+                  {typeof jaiminiKarakaParityTolerance === "number" ? `; tolerance: ${jaiminiKarakaParityTolerance}` : ""}
                 </small>
               </div>
             ) : null}
@@ -6331,6 +6378,26 @@ function AccuracyReportPanel({
             {prashnaParityActions.map((item) => (
               <div key={"prashna-parity-" + item.case_id}>
                 <span>Prashna parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {jaiminiKarakaParityActions.map((item) => (
+              <div key={"jaimini-karaka-parity-" + item.case_id}>
+                <span>Jaimini karaka parity</span>
                 <strong>{item.case_id || "witness case"}</strong>
                 <small>
                   {[
