@@ -5543,6 +5543,28 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const tajakaParity = witnessSummary?.witness_tajaka_parity;
+  const tajakaParitySummary = tajakaParity?.summary;
+  const tajakaParityLayers = Object.keys(tajakaParity?.layer_summary ?? {}).sort();
+  const tajakaParityFields = Object.keys(tajakaParity?.field_summary ?? {}).sort();
+  const tajakaParitySkippedCount = Object.values(tajakaParity?.field_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const tajakaParityActions = tajakaParity?.next_actions.slice(0, 3) ?? [];
+  const tajakaParityTolerance = tajakaParity?.tolerance_profile?.degrees;
+  const tajakaParityTargetMet = Boolean(tajakaParity?.target_met);
+  const tajakaParityNeedsAttention =
+    Boolean(tajakaParity?.available) &&
+    (!tajakaParityTargetMet ||
+      Boolean(tajakaParitySummary?.failed_count) ||
+      Boolean(tajakaParitySummary?.missing_witness_count) ||
+      Boolean(tajakaParitySummary?.not_reviewed_count) ||
+      Boolean(tajakaParitySummary?.not_comparable_count));
+  const tajakaParityState = tajakaParity?.available
+    ? tajakaParityTargetMet
+      ? "target met"
+      : tajakaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5561,6 +5583,7 @@ function AccuracyReportPanel({
     compatibilityParityNeedsAttention ||
     muhurtaParityNeedsAttention ||
     tithiPraveshaParityNeedsAttention ||
+    tajakaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5732,6 +5755,18 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Tajaka parity</span>
+            <strong>{tajakaParityState}</strong>
+            {tajakaParitySummary ? (
+              <small>
+                Varshaphala baseline rows: {tajakaParitySummary.passed_count}/{tajakaParitySummary.target_reviewed_count} ready, {tajakaParitySummary.failed_count} diff
+                {tajakaParityFields.length ? `, fields: ${tajakaParityFields.length}` : ""}
+                {tajakaParitySkippedCount ? `, skipped: ${tajakaParitySkippedCount}` : ""}
+                {typeof tajakaParityTolerance === "number" ? `, tolerance: ${tajakaParityTolerance}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5897,6 +5932,18 @@ function AccuracyReportPanel({
                 <small>
                   {tithiPraveshaParityLayers.length ? tithiPraveshaParityLayers.join("/") : "Annual return rows"}; fields: {tithiPraveshaParityFields.length}; skipped: {tithiPraveshaParitySkippedCount}; target: {tithiPraveshaParitySummary.target_reviewed_count} reviewed witness cases
                   {typeof tithiPraveshaParityTolerance === "number" ? `; tolerance: ${tithiPraveshaParityTolerance}` : ""}
+                </small>
+              </div>
+            ) : null}
+            {tajakaParityNeedsAttention && tajakaParitySummary ? (
+              <div>
+                <span>Tajaka parity</span>
+                <strong>
+                  {tajakaParitySummary.comparable_count} comparable, {tajakaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {tajakaParityLayers.length ? tajakaParityLayers.join("/") : "Varshaphala baseline rows"}; fields: {tajakaParityFields.length}; skipped: {tajakaParitySkippedCount}; target: {tajakaParitySummary.target_reviewed_count} reviewed witness cases
+                  {typeof tajakaParityTolerance === "number" ? `; tolerance: ${tajakaParityTolerance}` : ""}
                 </small>
               </div>
             ) : null}
@@ -6197,6 +6244,26 @@ function AccuracyReportPanel({
             {tithiPraveshaParityActions.map((item) => (
               <div key={"tithi-pravesha-parity-" + item.case_id}>
                 <span>Tithi Pravesha parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {tajakaParityActions.map((item) => (
+              <div key={"tajaka-parity-" + item.case_id}>
+                <span>Tajaka parity</span>
                 <strong>{item.case_id || "witness case"}</strong>
                 <small>
                   {[

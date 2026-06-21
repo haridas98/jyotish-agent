@@ -3327,3 +3327,193 @@ def test_witness_tithi_pravesha_parity_default_path_matches_command_output(setti
     normalized = str(settings.WITNESS_TITHI_PRAVESHA_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/tithi-pravesha-parity-report.json")
+
+
+def _write_tajaka_parity_report(path, *, case_id="case-tajaka-a", status="failed"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-tajaka-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "tolerance_profile": {"degrees": 0.01},
+                    "layers": [
+                        "tajaka_context",
+                        "tithi_pravesha_link",
+                        "annual_lagna",
+                        "muntha",
+                        "annual_bodies",
+                        "annual_panchanga",
+                        "open_items",
+                    ],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 1,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 1,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 0,
+                    "target_reviewed_count": 20,
+                    "target_met": False,
+                },
+                "layer_summary": {
+                    "annual_lagna": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "not_comparable": 0,
+                    },
+                    "muntha": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "not_comparable": 0,
+                    },
+                    "open_items": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "not_comparable": 0,
+                    },
+                },
+                "field_summary": {
+                    "annual_lagna.rashi": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "skipped": 0,
+                    },
+                    "experimental_tajaka_note": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "source": "jhora",
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["annual_lagna", "muntha", "open_items"],
+                        "failed_layers": ["annual_lagna"] if status == "failed" else [],
+                        "missing_layers": [],
+                        "checked_fields": ["annual_lagna.rashi", "muntha.rashi", "open_items"],
+                        "failed_fields": ["annual_lagna.rashi"] if status == "failed" else [],
+                        "missing_fields": ["calculated.tajaka"] if status == "failed" else [],
+                        "skipped_fields": ["tajaka.experimental_tajaka_note"],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "annual_lagna",
+                                "field": "annual_lagna.rashi",
+                                "expected": "karka",
+                                "actual": "simha",
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_tajaka_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "tajaka-parity-report.json"
+    _write_tajaka_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_tajaka_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_tajaka_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-tajaka-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["annual_lagna"]["failed"] == 1
+    assert parity["field_summary"]["annual_lagna.rashi"]["failed"] == 1
+    assert parity["field_summary"]["experimental_tajaka_note"]["skipped"] == 1
+    assert parity["tolerance_profile"] == {"degrees": 0.01}
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-tajaka-a",
+            "status": "failed",
+            "checked_layers": ["annual_lagna", "muntha", "open_items"],
+            "failed_layers": ["annual_lagna"],
+            "missing_layers": [],
+            "checked_fields": ["annual_lagna.rashi", "muntha.rashi", "open_items"],
+            "failed_fields": ["annual_lagna.rashi"],
+            "missing_fields": ["calculated.tajaka"],
+            "skipped_fields": ["tajaka.experimental_tajaka_note"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_tajaka_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_tajaka_parity_report_path=tmp_path / "missing-tajaka-parity.json",
+    )
+    assert missing_summary["witness_tajaka_parity"]["available"] is False
+    assert missing_summary["witness_tajaka_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-tajaka-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_tajaka_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_tajaka_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_tajaka_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-tajaka-parity.json"
+    second_path = tmp_path / "second-tajaka-parity.json"
+    _write_tajaka_parity_report(first_path, case_id="first-tajaka-case")
+    _write_tajaka_parity_report(second_path, case_id="second-tajaka-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_TAJAKA_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_TAJAKA_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_tajaka_parity"]["next_actions"][0]["case_id"] == "first-tajaka-case"
+    assert second_response.data["witness_tajaka_parity"]["next_actions"][0]["case_id"] == "second-tajaka-case"
+
+
+def test_witness_tajaka_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_TAJAKA_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/tajaka-parity-report.json")
