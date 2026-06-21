@@ -2251,3 +2251,172 @@ def test_witness_argala_parity_default_path_matches_command_output(settings):
     normalized = str(settings.WITNESS_ARGALA_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/argala-parity-report.json")
+
+
+def _write_avastha_parity_report(path, *, status: str = "failed", case_id: str = "case-avastha-a"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-avastha-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "layers": ["baladi_avastha"],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 1,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "layer_summary": {
+                    "baladi_avastha": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                },
+                "avastha_summary": {
+                    "Chandra": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 1 if status == "failed" else 0, "skipped": 0},
+                    "deepta": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "source": "jhora",
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["baladi_avastha"],
+                        "failed_layers": ["baladi_avastha"] if status == "failed" else [],
+                        "missing_layers": [],
+                        "checked_bodies": ["Chandra"],
+                        "matched_bodies": [] if status == "failed" else ["Chandra"],
+                        "failed_bodies": ["Chandra"] if status == "failed" else [],
+                        "missing_bodies": ["Chandra"] if status == "failed" else [],
+                        "skipped_bodies": ["Mangala"],
+                        "checked_fields": ["baladi_avastha.Chandra.state"],
+                        "failed_fields": ["baladi_avastha.Chandra.state"] if status == "failed" else [],
+                        "missing_fields": [],
+                        "skipped_fields": ["avasthas.deepta"],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "baladi_avastha",
+                                "body": "Chandra",
+                                "field": "baladi_avastha.Chandra.state",
+                                "expected": "mrita",
+                                "actual": "yuva",
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_avastha_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "avastha-parity-report.json"
+    _write_avastha_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_avastha_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_avastha_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-avastha-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["baladi_avastha"]["failed"] == 1
+    assert parity["avastha_summary"]["Chandra"]["failed"] == 1
+    assert parity["avastha_summary"]["deepta"]["skipped"] == 1
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-avastha-a",
+            "status": "failed",
+            "checked_layers": ["baladi_avastha"],
+            "failed_layers": ["baladi_avastha"],
+            "missing_layers": [],
+            "checked_bodies": ["Chandra"],
+            "matched_bodies": [],
+            "failed_bodies": ["Chandra"],
+            "missing_bodies": ["Chandra"],
+            "skipped_bodies": ["Mangala"],
+            "checked_fields": ["baladi_avastha.Chandra.state"],
+            "failed_fields": ["baladi_avastha.Chandra.state"],
+            "missing_fields": [],
+            "skipped_fields": ["avasthas.deepta"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_avastha_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_avastha_parity_report_path=tmp_path / "missing-avastha-parity.json",
+    )
+    assert missing_summary["witness_avastha_parity"]["available"] is False
+    assert missing_summary["witness_avastha_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-avastha-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_avastha_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_avastha_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_avastha_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-avastha-parity.json"
+    second_path = tmp_path / "second-avastha-parity.json"
+    _write_avastha_parity_report(first_path, case_id="first-avastha-case")
+    _write_avastha_parity_report(second_path, case_id="second-avastha-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_AVASTHA_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_AVASTHA_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_avastha_parity"]["next_actions"][0]["case_id"] == "first-avastha-case"
+    assert second_response.data["witness_avastha_parity"]["next_actions"][0]["case_id"] == "second-avastha-case"
+
+
+def test_witness_avastha_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_AVASTHA_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/avastha-parity-report.json")

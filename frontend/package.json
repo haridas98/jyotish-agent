@@ -42,6 +42,7 @@
     "test:accuracy-yoga-parity": "node scripts/check-accuracy-yoga-parity-ui.mjs",
     "test:accuracy-special-points-parity": "node scripts/check-accuracy-special-points-parity-ui.mjs",
     "test:accuracy-argala-parity": "node scripts/check-accuracy-argala-parity-ui.mjs",
+    "test:accuracy-avastha-parity": "node scripts/check-accuracy-avastha-parity-ui.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",

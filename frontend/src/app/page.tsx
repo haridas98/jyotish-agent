@@ -5413,6 +5413,27 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const avasthaParity = witnessSummary?.witness_avastha_parity;
+  const avasthaParitySummary = avasthaParity?.summary;
+  const avasthaParityLayers = Object.keys(avasthaParity?.layer_summary ?? {}).sort();
+  const avasthaParityNames = Object.keys(avasthaParity?.avastha_summary ?? {}).sort();
+  const avasthaParitySkippedCount = Object.values(avasthaParity?.avastha_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const avasthaParityActions = avasthaParity?.next_actions.slice(0, 3) ?? [];
+  const avasthaParityTargetMet = Boolean(avasthaParity?.target_met);
+  const avasthaParityNeedsAttention =
+    Boolean(avasthaParity?.available) &&
+    (!avasthaParityTargetMet ||
+      Boolean(avasthaParitySummary?.failed_count) ||
+      Boolean(avasthaParitySummary?.missing_witness_count) ||
+      Boolean(avasthaParitySummary?.not_reviewed_count) ||
+      Boolean(avasthaParitySummary?.not_comparable_count));
+  const avasthaParityState = avasthaParity?.available
+    ? avasthaParityTargetMet
+      ? "target met"
+      : avasthaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5425,6 +5446,7 @@ function AccuracyReportPanel({
     yogaParityNeedsAttention ||
     specialPointsParityNeedsAttention ||
     argalaParityNeedsAttention ||
+    avasthaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5529,6 +5551,16 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Avastha parity</span>
+            <strong>{avasthaParityState}</strong>
+            {avasthaParitySummary ? (
+              <small>
+                Baladi rows: {avasthaParitySummary.passed_count}/{avasthaParitySummary.target_reviewed_count} ready, {avasthaParitySummary.failed_count} diff
+                {avasthaParitySkippedCount ? `, skipped: ${avasthaParitySkippedCount}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5624,6 +5656,17 @@ function AccuracyReportPanel({
                 </strong>
                 <small>
                   {argalaParityLayers.length ? argalaParityLayers.join("/") : "Lagna pairs"}; fields: {argalaParityNames.length}; skipped: {argalaParitySkippedCount}; target: {argalaParitySummary.target_reviewed_count} reviewed witness cases
+                </small>
+              </div>
+            ) : null}
+            {avasthaParityNeedsAttention && avasthaParitySummary ? (
+              <div>
+                <span>Avastha parity</span>
+                <strong>
+                  {avasthaParitySummary.comparable_count} comparable, {avasthaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {avasthaParityLayers.length ? avasthaParityLayers.join("/") : "Baladi rows"}; bodies: {avasthaParityNames.length}; skipped: {avasthaParitySkippedCount}; target: {avasthaParitySummary.target_reviewed_count} reviewed witness cases
                 </small>
               </div>
             ) : null}
@@ -5792,6 +5835,30 @@ function AccuracyReportPanel({
                     item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
                     item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
                     item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {avasthaParityActions.map((item) => (
+              <div key={"avastha-parity-" + item.case_id}>
+                <span>Avastha parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_bodies.length ? "checked bodies: " + item.checked_bodies.join(", ") : "",
+                    item.failed_bodies.length ? "failed bodies: " + item.failed_bodies.join(", ") : "",
+                    item.missing_bodies.length ? "missing bodies: " + item.missing_bodies.join(", ") : "",
+                    item.skipped_bodies.length ? "skipped bodies: " + item.skipped_bodies.join(", ") : "",
                     item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
