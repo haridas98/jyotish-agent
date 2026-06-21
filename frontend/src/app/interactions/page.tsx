@@ -213,6 +213,10 @@ export default function InteractionsPage() {
   const recipes = useMemo(() => getVisibleRecipes(mode), [mode]);
   const selectedRecipe = useMemo(() => recipes.find((recipe) => recipe.id === recipeId) ?? recipes[0], [recipeId, recipes]);
   const relationshipType = selectedRecipe ? getRelationshipType(selectedRecipe.relationshipTypeId) : null;
+  const selectedScenarioPreset = useMemo(
+    () => interactionScenarioPresets.find((preset) => preset.id === selectedScenarioPresetId) ?? null,
+    [selectedScenarioPresetId],
+  );
   const profileA = profiles.find((profile) => profile.id === profileAId) ?? null;
   const profileB = profiles.find((profile) => profile.id === profileBId) ?? null;
   const canSave = Boolean(
@@ -225,6 +229,32 @@ export default function InteractionsPage() {
       selectedRecipe.status !== "disabled",
   );
   const readiness = profiles.length < 2 ? "Нужны две карты" : canSave ? "Можно сохранить связь" : "Выберите пару и тип";
+  const briefReadiness =
+    profiles.length < 2
+      ? "Missing profiles"
+      : !profileAId || !profileBId || profileAId === profileBId
+        ? "Choose pair"
+        : !note.trim()
+          ? "Add context"
+          : "Ready to review";
+  const interactionDecisionBrief = {
+    scenarioLabel: selectedScenarioPreset?.label ?? "Custom interaction question",
+    relationshipLabel: selectedRecipe?.label.ru ?? relationshipType?.label.ru ?? "Custom relationship",
+    relationshipCategory: relationshipType ? categoryLabels[relationshipType.category] : categoryLabels.custom,
+    directionMode: relationshipType?.symmetric ? "mutual" : direction,
+    profileAName: profileA?.display_name ?? "Missing profile A",
+    profileBName: profileB?.display_name ?? "Missing profile B",
+    noteText: note,
+    readiness: briefReadiness,
+    nextStep:
+      briefReadiness === "Missing profiles"
+        ? "create another chart"
+        : briefReadiness === "Choose pair"
+          ? "choose a different pair"
+          : briefReadiness === "Add context"
+            ? "add context"
+            : "save/review the relationship",
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -435,6 +465,47 @@ export default function InteractionsPage() {
                   ))}
                 </div>
               </div>
+            </section>
+            <section className="interaction-layer" aria-label="Decision brief">
+              <h3>Decision brief</h3>
+              <div className="interaction-chip-row">
+                <span>Selected scenario</span>
+                <div>
+                  <strong>{interactionDecisionBrief.scenarioLabel}</strong>
+                </div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Relationship type</span>
+                <div>
+                  <strong>{interactionDecisionBrief.relationshipLabel}</strong>
+                  <em>{interactionDecisionBrief.relationshipCategory}</em>
+                </div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Direction mode</span>
+                <div>
+                  <strong>{interactionDecisionBrief.directionMode}</strong>
+                </div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Profile A</span>
+                <div>{interactionDecisionBrief.profileAName}</div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Profile B</span>
+                <div>{interactionDecisionBrief.profileBName}</div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Current note</span>
+                <div>{interactionDecisionBrief.noteText || "Add context"}</div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Readiness</span>
+                <div>
+                  <strong>{interactionDecisionBrief.readiness}</strong>
+                </div>
+              </div>
+              <p className="interaction-muted">Next step: {interactionDecisionBrief.nextStep}</p>
             </section>
             {profiles.length < 2 ? (
               <div className="interaction-empty">
