@@ -152,6 +152,46 @@ def test_panchanga_parity_missing_witness_or_actual_is_not_formula_failure(tmp_p
     assert report["summary"]["failed_count"] == 0
 
 
+def test_panchanga_parity_partial_comparable_field_still_passes_case(tmp_path):
+    from apps.calculations.witness_panchanga_parity import build_witness_panchanga_parity_report
+
+    _write_jhora_case(
+        tmp_path / "jhora",
+        "sterlitamak-1998-04-30-1345",
+        expected_panchanga={"tithi": "Sukla Panchami"},
+        chart_panchanga={"tithi": {"name": "Panchami", "paksha": "Shukla"}},
+    )
+
+    report = build_witness_panchanga_parity_report(jhora_root=tmp_path / "jhora", pl_root=tmp_path / "pl7")
+    row = next(item for item in report["cases"] if item["case_id"] == "sterlitamak-1998-04-30-1345")
+
+    assert row["comparison_status"] == "passed"
+    assert row["checked_fields"] == ["tithi"]
+    assert "jhora.panchanga.vara" in row["missing_fields"]
+    assert "calculated.panchanga.vara" not in row["missing_fields"]
+    assert report["summary"]["comparable_count"] == 1
+    assert report["summary"]["passed_count"] == 1
+    assert report["field_summary"]["tithi"]["passed"] == 1
+    assert report["field_summary"]["vara"]["missing"] == 1
+
+
+def test_panchanga_parity_missing_one_source_does_not_hide_comparable_reviewed_source(tmp_path):
+    from apps.calculations.witness_panchanga_parity import build_witness_panchanga_parity_report
+
+    case_id = "sterlitamak-1998-04-30-1345"
+    _write_jhora_case(tmp_path / "jhora", case_id, expected_panchanga={})
+    _write_pl_case(tmp_path / "pl7", case_id, manual_panchanga={"tithi": "Sukla Panchami"}, chart_panchanga={"tithi": {"name": "Panchami", "paksha": "Shukla"}})
+
+    report = build_witness_panchanga_parity_report(jhora_root=tmp_path / "jhora", pl_root=tmp_path / "pl7")
+    row = next(item for item in report["cases"] if item["case_id"] == case_id)
+
+    assert row["comparison_status"] == "passed"
+    assert row["checked_fields"] == ["tithi"]
+    assert "jhora.panchanga" in row["missing_fields"]
+    assert report["summary"]["comparable_count"] == 1
+    assert report["summary"]["passed_count"] == 1
+
+
 def test_panchanga_parity_report_keeps_unreviewed_case_out_of_passed(tmp_path):
     from apps.calculations.witness_panchanga_parity import build_witness_panchanga_parity_report
 

@@ -121,8 +121,6 @@ def _case_report(case_row: dict[str, Any], fields: tuple[str, ...]) -> dict[str,
     missing_panchanga_fields = sorted({_field_from_missing_field(item, fields) for item in missing_fields if _field_from_missing_field(item, fields)})
     if failed_fields:
         comparison_status = "failed"
-    elif missing_fields:
-        comparison_status = "not_comparable"
     else:
         comparison_status = "passed"
     return {
@@ -282,7 +280,7 @@ def _field_summary(rows: list[dict[str, Any]], fields: tuple[str, ...]) -> dict[
             if field in row["failed_panchanga_fields"]:
                 summary[field]["failed"] += 1
             elif field in row["missing_panchanga_fields"]:
-                if row["comparison_status"] == "missing":
+                if row["comparison_status"] == "missing" or _has_witness_missing_field(row.get("missing_fields"), field):
                     summary[field]["missing"] += 1
                 else:
                     summary[field]["not_comparable"] += 1
@@ -291,6 +289,13 @@ def _field_summary(rows: list[dict[str, Any]], fields: tuple[str, ...]) -> dict[
             elif row["comparison_status"] in {"missing", "not_comparable", "not_reviewed", "missing_witness"}:
                 summary[field]["not_comparable"] += 1
     return summary
+
+
+def _has_witness_missing_field(missing_fields: Any, field: str) -> bool:
+    if not isinstance(missing_fields, list):
+        return False
+    suffix = f".panchanga.{field}"
+    return any(str(item).endswith(suffix) and not str(item).startswith("calculated.") for item in missing_fields)
 
 
 def _field_from_missing_field(value: str, fields: tuple[str, ...] | list[str]) -> str:
