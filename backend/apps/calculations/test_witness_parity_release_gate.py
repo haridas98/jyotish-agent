@@ -8,6 +8,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from apps.calculations.witness_parity_ops_bundle import build_witness_parity_ops_bundle
+from apps.calculations.witness_parity_report_availability import build_witness_parity_report_availability
 from apps.calculations.witness_parity_release_gate import build_witness_parity_release_gate
 from apps.calculations.witness_parity_roadmap import PARITY_ROADMAP_DOMAINS, build_witness_parity_roadmap
 
@@ -69,13 +70,15 @@ def test_release_gate_accepts_raw_summary_roadmap_and_ops_bundle_input():
     assert raw_gate["blocker_totals"] == roadmap_gate["blocker_totals"] == ops_gate["blocker_totals"]
 
 
-def test_release_gate_reports_ready_only_when_no_review_waiting_or_high_priority():
-    ready_gate = build_witness_parity_release_gate(_all_ready_summary())
+def test_release_gate_reports_ready_only_when_no_review_waiting_or_high_priority(tmp_path):
+    ready_availability = _availability_with_present_count(tmp_path, present_count=19)
+    ready_gate = build_witness_parity_release_gate(_all_ready_summary(), report_availability=ready_availability)
     blocked_gate = build_witness_parity_release_gate(
         _all_ready_summary(
             witness_core_parity=_payload(failed=1),
             witness_varga_parity={"available": False, "summary": {}},
-        )
+        ),
+        report_availability=ready_availability,
     )
 
     assert ready_gate["status"] == "ready"
@@ -85,6 +88,7 @@ def test_release_gate_reports_ready_only_when_no_review_waiting_or_high_priority
         "high_priority_domains": {"threshold": 0, "observed": 0},
         "command_smoke_matrix": {"threshold": 0, "observed": 0},
         "command_missing_contracts": {"threshold": 0, "observed": 0},
+        "missing_report_availability": {"threshold": 0, "observed": 0},
     }
     assert ready_gate["required_actions"] == []
 
@@ -95,6 +99,9 @@ def test_release_gate_reports_ready_only_when_no_review_waiting_or_high_priority
         "high_priority_count": 1,
         "command_smoke_blocked_count": 0,
         "command_smoke_missing_count": 0,
+        "report_availability_domain_count": 19,
+        "report_availability_present_count": 19,
+        "report_availability_missing_count": 0,
         "action_count": 2,
     }
 
@@ -203,6 +210,30 @@ def test_release_gate_required_actions_are_ordered_and_limited():
     assert gate["blocker_totals"]["action_count"] == 3
 
 
+def test_release_gate_includes_report_availability_totals_and_safe_collection_actions(tmp_path):
+    availability = _availability_with_present_count(tmp_path, present_count=2)
+    gate = build_witness_parity_release_gate(
+        _all_ready_summary(
+            witness_core_parity=_payload(failed=1),
+            witness_varga_parity=_payload(missing=2),
+            witness_dasha_parity={"available": False, "summary": {}},
+        ),
+        report_availability=availability,
+    )
+
+    assert gate["status"] == "blocked"
+    assert gate["blocker_totals"]["report_availability_domain_count"] == 19
+    assert gate["blocker_totals"]["report_availability_present_count"] == 2
+    assert gate["blocker_totals"]["report_availability_missing_count"] == 17
+    assert gate["criteria"]["missing_report_availability"] == {"threshold": 0, "observed": 17}
+    waiting_actions = [row for row in gate["required_actions"] if row["state"] == "waiting"]
+    assert [row["key"] for row in waiting_actions] == ["witness_dasha_parity"]
+    assert waiting_actions[0]["collection_hint"] == "manage.py build_witness_dasha_parity_report --output <report-json>"
+    serialized = json.dumps(waiting_actions, ensure_ascii=False).lower()
+    for forbidden in ["source_report", "field_results", "expected", "actual", "c:/users", "--ack-diff-open", "authority"]:
+        assert forbidden not in serialized
+
+
 def test_release_gate_strips_raw_forbidden_fields():
     gate = build_witness_parity_release_gate(
         _all_ready_summary(
@@ -298,3 +329,35 @@ def _point_summary_settings_to_missing(settings, tmp_path):
         "WITNESS_JAIMINI_VARGA_PARITY_REPORT_PATH",
     ]:
         setattr(settings, name, tmp_path / f"missing-{name.lower()}.json")
+
+
+def _availability_with_present_count(tmp_path, *, present_count):
+    report_paths = {
+        name: tmp_path / f"{name.lower().replace('_', '-')}.json"
+        for name in [
+            "WITNESS_CORE_PARITY_REPORT_PATH",
+            "WITNESS_VARGA_PARITY_REPORT_PATH",
+            "WITNESS_DASHA_PARITY_REPORT_PATH",
+            "WITNESS_PANCHANGA_PARITY_REPORT_PATH",
+            "WITNESS_ASHTAKAVARGA_PARITY_REPORT_PATH",
+            "WITNESS_STRENGTHS_PARITY_REPORT_PATH",
+            "WITNESS_YOGA_PARITY_REPORT_PATH",
+            "WITNESS_SPECIAL_POINTS_PARITY_REPORT_PATH",
+            "WITNESS_ARGALA_PARITY_REPORT_PATH",
+            "WITNESS_AVASTHA_PARITY_REPORT_PATH",
+            "WITNESS_DRISHTI_PARITY_REPORT_PATH",
+            "WITNESS_TRANSIT_COORDINATE_PARITY_REPORT_PATH",
+            "WITNESS_COMPATIBILITY_PARITY_REPORT_PATH",
+            "WITNESS_MUHURTA_PARITY_REPORT_PATH",
+            "WITNESS_TITHI_PRAVESHA_PARITY_REPORT_PATH",
+            "WITNESS_TAJAKA_PARITY_REPORT_PATH",
+            "WITNESS_PRASHNA_PARITY_REPORT_PATH",
+            "WITNESS_JAIMINI_KARAKA_PARITY_REPORT_PATH",
+            "WITNESS_JAIMINI_VARGA_PARITY_REPORT_PATH",
+        ]
+    }
+    present_paths = {str(path) for path in list(report_paths.values())[:present_count]}
+    return build_witness_parity_report_availability(
+        report_paths=report_paths,
+        path_exists=lambda path: path in present_paths,
+    )

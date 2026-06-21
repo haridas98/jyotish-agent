@@ -8,6 +8,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from apps.calculations.witness_parity_ops_bundle import build_witness_parity_ops_bundle
+from apps.calculations.witness_parity_report_availability import build_witness_parity_report_availability
 from apps.calculations.witness_parity_roadmap import PARITY_ROADMAP_DOMAINS, build_witness_parity_roadmap
 
 
@@ -119,6 +120,7 @@ def test_ops_bundle_priority_state_totals_are_deterministic():
             "readiness_gap_count": 0,
             "target_reviewed_count": 0,
             "passed_count": 0,
+            "collection_hint": "manage.py build_witness_dasha_parity_report --output <report-json>",
         },
         {
             "key": "witness_panchanga_parity",
@@ -132,6 +134,7 @@ def test_ops_bundle_priority_state_totals_are_deterministic():
             "readiness_gap_count": 0,
             "target_reviewed_count": 0,
             "passed_count": 0,
+            "collection_hint": "manage.py build_witness_panchanga_parity_report --output <report-json>",
         },
     ]
 
@@ -150,6 +153,27 @@ def test_ops_bundle_limit_and_state_filter():
     assert len(bundle["next_actions"]) == 1
     assert bundle["next_actions"][0]["key"] == "witness_varga_parity"
     assert bundle["next_actions"][0]["state"] == "waiting"
+
+
+def test_ops_bundle_adds_report_availability_totals_and_collection_hints(tmp_path):
+    availability = _availability_with_present_count(tmp_path, present_count=2)
+    bundle = build_witness_parity_ops_bundle(
+        _all_ready_summary(
+            witness_core_parity=_payload(failed=1),
+            witness_varga_parity=_payload(missing=2),
+            witness_dasha_parity={"available": False, "summary": {}},
+            witness_panchanga_parity={"available": False, "summary": {}},
+        ),
+        report_availability=availability,
+    )
+
+    assert bundle["report_availability_domain_count"] == 19
+    assert bundle["report_availability_present_count"] == 2
+    assert bundle["report_availability_missing_count"] == 17
+    waiting_actions = [row for row in bundle["next_actions"] if row["state"] == "waiting"]
+    assert [row["key"] for row in waiting_actions[:2]] == ["witness_dasha_parity", "witness_panchanga_parity"]
+    assert waiting_actions[0]["collection_hint"] == "manage.py build_witness_dasha_parity_report --output <report-json>"
+    assert waiting_actions[0]["next_action"] == "collect report"
 
 
 def test_ops_bundle_strips_raw_forbidden_fields():
@@ -257,6 +281,38 @@ def _write_parity_report(path, *, failed=0):
     }
     path.write_text(json.dumps(report), encoding="utf-8")
     return path
+
+
+def _availability_with_present_count(tmp_path, *, present_count):
+    report_paths = {
+        name: tmp_path / f"{name.lower().replace('_', '-')}.json"
+        for name in [
+            "WITNESS_CORE_PARITY_REPORT_PATH",
+            "WITNESS_VARGA_PARITY_REPORT_PATH",
+            "WITNESS_DASHA_PARITY_REPORT_PATH",
+            "WITNESS_PANCHANGA_PARITY_REPORT_PATH",
+            "WITNESS_ASHTAKAVARGA_PARITY_REPORT_PATH",
+            "WITNESS_STRENGTHS_PARITY_REPORT_PATH",
+            "WITNESS_YOGA_PARITY_REPORT_PATH",
+            "WITNESS_SPECIAL_POINTS_PARITY_REPORT_PATH",
+            "WITNESS_ARGALA_PARITY_REPORT_PATH",
+            "WITNESS_AVASTHA_PARITY_REPORT_PATH",
+            "WITNESS_DRISHTI_PARITY_REPORT_PATH",
+            "WITNESS_TRANSIT_COORDINATE_PARITY_REPORT_PATH",
+            "WITNESS_COMPATIBILITY_PARITY_REPORT_PATH",
+            "WITNESS_MUHURTA_PARITY_REPORT_PATH",
+            "WITNESS_TITHI_PRAVESHA_PARITY_REPORT_PATH",
+            "WITNESS_TAJAKA_PARITY_REPORT_PATH",
+            "WITNESS_PRASHNA_PARITY_REPORT_PATH",
+            "WITNESS_JAIMINI_KARAKA_PARITY_REPORT_PATH",
+            "WITNESS_JAIMINI_VARGA_PARITY_REPORT_PATH",
+        ]
+    }
+    present_paths = {str(path) for path in list(report_paths.values())[:present_count]}
+    return build_witness_parity_report_availability(
+        report_paths=report_paths,
+        path_exists=lambda path: path in present_paths,
+    )
 
 
 def _point_roadmap_settings_to_missing(settings, tmp_path):

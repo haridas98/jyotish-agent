@@ -17,19 +17,23 @@ def build_witness_parity_release_gate(
     summary_or_roadmap_or_ops_bundle: dict[str, Any],
     *,
     command_smoke_matrix: dict[str, Any] | None = None,
+    report_availability: dict[str, Any] | None = None,
     limit: int = 0,
 ) -> dict[str, Any]:
     generated_from_schema_version = _source_schema(summary_or_roadmap_or_ops_bundle)
     ops_bundle = (
         summary_or_roadmap_or_ops_bundle
-        if summary_or_roadmap_or_ops_bundle.get("schema_version") == OPS_BUNDLE_SCHEMA_VERSION
-        else build_witness_parity_ops_bundle(summary_or_roadmap_or_ops_bundle, limit=0)
+        if summary_or_roadmap_or_ops_bundle.get("schema_version") == OPS_BUNDLE_SCHEMA_VERSION and report_availability is None
+        else build_witness_parity_ops_bundle(summary_or_roadmap_or_ops_bundle, limit=0, report_availability=report_availability)
     )
     state_totals = ops_bundle.get("state_totals") if isinstance(ops_bundle.get("state_totals"), dict) else {}
     priority_totals = ops_bundle.get("priority_totals") if isinstance(ops_bundle.get("priority_totals"), dict) else {}
     review_count = _safe_int(state_totals.get("review"))
     waiting_count = _safe_int(state_totals.get("waiting"))
     high_priority_count = _safe_int(priority_totals.get("high"))
+    report_availability_domain_count = _safe_int(ops_bundle.get("report_availability_domain_count"))
+    report_availability_present_count = _safe_int(ops_bundle.get("report_availability_present_count"))
+    report_availability_missing_count = _safe_int(ops_bundle.get("report_availability_missing_count"))
     smoke_matrix = command_smoke_matrix if isinstance(command_smoke_matrix, dict) else build_witness_parity_command_smoke_matrix()
     smoke_totals = smoke_matrix.get("totals") if isinstance(smoke_matrix.get("totals"), dict) else {}
     smoke_status_blocker = 0 if str(smoke_matrix.get("status") or "").lower() == "ready" else 1
@@ -47,6 +51,7 @@ def build_witness_parity_release_gate(
         and high_priority_count == 0
         and command_smoke_blocked_count == 0
         and command_smoke_missing_count == 0
+        and report_availability_missing_count == 0
         else "blocked"
     )
     return {
@@ -59,6 +64,7 @@ def build_witness_parity_release_gate(
             "high_priority_domains": {"threshold": 0, "observed": high_priority_count},
             "command_smoke_matrix": {"threshold": 0, "observed": command_smoke_blocked_count},
             "command_missing_contracts": {"threshold": 0, "observed": command_smoke_missing_count},
+            "missing_report_availability": {"threshold": 0, "observed": report_availability_missing_count},
         },
         "blocker_totals": {
             "review_count": review_count,
@@ -66,6 +72,9 @@ def build_witness_parity_release_gate(
             "high_priority_count": high_priority_count,
             "command_smoke_blocked_count": command_smoke_blocked_count,
             "command_smoke_missing_count": command_smoke_missing_count,
+            "report_availability_domain_count": report_availability_domain_count,
+            "report_availability_present_count": report_availability_present_count,
+            "report_availability_missing_count": report_availability_missing_count,
             "action_count": len(full_actions),
         },
         "required_actions": shown_actions,
@@ -100,7 +109,7 @@ def _required_action_rows(rows: Any) -> list[dict[str, Any]]:
 
 
 def _safe_required_action(row: dict[str, Any]) -> dict[str, Any]:
-    return {
+    safe = {
         "key": str(row.get("key") or ""),
         "label": str(row.get("label") or ""),
         "state": str(row.get("state") or ""),
@@ -111,6 +120,10 @@ def _safe_required_action(row: dict[str, Any]) -> dict[str, Any]:
         "blocker_count": _safe_int(row.get("blocker_count")),
         "readiness_gap_count": _safe_int(row.get("readiness_gap_count")),
     }
+    collection_hint = str(row.get("collection_hint") or "")
+    if "<report-json>" in collection_hint:
+        safe["collection_hint"] = collection_hint
+    return safe
 
 
 def _source_schema(summary_or_roadmap_or_ops_bundle: dict[str, Any]) -> str:
