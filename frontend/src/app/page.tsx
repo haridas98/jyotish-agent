@@ -157,8 +157,9 @@ function browserStorageAvailable() {
 
 function requestedAnalysisFromLocation(): AnalysisTab | null {
   if (typeof window === "undefined") return null;
+  if (window.location.pathname === "/accuracy") return "accuracy";
   const requested = new URLSearchParams(window.location.search).get("analysis");
-  if (!requested || requested === "calculations" || requested === "accuracy") return null;
+  if (!requested || requested === "calculations") return null;
   return analysisTabs.some((tab) => tab.key === requested) ? (requested as AnalysisTab) : null;
 }
 
