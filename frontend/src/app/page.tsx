@@ -5763,7 +5763,7 @@ function AccuracyReportPanel({
           </div>
           <h3>Artifact availability checkpoint</h3>
           <p>
-            {artifactAvailabilityCheckpoint.environmentCopy}: {artifactAvailabilityCheckpoint.localDevCopy}; {artifactAvailabilityCheckpoint.productionCopy}. Counts reflect environment artifacts, not product failure.
+            {artifactAvailabilityCheckpoint.environmentCopy}: {artifactAvailabilityCheckpoint.localDevCopy}; {artifactAvailabilityCheckpoint.productionCopy}. {artifactAvailabilityCheckpoint.environmentDetailCopy}. Counts reflect environment artifacts, not product failure.
           </p>
           <small>
             total witness domains: {artifactAvailabilityCheckpoint.totals.domainCount} - available/review rows: {artifactAvailabilityCheckpoint.totals.availableReviewRows} - missing reports: {artifactAvailabilityCheckpoint.totals.missingReports} - collect reports: {artifactAvailabilityCheckpoint.totals.collectReports}
