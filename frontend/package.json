@@ -18,6 +18,7 @@
     "test:interaction-decision-brief": "node scripts/check-interaction-decision-brief.mjs",
     "test:interaction-question-presets": "node scripts/check-interaction-question-presets.mjs",
     "test:timing-scenario-presets": "node scripts/check-timing-scenario-presets.mjs",
+    "test:muhurta-action-presets": "node scripts/check-muhurta-action-presets.mjs",
     "test:muhurta-planning-page": "node scripts/check-muhurta-planning-page.mjs",
     "test:muhurta-planning-brief": "node scripts/check-muhurta-planning-brief.mjs",
     "test:compatibility": "node scripts/check-compatibility-foundation.mjs",

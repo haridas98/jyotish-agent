@@ -13,6 +13,13 @@ type CandidateWindow = {
   time: string;
   note: string;
 };
+type MuhurtaActionPreset = {
+  id: string;
+  label: string;
+  focus: string;
+  nextStep: string;
+  attention: string;
+};
 
 const decisionModes: Array<{ id: DecisionMode; label: string }> = [
   { id: "compare", label: "compare" },
@@ -34,11 +41,61 @@ const constraintDefaults = [
   "counterpart readiness",
 ];
 
+const muhurtaActionPresets: MuhurtaActionPreset[] = [
+  {
+    id: "project_start",
+    label: "Project start",
+    focus: "opening work with clear owners and a realistic first milestone",
+    nextStep: "confirm scope, owner, and the first checkpoint before comparing windows",
+    attention: "unclear ownership or rushed kickoff details",
+  },
+  {
+    id: "contract_signing",
+    label: "Contract signing",
+    focus: "signing or approval timing after terms are already reviewed",
+    nextStep: "confirm document version, signers, and fallback window",
+    attention: "missing approvals, unclear terms, or counterpart readiness",
+  },
+  {
+    id: "investment_review",
+    label: "Investment review",
+    focus: "reviewing a commitment window without treating timing as advice",
+    nextStep: "write the risk limit and independent review checkpoint",
+    attention: "pressure to decide before budget and risk limits are explicit",
+  },
+  {
+    id: "important_meeting",
+    label: "Important meeting",
+    focus: "planning a conversation where preparation and tone matter",
+    nextStep: "prepare agenda, decision owner, and a lower-pressure backup slot",
+    attention: "missing agenda, escalation pressure, or unready counterpart",
+  },
+  {
+    id: "travel_start",
+    label: "Travel start",
+    focus: "choosing a departure window with logistics already visible",
+    nextStep: "confirm route, buffers, documents, and contingency time",
+    attention: "thin travel buffer, document gaps, or weather/logistics uncertainty",
+  },
+  {
+    id: "product_launch",
+    label: "Product launch",
+    focus: "coordinating a launch window with readiness checks",
+    nextStep: "confirm launch owner, rollback plan, and support coverage",
+    attention: "missing support coverage, unclear rollback, or rushed readiness",
+  },
+];
+
 export default function MuhurtaPage() {
   const [selectedPresetId, setSelectedPresetId] = useState(timingScenarioPresets[0]?.id ?? "");
+  const [selectedActionPresetId, setSelectedActionPresetId] = useState(muhurtaActionPresets[0]?.id ?? "");
   const selectedPreset = useMemo(
     () => timingScenarioPresets.find((preset) => preset.id === selectedPresetId) ?? timingScenarioPresets[0],
     [selectedPresetId],
+  );
+  const selectedActionPreset = useMemo(
+    () => muhurtaActionPresets.find((preset) => preset.id === selectedActionPresetId) ?? muhurtaActionPresets[0],
+    [selectedActionPresetId],
   );
   const [planningContext, setPlanningContext] = useState(selectedPreset?.context ?? "");
   const [candidateWindows, setCandidateWindows] = useState<CandidateWindow[]>(defaultCandidateWindows);
@@ -53,9 +110,25 @@ export default function MuhurtaPage() {
   ).length;
   const readinessStatus =
     openConstraints.length > 0 ? "Prepare first" : missingCandidateDetails > 0 || !planningContext.trim() ? "Needs details" : "Ready to compare";
+  const firstCandidate = candidateWindows[0];
+  const actionDecisionBrief = {
+    label: selectedActionPreset?.label ?? "Custom action",
+    focus: selectedActionPreset?.focus ?? "local action planning",
+    contextWindow: `${firstCandidate?.date || "Missing action context"} ${firstCandidate?.time || ""}`.trim(),
+    planningContext: planningContext.trim() || "Missing action context",
+    nextStep: selectedActionPreset?.nextStep ?? "add practical context before comparing windows",
+    attention: selectedActionPreset?.attention ?? "missing action context",
+    missingCopy:
+      !planningContext.trim() || missingCandidateDetails > 0
+        ? "Missing action context"
+        : openConstraints.length > 0
+          ? "Open constraints remain"
+          : "Ready for local review",
+  };
   const planningBrief = {
     scenarioLabel: selectedPreset?.label ?? "Custom timing scenario",
     scenarioCategory: selectedPreset?.category ?? "custom",
+    actionDecisionBrief,
     decisionMode,
     planningContext,
     candidateWindows,
@@ -114,6 +187,28 @@ export default function MuhurtaPage() {
             Planning context
             <textarea value={planningContext} onChange={(event) => setPlanningContext(event.target.value)} />
           </label>
+        </section>
+
+        <section className="product-page-card" aria-label="Action presets">
+          <div className="panel-heading">
+            <div>
+              <h2>Action presets</h2>
+              <span>Select the practical action being timed.</span>
+            </div>
+          </div>
+          <div className="dasha-control-bar transit-view-switch">
+            {muhurtaActionPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className={selectedActionPresetId === preset.id ? "active" : ""}
+                onClick={() => setSelectedActionPresetId(preset.id)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+          <p className="product-status">{selectedActionPreset?.focus}</p>
         </section>
 
         <section className="product-page-card" aria-label="Candidate windows">
@@ -201,6 +296,32 @@ export default function MuhurtaPage() {
           <div className="interaction-layer">
             <strong>Planning context</strong>
             <p>{planningBrief.planningContext || "Needs details"}</p>
+          </div>
+          <div className="dasha-toolbar" aria-label="Action decision brief">
+            <div className="interaction-layer">
+              <strong>Selected action</strong>
+              <p>
+                {planningBrief.actionDecisionBrief.label} В· {planningBrief.actionDecisionBrief.focus}
+              </p>
+            </div>
+            <div className="interaction-layer">
+              <strong>Current window/context</strong>
+              <p>
+                {planningBrief.actionDecisionBrief.contextWindow} В· {planningBrief.actionDecisionBrief.planningContext}
+              </p>
+            </div>
+            <div className="interaction-layer">
+              <strong>Practical next step</strong>
+              <p>{planningBrief.actionDecisionBrief.nextStep}</p>
+            </div>
+            <div className="interaction-layer">
+              <strong>Risk/attention point</strong>
+              <p>{planningBrief.actionDecisionBrief.attention}</p>
+            </div>
+            <div className="interaction-layer">
+              <strong>Action readiness</strong>
+              <p>{planningBrief.actionDecisionBrief.missingCopy}</p>
+            </div>
           </div>
           <div className="transit-table-wrap">
             <table>
