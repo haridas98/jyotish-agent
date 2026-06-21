@@ -1,0 +1,87 @@
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+function sliceBetween(source, start, end) {
+  const startIndex = source.indexOf(start);
+  const endIndex = source.indexOf(end, startIndex);
+  assert(startIndex >= 0, `Missing slice start: ${start}`);
+  assert(endIndex > startIndex, `Missing slice end: ${end}`);
+  return source.slice(startIndex, endIndex);
+}
+
+const api = readFileSync(new URL("../src/lib/api.ts", import.meta.url), "utf8");
+const page = readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
+const panel = sliceBetween(page, "function AccuracyReportPanel", "export default function Home");
+
+for (const marker of ["witness_drishti_parity", "layer_summary", "drishti_summary", "target_met", "next_actions"]) {
+  assert(api.includes(marker), `WitnessSummary type missing ${marker}`);
+}
+
+for (const marker of [
+  "witness_drishti_parity",
+  "Drishti parity",
+  "Graha / Rashi aspects",
+  "drishtiParitySummary",
+  "drishtiParityActions",
+  "checked_aspects",
+  "matched_aspects",
+  "failed_aspects",
+  "missing_aspects",
+  "skipped_aspects",
+  "checked_fields",
+  "failed_fields",
+  "missing_fields",
+  "skipped_fields",
+]) {
+  assert(panel.includes(marker), `AccuracyReportPanel missing Drishti parity UI marker: ${marker}`);
+}
+
+const drishtiSlice = sliceBetween(panel, "const drishtiParity", "const plFailedCount");
+for (const marker of ["Р Вµ", "Р Р…", "Р С•", "Р Т‘", "РЎРѓ", "РЎвЂ ", "Р’В·", "пїЅ"]) {
+  assert(!drishtiSlice.includes(marker), `Drishti parity slice contains mojibake marker: ${marker}`);
+}
+
+for (const forbidden of [
+  "field_results",
+  "expected",
+  "actual",
+  "sources_present",
+  "source_report",
+  "authority",
+  "authoritative",
+  "seal_witness_case",
+  "mark_",
+  "--ack-diff-open",
+]) {
+  assert(!drishtiSlice.includes(forbidden), `Drishti parity slice must not expose ${forbidden}`);
+}
+
+const changedFiles = execFileSync("git", ["diff", "--name-only"], { encoding: "utf8" })
+  .split(/\r?\n/)
+  .filter(Boolean);
+for (const changed of changedFiles) {
+  assert(
+    ![
+      "backend/apps/calculations/classical.py",
+      "backend/apps/calculations/chart.py",
+      "backend/apps/calculations/ephemeris.py",
+      "backend/apps/calculations/math.py",
+      "backend/apps/calculations/panchanga.py",
+      "backend/apps/calculations/vimshottari.py",
+      "backend/apps/calculations/dasha_systems.py",
+      "backend/apps/calculations/vargas.py",
+      "backend/apps/calculations/accuracy.py",
+      "backend/apps/calculations/graha_drishti.py",
+      "backend/apps/calculations/rashi_drishti.py",
+    ].includes(changed),
+    `Formula/calculation file changed during Drishti parity UI stage: ${changed}`,
+  );
+}
+
+console.log("Accuracy Drishti parity UI check passed.");

@@ -1345,6 +1345,60 @@ export type WitnessSummary = {
     }>;
     error?: string;
   };
+  witness_drishti_parity: {
+    available: boolean;
+    status: string;
+    source_report: string;
+    schema_version: string;
+    generated_at: string;
+    summary: {
+      case_count: number;
+      comparable_count: number;
+      passed_count: number;
+      failed_count: number;
+      missing_witness_count: number;
+      not_reviewed_count: number;
+      not_comparable_count: number;
+      target_reviewed_count: number;
+      target_met: boolean;
+    };
+    layer_summary: Record<
+      string,
+      {
+        passed: number;
+        failed: number;
+        missing: number;
+        not_comparable: number;
+      }
+    >;
+    drishti_summary: Record<
+      string,
+      {
+        passed: number;
+        failed: number;
+        missing: number;
+        skipped: number;
+      }
+    >;
+    target_met: boolean;
+    next_actions: Array<{
+      case_id: string;
+      status: string;
+      checked_layers: string[];
+      failed_layers: string[];
+      missing_layers: string[];
+      checked_aspects: string[];
+      matched_aspects: string[];
+      failed_aspects: string[];
+      missing_aspects: string[];
+      skipped_aspects: string[];
+      checked_fields: string[];
+      failed_fields: string[];
+      missing_fields: string[];
+      skipped_fields: string[];
+    }>;
+    error?: string;
+  };
   jhora: {
     available: boolean;
     status: string;

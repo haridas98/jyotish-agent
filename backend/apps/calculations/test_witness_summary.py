@@ -2420,3 +2420,172 @@ def test_witness_avastha_parity_default_path_matches_command_output(settings):
     normalized = str(settings.WITNESS_AVASTHA_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/avastha-parity-report.json")
+
+
+def _write_drishti_parity_report(path, *, status: str = "failed", case_id: str = "case-drishti-a"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-drishti-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "layers": ["graha_drishti", "rashi_drishti"],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 1,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "layer_summary": {
+                    "graha_drishti": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                    "rashi_drishti": {"passed": 0, "failed": 0, "missing": 0, "not_comparable": 1},
+                },
+                "drishti_summary": {
+                    "graha_drishti.special_10th": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 1 if status == "failed" else 0, "skipped": 0},
+                    "tajika_aspects": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "source": "jhora",
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["graha_drishti"],
+                        "failed_layers": ["graha_drishti"] if status == "failed" else [],
+                        "missing_layers": [],
+                        "checked_aspects": ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"],
+                        "matched_aspects": [] if status == "failed" else ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"],
+                        "failed_aspects": ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"] if status == "failed" else [],
+                        "missing_aspects": ["calculated.graha_drishti"] if status == "failed" else [],
+                        "skipped_aspects": ["tajika_aspects"],
+                        "checked_fields": ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"],
+                        "failed_fields": ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"] if status == "failed" else [],
+                        "missing_fields": ["calculated.graha_drishti"] if status == "failed" else [],
+                        "skipped_fields": ["drishti.tajika_aspects"],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "graha_drishti",
+                                "field": "graha_drishti.transit_graha_sa.natal_house_10.special_10th",
+                                "expected": "graha_drishti.transit_graha_sa.natal_house_10.special_10th",
+                                "actual": [],
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_drishti_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "drishti-parity-report.json"
+    _write_drishti_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_drishti_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_drishti_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-drishti-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["graha_drishti"]["failed"] == 1
+    assert parity["drishti_summary"]["graha_drishti.special_10th"]["failed"] == 1
+    assert parity["drishti_summary"]["tajika_aspects"]["skipped"] == 1
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-drishti-a",
+            "status": "failed",
+            "checked_layers": ["graha_drishti"],
+            "failed_layers": ["graha_drishti"],
+            "missing_layers": [],
+            "checked_aspects": ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"],
+            "matched_aspects": [],
+            "failed_aspects": ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"],
+            "missing_aspects": ["calculated.graha_drishti"],
+            "skipped_aspects": ["tajika_aspects"],
+            "checked_fields": ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"],
+            "failed_fields": ["graha_drishti.transit_graha_sa.natal_house_10.special_10th"],
+            "missing_fields": ["calculated.graha_drishti"],
+            "skipped_fields": ["drishti.tajika_aspects"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_drishti_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_drishti_parity_report_path=tmp_path / "missing-drishti-parity.json",
+    )
+    assert missing_summary["witness_drishti_parity"]["available"] is False
+    assert missing_summary["witness_drishti_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-drishti-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_drishti_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_drishti_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_drishti_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-drishti-parity.json"
+    second_path = tmp_path / "second-drishti-parity.json"
+    _write_drishti_parity_report(first_path, case_id="first-drishti-case")
+    _write_drishti_parity_report(second_path, case_id="second-drishti-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_DRISHTI_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_DRISHTI_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_drishti_parity"]["next_actions"][0]["case_id"] == "first-drishti-case"
+    assert second_response.data["witness_drishti_parity"]["next_actions"][0]["case_id"] == "second-drishti-case"
+
+
+def test_witness_drishti_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_DRISHTI_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/drishti-parity-report.json")
