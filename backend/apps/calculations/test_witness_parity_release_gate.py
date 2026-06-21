@@ -83,6 +83,8 @@ def test_release_gate_reports_ready_only_when_no_review_waiting_or_high_priority
         "review_domains": {"threshold": 0, "observed": 0},
         "waiting_domains": {"threshold": 0, "observed": 0},
         "high_priority_domains": {"threshold": 0, "observed": 0},
+        "command_smoke_matrix": {"threshold": 0, "observed": 0},
+        "command_missing_contracts": {"threshold": 0, "observed": 0},
     }
     assert ready_gate["required_actions"] == []
 
@@ -91,8 +93,64 @@ def test_release_gate_reports_ready_only_when_no_review_waiting_or_high_priority
         "review_count": 1,
         "waiting_count": 1,
         "high_priority_count": 1,
+        "command_smoke_blocked_count": 0,
+        "command_smoke_missing_count": 0,
         "action_count": 2,
     }
+
+
+def test_release_gate_blocks_on_supplied_command_smoke_matrix_and_respects_limit():
+    blocked_smoke_matrix = {
+        "schema_version": "witness-parity-command-smoke-matrix.v1",
+        "status": "blocked",
+        "totals": {
+            "domain_count": 19,
+            "smoke_ready_count": 18,
+            "blocked_count": 1,
+            "missing_count": 2,
+        },
+        "domains": [
+            {
+                "key": "witness_core_parity",
+                "label": "Core parity",
+                "backend_command": "build_witness_core_parity_report",
+                "frontend_gate_script": "check-accuracy-core-parity-ui.mjs",
+                "smoke_ready": False,
+                "missing": ["backend_command", "backend_test"],
+                "contract": {
+                    "command_invocation_hint": "manage.py build_witness_core_parity_report --out <file>",
+                },
+                "source_report": "C:/Users/Admin/private/raw.json",
+                "field_results": [{"expected": 1, "actual": 2}],
+            }
+        ],
+    }
+
+    gate = build_witness_parity_release_gate(
+        _all_ready_summary(),
+        command_smoke_matrix=blocked_smoke_matrix,
+        limit=1,
+    )
+
+    assert gate["status"] == "blocked"
+    assert gate["criteria"]["command_smoke_matrix"] == {"threshold": 0, "observed": 1}
+    assert gate["criteria"]["command_missing_contracts"] == {"threshold": 0, "observed": 2}
+    assert gate["blocker_totals"]["command_smoke_blocked_count"] == 1
+    assert gate["blocker_totals"]["command_smoke_missing_count"] == 2
+    assert gate["blocker_totals"]["action_count"] == 1
+    assert gate["required_actions"] == [
+        {
+            "key": "witness_parity_command_smoke_matrix",
+            "label": "Parity command smoke matrix",
+            "state": "blocked",
+            "priority": "high",
+            "reason": "command smoke coverage blocked",
+            "next_action": "review parity command manifest",
+            "failed_count": 1,
+            "blocker_count": 2,
+            "readiness_gap_count": 0,
+        }
+    ]
 
 
 def test_release_gate_required_actions_are_ordered_and_limited():
@@ -165,6 +223,8 @@ def test_build_witness_parity_release_gate_report_command_writes_limited_json(se
     report = json.loads(out.read_text(encoding="utf-8"))
     assert report["schema_version"] == "witness-parity-release-gate.v1"
     assert report["status"] == "blocked"
+    assert "command_smoke_matrix" in report["criteria"]
+    assert "command_smoke_blocked_count" in report["blocker_totals"]
     assert len(report["required_actions"]) == 5
     assert report["blocker_totals"]["waiting_count"] == 19
 

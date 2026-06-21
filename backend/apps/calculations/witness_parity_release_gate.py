@@ -6,6 +6,7 @@ from apps.calculations.witness_parity_ops_bundle import (
     SCHEMA_VERSION as OPS_BUNDLE_SCHEMA_VERSION,
     build_witness_parity_ops_bundle,
 )
+from apps.calculations.witness_parity_command_smoke_matrix import build_witness_parity_command_smoke_matrix
 from apps.calculations.witness_parity_roadmap import SCHEMA_VERSION as ROADMAP_SCHEMA_VERSION
 
 
@@ -15,6 +16,7 @@ SCHEMA_VERSION = "witness-parity-release-gate.v1"
 def build_witness_parity_release_gate(
     summary_or_roadmap_or_ops_bundle: dict[str, Any],
     *,
+    command_smoke_matrix: dict[str, Any] | None = None,
     limit: int = 0,
 ) -> dict[str, Any]:
     generated_from_schema_version = _source_schema(summary_or_roadmap_or_ops_bundle)
@@ -28,9 +30,24 @@ def build_witness_parity_release_gate(
     review_count = _safe_int(state_totals.get("review"))
     waiting_count = _safe_int(state_totals.get("waiting"))
     high_priority_count = _safe_int(priority_totals.get("high"))
+    smoke_matrix = command_smoke_matrix if isinstance(command_smoke_matrix, dict) else build_witness_parity_command_smoke_matrix()
+    smoke_totals = smoke_matrix.get("totals") if isinstance(smoke_matrix.get("totals"), dict) else {}
+    command_smoke_blocked_count = _safe_int(smoke_totals.get("blocked_count"))
+    command_smoke_missing_count = _safe_int(smoke_totals.get("missing_count"))
     full_actions = [_safe_required_action(row) for row in _required_action_rows(ops_bundle.get("next_actions"))]
+    smoke_action = _command_smoke_action(command_smoke_blocked_count, command_smoke_missing_count)
+    if smoke_action:
+        full_actions.append(smoke_action)
     shown_actions = full_actions if limit <= 0 else full_actions[:limit]
-    status = "ready" if review_count == 0 and waiting_count == 0 and high_priority_count == 0 else "blocked"
+    status = (
+        "ready"
+        if review_count == 0
+        and waiting_count == 0
+        and high_priority_count == 0
+        and command_smoke_blocked_count == 0
+        and command_smoke_missing_count == 0
+        else "blocked"
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_from_schema_version": generated_from_schema_version,
@@ -39,14 +56,34 @@ def build_witness_parity_release_gate(
             "review_domains": {"threshold": 0, "observed": review_count},
             "waiting_domains": {"threshold": 0, "observed": waiting_count},
             "high_priority_domains": {"threshold": 0, "observed": high_priority_count},
+            "command_smoke_matrix": {"threshold": 0, "observed": command_smoke_blocked_count},
+            "command_missing_contracts": {"threshold": 0, "observed": command_smoke_missing_count},
         },
         "blocker_totals": {
             "review_count": review_count,
             "waiting_count": waiting_count,
             "high_priority_count": high_priority_count,
+            "command_smoke_blocked_count": command_smoke_blocked_count,
+            "command_smoke_missing_count": command_smoke_missing_count,
             "action_count": len(full_actions),
         },
         "required_actions": shown_actions,
+    }
+
+
+def _command_smoke_action(blocked_count: int, missing_count: int) -> dict[str, Any] | None:
+    if blocked_count == 0 and missing_count == 0:
+        return None
+    return {
+        "key": "witness_parity_command_smoke_matrix",
+        "label": "Parity command smoke matrix",
+        "state": "blocked",
+        "priority": "high",
+        "reason": "command smoke coverage blocked",
+        "next_action": "review parity command manifest",
+        "failed_count": blocked_count,
+        "blocker_count": missing_count,
+        "readiness_gap_count": 0,
     }
 
 
