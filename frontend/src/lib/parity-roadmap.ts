@@ -55,6 +55,16 @@ export type ParityRoadmapRow = {
   action: "ready for demo" | "review witness rows" | "collect report";
 };
 
+export type ParityCollectionChecklistRow = ParityRoadmapRow & {
+  collectionHint: string;
+};
+
+export type ParityCollectionChecklistTotals = {
+  ready: number;
+  review: number;
+  waiting: number;
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -76,6 +86,28 @@ export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_jaimini_karaka_parity", label: "Jaimini karaka parity" },
   { key: "witness_jaimini_varga_parity", label: "Jaimini varga parity" },
 ];
+
+const parityCollectionCommandByKey: Record<ParityKey, string> = {
+  witness_core_parity: "build_witness_core_parity_report",
+  witness_varga_parity: "build_witness_varga_parity_report",
+  witness_dasha_parity: "build_witness_dasha_parity_report",
+  witness_panchanga_parity: "build_witness_panchanga_parity_report",
+  witness_ashtakavarga_parity: "build_witness_ashtakavarga_parity_report",
+  witness_strengths_parity: "build_witness_strengths_parity_report",
+  witness_yoga_parity: "build_witness_yoga_parity_report",
+  witness_special_points_parity: "build_witness_special_points_parity_report",
+  witness_argala_parity: "build_witness_argala_parity_report",
+  witness_avastha_parity: "build_witness_avastha_parity_report",
+  witness_drishti_parity: "build_witness_drishti_parity_report",
+  witness_transit_coordinate_parity: "build_witness_transit_coordinates_parity_report",
+  witness_compatibility_parity: "build_witness_compatibility_parity_report",
+  witness_muhurta_parity: "build_witness_muhurta_parity_report",
+  witness_tithi_pravesha_parity: "build_witness_tithi_pravesha_parity_report",
+  witness_tajaka_parity: "build_witness_tajaka_parity_report",
+  witness_prashna_parity: "build_witness_prashna_parity_report",
+  witness_jaimini_karaka_parity: "build_witness_jaimini_karaka_parity_report",
+  witness_jaimini_varga_parity: "build_witness_jaimini_varga_parity_report",
+};
 
 export function buildParityRoadmapRows(witnessSummary: WitnessSummary | null): ParityRoadmapRow[] {
   return parityRoadmapItems.map((item) => {
@@ -107,6 +139,23 @@ export function buildParityRoadmapRows(witnessSummary: WitnessSummary | null): P
       action: state === "ready" ? "ready for demo" : state === "review" ? "review witness rows" : "collect report",
     };
   });
+}
+
+export function buildParityCollectionChecklistRows(rows: ParityRoadmapRow[]): ParityCollectionChecklistRow[] {
+  return rows.map((row) => ({
+    ...row,
+    collectionHint: `manage.py ${parityCollectionCommandByKey[row.key]} --output <report-json>`,
+  }));
+}
+
+export function buildParityCollectionChecklistTotals(rows: ParityRoadmapRow[]): ParityCollectionChecklistTotals {
+  return rows.reduce<ParityCollectionChecklistTotals>(
+    (totals, row) => ({
+      ...totals,
+      [row.state]: totals[row.state] + 1,
+    }),
+    { ready: 0, review: 0, waiting: 0 },
+  );
 }
 
 function skippedCount(payload: ParityPayload): number {

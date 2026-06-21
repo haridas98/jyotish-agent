@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildParityRoadmapRows } from "@/lib/parity-roadmap";
+import { buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5666,6 +5666,8 @@ function AccuracyReportPanel({
   const parityRoadmapReadyCount = parityRoadmapRows.filter((item) => item.state === "ready").length;
   const parityRoadmapReviewCount = parityRoadmapRows.filter((item) => item.state === "review").length;
   const parityRoadmapWaitingCount = parityRoadmapRows.filter((item) => item.state === "waiting").length;
+  const parityCollectionChecklistRows = buildParityCollectionChecklistRows(parityRoadmapRows);
+  const collectionChecklistTotals = buildParityCollectionChecklistTotals(parityRoadmapRows);
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5689,6 +5691,21 @@ function AccuracyReportPanel({
                 {item.skipped ? `; skipped: ${item.skipped}` : ""}
                 {item.readinessGaps ? `; readiness gaps: ${item.readinessGaps}` : ""}
                 ; {item.action}
+              </small>
+            </div>
+          ))}
+          <h3>Parity collection checklist</h3>
+          <p>Missing reports are operational blockers, not formula failures.</p>
+          <small>
+            ready: {collectionChecklistTotals.ready} - review: {collectionChecklistTotals.review} - waiting: {collectionChecklistTotals.waiting}
+          </small>
+          {parityCollectionChecklistRows.map((item) => (
+            <div key={`${item.key}-collection`}>
+              <span>{item.label}</span>
+              <strong>{item.state}</strong>
+              <small>
+                {item.action}
+                {item.state === "waiting" ? `; ${item.collectionHint}` : ""}
               </small>
             </div>
           ))}
