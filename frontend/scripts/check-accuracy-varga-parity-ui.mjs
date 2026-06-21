@@ -19,26 +19,25 @@ const api = readFileSync(new URL("../src/lib/api.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
 const panel = sliceBetween(page, "function AccuracyReportPanel", "export default function Home");
 
-for (const marker of ["witness_core_parity", "target_met", "next_actions", "tolerance_profile"]) {
+for (const marker of ["witness_varga_parity", "varga_summary", "target_met", "next_actions"]) {
   assert(api.includes(marker), `WitnessSummary type missing ${marker}`);
 }
 
 for (const marker of [
-  "witness_core_parity",
-  "target_met",
-  "Core parity",
-  "Сверка ядра",
-  "passed_count",
-  "failed_count",
-  "comparable_count",
-  "target_reviewed_count",
-  "next_actions",
-  "coreParityActions",
+  "witness_varga_parity",
+  "Varga parity",
+  "D7-D9-D10",
+  "vargaParitySummary",
+  "vargaParityActions",
+  "varga_summary",
+  "failed_vargas",
+  "missing_vargas",
+  "not_comparable_count",
 ]) {
-  assert(panel.includes(marker), `AccuracyReportPanel missing core parity UI marker: ${marker}`);
+  assert(panel.includes(marker), `AccuracyReportPanel missing varga parity UI marker: ${marker}`);
 }
 
-for (const marker of ["РЎ", "Рџ", "РІ", "Рћ", "Рљ", "В·", "�"]) {
+for (const marker of ["Р РЋ", "Р Сџ", "Р Р†", "Р С›", "Р С™", "Р’В·", "пїЅ"]) {
   assert(!panel.includes(marker), `AccuracyReportPanel contains mojibake marker: ${marker}`);
 }
 
@@ -66,8 +65,8 @@ for (const changed of changedFiles) {
       "backend/apps/calculations/ephemeris.py",
       "backend/apps/calculations/math.py",
     ].includes(changed),
-    `Formula/calculation file changed during accuracy parity UI stage: ${changed}`,
+    `Formula/calculation file changed during varga parity UI stage: ${changed}`,
   );
 }
 
-console.log("Accuracy core parity UI check passed.");
+console.log("Accuracy varga parity UI check passed.");

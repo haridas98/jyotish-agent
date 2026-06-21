@@ -5252,10 +5252,30 @@ function AccuracyReportPanel({
         ? "есть расхождения"
         : "нужны witness-данные"
     : "ожидает";
+  const vargaParity = witnessSummary?.witness_varga_parity;
+  const vargaParitySummary = vargaParity?.summary;
+  const vargaParityCodes = Object.keys(vargaParity?.varga_summary ?? {}).sort();
+  const vargaParityActions = vargaParity?.next_actions.slice(0, 3) ?? [];
+  const vargaParityTargetMet = Boolean(vargaParity?.target_met);
+  const vargaParityNeedsAttention =
+    Boolean(vargaParity?.available) &&
+    (!vargaParityTargetMet ||
+      Boolean(vargaParitySummary?.failed_count) ||
+      Boolean(vargaParitySummary?.missing_witness_count) ||
+      Boolean(vargaParitySummary?.not_reviewed_count) ||
+      Boolean(vargaParitySummary?.not_comparable_count));
+  const vargaParityState = vargaParity?.available
+    ? vargaParityTargetMet
+      ? "С†РµР»СЊ РґРѕСЃС‚РёРіРЅСѓС‚Р°"
+      : vargaParity.status === "diff_open"
+        ? "РµСЃС‚СЊ СЂР°СЃС…РѕР¶РґРµРЅРёСЏ"
+        : "РЅСѓР¶РЅС‹ witness-РґР°РЅРЅС‹Рµ"
+    : "РѕР¶РёРґР°РµС‚";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
     coreParityNeedsAttention ||
+    vargaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5294,6 +5314,15 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Varga parity</span>
+            <strong>{vargaParityState}</strong>
+            {vargaParitySummary ? (
+              <small>
+                D7-D9-D10: {vargaParitySummary.passed_count}/{vargaParitySummary.target_reviewed_count} принято, {vargaParitySummary.failed_count} расх.
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Итог</span>
             <strong>{hasOpenAccuracyItems ? "проверить witness-сверку" : "можно читать карту"}</strong>
           </div>
@@ -5310,6 +5339,15 @@ function AccuracyReportPanel({
                 <small>цель: {coreParitySummary.target_reviewed_count} reviewed witness cases</small>
               </div>
             ) : null}
+            {vargaParityNeedsAttention && vargaParitySummary ? (
+              <div>
+                <span>Varga parity</span>
+                <strong>
+                  {vargaParitySummary.comparable_count} сравнимых, {vargaParitySummary.failed_count} расхождений
+                </strong>
+                <small>{vargaParityCodes.length ? vargaParityCodes.join("/") : "D7-D9-D10"} · цель: {vargaParitySummary.target_reviewed_count} reviewed witness cases</small>
+              </div>
+            ) : null}
             {coreParityActions.map((item) => (
               <div key={"core-parity-" + item.case_id}>
                 <span>Core parity</span>
@@ -5317,6 +5355,23 @@ function AccuracyReportPanel({
                 <small>
                   {[
                     item.status,
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {vargaParityActions.map((item) => (
+              <div key={"varga-parity-" + item.case_id}>
+                <span>Varga parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.failed_vargas.length ? "failed vargas: " + item.failed_vargas.join(", ") : "",
+                    item.missing_vargas.length ? "missing vargas: " + item.missing_vargas.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
                   ]
