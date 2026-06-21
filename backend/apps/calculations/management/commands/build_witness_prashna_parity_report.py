@@ -70,4 +70,3 @@ class Command(BaseCommand):
                     ]
                 )
             )
-
