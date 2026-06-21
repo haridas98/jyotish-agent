@@ -84,6 +84,26 @@ BATCH_ARTIFACTS = {
         "path": ".tmp/witness-review/prashna-parity-report.json",
         "schema": "jyotish-prashna-parity-report-v1",
     },
+    "strengths": {
+        "command": "build_witness_strengths_parity_report",
+        "path": ".tmp/witness-review/strengths-parity-report.json",
+        "schema": "jyotish-strengths-parity-report-v1",
+    },
+    "yoga": {
+        "command": "build_witness_yoga_parity_report",
+        "path": ".tmp/witness-review/yoga-parity-report.json",
+        "schema": "jyotish-yoga-parity-report-v1",
+    },
+    "jaimini_karaka": {
+        "command": "build_witness_jaimini_karaka_parity_report",
+        "path": ".tmp/witness-review/jaimini-karaka-parity-report.json",
+        "schema": "jyotish-jaimini-karaka-parity-report-v1",
+    },
+    "jaimini_varga": {
+        "command": "build_witness_jaimini_varga_parity_report",
+        "path": ".tmp/witness-review/jaimini-varga-parity-report.json",
+        "schema": "jyotish-jaimini-varga-parity-report-v1",
+    },
 }
 
 FORBIDDEN_KEYS = {
@@ -119,6 +139,7 @@ SUMMARY_NUMERIC_FIELDS = [
     "not_comparable_count",
     "target_reviewed_count",
 ]
+_REMOVED = object()
 
 
 def test_p39_committed_artifacts_parse_have_schema_and_safe_summaries():
@@ -177,10 +198,20 @@ def _normalize_for_batch_comparison(report: dict[str, Any]) -> dict[str, Any]:
 def _strip_raw_diagnostic_fields(value: Any) -> Any:
     if isinstance(value, dict):
         return {
-            str(key): _strip_raw_diagnostic_fields(item)
+            str(key): cleaned
             for key, item in value.items()
-            if str(key) not in FORBIDDEN_KEYS
+            if str(key) not in FORBIDDEN_KEYS and not _has_forbidden_text(str(key))
+            for cleaned in [_strip_raw_diagnostic_fields(item)]
+            if cleaned is not _REMOVED
         }
     if isinstance(value, list):
-        return [_strip_raw_diagnostic_fields(item) for item in value]
+        cleaned_items = [_strip_raw_diagnostic_fields(item) for item in value]
+        return [item for item in cleaned_items if item is not _REMOVED]
+    if isinstance(value, str) and _has_forbidden_text(value):
+        return _REMOVED
     return value
+
+
+def _has_forbidden_text(value: str) -> bool:
+    lowered = value.lower()
+    return any(marker in lowered for marker in FORBIDDEN_TEXT)
