@@ -146,6 +146,14 @@ export const relationshipRecipeDefinitions: RelationshipRecipe[] = [
     mutualBasic("rule.relationship.business_partners.mutual"),
   ),
   recipe(
+    "friends",
+    "Friends",
+    "Friends",
+    friendFocus("rule.relationship.friends.a_to_b"),
+    friendFocus("rule.relationship.friends.b_to_a"),
+    mutualBasic("rule.relationship.friends.mutual"),
+  ),
+  recipe(
     "boss_subordinate",
     "Руководитель и подчиненный",
     "Boss and subordinate",
@@ -218,6 +226,14 @@ export const relationshipRecipeDefinitions: RelationshipRecipe[] = [
     mutualBasic("rule.relationship.opponents.mutual"),
   ),
   recipe(
+    "client_supplier",
+    "Client and supplier",
+    "Client and supplier",
+    clientSupplierFocus("rule.relationship.client_supplier.client_to_supplier"),
+    clientSupplierFocus("rule.relationship.client_supplier.supplier_to_client"),
+    mutualBasic("rule.relationship.client_supplier.mutual"),
+  ),
+  recipe(
     "custom",
     "Своя связь",
     "Custom relationship",
@@ -286,6 +302,30 @@ function businessFocus(ruleId: string): RecipeFocus {
     relationshipFactorIds: ["factor.overlay.houses_a_to_b", "factor.overlay.planets_a_to_b", "factor.dasha.overlap"],
     requiredCalculationIds: ["varga.D1", "varga.D10"],
     optionalCalculationIds: ["dasha.vimshottari"],
+    ruleIds: [ruleId],
+    warnings: [missingSource([ruleId])],
+  });
+}
+
+function friendFocus(ruleId: string): RecipeFocus {
+  return focus({
+    primaryEntityIds: ["house.11", "graha.MO"],
+    secondaryEntityIds: ["house.3", "graha.ME"],
+    relationshipFactorIds: ["factor.overlay.houses_a_to_b", "factor.overlay.planets_a_to_b", "factor.moon.relationship"],
+    requiredCalculationIds: ["varga.D1"],
+    optionalCalculationIds: ["dasha.vimshottari", "transits.current"],
+    ruleIds: [ruleId],
+    warnings: [missingSource([ruleId])],
+  });
+}
+
+function clientSupplierFocus(ruleId: string): RecipeFocus {
+  return focus({
+    primaryEntityIds: ["house.7", "house.10", "varga.D10"],
+    secondaryEntityIds: ["house.2", "house.6", "graha.ME", "graha.SA"],
+    relationshipFactorIds: ["factor.overlay.houses_a_to_b", "factor.overlay.planets_a_to_b", "factor.dasha.overlap"],
+    requiredCalculationIds: ["varga.D1", "varga.D10"],
+    optionalCalculationIds: ["dasha.vimshottari", "transits.current"],
     ruleIds: [ruleId],
     warnings: [missingSource([ruleId])],
   });

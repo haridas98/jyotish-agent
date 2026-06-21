@@ -26,6 +26,10 @@ import {
   type RelationshipTypeId,
   type RelationshipUiMode,
 } from "@/astrology";
+import {
+  interactionScenarioPresets,
+  type InteractionScenarioPreset,
+} from "@/astrology/relationships/interactionScenarioPresets";
 import { EntityChip, EntityInspector } from "@/ui";
 
 type Direction = "a_to_b" | "b_to_a";
@@ -200,6 +204,7 @@ export default function InteractionsPage() {
   const [recipeId, setRecipeId] = useState("father_child");
   const [direction, setDirection] = useState<Direction>("a_to_b");
   const [note, setNote] = useState("");
+  const [selectedScenarioPresetId, setSelectedScenarioPresetId] = useState<string | null>(null);
   const [activeEntityId, setActiveEntityId] = useState<EntityId | null>(null);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -287,6 +292,19 @@ export default function InteractionsPage() {
     setDirection("a_to_b");
     setNote(relationship.notes ?? "");
     setStatus("Связь открыта.");
+  }
+
+  function applyScenarioPreset(preset: InteractionScenarioPreset) {
+    const matchingRecipe =
+      recipes.find((recipe) => recipe.relationshipTypeId === preset.relationshipTypeId) ??
+      recipes.find((recipe) => recipe.relationshipTypeId === "custom") ??
+      recipes[0];
+    if (matchingRecipe) setRecipeId(matchingRecipe.id);
+    setDirection(preset.direction);
+    setNote(preset.context);
+    setSelectedScenarioPresetId(preset.id);
+    setEditingRelationshipId(null);
+    setStatus("Scenario preset applied. Edit the note before saving.");
   }
 
   async function deleteRelationship(relationship: ChartRelationship) {
@@ -399,6 +417,25 @@ export default function InteractionsPage() {
 
           <section className="interaction-setup-panel panel">
             <h2>Настройка</h2>
+            <section className="interaction-layer" aria-label="Scenario presets">
+              <h3>Scenario presets</h3>
+              <p className="interaction-muted">Practical question presets</p>
+              <div className="interaction-chip-row">
+                <span>Use case</span>
+                <div>
+                  {interactionScenarioPresets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={preset.id === selectedScenarioPresetId ? "relationship-factor-chip active" : "relationship-factor-chip"}
+                      onClick={() => applyScenarioPreset(preset)}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
             {profiles.length < 2 ? (
               <div className="interaction-empty">
                 <strong>Нужны минимум две карты.</strong>
