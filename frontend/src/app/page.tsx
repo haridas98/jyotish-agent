@@ -5309,6 +5309,26 @@ function AccuracyReportPanel({
         ? "есть расхождения"
         : "нужны witness-данные"
     : "ожидает";
+  const ashtakavargaParity = witnessSummary?.witness_ashtakavarga_parity;
+  const ashtakavargaParitySummary = ashtakavargaParity?.summary;
+  const ashtakavargaParityLayers = Object.keys(ashtakavargaParity?.layer_summary ?? {}).sort();
+  const ashtakavargaParityBodies = Object.keys(ashtakavargaParity?.body_summary ?? {}).sort();
+  const ashtakavargaParityActions = ashtakavargaParity?.next_actions.slice(0, 3) ?? [];
+  const ashtakavargaParityTargetMet = Boolean(ashtakavargaParity?.target_met);
+  const ashtakavargaParityNeedsAttention =
+    Boolean(ashtakavargaParity?.available) &&
+    (!ashtakavargaParityTargetMet ||
+      Boolean(ashtakavargaParitySummary?.failed_count) ||
+      Boolean(ashtakavargaParitySummary?.missing_witness_count) ||
+      Boolean(ashtakavargaParitySummary?.not_reviewed_count) ||
+      Boolean(ashtakavargaParitySummary?.not_comparable_count));
+  const ashtakavargaParityState = ashtakavargaParity?.available
+    ? ashtakavargaParityTargetMet
+      ? "target met"
+      : ashtakavargaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5316,6 +5336,7 @@ function AccuracyReportPanel({
     vargaParityNeedsAttention ||
     dashaParityNeedsAttention ||
     panchangaParityNeedsAttention ||
+    ashtakavargaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5372,6 +5393,15 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Ashtakavarga parity</span>
+            <strong>{ashtakavargaParityState}</strong>
+            {ashtakavargaParitySummary ? (
+              <small>
+                BAV / SAV: {ashtakavargaParitySummary.passed_count}/{ashtakavargaParitySummary.target_reviewed_count} ready, {ashtakavargaParitySummary.failed_count} diff
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5413,6 +5443,17 @@ function AccuracyReportPanel({
                   {dashaParitySummary.comparable_count} сравнимых, {dashaParitySummary.failed_count} расхождений
                 </strong>
                 <small>{dashaParityLevels.length ? dashaParityLevels.join("/") : "Vimshottari MD-AD"} · цель: {dashaParitySummary.target_reviewed_count} reviewed witness cases</small>
+              </div>
+            ) : null}
+            {ashtakavargaParityNeedsAttention && ashtakavargaParitySummary ? (
+              <div>
+                <span>Ashtakavarga parity</span>
+                <strong>
+                  {ashtakavargaParitySummary.comparable_count} comparable, {ashtakavargaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {ashtakavargaParityLayers.length ? ashtakavargaParityLayers.join("/") : "BAV / SAV"}; bodies: {ashtakavargaParityBodies.length}; target: {ashtakavargaParitySummary.target_reviewed_count} reviewed witness cases
+                </small>
               </div>
             ) : null}
             {panchangaParityNeedsAttention && panchangaParitySummary ? (
@@ -5483,6 +5524,24 @@ function AccuracyReportPanel({
                     item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {ashtakavargaParityActions.map((item) => (
+              <div key={"ashtakavarga-parity-" + item.case_id}>
+                <span>Ashtakavarga parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.failed_cells.length ? "failed: " + item.failed_cells.join(", ") : "",
+                    item.missing_cells.length ? "missing: " + item.missing_cells.join(", ") : "",
                   ]
                     .filter(Boolean)
                     .join("; ")}
