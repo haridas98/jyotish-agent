@@ -5271,11 +5271,31 @@ function AccuracyReportPanel({
         ? "есть расхождения"
         : "нужны witness-данные"
     : "ожидает";
+  const dashaParity = witnessSummary?.witness_dasha_parity;
+  const dashaParitySummary = dashaParity?.summary;
+  const dashaParityLevels = Object.keys(dashaParity?.level_summary ?? {}).sort();
+  const dashaParityActions = dashaParity?.next_actions.slice(0, 3) ?? [];
+  const dashaParityTargetMet = Boolean(dashaParity?.target_met);
+  const dashaParityNeedsAttention =
+    Boolean(dashaParity?.available) &&
+    (!dashaParityTargetMet ||
+      Boolean(dashaParitySummary?.failed_count) ||
+      Boolean(dashaParitySummary?.missing_witness_count) ||
+      Boolean(dashaParitySummary?.not_reviewed_count) ||
+      Boolean(dashaParitySummary?.not_comparable_count));
+  const dashaParityState = dashaParity?.available
+    ? dashaParityTargetMet
+      ? "цель достигнута"
+      : dashaParity.status === "diff_open"
+        ? "есть расхождения"
+        : "нужны witness-данные"
+    : "ожидает";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
     coreParityNeedsAttention ||
     vargaParityNeedsAttention ||
+    dashaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5323,6 +5343,15 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Dasha parity</span>
+            <strong>{dashaParityState}</strong>
+            {dashaParitySummary ? (
+              <small>
+                Vimshottari MD-AD: {dashaParitySummary.passed_count}/{dashaParitySummary.target_reviewed_count} принято, {dashaParitySummary.failed_count} расх.
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Итог</span>
             <strong>{hasOpenAccuracyItems ? "проверить witness-сверку" : "можно читать карту"}</strong>
           </div>
@@ -5346,6 +5375,15 @@ function AccuracyReportPanel({
                   {vargaParitySummary.comparable_count} сравнимых, {vargaParitySummary.failed_count} расхождений
                 </strong>
                 <small>{vargaParityCodes.length ? vargaParityCodes.join("/") : "D7-D9-D10"} · цель: {vargaParitySummary.target_reviewed_count} reviewed witness cases</small>
+              </div>
+            ) : null}
+            {dashaParityNeedsAttention && dashaParitySummary ? (
+              <div>
+                <span>Dasha parity</span>
+                <strong>
+                  {dashaParitySummary.comparable_count} сравнимых, {dashaParitySummary.failed_count} расхождений
+                </strong>
+                <small>{dashaParityLevels.length ? dashaParityLevels.join("/") : "Vimshottari MD-AD"} · цель: {dashaParitySummary.target_reviewed_count} reviewed witness cases</small>
               </div>
             ) : null}
             {coreParityActions.map((item) => (
@@ -5372,6 +5410,23 @@ function AccuracyReportPanel({
                     item.status,
                     item.failed_vargas.length ? "failed vargas: " + item.failed_vargas.join(", ") : "",
                     item.missing_vargas.length ? "missing vargas: " + item.missing_vargas.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {dashaParityActions.map((item) => (
+              <div key={"dasha-parity-" + item.case_id}>
+                <span>Dasha parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.failed_levels.length ? "failed levels: " + item.failed_levels.join(", ") : "",
+                    item.missing_levels.length ? "missing levels: " + item.missing_levels.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
                   ]

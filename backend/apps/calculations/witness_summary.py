@@ -62,6 +62,7 @@ def build_witness_summary(
     witness_capture_queue_path: str | Path = "",
     witness_core_parity_report_path: str | Path = "",
     witness_varga_parity_report_path: str | Path = "",
+    witness_dasha_parity_report_path: str | Path = "",
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
@@ -99,6 +100,7 @@ def build_witness_summary(
     witness_capture_queue = _witness_capture_queue(witness_capture_queue_path)
     witness_core_parity = _witness_core_parity(witness_core_parity_report_path)
     witness_varga_parity = _witness_varga_parity(witness_varga_parity_report_path)
+    witness_dasha_parity = _witness_dasha_parity(witness_dasha_parity_report_path)
     open_items = _open_items(jhora, parashara_light)
     witness_contract = _witness_contract_summary(
         jhora_witness_case_path=jhora_witness_case_path,
@@ -116,6 +118,7 @@ def build_witness_summary(
         "witness_capture_queue": witness_capture_queue,
         "witness_core_parity": witness_core_parity,
         "witness_varga_parity": witness_varga_parity,
+        "witness_dasha_parity": witness_dasha_parity,
         "jhora": jhora,
         "parashara_light": parashara_light,
         "open_items": open_items,
@@ -351,6 +354,103 @@ def _varga_parity_next_actions(cases: Any, *, limit: int = 5) -> list[dict[str, 
                 "checked_vargas": _string_list(row.get("checked_vargas")),
                 "failed_vargas": _string_list(row.get("failed_vargas")),
                 "missing_vargas": _string_list(row.get("missing_vargas")),
+                "missing_fields": _string_list(row.get("missing_fields"))[:12],
+                "failed_fields": _string_list(row.get("failed_fields"))[:12],
+            }
+        )
+        if len(actions) >= limit:
+            break
+    return actions
+
+
+def _witness_dasha_parity(path: str | Path) -> dict[str, Any]:
+    source_report = str(path or "")
+    if not source_report or not Path(source_report).exists():
+        return {
+            "available": False,
+            "status": "missing",
+            "source_report": source_report,
+            "schema_version": "",
+            "generated_at": "",
+            "summary": _empty_core_parity_summary(),
+            "level_summary": {},
+            "target_met": False,
+            "next_actions": [],
+        }
+    try:
+        report = json.loads(Path(source_report).read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "available": False,
+            "status": "invalid",
+            "source_report": source_report,
+            "schema_version": "",
+            "generated_at": "",
+            "error": f"{type(exc).__name__}: {str(exc)[:160]}",
+            "summary": _empty_core_parity_summary(),
+            "level_summary": {},
+            "target_met": False,
+            "next_actions": [],
+        }
+    if not isinstance(report, dict) or not isinstance(report.get("summary"), dict):
+        return {
+            "available": False,
+            "status": "invalid",
+            "source_report": source_report,
+            "schema_version": str(report.get("schema_version") if isinstance(report, dict) else ""),
+            "generated_at": "",
+            "error": "invalid dasha parity report schema",
+            "summary": _empty_core_parity_summary(),
+            "level_summary": {},
+            "target_met": False,
+            "next_actions": [],
+        }
+
+    summary = _safe_core_parity_summary(report.get("summary"))
+    metadata = report.get("metadata") if isinstance(report.get("metadata"), dict) else {}
+    return {
+        "available": True,
+        "status": _core_parity_status(summary),
+        "source_report": source_report,
+        "schema_version": str(report.get("schema_version") or ""),
+        "generated_at": str(metadata.get("generated_at") or ""),
+        "summary": summary,
+        "level_summary": _safe_dasha_level_summary(report.get("level_summary")),
+        "target_met": bool(summary.get("target_met")),
+        "next_actions": _dasha_parity_next_actions(report.get("cases")),
+    }
+
+
+def _safe_dasha_level_summary(value: Any) -> dict[str, dict[str, int]]:
+    result: dict[str, dict[str, int]] = {}
+    if not isinstance(value, dict):
+        return result
+    for level, row in value.items():
+        if not isinstance(row, dict):
+            continue
+        result[str(level)] = {
+            "passed": _safe_int(row.get("passed")),
+            "failed": _safe_int(row.get("failed")),
+            "missing": _safe_int(row.get("missing")),
+            "not_comparable": _safe_int(row.get("not_comparable")),
+        }
+    return result
+
+
+def _dasha_parity_next_actions(cases: Any, *, limit: int = 5) -> list[dict[str, Any]]:
+    if not isinstance(cases, list):
+        return []
+    actions: list[dict[str, Any]] = []
+    for row in cases:
+        if not isinstance(row, dict) or row.get("comparison_status") == "passed":
+            continue
+        actions.append(
+            {
+                "case_id": str(row.get("case_id") or ""),
+                "status": str(row.get("comparison_status") or "unknown"),
+                "checked_levels": _string_list(row.get("checked_levels")),
+                "failed_levels": _string_list(row.get("failed_levels")),
+                "missing_levels": _string_list(row.get("missing_levels")),
                 "missing_fields": _string_list(row.get("missing_fields"))[:12],
                 "failed_fields": _string_list(row.get("failed_fields"))[:12],
             }
