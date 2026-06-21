@@ -1923,3 +1923,172 @@ def test_witness_yoga_parity_default_path_matches_command_output(settings):
     normalized = str(settings.WITNESS_YOGA_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/yoga-parity-report.json")
+
+
+def _write_special_points_parity_report(path, *, status: str = "failed", case_id: str = "case-special-points-a"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-special-points-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "layers": ["special_points"],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 1,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "layer_summary": {
+                    "special_points": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                },
+                "point_summary": {
+                    "gulika": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 1 if status == "failed" else 0, "skipped": 0},
+                    "unlisted_point": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["special_points"],
+                        "failed_layers": ["special_points"] if status == "failed" else [],
+                        "missing_layers": [],
+                        "checked_points": ["gulika"],
+                        "matched_points": [] if status == "failed" else ["gulika"],
+                        "failed_points": ["gulika"] if status == "failed" else [],
+                        "missing_points": ["gulika"] if status == "failed" else [],
+                        "skipped_points": ["unlisted_point"],
+                        "failed_fields": ["special_points.gulika.longitude"] if status == "failed" else [],
+                        "missing_fields": [],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "special_points",
+                                "field": "special_points.gulika.longitude",
+                                "expected": 110.0,
+                                "actual": 111.0,
+                                "delta_arcseconds": 3600.0,
+                                "signed_delta_arcseconds": 3600.0,
+                                "corrected_actual": 111.0,
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_special_points_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "special-points-parity-report.json"
+    _write_special_points_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_special_points_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_special_points_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-special-points-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["special_points"]["failed"] == 1
+    assert parity["point_summary"]["gulika"]["failed"] == 1
+    assert parity["point_summary"]["unlisted_point"]["skipped"] == 1
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-special-points-a",
+            "status": "failed",
+            "checked_layers": ["special_points"],
+            "failed_layers": ["special_points"],
+            "missing_layers": [],
+            "checked_points": ["gulika"],
+            "matched_points": [],
+            "failed_points": ["gulika"],
+            "missing_points": ["gulika"],
+            "skipped_points": ["unlisted_point"],
+            "missing_fields": [],
+            "failed_fields": ["special_points.gulika.longitude"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "delta_arcseconds",
+        "signed_delta_arcseconds",
+        "corrected_actual",
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_special_points_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_special_points_parity_report_path=tmp_path / "missing-special-points-parity.json",
+    )
+    assert missing_summary["witness_special_points_parity"]["available"] is False
+    assert missing_summary["witness_special_points_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-special-points-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_special_points_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_special_points_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_special_points_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-special-points-parity.json"
+    second_path = tmp_path / "second-special-points-parity.json"
+    _write_special_points_parity_report(first_path, case_id="first-special-points-case")
+    _write_special_points_parity_report(second_path, case_id="second-special-points-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_SPECIAL_POINTS_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_SPECIAL_POINTS_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_special_points_parity"]["next_actions"][0]["case_id"] == "first-special-points-case"
+    assert second_response.data["witness_special_points_parity"]["next_actions"][0]["case_id"] == "second-special-points-case"
+
+
+def test_witness_special_points_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_SPECIAL_POINTS_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/special-points-parity-report.json")

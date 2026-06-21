@@ -1190,6 +1190,58 @@ export type WitnessSummary = {
     }>;
     error?: string;
   };
+  witness_special_points_parity: {
+    available: boolean;
+    status: string;
+    source_report: string;
+    schema_version: string;
+    generated_at: string;
+    summary: {
+      case_count: number;
+      comparable_count: number;
+      passed_count: number;
+      failed_count: number;
+      missing_witness_count: number;
+      not_reviewed_count: number;
+      not_comparable_count: number;
+      target_reviewed_count: number;
+      target_met: boolean;
+    };
+    layer_summary: Record<
+      string,
+      {
+        passed: number;
+        failed: number;
+        missing: number;
+        not_comparable: number;
+      }
+    >;
+    point_summary: Record<
+      string,
+      {
+        passed: number;
+        failed: number;
+        missing: number;
+        skipped: number;
+      }
+    >;
+    target_met: boolean;
+    next_actions: Array<{
+      case_id: string;
+      status: string;
+      checked_layers: string[];
+      failed_layers: string[];
+      missing_layers: string[];
+      checked_points: string[];
+      matched_points: string[];
+      failed_points: string[];
+      missing_points: string[];
+      skipped_points: string[];
+      missing_fields: string[];
+      failed_fields: string[];
+    }>;
+    error?: string;
+  };
   jhora: {
     available: boolean;
     status: string;

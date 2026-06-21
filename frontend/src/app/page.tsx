@@ -5371,6 +5371,27 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const specialPointsParity = witnessSummary?.witness_special_points_parity;
+  const specialPointsParitySummary = specialPointsParity?.summary;
+  const specialPointsParityLayers = Object.keys(specialPointsParity?.layer_summary ?? {}).sort();
+  const specialPointsParityNames = Object.keys(specialPointsParity?.point_summary ?? {}).sort();
+  const specialPointsParitySkippedCount = Object.values(specialPointsParity?.point_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const specialPointsParityActions = specialPointsParity?.next_actions.slice(0, 3) ?? [];
+  const specialPointsParityTargetMet = Boolean(specialPointsParity?.target_met);
+  const specialPointsParityNeedsAttention =
+    Boolean(specialPointsParity?.available) &&
+    (!specialPointsParityTargetMet ||
+      Boolean(specialPointsParitySummary?.failed_count) ||
+      Boolean(specialPointsParitySummary?.missing_witness_count) ||
+      Boolean(specialPointsParitySummary?.not_reviewed_count) ||
+      Boolean(specialPointsParitySummary?.not_comparable_count));
+  const specialPointsParityState = specialPointsParity?.available
+    ? specialPointsParityTargetMet
+      ? "target met"
+      : specialPointsParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5381,6 +5402,7 @@ function AccuracyReportPanel({
     ashtakavargaParityNeedsAttention ||
     strengthsParityNeedsAttention ||
     yogaParityNeedsAttention ||
+    specialPointsParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5465,6 +5487,16 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Special points parity</span>
+            <strong>{specialPointsParityState}</strong>
+            {specialPointsParitySummary ? (
+              <small>
+                Upagrahas and lagnas: {specialPointsParitySummary.passed_count}/{specialPointsParitySummary.target_reviewed_count} ready, {specialPointsParitySummary.failed_count} diff
+                {specialPointsParitySkippedCount ? `, skipped: ${specialPointsParitySkippedCount}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5538,6 +5570,17 @@ function AccuracyReportPanel({
                 </strong>
                 <small>
                   {yogaParityLayers.length ? yogaParityLayers.join("/") : "Active yogas"}; yogas: {yogaParityNames.length}; skipped: {yogaParitySkippedCount}; target: {yogaParitySummary.target_reviewed_count} reviewed witness cases
+                </small>
+              </div>
+            ) : null}
+            {specialPointsParityNeedsAttention && specialPointsParitySummary ? (
+              <div>
+                <span>Special points parity</span>
+                <strong>
+                  {specialPointsParitySummary.comparable_count} comparable, {specialPointsParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {specialPointsParityLayers.length ? specialPointsParityLayers.join("/") : "Upagrahas and lagnas"}; points: {specialPointsParityNames.length}; skipped: {specialPointsParitySkippedCount}; target: {specialPointsParitySummary.target_reviewed_count} reviewed witness cases
                 </small>
               </div>
             ) : null}
@@ -5666,6 +5709,28 @@ function AccuracyReportPanel({
                     item.failed_yogas.length ? "failed yogas: " + item.failed_yogas.join(", ") : "",
                     item.missing_yogas.length ? "missing yogas: " + item.missing_yogas.join(", ") : "",
                     item.skipped_yogas.length ? "skipped yogas: " + item.skipped_yogas.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {specialPointsParityActions.map((item) => (
+              <div key={"special-points-parity-" + item.case_id}>
+                <span>Special points parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_points.length ? "checked points: " + item.checked_points.join(", ") : "",
+                    item.failed_points.length ? "failed points: " + item.failed_points.join(", ") : "",
+                    item.missing_points.length ? "missing points: " + item.missing_points.join(", ") : "",
+                    item.skipped_points.length ? "skipped points: " + item.skipped_points.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
                   ]
