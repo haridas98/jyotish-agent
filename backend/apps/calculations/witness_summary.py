@@ -65,6 +65,7 @@ def build_witness_summary(
     witness_dasha_parity_report_path: str | Path = "",
     witness_panchanga_parity_report_path: str | Path = "",
     witness_ashtakavarga_parity_report_path: str | Path = "",
+    witness_strengths_parity_report_path: str | Path = "",
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
@@ -105,6 +106,7 @@ def build_witness_summary(
     witness_dasha_parity = _witness_dasha_parity(witness_dasha_parity_report_path)
     witness_panchanga_parity = _witness_panchanga_parity(witness_panchanga_parity_report_path)
     witness_ashtakavarga_parity = _witness_ashtakavarga_parity(witness_ashtakavarga_parity_report_path)
+    witness_strengths_parity = _witness_strengths_parity(witness_strengths_parity_report_path)
     open_items = _open_items(jhora, parashara_light)
     witness_contract = _witness_contract_summary(
         jhora_witness_case_path=jhora_witness_case_path,
@@ -125,6 +127,7 @@ def build_witness_summary(
         "witness_dasha_parity": witness_dasha_parity,
         "witness_panchanga_parity": witness_panchanga_parity,
         "witness_ashtakavarga_parity": witness_ashtakavarga_parity,
+        "witness_strengths_parity": witness_strengths_parity,
         "jhora": jhora,
         "parashara_light": parashara_light,
         "open_items": open_items,
@@ -655,6 +658,96 @@ def _ashtakavarga_parity_next_actions(cases: Any, *, limit: int = 5) -> list[dic
                 "missing_layers": _string_list(row.get("missing_layers")),
                 "missing_cells": _string_list(row.get("missing_cells"))[:12],
                 "failed_cells": _string_list(row.get("failed_cells"))[:12],
+            }
+        )
+        if len(actions) >= limit:
+            break
+    return actions
+
+
+def _witness_strengths_parity(path: str | Path) -> dict[str, Any]:
+    source_report = str(path or "")
+    if not source_report or not Path(source_report).exists():
+        return {
+            "available": False,
+            "status": "missing",
+            "source_report": source_report,
+            "schema_version": "",
+            "generated_at": "",
+            "summary": _empty_core_parity_summary(),
+            "layer_summary": {},
+            "body_summary": {},
+            "target_met": False,
+            "profile_sensitive_layers": [],
+            "next_actions": [],
+        }
+    try:
+        report = json.loads(Path(source_report).read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "available": False,
+            "status": "invalid",
+            "source_report": source_report,
+            "schema_version": "",
+            "generated_at": "",
+            "error": f"{type(exc).__name__}: {str(exc)[:160]}",
+            "summary": _empty_core_parity_summary(),
+            "layer_summary": {},
+            "body_summary": {},
+            "target_met": False,
+            "profile_sensitive_layers": [],
+            "next_actions": [],
+        }
+    if not isinstance(report, dict) or not isinstance(report.get("summary"), dict):
+        return {
+            "available": False,
+            "status": "invalid",
+            "source_report": source_report,
+            "schema_version": str(report.get("schema_version") if isinstance(report, dict) else ""),
+            "generated_at": "",
+            "error": "invalid strengths parity report schema",
+            "summary": _empty_core_parity_summary(),
+            "layer_summary": {},
+            "body_summary": {},
+            "target_met": False,
+            "profile_sensitive_layers": [],
+            "next_actions": [],
+        }
+
+    summary = _safe_core_parity_summary(report.get("summary"))
+    metadata = report.get("metadata") if isinstance(report.get("metadata"), dict) else {}
+    return {
+        "available": True,
+        "status": _core_parity_status(summary),
+        "source_report": source_report,
+        "schema_version": str(report.get("schema_version") or ""),
+        "generated_at": str(metadata.get("generated_at") or ""),
+        "summary": summary,
+        "layer_summary": _safe_parity_count_summary(report.get("layer_summary")),
+        "body_summary": _safe_parity_count_summary(report.get("body_summary")),
+        "target_met": bool(summary.get("target_met")),
+        "profile_sensitive_layers": _string_list(metadata.get("profile_sensitive_layers")),
+        "next_actions": _strengths_parity_next_actions(report.get("cases")),
+    }
+
+
+def _strengths_parity_next_actions(cases: Any, *, limit: int = 5) -> list[dict[str, Any]]:
+    if not isinstance(cases, list):
+        return []
+    actions: list[dict[str, Any]] = []
+    for row in cases:
+        if not isinstance(row, dict) or row.get("comparison_status") == "passed":
+            continue
+        actions.append(
+            {
+                "case_id": str(row.get("case_id") or ""),
+                "status": str(row.get("comparison_status") or "unknown"),
+                "checked_layers": _string_list(row.get("checked_layers")),
+                "failed_layers": _string_list(row.get("failed_layers")),
+                "missing_layers": _string_list(row.get("missing_layers")),
+                "checked_fields": _string_list(row.get("checked_fields"))[:12],
+                "missing_fields": _string_list(row.get("missing_fields"))[:12],
+                "failed_fields": _string_list(row.get("failed_fields"))[:12],
             }
         )
         if len(actions) >= limit:

@@ -1602,3 +1602,161 @@ def test_witness_ashtakavarga_parity_default_path_matches_command_output(setting
     normalized = str(settings.WITNESS_ASHTAKAVARGA_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/ashtakavarga-parity-report.json")
+
+
+def _write_strengths_parity_report(path, *, status: str = "failed", case_id: str = "case-strengths-a"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-strengths-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "layers": ["vimshopaka", "shadbala"],
+                    "profile_sensitive_layers": ["shadbala"],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 1,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "layer_summary": {
+                    "vimshopaka": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                    "shadbala": {"passed": 1, "failed": 0, "missing": 1, "not_comparable": 0},
+                },
+                "body_summary": {
+                    "Surya": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                    "Chandra": {"passed": 1, "failed": 0, "missing": 0, "not_comparable": 0},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["vimshopaka", "shadbala"],
+                        "failed_layers": ["vimshopaka"] if status == "failed" else [],
+                        "missing_layers": ["shadbala"] if status != "failed" else [],
+                        "checked_fields": ["vimshopaka.Surya.shadvarga", "shadbala.Surya.total_virupas"],
+                        "failed_fields": ["vimshopaka.Surya.shadvarga"] if status == "failed" else [],
+                        "missing_fields": ["calculated.shadbala.Surya.total_virupas"] if status != "failed" else [],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "vimshopaka",
+                                "body": "Surya",
+                                "field": "vimshopaka.Surya.shadvarga",
+                                "expected": 12.52,
+                                "actual": 12.5,
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_strengths_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "strengths-parity-report.json"
+    _write_strengths_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_strengths_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_strengths_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-strengths-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["vimshopaka"]["failed"] == 1
+    assert parity["body_summary"]["Surya"]["failed"] == 1
+    assert parity["target_met"] is False
+    assert parity["profile_sensitive_layers"] == ["shadbala"]
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-strengths-a",
+            "status": "failed",
+            "checked_layers": ["vimshopaka", "shadbala"],
+            "failed_layers": ["vimshopaka"],
+            "missing_layers": [],
+            "checked_fields": ["vimshopaka.Surya.shadvarga", "shadbala.Surya.total_virupas"],
+            "missing_fields": [],
+            "failed_fields": ["vimshopaka.Surya.shadvarga"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_strengths_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_strengths_parity_report_path=tmp_path / "missing-strengths-parity.json",
+    )
+    assert missing_summary["witness_strengths_parity"]["available"] is False
+    assert missing_summary["witness_strengths_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-strengths-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_strengths_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_strengths_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_strengths_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-strengths-parity.json"
+    second_path = tmp_path / "second-strengths-parity.json"
+    _write_strengths_parity_report(first_path, case_id="first-strengths-case")
+    _write_strengths_parity_report(second_path, case_id="second-strengths-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_STRENGTHS_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_STRENGTHS_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_strengths_parity"]["next_actions"][0]["case_id"] == "first-strengths-case"
+    assert second_response.data["witness_strengths_parity"]["next_actions"][0]["case_id"] == "second-strengths-case"
+
+
+def test_witness_strengths_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_STRENGTHS_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/strengths-parity-report.json")

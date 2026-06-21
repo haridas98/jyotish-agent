@@ -5329,6 +5329,27 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const strengthsParity = witnessSummary?.witness_strengths_parity;
+  const strengthsParitySummary = strengthsParity?.summary;
+  const strengthsParityLayers = Object.keys(strengthsParity?.layer_summary ?? {}).sort();
+  const strengthsParityBodies = Object.keys(strengthsParity?.body_summary ?? {}).sort();
+  const strengthsParityProfileSensitive = strengthsParity?.profile_sensitive_layers ?? [];
+  const strengthsParityActions = strengthsParity?.next_actions.slice(0, 3) ?? [];
+  const strengthsParityTargetMet = Boolean(strengthsParity?.target_met);
+  const strengthsParityNeedsAttention =
+    Boolean(strengthsParity?.available) &&
+    (!strengthsParityTargetMet ||
+      Boolean(strengthsParitySummary?.failed_count) ||
+      Boolean(strengthsParitySummary?.missing_witness_count) ||
+      Boolean(strengthsParitySummary?.not_reviewed_count) ||
+      Boolean(strengthsParitySummary?.not_comparable_count));
+  const strengthsParityState = strengthsParity?.available
+    ? strengthsParityTargetMet
+      ? "target met"
+      : strengthsParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5337,6 +5358,7 @@ function AccuracyReportPanel({
     dashaParityNeedsAttention ||
     panchangaParityNeedsAttention ||
     ashtakavargaParityNeedsAttention ||
+    strengthsParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5402,6 +5424,15 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Strengths parity</span>
+            <strong>{strengthsParityState}</strong>
+            {strengthsParitySummary ? (
+              <small>
+                Vimshopaka / Shadbala: {strengthsParitySummary.passed_count}/{strengthsParitySummary.target_reviewed_count} ready, {strengthsParitySummary.failed_count} diff
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5453,6 +5484,17 @@ function AccuracyReportPanel({
                 </strong>
                 <small>
                   {ashtakavargaParityLayers.length ? ashtakavargaParityLayers.join("/") : "BAV / SAV"}; bodies: {ashtakavargaParityBodies.length}; target: {ashtakavargaParitySummary.target_reviewed_count} reviewed witness cases
+                </small>
+              </div>
+            ) : null}
+            {strengthsParityNeedsAttention && strengthsParitySummary ? (
+              <div>
+                <span>Strengths parity</span>
+                <strong>
+                  {strengthsParitySummary.comparable_count} comparable, {strengthsParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {strengthsParityLayers.length ? strengthsParityLayers.join("/") : "Vimshopaka / Shadbala"}; bodies: {strengthsParityBodies.length}; profile-sensitive: {strengthsParityProfileSensitive.length ? strengthsParityProfileSensitive.join(", ") : "none"}; target: {strengthsParitySummary.target_reviewed_count} reviewed witness cases
                 </small>
               </div>
             ) : null}
@@ -5542,6 +5584,25 @@ function AccuracyReportPanel({
                     item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
                     item.failed_cells.length ? "failed: " + item.failed_cells.join(", ") : "",
                     item.missing_cells.length ? "missing: " + item.missing_cells.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {strengthsParityActions.map((item) => (
+              <div key={"strengths-parity-" + item.case_id}>
+                <span>Strengths parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
                   ]
                     .filter(Boolean)
                     .join("; ")}
