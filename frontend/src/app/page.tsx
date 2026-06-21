@@ -5455,6 +5455,28 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const transitCoordinateParity = witnessSummary?.witness_transit_coordinate_parity;
+  const transitCoordinateParitySummary = transitCoordinateParity?.summary;
+  const transitCoordinateParityLayers = Object.keys(transitCoordinateParity?.layer_summary ?? {}).sort();
+  const transitCoordinateParityBodies = Object.keys(transitCoordinateParity?.body_summary ?? {}).sort();
+  const transitCoordinateParitySkippedCount = Object.values(transitCoordinateParity?.body_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const transitCoordinateParityActions = transitCoordinateParity?.next_actions.slice(0, 3) ?? [];
+  const transitCoordinateParityTolerance = transitCoordinateParity?.tolerance_profile?.["long" + "itude_arcseconds"];
+  const transitCoordinateParityTargetMet = Boolean(transitCoordinateParity?.target_met);
+  const transitCoordinateParityNeedsAttention =
+    Boolean(transitCoordinateParity?.available) &&
+    (!transitCoordinateParityTargetMet ||
+      Boolean(transitCoordinateParitySummary?.failed_count) ||
+      Boolean(transitCoordinateParitySummary?.missing_witness_count) ||
+      Boolean(transitCoordinateParitySummary?.not_reviewed_count) ||
+      Boolean(transitCoordinateParitySummary?.not_comparable_count));
+  const transitCoordinateParityState = transitCoordinateParity?.available
+    ? transitCoordinateParityTargetMet
+      ? "target met"
+      : transitCoordinateParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5469,6 +5491,7 @@ function AccuracyReportPanel({
     argalaParityNeedsAttention ||
     avasthaParityNeedsAttention ||
     drishtiParityNeedsAttention ||
+    transitCoordinateParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5593,6 +5616,17 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Transit coordinate parity</span>
+            <strong>{transitCoordinateParityState}</strong>
+            {transitCoordinateParitySummary ? (
+              <small>
+                Lagna / graha coordinates: {transitCoordinateParitySummary.passed_count}/{transitCoordinateParitySummary.target_reviewed_count} ready, {transitCoordinateParitySummary.failed_count} diff
+                {transitCoordinateParitySkippedCount ? `, skipped: ${transitCoordinateParitySkippedCount}` : ""}
+                {typeof transitCoordinateParityTolerance === "number" ? `, tolerance: ${transitCoordinateParityTolerance} arcsec` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5710,6 +5744,18 @@ function AccuracyReportPanel({
                 </strong>
                 <small>
                   {drishtiParityLayers.length ? drishtiParityLayers.join("/") : "Graha / Rashi aspects"}; aspects: {drishtiParityNames.length}; skipped: {drishtiParitySkippedCount}; target: {drishtiParitySummary.target_reviewed_count} reviewed witness cases
+                </small>
+              </div>
+            ) : null}
+            {transitCoordinateParityNeedsAttention && transitCoordinateParitySummary ? (
+              <div>
+                <span>Transit coordinate parity</span>
+                <strong>
+                  {transitCoordinateParitySummary.comparable_count} comparable, {transitCoordinateParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {transitCoordinateParityLayers.length ? transitCoordinateParityLayers.join("/") : "Lagna / graha coordinates"}; bodies: {transitCoordinateParityBodies.length}; skipped: {transitCoordinateParitySkippedCount}; target: {transitCoordinateParitySummary.target_reviewed_count} reviewed witness cases
+                  {typeof transitCoordinateParityTolerance === "number" ? `; tolerance: ${transitCoordinateParityTolerance} arcsec` : ""}
                 </small>
               </div>
             ) : null}
@@ -5927,6 +5973,31 @@ function AccuracyReportPanel({
                     item.failed_aspects.length ? "failed aspects: " + item.failed_aspects.join(", ") : "",
                     item.missing_aspects.length ? "missing aspects: " + item.missing_aspects.join(", ") : "",
                     item.skipped_aspects.length ? "skipped aspects: " + item.skipped_aspects.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {transitCoordinateParityActions.map((item) => (
+              <div key={"transit-coordinate-parity-" + item.case_id}>
+                <span>Transit coordinate parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_bodies.length ? "checked bodies: " + item.checked_bodies.join(", ") : "",
+                    item.matched_bodies.length ? "matched bodies: " + item.matched_bodies.join(", ") : "",
+                    item.failed_bodies.length ? "failed bodies: " + item.failed_bodies.join(", ") : "",
+                    item.missing_bodies.length ? "missing bodies: " + item.missing_bodies.join(", ") : "",
+                    item.skipped_bodies.length ? "skipped bodies: " + item.skipped_bodies.join(", ") : "",
                     item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",

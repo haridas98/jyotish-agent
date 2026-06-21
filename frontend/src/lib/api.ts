@@ -1399,6 +1399,61 @@ export type WitnessSummary = {
     }>;
     error?: string;
   };
+  witness_transit_coordinate_parity: {
+    available: boolean;
+    status: string;
+    source_report: string;
+    schema_version: string;
+    generated_at: string;
+    summary: {
+      case_count: number;
+      comparable_count: number;
+      passed_count: number;
+      failed_count: number;
+      missing_witness_count: number;
+      not_reviewed_count: number;
+      not_comparable_count: number;
+      target_reviewed_count: number;
+      target_met: boolean;
+    };
+    layer_summary: Record<
+      string,
+      {
+        passed: number;
+        failed: number;
+        missing: number;
+        not_comparable: number;
+      }
+    >;
+    body_summary: Record<
+      string,
+      {
+        passed: number;
+        failed: number;
+        missing: number;
+        skipped: number;
+      }
+    >;
+    target_met: boolean;
+    tolerance_profile: Record<string, number>;
+    next_actions: Array<{
+      case_id: string;
+      status: string;
+      checked_layers: string[];
+      failed_layers: string[];
+      missing_layers: string[];
+      checked_bodies: string[];
+      matched_bodies: string[];
+      failed_bodies: string[];
+      missing_bodies: string[];
+      skipped_bodies: string[];
+      checked_fields: string[];
+      failed_fields: string[];
+      missing_fields: string[];
+      skipped_fields: string[];
+    }>;
+    error?: string;
+  };
   jhora: {
     available: boolean;
     status: string;

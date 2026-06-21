@@ -44,6 +44,7 @@
     "test:accuracy-argala-parity": "node scripts/check-accuracy-argala-parity-ui.mjs",
     "test:accuracy-avastha-parity": "node scripts/check-accuracy-avastha-parity-ui.mjs",
     "test:accuracy-drishti-parity": "node scripts/check-accuracy-drishti-parity-ui.mjs",
+    "test:accuracy-transit-coordinate-parity": "node scripts/check-accuracy-transit-coordinate-parity-ui.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",

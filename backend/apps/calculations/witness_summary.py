@@ -71,6 +71,7 @@ def build_witness_summary(
     witness_argala_parity_report_path: str | Path = "",
     witness_avastha_parity_report_path: str | Path = "",
     witness_drishti_parity_report_path: str | Path = "",
+    witness_transit_coordinate_parity_report_path: str | Path = "",
     parashara_light_packet_path: str | Path,
     parashara_light_manual_values_path: str | Path = "",
     parashara_light_profile_report_path: str | Path = "",
@@ -117,6 +118,9 @@ def build_witness_summary(
     witness_argala_parity = _witness_argala_parity(witness_argala_parity_report_path)
     witness_avastha_parity = _witness_avastha_parity(witness_avastha_parity_report_path)
     witness_drishti_parity = _witness_drishti_parity(witness_drishti_parity_report_path)
+    witness_transit_coordinate_parity = _witness_transit_coordinate_parity(
+        witness_transit_coordinate_parity_report_path
+    )
     open_items = _open_items(jhora, parashara_light)
     witness_contract = _witness_contract_summary(
         jhora_witness_case_path=jhora_witness_case_path,
@@ -143,6 +147,7 @@ def build_witness_summary(
         "witness_argala_parity": witness_argala_parity,
         "witness_avastha_parity": witness_avastha_parity,
         "witness_drishti_parity": witness_drishti_parity,
+        "witness_transit_coordinate_parity": witness_transit_coordinate_parity,
         "jhora": jhora,
         "parashara_light": parashara_light,
         "open_items": open_items,
@@ -1290,6 +1295,118 @@ def _drishti_parity_next_actions(cases: Any, *, limit: int = 5) -> list[dict[str
                 "failed_aspects": _string_list(row.get("failed_aspects"))[:12],
                 "missing_aspects": _string_list(row.get("missing_aspects"))[:12],
                 "skipped_aspects": _string_list(row.get("skipped_aspects"))[:12],
+                "checked_fields": _string_list(row.get("checked_fields"))[:12],
+                "failed_fields": _string_list(row.get("failed_fields"))[:12],
+                "missing_fields": _string_list(row.get("missing_fields"))[:12],
+                "skipped_fields": _string_list(row.get("skipped_fields"))[:12],
+            }
+        )
+        if len(actions) >= limit:
+            break
+    return actions
+
+
+def _witness_transit_coordinate_parity(path: str | Path) -> dict[str, Any]:
+    source_report = str(path or "")
+    if not source_report or not Path(source_report).exists():
+        return {
+            "available": False,
+            "status": "missing",
+            "source_report": source_report,
+            "schema_version": "",
+            "generated_at": "",
+            "summary": _empty_core_parity_summary(),
+            "layer_summary": {},
+            "body_summary": {},
+            "target_met": False,
+            "tolerance_profile": {},
+            "next_actions": [],
+        }
+    try:
+        report = json.loads(Path(source_report).read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "available": False,
+            "status": "invalid",
+            "source_report": source_report,
+            "schema_version": "",
+            "generated_at": "",
+            "error": f"{type(exc).__name__}: {str(exc)[:160]}",
+            "summary": _empty_core_parity_summary(),
+            "layer_summary": {},
+            "body_summary": {},
+            "target_met": False,
+            "tolerance_profile": {},
+            "next_actions": [],
+        }
+    if not isinstance(report, dict) or not isinstance(report.get("summary"), dict):
+        return {
+            "available": False,
+            "status": "invalid",
+            "source_report": source_report,
+            "schema_version": str(report.get("schema_version") if isinstance(report, dict) else ""),
+            "generated_at": "",
+            "error": "invalid transit coordinate parity report schema",
+            "summary": _empty_core_parity_summary(),
+            "layer_summary": {},
+            "body_summary": {},
+            "target_met": False,
+            "tolerance_profile": {},
+            "next_actions": [],
+        }
+
+    summary = _safe_core_parity_summary(report.get("summary"))
+    metadata = report.get("metadata") if isinstance(report.get("metadata"), dict) else {}
+    return {
+        "available": True,
+        "status": _core_parity_status(summary),
+        "source_report": source_report,
+        "schema_version": str(report.get("schema_version") or ""),
+        "generated_at": str(metadata.get("generated_at") or ""),
+        "summary": summary,
+        "layer_summary": _safe_parity_count_summary(report.get("layer_summary")),
+        "body_summary": _safe_transit_coordinate_body_summary(report.get("body_summary")),
+        "target_met": bool(summary.get("target_met")),
+        "tolerance_profile": _safe_float_map(metadata.get("tolerance_profile")),
+        "next_actions": _transit_coordinate_parity_next_actions(report.get("cases")),
+    }
+
+
+def _safe_transit_coordinate_body_summary(value: Any) -> dict[str, dict[str, int]]:
+    result: dict[str, dict[str, int]] = {}
+    if not isinstance(value, dict):
+        return result
+    for key, row in value.items():
+        if not isinstance(row, dict):
+            continue
+        result[str(key)] = {
+            "passed": _safe_int(row.get("passed")),
+            "failed": _safe_int(row.get("failed")),
+            "missing": _safe_int(row.get("missing")),
+            "skipped": _safe_int(row.get("skipped")),
+        }
+    return result
+
+
+def _transit_coordinate_parity_next_actions(cases: Any, *, limit: int = 5) -> list[dict[str, Any]]:
+    if not isinstance(cases, list):
+        return []
+    actions: list[dict[str, Any]] = []
+    for row in cases:
+        if not isinstance(row, dict) or row.get("comparison_status") == "passed":
+            continue
+        actions.append(
+            {
+                "case_id": str(row.get("case_id") or ""),
+                "status": str(row.get("comparison_status") or "unknown"),
+                "checked_layers": _string_list(row.get("checked_layers")),
+                "failed_layers": _string_list(row.get("failed_layers")),
+                "missing_layers": _string_list(row.get("missing_layers")),
+                "checked_bodies": _string_list(row.get("checked_bodies"))[:12],
+                "matched_bodies": _string_list(row.get("matched_bodies"))[:12],
+                "failed_bodies": _string_list(row.get("failed_bodies"))[:12],
+                "missing_bodies": _string_list(row.get("missing_bodies"))[:12],
+                "skipped_bodies": _string_list(row.get("skipped_bodies"))[:12],
                 "checked_fields": _string_list(row.get("checked_fields"))[:12],
                 "failed_fields": _string_list(row.get("failed_fields"))[:12],
                 "missing_fields": _string_list(row.get("missing_fields"))[:12],
