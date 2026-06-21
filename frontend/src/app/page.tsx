@@ -6561,7 +6561,7 @@ function AccuracyReportPanel({
 }
 
 
-export default function Home() {
+export default function Home({ initialAnalysisTab = "overview" }: { initialAnalysisTab?: AnalysisTab } = {}) {
   const [birthDate, setBirthDate] = useState(() => localDateInputValue());
   const [birthTime, setBirthTime] = useState(() => localTimeInputValue());
   const [gender, setGender] = useState<"male" | "female" | "unknown">("male");
@@ -6602,7 +6602,7 @@ export default function Home() {
   const [chartViewHydrated, setChartViewHydrated] = useState(false);
   const [showBirthEditor, setShowBirthEditor] = useState(false);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>("overview");
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState<AnalysisTab>(initialAnalysisTab);
   const [analysisWorkspaceOpen, setAnalysisWorkspaceOpen] = useState(false);
   const [birthReport, setBirthReport] = useState<BirthReport["report"] | null>(null);
   const [draftAnalysis, setDraftAnalysis] = useState<GeneratedDraftAnalysis | null>(null);
