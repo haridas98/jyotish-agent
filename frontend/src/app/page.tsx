@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreReviewPreflightBlocker, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5672,6 +5672,7 @@ function AccuracyReportPanel({
   const releaseGateActionSummary = buildReleaseGateActionSummary(parityCollectionChecklistRows);
   const collectionPlanRunbook = buildCollectionPlanSnapshotRunbook(parityCollectionChecklistRows, releaseGateActionSummary);
   const artifactAvailabilityCheckpoint = buildArtifactAvailabilityCheckpoint(parityCollectionChecklistRows, releaseGateActionSummary);
+  const coreReviewPreflightBlocker = buildCoreReviewPreflightBlocker();
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5779,6 +5780,21 @@ function AccuracyReportPanel({
             <small>
               collect reports: {artifactAvailabilityCheckpoint.totals.collectReports} - review witness rows: {artifactAvailabilityCheckpoint.totals.reviewRows} - ready/demo rows: {artifactAvailabilityCheckpoint.totals.readyDemo}
             </small>
+          </div>
+          <h3>Core review preflight</h3>
+          <p>{coreReviewPreflightBlocker.domainKey}: {coreReviewPreflightBlocker.detailCopy}; {coreReviewPreflightBlocker.statusCopy}.</p>
+          <small>
+            not-reviewed witness rows: {coreReviewPreflightBlocker.notReviewedRows} - {coreReviewPreflightBlocker.sourceFamilyLabel}: {coreReviewPreflightBlocker.sourceFamilyCoverage} - release: {coreReviewPreflightBlocker.releaseGateStatus}
+          </small>
+          <div>
+            <span>safe command families</span>
+            <strong>{coreReviewPreflightBlocker.sourceFamilyCoverage}</strong>
+            <small>{coreReviewPreflightBlocker.safeCommandFamilies.join(" - ")}</small>
+          </div>
+          <div>
+            <span>review gate</span>
+            <strong>{coreReviewPreflightBlocker.releaseGateStatus}</strong>
+            <small>{coreReviewPreflightBlocker.cautionCopy}</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">

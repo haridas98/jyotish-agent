@@ -66,6 +66,7 @@
     "test:accuracy-release-gate-actions": "node scripts/check-accuracy-release-gate-actions.mjs",
     "test:accuracy-collection-plan-runbook": "node scripts/check-accuracy-collection-plan-runbook.mjs",
     "test:accuracy-artifact-availability-checkpoint": "node scripts/check-accuracy-artifact-availability-checkpoint.mjs",
+    "test:accuracy-core-review-preflight": "node scripts/check-accuracy-core-review-preflight.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",

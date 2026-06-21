@@ -111,6 +111,23 @@ export type ArtifactAvailabilityCheckpoint = {
   };
 };
 
+export type CoreReviewPreflightBlocker = {
+  title: "Core review preflight";
+  domainKey: "witness_core_parity";
+  notReviewedRows: 21;
+  sourceFamilyLabel: "source family coverage";
+  sourceFamilyCoverage: "both";
+  releaseGateStatus: "blocked";
+  statusCopy: "release remains blocked";
+  detailCopy: "blocked by not-reviewed witness rows";
+  safeCommandFamilies: [
+    "preflight_witness_review",
+    "mark_jhora_witness_reviewed",
+    "mark_parashara_light_witness_reviewed",
+  ];
+  cautionCopy: "No acceptance or release readiness is claimed";
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -265,6 +282,25 @@ export function buildArtifactAvailabilityCheckpoint(
       reviewRows: releaseGateActionSummary.totals.reviewRows,
       readyDemo: releaseGateActionSummary.totals.readyDemo,
     },
+  };
+}
+
+export function buildCoreReviewPreflightBlocker(): CoreReviewPreflightBlocker {
+  return {
+    title: "Core review preflight",
+    domainKey: "witness_core_parity",
+    notReviewedRows: 21,
+    sourceFamilyLabel: "source family coverage",
+    sourceFamilyCoverage: "both",
+    releaseGateStatus: "blocked",
+    statusCopy: "release remains blocked",
+    detailCopy: "blocked by not-reviewed witness rows",
+    safeCommandFamilies: [
+      "preflight_witness_review",
+      "mark_jhora_witness_reviewed",
+      "mark_parashara_light_witness_reviewed",
+    ],
+    cautionCopy: "No acceptance or release readiness is claimed",
   };
 }
 
