@@ -34,6 +34,46 @@ import { EntityChip, EntityInspector } from "@/ui";
 
 type Direction = "a_to_b" | "b_to_a";
 
+type InteractionQuestionPreset = {
+  id: string;
+  label: string;
+  nextStep: string;
+  attention: string;
+};
+
+const interactionQuestionPresets: InteractionQuestionPreset[] = [
+  {
+    id: "money_loan_relative",
+    label: "Money/loan with sibling or relative",
+    nextStep: "set repayment terms and boundaries",
+    attention: "pressure, unclear repayment, or mixed expectations",
+  },
+  {
+    id: "boss_work_conflict",
+    label: "Boss/work conflict",
+    nextStep: "prepare a calmer work conversation",
+    attention: "role pressure, escalation risk, and timing of the ask",
+  },
+  {
+    id: "friend_trust_support",
+    label: "Friend trust/support",
+    nextStep: "check consistency before sharing more",
+    attention: "uneven support, mixed signals, or sensitive information",
+  },
+  {
+    id: "client_business_negotiation",
+    label: "Client/business negotiation",
+    nextStep: "define negotiation limits before replying",
+    attention: "delivery risk, leverage, and fallback options",
+  },
+  {
+    id: "family_boundary_conflict",
+    label: "Family boundary/conflict",
+    nextStep: "name the boundary and choose a low-pressure moment",
+    attention: "old patterns, guilt pressure, and unclear roles",
+  },
+];
+
 const categoryLabels: Record<RelationshipTypeDefinition["category"], string> = {
   family: "Семья",
   romantic: "Отношения",
@@ -205,6 +245,7 @@ export default function InteractionsPage() {
   const [direction, setDirection] = useState<Direction>("a_to_b");
   const [note, setNote] = useState("");
   const [selectedScenarioPresetId, setSelectedScenarioPresetId] = useState<string | null>(null);
+  const [selectedQuestionPresetId, setSelectedQuestionPresetId] = useState<string>(interactionQuestionPresets[0]?.id ?? "");
   const [activeEntityId, setActiveEntityId] = useState<EntityId | null>(null);
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -216,6 +257,10 @@ export default function InteractionsPage() {
   const selectedScenarioPreset = useMemo(
     () => interactionScenarioPresets.find((preset) => preset.id === selectedScenarioPresetId) ?? null,
     [selectedScenarioPresetId],
+  );
+  const selectedQuestionPreset = useMemo(
+    () => interactionQuestionPresets.find((preset) => preset.id === selectedQuestionPresetId) ?? interactionQuestionPresets[0],
+    [selectedQuestionPresetId],
   );
   const profileA = profiles.find((profile) => profile.id === profileAId) ?? null;
   const profileB = profiles.find((profile) => profile.id === profileBId) ?? null;
@@ -239,12 +284,18 @@ export default function InteractionsPage() {
           : "Ready to review";
   const interactionDecisionBrief = {
     scenarioLabel: selectedScenarioPreset?.label ?? "Custom interaction question",
+    questionLabel: selectedQuestionPreset?.label ?? "Custom relationship question",
     relationshipLabel: selectedRecipe?.label.ru ?? relationshipType?.label.ru ?? "Custom relationship",
     relationshipCategory: relationshipType ? categoryLabels[relationshipType.category] : categoryLabels.custom,
+    relationshipContext: `${selectedRecipe?.label.ru ?? relationshipType?.label.ru ?? "Custom relationship"} / ${
+      relationshipType ? categoryLabels[relationshipType.category] : categoryLabels.custom
+    }`,
     directionMode: relationshipType?.symmetric ? "mutual" : direction,
     profileAName: profileA?.display_name ?? "Missing profile A",
     profileBName: profileB?.display_name ?? "Missing profile B",
     noteText: note,
+    practicalNextStep: selectedQuestionPreset?.nextStep ?? "add context",
+    attentionPoint: selectedQuestionPreset?.attention ?? "missing context",
     readiness: briefReadiness,
     nextStep:
       briefReadiness === "Missing profiles"
@@ -466,6 +517,24 @@ export default function InteractionsPage() {
                 </div>
               </div>
             </section>
+            <section className="interaction-layer" aria-label="Question presets">
+              <h3>Question presets</h3>
+              <div className="interaction-chip-row">
+                <span>Purpose</span>
+                <div>
+                  {interactionQuestionPresets.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={preset.id === selectedQuestionPresetId ? "relationship-factor-chip active" : "relationship-factor-chip"}
+                      onClick={() => setSelectedQuestionPresetId(preset.id)}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
             <section className="interaction-layer" aria-label="Decision brief">
               <h3>Decision brief</h3>
               <div className="interaction-chip-row">
@@ -475,11 +544,21 @@ export default function InteractionsPage() {
                 </div>
               </div>
               <div className="interaction-chip-row">
+                <span>Selected question</span>
+                <div>
+                  <strong>{interactionDecisionBrief.questionLabel}</strong>
+                </div>
+              </div>
+              <div className="interaction-chip-row">
                 <span>Relationship type</span>
                 <div>
                   <strong>{interactionDecisionBrief.relationshipLabel}</strong>
                   <em>{interactionDecisionBrief.relationshipCategory}</em>
                 </div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Relationship context</span>
+                <div>{interactionDecisionBrief.relationshipContext}</div>
               </div>
               <div className="interaction-chip-row">
                 <span>Direction mode</span>
@@ -504,6 +583,14 @@ export default function InteractionsPage() {
                 <div>
                   <strong>{interactionDecisionBrief.readiness}</strong>
                 </div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Practical next step</span>
+                <div>{interactionDecisionBrief.practicalNextStep}</div>
+              </div>
+              <div className="interaction-chip-row">
+                <span>Risk/attention point</span>
+                <div>{interactionDecisionBrief.attentionPoint}</div>
               </div>
               <p className="interaction-muted">Next step: {interactionDecisionBrief.nextStep}</p>
             </section>
