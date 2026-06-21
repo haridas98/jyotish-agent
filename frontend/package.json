@@ -51,6 +51,7 @@
     "test:accuracy-tajaka-parity": "node scripts/check-accuracy-tajaka-parity-ui.mjs",
     "test:accuracy-prashna-parity": "node scripts/check-accuracy-prashna-parity-ui.mjs",
     "test:accuracy-jaimini-karaka-parity": "node scripts/check-accuracy-jaimini-karaka-parity-ui.mjs",
+    "test:accuracy-jaimini-varga-parity": "node scripts/check-accuracy-jaimini-varga-parity-ui.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",

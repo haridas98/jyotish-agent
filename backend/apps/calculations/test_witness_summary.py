@@ -3896,6 +3896,220 @@ def test_witness_jaimini_karaka_parity_default_path_matches_command_output(setti
     assert normalized.endswith("/.tmp/witness-review/jaimini-karaka-parity-report.json")
 
 
+def _write_jaimini_varga_parity_report(path, *, case_id="case-jaimini-varga-a", status="failed"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-jaimini-varga-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "varga_codes": ["D5", "D6", "D8", "D11"],
+                    "layers": [
+                        "jaimini_varga_context",
+                        "d5_rows",
+                        "d6_rows",
+                        "d8_rows",
+                        "d11_rows",
+                        "placement_rows",
+                        "review_gates",
+                    ],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 1,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 1,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 0,
+                    "target_reviewed_count": 20,
+                    "target_met": False,
+                },
+                "varga_summary": {
+                    "D5": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "not_comparable": 0,
+                        "skipped": 0,
+                    },
+                    "D11": {"passed": 0, "failed": 0, "missing": 0, "not_comparable": 0, "skipped": 1},
+                },
+                "field_summary": {
+                    "D5.Surya.rashi": {
+                        "passed": 0,
+                        "failed": 1 if status == "failed" else 0,
+                        "missing": 0,
+                        "skipped": 0,
+                    },
+                    "experimental_note": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "readiness_summary": {
+                    "D5": {"compared": 1, "actual_missing": 0},
+                    "D6": {"compared": 0, "actual_missing": 1},
+                    "D8": {"compared": 0, "actual_missing": 0},
+                    "D11": {"compared": 0, "actual_missing": 0},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "source": "jhora",
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_vargas": ["D5"],
+                        "failed_vargas": ["D5"] if status == "failed" else [],
+                        "missing_vargas": ["D6"],
+                        "skipped_vargas": ["D11"],
+                        "checked_fields": ["D5.Surya.rashi"],
+                        "failed_fields": ["D5.Surya.rashi"] if status == "failed" else [],
+                        "missing_fields": ["calculated.vargas.D6"],
+                        "skipped_fields": ["D11.experimental_note"],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "varga": "D5",
+                                "field": "D5.Surya.rashi",
+                                "expected": "Mesha",
+                                "actual": "Tula",
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_jaimini_varga_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "jaimini-varga-parity-report.json"
+    _write_jaimini_varga_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_jaimini_varga_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_jaimini_varga_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-jaimini-varga-parity-report-v1"
+    assert "source_report" not in parity
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["varga_summary"]["D5"]["failed"] == 1
+    assert parity["varga_summary"]["D11"]["skipped"] == 1
+    assert parity["field_summary"]["D5.Surya.rashi"]["failed"] == 1
+    assert parity["field_summary"]["experimental_note"]["skipped"] == 1
+    assert parity["readiness_summary"]["D6"]["actual_missing"] == 1
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-jaimini-varga-a",
+            "status": "failed",
+            "checked_vargas": ["D5"],
+            "failed_vargas": ["D5"],
+            "missing_vargas": ["D6"],
+            "skipped_vargas": ["D11"],
+            "checked_fields": ["D5.Surya.rashi"],
+            "failed_fields": ["D5.Surya.rashi"],
+            "missing_fields": ["calculated.vargas.D6"],
+            "skipped_fields": ["D11.experimental_note"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "cases",
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        "source_report",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_jaimini_varga_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_jaimini_varga_parity_report_path=tmp_path / "missing-jaimini-varga-parity.json",
+    )
+    assert missing_summary["witness_jaimini_varga_parity"]["available"] is False
+    assert missing_summary["witness_jaimini_varga_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-jaimini-varga-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_jaimini_varga_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_jaimini_varga_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_jaimini_varga_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-jaimini-varga-parity.json"
+    second_path = tmp_path / "second-jaimini-varga-parity.json"
+    _write_jaimini_varga_parity_report(first_path, case_id="first-jaimini-varga-case")
+    _write_jaimini_varga_parity_report(second_path, case_id="second-jaimini-varga-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_JAIMINI_VARGA_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_JAIMINI_VARGA_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_jaimini_varga_parity"]["next_actions"][0]["case_id"] == "first-jaimini-varga-case"
+    assert second_response.data["witness_jaimini_varga_parity"]["next_actions"][0]["case_id"] == "second-jaimini-varga-case"
+
+
+def test_witness_jaimini_varga_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_JAIMINI_VARGA_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/jaimini-varga-parity-report.json")
+
+
+def test_witness_summary_jaimini_varga_parity_stage_does_not_change_formula_workflow_or_report_builder_files():
+    changed = subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()
+    forbidden_files = {
+        "backend/apps/calculations/classical.py",
+        "backend/apps/calculations/chart.py",
+        "backend/apps/calculations/ephemeris.py",
+        "backend/apps/calculations/math.py",
+        "backend/apps/calculations/panchanga.py",
+        "backend/apps/calculations/vimshottari.py",
+        "backend/apps/calculations/dasha_systems.py",
+        "backend/apps/calculations/vargas.py",
+        "backend/apps/calculations/accuracy.py",
+        "backend/apps/calculations/graha_drishti.py",
+        "backend/apps/calculations/rashi_drishti.py",
+        "backend/apps/calculations/transit_coordinates.py",
+        "backend/apps/calculations/workflows.py",
+        "backend/apps/calculations/witness_jaimini_varga_parity.py",
+        "backend/apps/calculations/management/commands/build_witness_jaimini_varga_parity_report.py",
+    }
+
+    assert not (forbidden_files & set(changed))
+
+
 def test_witness_summary_jaimini_karaka_parity_stage_does_not_change_formula_workflow_or_report_builder_files():
     changed = subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()
     forbidden_files = {

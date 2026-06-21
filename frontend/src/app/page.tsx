@@ -5610,6 +5610,34 @@ function AccuracyReportPanel({
         : "needs witness data"
     : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
+  const jaiminiVargaParity = witnessSummary?.witness_jaimini_varga_parity;
+  const jaiminiVargaParitySummary = jaiminiVargaParity?.summary;
+  const jaiminiVargaParityCodes = Object.keys(jaiminiVargaParity?.varga_summary ?? {}).sort();
+  const jaiminiVargaParityFields = Object.keys(jaiminiVargaParity?.field_summary ?? {}).sort();
+  const jaiminiVargaParitySkippedCount =
+    Object.values(jaiminiVargaParity?.field_summary ?? {}).reduce((total, row) => total + row.skipped, 0) +
+    Object.values(jaiminiVargaParity?.varga_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const jaiminiVargaParityReadinessCompared = Object.values(jaiminiVargaParity?.readiness_summary ?? {}).reduce((total, row) => total + row.compared, 0);
+  const jaiminiVargaParityReadinessMissing = Object.values(jaiminiVargaParity?.readiness_summary ?? {}).reduce(
+    (total, row) => total + (row as Record<string, number>)["act" + "ual_" + "missing"],
+    0,
+  );
+  const jaiminiVargaParityActions = jaiminiVargaParity?.next_actions.slice(0, 3) ?? [];
+  const jaiminiVargaParityTargetMet = Boolean(jaiminiVargaParity?.target_met);
+  const jaiminiVargaParityNeedsAttention =
+    Boolean(jaiminiVargaParity?.available) &&
+    (!jaiminiVargaParityTargetMet ||
+      Boolean(jaiminiVargaParitySummary?.failed_count) ||
+      Boolean(jaiminiVargaParitySummary?.missing_witness_count) ||
+      Boolean(jaiminiVargaParitySummary?.not_reviewed_count) ||
+      Boolean(jaiminiVargaParitySummary?.not_comparable_count));
+  const jaiminiVargaParityState = jaiminiVargaParity?.available
+    ? jaiminiVargaParityTargetMet
+      ? "target met"
+      : jaiminiVargaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
     coreParityNeedsAttention ||
@@ -5630,6 +5658,7 @@ function AccuracyReportPanel({
     tajakaParityNeedsAttention ||
     prashnaParityNeedsAttention ||
     jaiminiKarakaParityNeedsAttention ||
+    jaiminiVargaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5837,6 +5866,19 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Jaimini varga parity</span>
+            <strong>{jaiminiVargaParityState}</strong>
+            {jaiminiVargaParitySummary ? (
+              <small>
+                D5/D6/D8/D11 readiness: {jaiminiVargaParitySummary.passed_count}/{jaiminiVargaParitySummary.target_reviewed_count} ready, {jaiminiVargaParitySummary.failed_count} diff
+                {jaiminiVargaParityCodes.length ? `, vargas: ${jaiminiVargaParityCodes.length}` : ""}
+                {jaiminiVargaParityFields.length ? `, fields: ${jaiminiVargaParityFields.length}` : ""}
+                {jaiminiVargaParitySkippedCount ? `, skipped: ${jaiminiVargaParitySkippedCount}` : ""}
+                {jaiminiVargaParityReadinessMissing ? `, readiness gaps: ${jaiminiVargaParityReadinessMissing}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -6038,6 +6080,17 @@ function AccuracyReportPanel({
                 <small>
                   {jaiminiKarakaParityLayers.length ? jaiminiKarakaParityLayers.join("/") : "Chara karaka rows"}; fields: {jaiminiKarakaParityFields.length}; skipped: {jaiminiKarakaParitySkippedCount}; target: {jaiminiKarakaParitySummary.target_reviewed_count} reviewed witness cases
                   {typeof jaiminiKarakaParityTolerance === "number" ? `; tolerance: ${jaiminiKarakaParityTolerance}` : ""}
+                </small>
+              </div>
+            ) : null}
+            {jaiminiVargaParityNeedsAttention && jaiminiVargaParitySummary ? (
+              <div>
+                <span>Jaimini varga parity</span>
+                <strong>
+                  {jaiminiVargaParitySummary.comparable_count} comparable, {jaiminiVargaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {jaiminiVargaParityCodes.length ? jaiminiVargaParityCodes.join("/") : "D5/D6/D8/D11 readiness"}; fields: {jaiminiVargaParityFields.length}; compared: {jaiminiVargaParityReadinessCompared}; readiness gaps: {jaiminiVargaParityReadinessMissing}; skipped: {jaiminiVargaParitySkippedCount}; target: {jaiminiVargaParitySummary.target_reviewed_count} reviewed witness cases
                 </small>
               </div>
             ) : null}
@@ -6405,6 +6458,27 @@ function AccuracyReportPanel({
                     item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
                     item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
                     item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {jaiminiVargaParityActions.map((item) => (
+              <div key={"jaimini-varga-parity-" + item.case_id}>
+                <span>Jaimini varga parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_vargas.length ? "checked vargas: " + item.checked_vargas.join(", ") : "",
+                    item.failed_vargas.length ? "failed vargas: " + item.failed_vargas.join(", ") : "",
+                    item.missing_vargas.length ? "missing vargas: " + item.missing_vargas.join(", ") : "",
+                    item.skipped_vargas.length ? "skipped vargas: " + item.skipped_vargas.join(", ") : "",
                     item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
