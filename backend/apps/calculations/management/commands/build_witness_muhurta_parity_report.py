@@ -44,7 +44,18 @@ class Command(BaseCommand):
             markdown_path.parent.mkdir(parents=True, exist_ok=True)
             markdown_path.write_text(render_muhurta_parity_markdown(report), encoding="utf-8")
         if options["json"]:
-            self.stdout.write(json.dumps(report, ensure_ascii=False, indent=2))
+            self.stdout.write(
+                json.dumps(
+                    {
+                        "schema_version": report["schema_version"],
+                        "summary": report["summary"],
+                        "output": str(output),
+                        "markdown_output": markdown_output,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
         else:
             summary = report["summary"]
             self.stdout.write(

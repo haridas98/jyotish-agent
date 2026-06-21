@@ -112,6 +112,22 @@ def _write_jhora_case(
     return case_dir
 
 
+def _write_jhora_top_level_actual_case(root, case_id: str):
+    case_dir = root / "batch-queue" / case_id
+    case_dir.mkdir(parents=True)
+    fixture = {
+        "id": case_id,
+        "source": "jhora_complete_calculations_clipboard",
+        "review_status": "jhora_verified",
+        "input": _case_input(case_id),
+        "jhora_metadata": {"capture_status": "export_parsed"},
+        "expected": {"muhurta": _muhurta_payload()},
+        "muhurta_report": _muhurta_payload(),
+    }
+    (case_dir / "fixture.json").write_text(json.dumps(fixture), encoding="utf-8")
+    return case_dir
+
+
 def _write_pl_case(
     root,
     case_id: str,
@@ -195,6 +211,19 @@ def test_muhurta_parity_passes_pl_manual_normalized_electional_timing(tmp_path):
     assert row["comparison_status"] == "passed"
     assert report["summary"]["comparable_count"] == 1
     assert report["layer_summary"]["panchanga_factors"]["passed"] == 1
+
+
+def test_muhurta_parity_uses_top_level_actual_payload_without_sibling_chart(tmp_path):
+    from apps.calculations.witness_muhurta_parity import build_witness_muhurta_parity_report
+
+    _write_jhora_top_level_actual_case(tmp_path / "jhora", "sterlitamak-1998-04-30-1345")
+
+    report = build_witness_muhurta_parity_report(witness_dir=tmp_path / "jhora", pl_root=tmp_path / "pl7")
+    row = next(item for item in report["cases"] if item["case_id"] == "sterlitamak-1998-04-30-1345")
+
+    assert row["comparison_status"] == "passed"
+    assert row["missing_fields"] == []
+    assert report["summary"]["comparable_count"] == 1
 
 
 def test_muhurta_parity_missing_witness_or_actual_is_not_formula_failure(tmp_path):
@@ -303,7 +332,12 @@ def test_muhurta_parity_command_writes_json_markdown_and_safe_json_stdout(tmp_pa
     serialized = json.dumps(payload, ensure_ascii=False) + markdown_text
 
     assert payload["summary"]["passed_count"] == 1
-    assert json.loads(output.read_text(encoding="utf-8"))["schema_version"] == "jyotish-muhurta-parity-report-v1"
+    assert payload["schema_version"] == "jyotish-muhurta-parity-report-v1"
+    assert "cases" not in payload
+    assert "field_results" not in serialized
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["schema_version"] == "jyotish-muhurta-parity-report-v1"
+    assert "cases" in report
     assert "Muhurta Parity Report" in markdown_text
     for forbidden in ["mark_jhora_witness_reviewed", "seal_witness_case", "--ack-diff-open"]:
         assert forbidden not in serialized

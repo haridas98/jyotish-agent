@@ -264,8 +264,12 @@ def _expected_muhurta(fixture: dict[str, Any], source: str) -> tuple[dict[str, A
 
 
 def _actual_muhurta(chart: dict[str, Any], fixture: dict[str, Any] | None = None) -> dict[str, Any]:
-    for key in ("muhurta", "muhurta_report", "electional_timing"):
-        payload, _skipped = _coerce_muhurta(chart.get(key))
+    containers: list[dict[str, Any]] = [chart]
+    if isinstance(fixture, dict):
+        nested_chart = fixture.get("jyotish_agent_chart") if isinstance(fixture.get("jyotish_agent_chart"), dict) else {}
+        containers.extend([nested_chart, fixture])
+    for container in containers:
+        payload = _muhurta_from_container(container)
         if payload:
             return payload
     fallback_inputs = [chart]
@@ -283,6 +287,16 @@ def _actual_muhurta(chart: dict[str, Any], fixture: dict[str, Any] | None = None
                 return payload
         except Exception:
             continue
+    return {}
+
+
+def _muhurta_from_container(container: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(container, dict):
+        return {}
+    for key in ("muhurta", "muhurta_report", "electional_timing"):
+        payload, _skipped = _coerce_muhurta(container.get(key))
+        if payload:
+            return payload
     return {}
 
 
