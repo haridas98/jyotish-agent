@@ -5477,6 +5477,28 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const compatibilityParity = witnessSummary?.witness_compatibility_parity;
+  const compatibilityParitySummary = compatibilityParity?.summary;
+  const compatibilityParityLayers = Object.keys(compatibilityParity?.layer_summary ?? {}).sort();
+  const compatibilityParityKutas = Object.keys(compatibilityParity?.kuta_summary ?? {}).sort();
+  const compatibilityParitySkippedCount = Object.values(compatibilityParity?.kuta_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const compatibilityParityActions = compatibilityParity?.next_actions.slice(0, 3) ?? [];
+  const compatibilityParityTolerance = compatibilityParity?.tolerance_profile?.score;
+  const compatibilityParityTargetMet = Boolean(compatibilityParity?.target_met);
+  const compatibilityParityNeedsAttention =
+    Boolean(compatibilityParity?.available) &&
+    (!compatibilityParityTargetMet ||
+      Boolean(compatibilityParitySummary?.failed_count) ||
+      Boolean(compatibilityParitySummary?.missing_witness_count) ||
+      Boolean(compatibilityParitySummary?.not_reviewed_count) ||
+      Boolean(compatibilityParitySummary?.not_comparable_count));
+  const compatibilityParityState = compatibilityParity?.available
+    ? compatibilityParityTargetMet
+      ? "target met"
+      : compatibilityParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5492,6 +5514,7 @@ function AccuracyReportPanel({
     avasthaParityNeedsAttention ||
     drishtiParityNeedsAttention ||
     transitCoordinateParityNeedsAttention ||
+    compatibilityParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5627,6 +5650,18 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Compatibility parity</span>
+            <strong>{compatibilityParityState}</strong>
+            {compatibilityParitySummary ? (
+              <small>
+                Ashtakuta rows: {compatibilityParitySummary.passed_count}/{compatibilityParitySummary.target_reviewed_count} ready, {compatibilityParitySummary.failed_count} diff
+                {compatibilityParityKutas.length ? `, kutas: ${compatibilityParityKutas.length}` : ""}
+                {compatibilityParitySkippedCount ? `, skipped: ${compatibilityParitySkippedCount}` : ""}
+                {typeof compatibilityParityTolerance === "number" ? `, tolerance: ${compatibilityParityTolerance}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5756,6 +5791,18 @@ function AccuracyReportPanel({
                 <small>
                   {transitCoordinateParityLayers.length ? transitCoordinateParityLayers.join("/") : "Lagna / graha coordinates"}; bodies: {transitCoordinateParityBodies.length}; skipped: {transitCoordinateParitySkippedCount}; target: {transitCoordinateParitySummary.target_reviewed_count} reviewed witness cases
                   {typeof transitCoordinateParityTolerance === "number" ? `; tolerance: ${transitCoordinateParityTolerance} arcsec` : ""}
+                </small>
+              </div>
+            ) : null}
+            {compatibilityParityNeedsAttention && compatibilityParitySummary ? (
+              <div>
+                <span>Compatibility parity</span>
+                <strong>
+                  {compatibilityParitySummary.comparable_count} comparable, {compatibilityParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {compatibilityParityLayers.length ? compatibilityParityLayers.join("/") : "Ashtakuta rows"}; kutas: {compatibilityParityKutas.length}; skipped: {compatibilityParitySkippedCount}; target: {compatibilityParitySummary.target_reviewed_count} reviewed witness cases
+                  {typeof compatibilityParityTolerance === "number" ? `; tolerance: ${compatibilityParityTolerance}` : ""}
                 </small>
               </div>
             ) : null}
@@ -5998,6 +6045,31 @@ function AccuracyReportPanel({
                     item.failed_bodies.length ? "failed bodies: " + item.failed_bodies.join(", ") : "",
                     item.missing_bodies.length ? "missing bodies: " + item.missing_bodies.join(", ") : "",
                     item.skipped_bodies.length ? "skipped bodies: " + item.skipped_bodies.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {compatibilityParityActions.map((item) => (
+              <div key={"compatibility-parity-" + item.case_id}>
+                <span>Compatibility parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_kutas.length ? "checked kutas: " + item.checked_kutas.join(", ") : "",
+                    item.matched_kutas.length ? "matched kutas: " + item.matched_kutas.join(", ") : "",
+                    item.failed_kutas.length ? "failed kutas: " + item.failed_kutas.join(", ") : "",
+                    item.missing_kutas.length ? "missing kutas: " + item.missing_kutas.join(", ") : "",
+                    item.skipped_kutas.length ? "skipped kutas: " + item.skipped_kutas.join(", ") : "",
                     item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",

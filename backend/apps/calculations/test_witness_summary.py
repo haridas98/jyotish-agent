@@ -2772,3 +2772,181 @@ def test_witness_transit_coordinate_parity_default_path_matches_command_output(s
     normalized = str(settings.WITNESS_TRANSIT_COORDINATE_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/transit-coordinate-parity-report.json")
+
+
+def _write_compatibility_parity_report(
+    path,
+    *,
+    status: str = "failed",
+    case_id: str = "case-compatibility-a",
+):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-compatibility-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "layers": ["ashtakuta_total", "kuta_breakdown", "moon_pair", "relationship_context"],
+                    "tolerance_profile": {"score": 0.01},
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 1,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "layer_summary": {
+                    "ashtakuta_total": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                    "kuta_breakdown": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                },
+                "kuta_summary": {
+                    "tara": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "skipped": 0},
+                    "experimental_kuta": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "source": "jhora",
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["ashtakuta_total", "kuta_breakdown"],
+                        "failed_layers": ["ashtakuta_total", "kuta_breakdown"] if status == "failed" else [],
+                        "missing_layers": [],
+                        "checked_kutas": ["tara"],
+                        "matched_kutas": [] if status == "failed" else ["tara"],
+                        "failed_kutas": ["tara"] if status == "failed" else [],
+                        "missing_kutas": [],
+                        "skipped_kutas": ["experimental_kuta"],
+                        "checked_fields": ["ashtakuta_total.total", "kuta_breakdown.tara.score"],
+                        "failed_fields": ["ashtakuta_total.total", "kuta_breakdown.tara.score"] if status == "failed" else [],
+                        "missing_fields": ["calculated.compatibility"] if status == "failed" else [],
+                        "skipped_fields": ["compatibility.experimental_kuta"],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "kuta_breakdown",
+                                "field": "kuta_breakdown.tara.score",
+                                "kuta": "tara",
+                                "expected": 0,
+                                "actual": 3,
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_compatibility_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "compatibility-parity-report.json"
+    _write_compatibility_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_compatibility_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_compatibility_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-compatibility-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["kuta_breakdown"]["failed"] == 1
+    assert parity["kuta_summary"]["tara"]["failed"] == 1
+    assert parity["kuta_summary"]["tara"]["missing"] == 0
+    assert parity["kuta_summary"]["experimental_kuta"]["skipped"] == 1
+    assert parity["tolerance_profile"] == {"score": 0.01}
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-compatibility-a",
+            "status": "failed",
+            "checked_layers": ["ashtakuta_total", "kuta_breakdown"],
+            "failed_layers": ["ashtakuta_total", "kuta_breakdown"],
+            "missing_layers": [],
+            "checked_kutas": ["tara"],
+            "matched_kutas": [],
+            "failed_kutas": ["tara"],
+            "missing_kutas": [],
+            "skipped_kutas": ["experimental_kuta"],
+            "checked_fields": ["ashtakuta_total.total", "kuta_breakdown.tara.score"],
+            "failed_fields": ["ashtakuta_total.total", "kuta_breakdown.tara.score"],
+            "missing_fields": ["calculated.compatibility"],
+            "skipped_fields": ["compatibility.experimental_kuta"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_compatibility_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_compatibility_parity_report_path=tmp_path / "missing-compatibility-parity.json",
+    )
+    assert missing_summary["witness_compatibility_parity"]["available"] is False
+    assert missing_summary["witness_compatibility_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-compatibility-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_compatibility_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_compatibility_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_compatibility_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-compatibility-parity.json"
+    second_path = tmp_path / "second-compatibility-parity.json"
+    _write_compatibility_parity_report(first_path, case_id="first-compatibility-case")
+    _write_compatibility_parity_report(second_path, case_id="second-compatibility-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_COMPATIBILITY_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_COMPATIBILITY_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_compatibility_parity"]["next_actions"][0]["case_id"] == "first-compatibility-case"
+    assert second_response.data["witness_compatibility_parity"]["next_actions"][0]["case_id"] == "second-compatibility-case"
+
+
+def test_witness_compatibility_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_COMPATIBILITY_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/compatibility-parity-report.json")
