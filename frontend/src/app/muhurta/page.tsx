@@ -46,6 +46,23 @@ export default function MuhurtaPage() {
   const [constraints, setConstraints] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(constraintDefaults.map((item) => [item, false])),
   );
+  const checkedConstraints = constraintDefaults.filter((item) => constraints[item]);
+  const openConstraints = constraintDefaults.filter((item) => !constraints[item]);
+  const missingCandidateDetails = candidateWindows.filter(
+    (candidate) => !candidate.title.trim() || !candidate.date.trim() || !candidate.time.trim() || !candidate.note.trim(),
+  ).length;
+  const readinessStatus =
+    openConstraints.length > 0 ? "Prepare first" : missingCandidateDetails > 0 || !planningContext.trim() ? "Needs details" : "Ready to compare";
+  const planningBrief = {
+    scenarioLabel: selectedPreset?.label ?? "Custom timing scenario",
+    scenarioCategory: selectedPreset?.category ?? "custom",
+    decisionMode,
+    planningContext,
+    candidateWindows,
+    checkedConstraints,
+    openConstraints,
+    readinessStatus,
+  };
 
   function applyPreset(preset: TimingScenarioPreset) {
     setSelectedPresetId(preset.id);
@@ -159,6 +176,67 @@ export default function MuhurtaPage() {
           <p className="product-status">
             Current mode: {decisionMode}. Use candidate notes and constraints to prepare questions before opening the transit workbench.
           </p>
+        </section>
+
+        <section className="product-page-card" aria-label="Planning brief">
+          <div className="panel-heading">
+            <div>
+              <h2>Planning brief</h2>
+              <span>Local review before opening `/transits`.</span>
+            </div>
+            <span className="product-status">{planningBrief.readinessStatus}</span>
+          </div>
+          <div className="dasha-toolbar">
+            <div className="interaction-layer">
+              <strong>Selected scenario</strong>
+              <p>
+                {planningBrief.scenarioLabel} · {planningBrief.scenarioCategory}
+              </p>
+            </div>
+            <div className="interaction-layer">
+              <strong>Decision mode</strong>
+              <p>{planningBrief.decisionMode}</p>
+            </div>
+          </div>
+          <div className="interaction-layer">
+            <strong>Planning context</strong>
+            <p>{planningBrief.planningContext || "Needs details"}</p>
+          </div>
+          <div className="transit-table-wrap">
+            <table>
+              <caption>Candidate window brief</caption>
+              <thead>
+                <tr>
+                  <th>Window</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {planningBrief.candidateWindows.map((candidate) => (
+                  <tr key={candidate.id}>
+                    <td>
+                      <strong>{candidate.title || candidate.id}</strong>
+                    </td>
+                    <td>{candidate.date || "Needs details"}</td>
+                    <td>{candidate.time || "Needs details"}</td>
+                    <td>{candidate.note || "Needs details"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="dasha-toolbar">
+            <div className="interaction-layer">
+              <strong>Checked constraints</strong>
+              <p>{planningBrief.checkedConstraints.length ? planningBrief.checkedConstraints.join(", ") : "None checked"}</p>
+            </div>
+            <div className="interaction-layer">
+              <strong>Open constraints</strong>
+              <p>{planningBrief.openConstraints.length ? planningBrief.openConstraints.join(", ") : "None open"}</p>
+            </div>
+          </div>
         </section>
       </section>
     </ProductShell>
