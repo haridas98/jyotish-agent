@@ -5392,6 +5392,27 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const argalaParity = witnessSummary?.witness_argala_parity;
+  const argalaParitySummary = argalaParity?.summary;
+  const argalaParityLayers = Object.keys(argalaParity?.layer_summary ?? {}).sort();
+  const argalaParityNames = Object.keys(argalaParity?.argala_summary ?? {}).sort();
+  const argalaParitySkippedCount = Object.values(argalaParity?.argala_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const argalaParityActions = argalaParity?.next_actions.slice(0, 3) ?? [];
+  const argalaParityTargetMet = Boolean(argalaParity?.target_met);
+  const argalaParityNeedsAttention =
+    Boolean(argalaParity?.available) &&
+    (!argalaParityTargetMet ||
+      Boolean(argalaParitySummary?.failed_count) ||
+      Boolean(argalaParitySummary?.missing_witness_count) ||
+      Boolean(argalaParitySummary?.not_reviewed_count) ||
+      Boolean(argalaParitySummary?.not_comparable_count));
+  const argalaParityState = argalaParity?.available
+    ? argalaParityTargetMet
+      ? "target met"
+      : argalaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5403,6 +5424,7 @@ function AccuracyReportPanel({
     strengthsParityNeedsAttention ||
     yogaParityNeedsAttention ||
     specialPointsParityNeedsAttention ||
+    argalaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5497,6 +5519,16 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Argala parity</span>
+            <strong>{argalaParityState}</strong>
+            {argalaParitySummary ? (
+              <small>
+                Lagna pairs: {argalaParitySummary.passed_count}/{argalaParitySummary.target_reviewed_count} ready, {argalaParitySummary.failed_count} diff
+                {argalaParitySkippedCount ? `, skipped: ${argalaParitySkippedCount}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5581,6 +5613,17 @@ function AccuracyReportPanel({
                 </strong>
                 <small>
                   {specialPointsParityLayers.length ? specialPointsParityLayers.join("/") : "Upagrahas and lagnas"}; points: {specialPointsParityNames.length}; skipped: {specialPointsParitySkippedCount}; target: {specialPointsParitySummary.target_reviewed_count} reviewed witness cases
+                </small>
+              </div>
+            ) : null}
+            {argalaParityNeedsAttention && argalaParitySummary ? (
+              <div>
+                <span>Argala parity</span>
+                <strong>
+                  {argalaParitySummary.comparable_count} comparable, {argalaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {argalaParityLayers.length ? argalaParityLayers.join("/") : "Lagna pairs"}; fields: {argalaParityNames.length}; skipped: {argalaParitySkippedCount}; target: {argalaParitySummary.target_reviewed_count} reviewed witness cases
                 </small>
               </div>
             ) : null}
@@ -5733,6 +5776,26 @@ function AccuracyReportPanel({
                     item.skipped_points.length ? "skipped points: " + item.skipped_points.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {argalaParityActions.map((item) => (
+              <div key={"argala-parity-" + item.case_id}>
+                <span>Argala parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                    item.skipped_fields.length ? "skipped: " + item.skipped_fields.join(", ") : "",
                   ]
                     .filter(Boolean)
                     .join("; ")}

@@ -293,6 +293,10 @@ WITNESS_SPECIAL_POINTS_PARITY_REPORT_PATH = os.getenv(
     "WITNESS_SPECIAL_POINTS_PARITY_REPORT_PATH",
     str(ROOT_DIR / ".tmp" / "witness-review" / "special-points-parity-report.json"),
 )
+WITNESS_ARGALA_PARITY_REPORT_PATH = os.getenv(
+    "WITNESS_ARGALA_PARITY_REPORT_PATH",
+    str(ROOT_DIR / ".tmp" / "witness-review" / "argala-parity-report.json"),
+)
 PARASHARA_LIGHT_PACKET_PATH = os.getenv(
     "PARASHARA_LIGHT_PACKET_PATH",
     str(ROOT_DIR / ".tmp" / "pl7" / "haridas-verification-packet" / "packet.json"),

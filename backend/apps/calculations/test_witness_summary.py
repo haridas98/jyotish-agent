@@ -2092,3 +2092,162 @@ def test_witness_special_points_parity_default_path_matches_command_output(setti
     normalized = str(settings.WITNESS_SPECIAL_POINTS_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/special-points-parity-report.json")
+
+
+def _write_argala_parity_report(path, *, status: str = "failed", case_id: str = "case-argala-a"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-argala-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "layers": ["argala_pairs", "argala_rows"],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 1,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "layer_summary": {
+                    "argala_pairs": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                    "argala_rows": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                },
+                "argala_summary": {
+                    "pairs": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "skipped": 0},
+                    "experimental_note": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["argala_pairs", "argala_rows"],
+                        "failed_layers": ["argala_pairs"] if status == "failed" else [],
+                        "missing_layers": [],
+                        "checked_fields": ["argala_pairs.primary.2.net_effect", "argala_rows.primary.2.bodies"],
+                        "failed_fields": ["argala_pairs.primary.2.net_effect"] if status == "failed" else [],
+                        "missing_fields": [],
+                        "skipped_fields": ["argala.experimental_note"],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "argala_pairs",
+                                "summary_key": "pairs",
+                                "field": "argala_pairs.primary.2.net_effect",
+                                "expected": "obstructed",
+                                "actual": "active",
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_argala_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "argala-parity-report.json"
+    _write_argala_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_argala_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_argala_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-argala-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["argala_pairs"]["failed"] == 1
+    assert parity["argala_summary"]["pairs"]["failed"] == 1
+    assert parity["argala_summary"]["experimental_note"]["skipped"] == 1
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-argala-a",
+            "status": "failed",
+            "checked_layers": ["argala_pairs", "argala_rows"],
+            "failed_layers": ["argala_pairs"],
+            "missing_layers": [],
+            "checked_fields": ["argala_pairs.primary.2.net_effect", "argala_rows.primary.2.bodies"],
+            "failed_fields": ["argala_pairs.primary.2.net_effect"],
+            "missing_fields": [],
+            "skipped_fields": ["argala.experimental_note"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_argala_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_argala_parity_report_path=tmp_path / "missing-argala-parity.json",
+    )
+    assert missing_summary["witness_argala_parity"]["available"] is False
+    assert missing_summary["witness_argala_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-argala-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_argala_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_argala_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_argala_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-argala-parity.json"
+    second_path = tmp_path / "second-argala-parity.json"
+    _write_argala_parity_report(first_path, case_id="first-argala-case")
+    _write_argala_parity_report(second_path, case_id="second-argala-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_ARGALA_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_ARGALA_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_argala_parity"]["next_actions"][0]["case_id"] == "first-argala-case"
+    assert second_response.data["witness_argala_parity"]["next_actions"][0]["case_id"] == "second-argala-case"
+
+
+def test_witness_argala_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_ARGALA_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/argala-parity-report.json")
