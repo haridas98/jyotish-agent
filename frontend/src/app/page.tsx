@@ -5350,6 +5350,27 @@ function AccuracyReportPanel({
         ? "diff open"
         : "needs witness data"
     : "pending";
+  const yogaParity = witnessSummary?.witness_yoga_parity;
+  const yogaParitySummary = yogaParity?.summary;
+  const yogaParityLayers = Object.keys(yogaParity?.layer_summary ?? {}).sort();
+  const yogaParityNames = Object.keys(yogaParity?.yoga_summary ?? {}).sort();
+  const yogaParitySkippedCount = Object.values(yogaParity?.yoga_summary ?? {}).reduce((total, row) => total + row.skipped, 0);
+  const yogaParityActions = yogaParity?.next_actions.slice(0, 3) ?? [];
+  const yogaParityTargetMet = Boolean(yogaParity?.target_met);
+  const yogaParityNeedsAttention =
+    Boolean(yogaParity?.available) &&
+    (!yogaParityTargetMet ||
+      Boolean(yogaParitySummary?.failed_count) ||
+      Boolean(yogaParitySummary?.missing_witness_count) ||
+      Boolean(yogaParitySummary?.not_reviewed_count) ||
+      Boolean(yogaParitySummary?.not_comparable_count));
+  const yogaParityState = yogaParity?.available
+    ? yogaParityTargetMet
+      ? "target met"
+      : yogaParity.status === "diff_open"
+        ? "diff open"
+        : "needs witness data"
+    : "pending";
   const plFailedCount = plReport?.manual_witness_comparison?.summary.failed_count ?? null;
   const hasOpenAccuracyItems =
     Boolean(witnessSummary?.open_items.length) ||
@@ -5359,6 +5380,7 @@ function AccuracyReportPanel({
     panchangaParityNeedsAttention ||
     ashtakavargaParityNeedsAttention ||
     strengthsParityNeedsAttention ||
+    yogaParityNeedsAttention ||
     (typeof plFailedCount === "number" && plFailedCount > 0) ||
     Boolean(report && !report.passed);
 
@@ -5433,6 +5455,16 @@ function AccuracyReportPanel({
             ) : null}
           </div>
           <div>
+            <span>Yoga parity</span>
+            <strong>{yogaParityState}</strong>
+            {yogaParitySummary ? (
+              <small>
+                Active yogas: {yogaParitySummary.passed_count}/{yogaParitySummary.target_reviewed_count} ready, {yogaParitySummary.failed_count} diff
+                {yogaParitySkippedCount ? `, skipped: ${yogaParitySkippedCount}` : ""}
+              </small>
+            ) : null}
+          </div>
+          <div>
             <span>Panchanga parity</span>
             <strong>{panchangaParityState}</strong>
             {panchangaParitySummary ? (
@@ -5495,6 +5527,17 @@ function AccuracyReportPanel({
                 </strong>
                 <small>
                   {strengthsParityLayers.length ? strengthsParityLayers.join("/") : "Vimshopaka / Shadbala"}; bodies: {strengthsParityBodies.length}; profile-sensitive: {strengthsParityProfileSensitive.length ? strengthsParityProfileSensitive.join(", ") : "none"}; target: {strengthsParitySummary.target_reviewed_count} reviewed witness cases
+                </small>
+              </div>
+            ) : null}
+            {yogaParityNeedsAttention && yogaParitySummary ? (
+              <div>
+                <span>Yoga parity</span>
+                <strong>
+                  {yogaParitySummary.comparable_count} comparable, {yogaParitySummary.failed_count} diff
+                </strong>
+                <small>
+                  {yogaParityLayers.length ? yogaParityLayers.join("/") : "Active yogas"}; yogas: {yogaParityNames.length}; skipped: {yogaParitySkippedCount}; target: {yogaParitySummary.target_reviewed_count} reviewed witness cases
                 </small>
               </div>
             ) : null}
@@ -5601,6 +5644,28 @@ function AccuracyReportPanel({
                     item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
                     item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
                     item.checked_fields.length ? "checked fields: " + item.checked_fields.join(", ") : "",
+                    item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
+                    item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ")}
+                </small>
+              </div>
+            ))}
+            {yogaParityActions.map((item) => (
+              <div key={"yoga-parity-" + item.case_id}>
+                <span>Yoga parity</span>
+                <strong>{item.case_id || "witness case"}</strong>
+                <small>
+                  {[
+                    item.status,
+                    item.checked_layers.length ? "checked layers: " + item.checked_layers.join(", ") : "",
+                    item.failed_layers.length ? "failed layers: " + item.failed_layers.join(", ") : "",
+                    item.missing_layers.length ? "missing layers: " + item.missing_layers.join(", ") : "",
+                    item.checked_yogas.length ? "checked yogas: " + item.checked_yogas.join(", ") : "",
+                    item.failed_yogas.length ? "failed yogas: " + item.failed_yogas.join(", ") : "",
+                    item.missing_yogas.length ? "missing yogas: " + item.missing_yogas.join(", ") : "",
+                    item.skipped_yogas.length ? "skipped yogas: " + item.skipped_yogas.join(", ") : "",
                     item.failed_fields.length ? "failed: " + item.failed_fields.join(", ") : "",
                     item.missing_fields.length ? "missing: " + item.missing_fields.join(", ") : "",
                   ]

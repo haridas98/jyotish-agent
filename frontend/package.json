@@ -39,6 +39,7 @@
     "test:accuracy-panchanga-parity": "node scripts/check-accuracy-panchanga-parity-ui.mjs",
     "test:accuracy-ashtakavarga-parity": "node scripts/check-accuracy-ashtakavarga-parity-ui.mjs",
     "test:accuracy-strengths-parity": "node scripts/check-accuracy-strengths-parity-ui.mjs",
+    "test:accuracy-yoga-parity": "node scripts/check-accuracy-yoga-parity-ui.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",

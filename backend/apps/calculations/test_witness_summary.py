@@ -1760,3 +1760,166 @@ def test_witness_strengths_parity_default_path_matches_command_output(settings):
     normalized = str(settings.WITNESS_STRENGTHS_PARITY_REPORT_PATH).replace("\\", "/")
 
     assert normalized.endswith("/.tmp/witness-review/strengths-parity-report.json")
+
+
+def _write_yoga_parity_report(path, *, status: str = "failed", case_id: str = "case-yoga-a"):
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "jyotish-yoga-parity-report-v1",
+                "metadata": {
+                    "generated_at": "2026-06-21T00:00:00+00:00",
+                    "target_reviewed_count": 20,
+                    "layers": ["active_yogas"],
+                    "witness_sources": ["jhora", "parashara_light"],
+                },
+                "summary": {
+                    "case_count": 2,
+                    "comparable_count": 1,
+                    "passed_count": 0 if status == "failed" else 20,
+                    "failed_count": 1 if status == "failed" else 0,
+                    "missing_witness_count": 0,
+                    "not_reviewed_count": 0,
+                    "not_comparable_count": 1,
+                    "target_reviewed_count": 20,
+                    "target_met": status != "failed",
+                },
+                "layer_summary": {
+                    "active_yogas": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 0, "not_comparable": 1},
+                },
+                "yoga_summary": {
+                    "ruchaka": {"passed": 0, "failed": 1 if status == "failed" else 0, "missing": 1 if status == "failed" else 0, "skipped": 0},
+                    "unlisted_regional_yoga": {"passed": 0, "failed": 0, "missing": 0, "skipped": 1},
+                },
+                "cases": [
+                    {
+                        "case_id": case_id,
+                        "review_status": "jhora_verified",
+                        "sources_present": ["jhora"],
+                        "comparison_status": status,
+                        "checked_layers": ["active_yogas"],
+                        "failed_layers": ["active_yogas"] if status == "failed" else [],
+                        "missing_layers": [],
+                        "checked_yogas": ["ruchaka"],
+                        "matched_yogas": [] if status == "failed" else ["ruchaka"],
+                        "failed_yogas": ["ruchaka"] if status == "failed" else [],
+                        "missing_yogas": ["ruchaka"] if status == "failed" else [],
+                        "skipped_yogas": ["unlisted_regional_yoga"],
+                        "failed_fields": ["active_yogas.ruchaka"] if status == "failed" else [],
+                        "missing_fields": [],
+                        "field_results": [
+                            {
+                                "source": "jhora",
+                                "layer": "active_yogas",
+                                "field": "active_yogas.ruchaka",
+                                "expected": "ruchaka",
+                                "actual": "",
+                                "passed": False,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_witness_summary_exposes_safe_yoga_parity_diagnostic(tmp_path):
+    report_path = tmp_path / "yoga-parity-report.json"
+    _write_yoga_parity_report(report_path)
+
+    summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_yoga_parity_report_path=report_path,
+    )
+
+    parity = summary["witness_yoga_parity"]
+    assert parity["available"] is True
+    assert parity["status"] == "diff_open"
+    assert parity["schema_version"] == "jyotish-yoga-parity-report-v1"
+    assert parity["source_report"] == str(report_path)
+    assert parity["summary"]["failed_count"] == 1
+    assert parity["layer_summary"]["active_yogas"]["failed"] == 1
+    assert parity["yoga_summary"]["ruchaka"]["failed"] == 1
+    assert parity["yoga_summary"]["unlisted_regional_yoga"]["skipped"] == 1
+    assert parity["target_met"] is False
+    assert parity["next_actions"] == [
+        {
+            "case_id": "case-yoga-a",
+            "status": "failed",
+            "checked_layers": ["active_yogas"],
+            "failed_layers": ["active_yogas"],
+            "missing_layers": [],
+            "checked_yogas": ["ruchaka"],
+            "matched_yogas": [],
+            "failed_yogas": ["ruchaka"],
+            "missing_yogas": ["ruchaka"],
+            "skipped_yogas": ["unlisted_regional_yoga"],
+            "missing_fields": [],
+            "failed_fields": ["active_yogas.ruchaka"],
+        }
+    ]
+    serialized = json.dumps(parity, ensure_ascii=False).lower()
+    for forbidden in [
+        "field_results",
+        '"expected"',
+        '"actual"',
+        "sources_present",
+        '"source"',
+        "mark_",
+        "seal_witness_case",
+        "--ack-diff-open",
+        "authority",
+        "authoritative",
+    ]:
+        assert forbidden not in serialized
+
+
+def test_witness_summary_yoga_parity_missing_and_invalid_are_safe(tmp_path):
+    missing_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_yoga_parity_report_path=tmp_path / "missing-yoga-parity.json",
+    )
+    assert missing_summary["witness_yoga_parity"]["available"] is False
+    assert missing_summary["witness_yoga_parity"]["status"] == "missing"
+
+    invalid_path = tmp_path / "invalid-yoga-parity.json"
+    invalid_path.write_text("{broken", encoding="utf-8")
+    invalid_summary = build_witness_summary(
+        jhora_report_path=tmp_path / "missing-jhora-report.json",
+        parashara_light_packet_path=tmp_path / "missing-pl-packet.json",
+        witness_yoga_parity_report_path=invalid_path,
+    )
+    parity = invalid_summary["witness_yoga_parity"]
+    assert parity["available"] is False
+    assert parity["status"] == "invalid"
+    assert "traceback" not in json.dumps(parity, ensure_ascii=False).lower()
+
+
+def test_witness_summary_api_cache_fingerprint_includes_yoga_parity_path(settings, tmp_path):
+    first_path = tmp_path / "first-yoga-parity.json"
+    second_path = tmp_path / "second-yoga-parity.json"
+    _write_yoga_parity_report(first_path, case_id="first-yoga-case")
+    _write_yoga_parity_report(second_path, case_id="second-yoga-case")
+    settings.JHORA_ACCURACY_REPORT_PATH = tmp_path / "missing-jhora.json"
+    settings.PARASHARA_LIGHT_PACKET_PATH = tmp_path / "missing-pl.json"
+    settings.PARASHARA_LIGHT_MANUAL_WITNESS_VALUES_PATH = ""
+    settings.WITNESS_YOGA_PARITY_REPORT_PATH = first_path
+
+    first_response = APIClient().get(reverse("witness-summary"))
+    settings.WITNESS_YOGA_PARITY_REPORT_PATH = second_path
+    second_response = APIClient().get(reverse("witness-summary"))
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    assert first_response.data["witness_yoga_parity"]["next_actions"][0]["case_id"] == "first-yoga-case"
+    assert second_response.data["witness_yoga_parity"]["next_actions"][0]["case_id"] == "second-yoga-case"
+
+
+def test_witness_yoga_parity_default_path_matches_command_output(settings):
+    normalized = str(settings.WITNESS_YOGA_PARITY_REPORT_PATH).replace("\\", "/")
+
+    assert normalized.endswith("/.tmp/witness-review/yoga-parity-report.json")
