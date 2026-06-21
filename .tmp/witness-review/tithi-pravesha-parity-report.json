@@ -1,0 +1,360 @@
+{
+  "schema_version": "jyotish-tithi-pravesha-parity-report-v1",
+  "metadata": {
+    "generated_at": "2026-06-21T19:28:28.640752+00:00",
+    "target_reviewed_count": 20,
+    "layers": [
+      "return_context",
+      "target_year",
+      "solar_lunar_angle",
+      "return_moment",
+      "return_chart",
+      "annual_panchanga",
+      "tajaka_baseline"
+    ],
+    "tolerance_profile": {
+      "degrees": 0.01
+    },
+    "diagnostic_policy": "Reviewed witness Tithi Pravesha rows are compared with Jyotish Agent annual return payloads.",
+    "normalization_notes": [
+      "Tithi Pravesha, annual_return, varshaphala and tajaka witness payloads are normalized.",
+      "Solar-lunar angle and degree fields use 0.01 degree tolerance.",
+      "Unknown optional annual return fields are skipped unless no comparable fields remain."
+    ],
+    "witness_sources": [
+      "jhora",
+      "parashara_light"
+    ]
+  },
+  "summary": {
+    "case_count": 21,
+    "comparable_count": 0,
+    "passed_count": 0,
+    "failed_count": 0,
+    "missing_witness_count": 0,
+    "not_reviewed_count": 21,
+    "not_comparable_count": 0,
+    "target_reviewed_count": 20,
+    "target_met": false
+  },
+  "layer_summary": {
+    "return_context": {
+      "passed": 0,
+      "failed": 0,
+      "missing": 0,
+      "not_comparable": 21
+    },
+    "target_year": {
+      "passed": 0,
+      "failed": 0,
+      "missing": 0,
+      "not_comparable": 21
+    },
+    "solar_lunar_angle": {
+      "passed": 0,
+      "failed": 0,
+      "missing": 0,
+      "not_comparable": 21
+    },
+    "return_moment": {
+      "passed": 0,
+      "failed": 0,
+      "missing": 0,
+      "not_comparable": 21
+    },
+    "return_chart": {
+      "passed": 0,
+      "failed": 0,
+      "missing": 0,
+      "not_comparable": 21
+    },
+    "annual_panchanga": {
+      "passed": 0,
+      "failed": 0,
+      "missing": 0,
+      "not_comparable": 21
+    },
+    "tajaka_baseline": {
+      "passed": 0,
+      "failed": 0,
+      "missing": 0,
+      "not_comparable": 21
+    }
+  },
+  "field_summary": {},
+  "cases": [
+    {
+      "case_id": "sterlitamak-1998-04-30-1345",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "vrindavan-1990-08-15-1024",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "delhi-india-1947-08-15-000001",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "mayapur-2001-02-03-0910",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "new-york-2026-03-08-0155",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "new-york-2026-11-01-0130",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "london-2026-03-29-0105",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "moscow-1899-12-31-2350",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "kolkata-1880-01-01-0600",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "jagannatha-puri-1922-07-01-1200",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "los-angeles-2026-06-21-0001",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "tokyo-2026-12-31-2359",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "reykjavik-2026-06-01-0005",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "sydney-2026-10-04-0205",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "cape-town-2026-04-14-0600",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "sao-paulo-2018-11-04-0030",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "anchorage-2026-01-15-1200",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "honolulu-2026-05-01-1200",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "paris-2026-10-25-0230",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "ujjain-2026-03-20-0600",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    },
+    {
+      "case_id": "mayapur-2026-01-01-0000",
+      "source": "jhora,parashara_light",
+      "review_status": "draft",
+      "comparison_status": "not_reviewed",
+      "checked_layers": [],
+      "failed_layers": [],
+      "missing_layers": [],
+      "checked_fields": [],
+      "failed_fields": [],
+      "missing_fields": [],
+      "skipped_fields": []
+    }
+  ]
+}
