@@ -69,14 +69,15 @@ def test_ops_bundle_accepts_raw_summary_and_roadmap_input():
     assert raw_bundle["next_actions"][0]["key"] == "witness_core_parity"
 
 
-def test_ops_bundle_priority_state_totals_are_deterministic():
+def test_ops_bundle_priority_state_totals_are_deterministic(tmp_path):
     bundle = build_witness_parity_ops_bundle(
         _all_ready_summary(
             witness_core_parity=_payload(failed=1),
             witness_varga_parity=_payload(missing=2),
             witness_dasha_parity={"available": False, "summary": {}},
             witness_panchanga_parity={"available": False, "summary": {}},
-        )
+        ),
+        report_availability=_availability_with_present_count(tmp_path, present_count=2),
     )
 
     assert bundle["priority_totals"] == {"high": 2, "medium": 2, "low": 15}
