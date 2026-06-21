@@ -265,7 +265,7 @@ def _is_reviewed(record: dict[str, Any]) -> bool:
 def _compare_record(record: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str], list[str], list[str], str]:
     fixture, chart = _load_fixture_and_chart(Path(str(record.get("path") or "")))
     expected, skipped_fields, skipped_kutas = _expected_compatibility(fixture, str(record["source"]))
-    actual = _actual_compatibility(chart)
+    actual = _actual_compatibility(chart, fixture)
     if not expected and not skipped_fields:
         return [], [f"{record['source']}.compatibility"], [], [], "witness"
     if not actual:
@@ -317,20 +317,26 @@ def _expected_compatibility(fixture: dict[str, Any], source: str) -> tuple[dict[
     return {}, [], []
 
 
-def _actual_compatibility(chart: dict[str, Any]) -> dict[str, Any]:
+def _actual_compatibility(chart: dict[str, Any], fixture: dict[str, Any] | None = None) -> dict[str, Any]:
     for key in ("compatibility", "compatibility_report", "ashtakuta"):
         value = chart.get(key)
         payload, _skipped_fields, _skipped_kutas = _coerce_compatibility(value)
         if payload:
             return payload
-    if isinstance(chart.get("person_a"), dict) and isinstance(chart.get("person_b"), dict):
+    fallback_inputs = [chart]
+    if isinstance(fixture, dict):
+        fixture_input = fixture.get("input") if isinstance(fixture.get("input"), dict) else {}
+        fallback_inputs.extend([fixture, fixture_input])
+    for candidate in fallback_inputs:
+        if not (isinstance(candidate.get("person_a"), dict) and isinstance(candidate.get("person_b"), dict)):
+            continue
         try:
             from .workflows import build_compatibility_report
 
-            payload, _skipped_fields, _skipped_kutas = _coerce_compatibility(build_compatibility_report(chart))
+            payload, _skipped_fields, _skipped_kutas = _coerce_compatibility(build_compatibility_report(candidate))
             return payload
         except Exception:
-            return {}
+            continue
     return {}
 
 
@@ -672,7 +678,6 @@ def _kuta_summary(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
             bucket = summary.setdefault(kuta, {"passed": 0, "failed": 0, "missing": 0, "skipped": 0})
             if kuta in row.get("failed_kutas", []):
                 bucket["failed"] += 1
-                bucket["missing"] += 1
             else:
                 bucket["passed"] += 1
         for kuta in row.get("missing_kutas", []):

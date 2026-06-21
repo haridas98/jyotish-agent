@@ -88,6 +88,7 @@ def _write_jhora_case(
     review_status: str = "jhora_verified",
     expected=None,
     chart_payload=None,
+    input_payload=None,
 ):
     case_dir = root / "batch-queue" / case_id
     case_dir.mkdir(parents=True)
@@ -95,7 +96,7 @@ def _write_jhora_case(
         "id": case_id,
         "source": "jhora_complete_calculations_clipboard",
         "review_status": review_status,
-        "input": _case_input(case_id),
+        "input": input_payload if input_payload is not None else _case_input(case_id),
         "jhora_metadata": {"capture_status": "export_parsed"},
         "expected": expected if expected is not None else {"compatibility": _compatibility_payload()},
     }
@@ -170,6 +171,8 @@ def test_compatibility_parity_fails_wrong_total_and_kuta(tmp_path):
     assert row["failed_kutas"] == ["tara"]
     assert "ashtakuta_total.total" in row["failed_fields"]
     assert "kuta_breakdown.tara.score" in row["failed_fields"]
+    report = build_witness_compatibility_parity_report(witness_dir=tmp_path / "jhora", pl_root=tmp_path / "pl7")
+    assert report["kuta_summary"]["tara"] == {"passed": 0, "failed": 1, "missing": 0, "skipped": 0}
 
 
 def test_compatibility_parity_passes_pl_manual_normalized_ashtakuta(tmp_path):
@@ -183,6 +186,33 @@ def test_compatibility_parity_passes_pl_manual_normalized_ashtakuta(tmp_path):
     assert row["comparison_status"] == "passed"
     assert report["summary"]["comparable_count"] == 1
     assert report["layer_summary"]["kuta_breakdown"]["passed"] == 1
+
+
+def test_compatibility_parity_computes_actual_from_fixture_person_inputs(tmp_path, monkeypatch):
+    from apps.calculations import workflows
+    from apps.calculations.witness_compatibility_parity import build_witness_compatibility_parity_report
+
+    def fake_build_compatibility_report(data):
+        assert set(data) >= {"person_a", "person_b"}
+        return _compatibility_payload()
+
+    monkeypatch.setattr(workflows, "build_compatibility_report", fake_build_compatibility_report)
+    _write_jhora_case(
+        tmp_path / "jhora",
+        "sterlitamak-1998-04-30-1345",
+        input_payload={
+            "person_a": {"birth_date": "2000-01-01", "birth_time": "10:00", "place_name": "Vrindavan"},
+            "person_b": {"birth_date": "2000-01-02", "birth_time": "10:00", "place_name": "Vrindavan"},
+            "relationship_context": {"role": "partner"},
+        },
+        chart_payload={},
+    )
+
+    report = build_witness_compatibility_parity_report(witness_dir=tmp_path / "jhora", pl_root=tmp_path / "pl7")
+    row = next(item for item in report["cases"] if item["case_id"] == "sterlitamak-1998-04-30-1345")
+
+    assert row["comparison_status"] == "passed"
+    assert report["summary"]["comparable_count"] == 1
 
 
 def test_compatibility_parity_missing_witness_or_actual_is_not_formula_failure(tmp_path):
