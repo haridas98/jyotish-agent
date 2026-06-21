@@ -13,6 +13,7 @@
     "test:relationships": "node scripts/check-relationship-foundation.mjs",
     "test:interactions": "node scripts/check-interactions-foundation.mjs",
     "test:interaction-scenario-presets": "node scripts/check-interaction-scenario-presets.mjs",
+    "test:timing-scenario-presets": "node scripts/check-timing-scenario-presets.mjs",
     "test:compatibility": "node scripts/check-compatibility-foundation.mjs",
     "test:reports": "node scripts/check-reports-foundation.mjs",
     "test:report-recipes": "node scripts/check-report-recipes.mjs",

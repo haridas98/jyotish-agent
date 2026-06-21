@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
 import { buildD1WorkbenchModel } from "@/astrology/d1-workbench";
+import {
+  timingScenarioPresets,
+  type TimingScenarioPreset,
+} from "@/astrology/timing/timingScenarioPresets";
 import { D1ChartWorkbench, D1ChartWorkbenchShell } from "@/ui/d1-workbench";
 import { fetchTransitWorkbench, listChartProfiles, type ChartCalculationRecord, type ChartProfile } from "@/lib/api";
 
@@ -103,6 +107,8 @@ export default function TransitsPage() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>("novice");
   const [showGrahaDrishti, setShowGrahaDrishti] = useState(false);
   const [showRashiDrishti, setShowRashiDrishti] = useState(false);
+  const [selectedTimingPresetId, setSelectedTimingPresetId] = useState<string | null>(null);
+  const [timingScenarioContext, setTimingScenarioContext] = useState("");
   const [status, setStatus] = useState("Загружаю сохранённые карты...");
   const [loading, setLoading] = useState(false);
 
@@ -169,6 +175,11 @@ export default function TransitsPage() {
     }
   };
 
+  const applyTimingScenarioPreset = (preset: TimingScenarioPreset) => {
+    setSelectedTimingPresetId(preset.id);
+    setTimingScenarioContext(preset.context);
+  };
+
   const overlay = (model?.overlay as { natalObjectCount?: number; transitObjectCount?: number; housesRelativeTo?: string } | undefined) ?? null;
   const natalModel = (model?.natal as { hasCalculation?: boolean; grahas?: unknown[]; specialPoints?: unknown[] } | undefined) ?? null;
   const aspectLayer = (model?.aspectLayer as GrahaDrishtiLayer | undefined) ?? null;
@@ -206,6 +217,46 @@ export default function TransitsPage() {
             <p>Выберите карту и контрольный момент.</p>
           </div>
         </header>
+
+        <section className="product-page-card" aria-label="Timing decision presets">
+          <div className="panel-heading">
+            <div>
+              <h2>Timing decision presets</h2>
+              <span>Planning context</span>
+            </div>
+          </div>
+          <div className="dasha-control-bar transit-view-switch" aria-label="Timing scenario presets">
+            {timingScenarioPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className={selectedTimingPresetId === preset.id ? "active" : ""}
+                onClick={() => applyTimingScenarioPreset(preset)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+          <div className="dasha-control-bar" aria-label="Timing planning factors">
+            {(timingScenarioPresets.find((preset) => preset.id === selectedTimingPresetId)?.planningFactors ?? [
+              "Moon state",
+              "weekday",
+              "tithi",
+              "nakshatra",
+              "transits",
+            ]).map((factor) => (
+              <span key={factor}>{factor}</span>
+            ))}
+          </div>
+          <label>
+            Planning note
+            <textarea
+              value={timingScenarioContext}
+              onChange={(event) => setTimingScenarioContext(event.target.value)}
+              placeholder="Add a practical planning note for this timing check."
+            />
+          </label>
+        </section>
 
         <section className="product-page-card dasha-workbench-shell" aria-label="Transit Workbench">
           <div className="dasha-toolbar">
