@@ -51,6 +51,7 @@ for (const marker of [
   "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit",
   "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue",
   "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue operator packet",
+  "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue operator packet dispatch gate",
   "operator attachment manifest",
   "operator packet status",
   "operator packet QA status",
@@ -84,6 +85,7 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAudit",
   "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueue",
   "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacket",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGate",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -112,6 +114,7 @@ for (const marker of [
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAudit",
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueue",
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacket",
+  "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGate",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -140,6 +143,8 @@ for (const marker of [
   "P97-A",
   "P99-A",
   "E100-A",
+  "P101-A",
+  "E102-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -164,6 +169,7 @@ for (const marker of [
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-v1",
+  "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -198,6 +204,7 @@ for (const marker of [
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet",
+  "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate",
   "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff",
   "safe_validation_transcript_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript",
   "safe_validation_command_status=blocked_pending_external_evidence_and_operator_handoff",
@@ -218,6 +225,12 @@ for (const marker of [
   "safe_validation_result_audit_remediation_queue_operator_packet_acknowledgement_status=not_acknowledged",
   "safe_validation_result_audit_remediation_queue_operator_packet_closure_status=not_closed",
   "safe_validation_result_audit_remediation_queue_operator_packet_execution_status=not_executed",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_status=not_dispatched",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_delivery_status=not_delivered",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_acknowledgement_status=not_acknowledged",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_closure_status=not_closed",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_execution_status=not_executed",
   "safe_validation_result_audit_remediation_execution_status=not_executed",
   "safe_validation_result_audit_remediation_ticket_status=not_created",
   "safe_validation_result_audit_remediation_notification_status=not_sent",
@@ -228,6 +241,7 @@ for (const marker of [
   "safe_validation_result_audit_only=true",
   "safe_validation_result_audit_remediation_queue_only=true",
   "safe_validation_result_audit_remediation_queue_operator_packet_only=true",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_only=true",
   "no_command_execution_performed=true",
   "no_safe_validation_result_recorded=true",
   "no_safe_validation_result_accepted=true",
@@ -244,6 +258,11 @@ for (const marker of [
   "no_safe_validation_result_audit_remediation_queue_operator_packet_acknowledged=true",
   "no_safe_validation_result_audit_remediation_queue_operator_packet_closed=true",
   "no_safe_validation_result_audit_remediation_queue_operator_packet_executed=true",
+  "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatched=true",
+  "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_delivered=true",
+  "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_acknowledged=true",
+  "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_closed=true",
+  "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_executed=true",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
@@ -1062,7 +1081,8 @@ assert(!helperSlice.includes('latestStage: "P91-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P93-A"'), "Core evidence pipeline helper must not retain stale P93 latest stage");
 assert(!helperSlice.includes('latestStage: "P95-A"'), "Core evidence pipeline helper must not retain stale P95 latest stage");
 assert(!helperSlice.includes('latestStage: "P97-A"'), "Core evidence pipeline helper must not retain stale P97 latest stage");
-assert(helperSlice.includes('latestStage: "P99-A"'), "Core evidence pipeline helper must expose latest P99 stage");
+assert(!helperSlice.includes('latestStage: "P99-A"'), "Core evidence pipeline helper must not retain stale P99 latest stage");
+assert(helperSlice.includes('latestStage: "P101-A"'), "Core evidence pipeline helper must expose latest P101 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -1084,6 +1104,7 @@ assert(helperSlice.includes('"P93 safe-validation result ledger"'), "Core eviden
 assert(helperSlice.includes('"P95 safe-validation result audit"'), "Core evidence pipeline helper must expose P95 stage sequence");
 assert(helperSlice.includes('"P97 result-audit remediation queue"'), "Core evidence pipeline helper must expose P97 stage sequence");
 assert(helperSlice.includes('"P99 remediation operator packets"'), "Core evidence pipeline helper must expose P99 stage sequence");
+assert(helperSlice.includes('"P101 operator-packet dispatch gate"'), "Core evidence pipeline helper must expose P101 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -2056,7 +2077,8 @@ assert(accuracyRoute.includes("no safe-validation result has been recorded, acce
 assert(!helperSlice.includes('latestStage: "P93-A"'), "Core evidence pipeline helper must not retain stale P93 latest stage");
 assert(!helperSlice.includes('latestStage: "P95-A"'), "Core evidence pipeline helper must not retain stale P95 latest stage");
 assert(!helperSlice.includes('latestStage: "P97-A"'), "Core evidence pipeline helper must not retain stale P97 latest stage");
-assert(helperSlice.includes('latestStage: "P99-A"'), "Core evidence pipeline helper must expose latest P99 stage");
+assert(!helperSlice.includes('latestStage: "P99-A"'), "Core evidence pipeline helper must not retain stale P99 latest stage");
+assert(helperSlice.includes('latestStage: "P101-A"'), "Core evidence pipeline helper must expose latest P101 stage");
 assert(helperSlice.includes('"P95 safe-validation result audit"'), "Core evidence pipeline helper must expose P95 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-v1"'), "Core evidence safe-validation result audit helper must expose P95 schema");
 assert(helperSlice.includes('stage: "P95-A"'), "Core evidence safe-validation result audit helper must expose P95-A stage");
@@ -2220,6 +2242,59 @@ assert(accuracyRoute.includes("packetize_operator_handoff_readiness_remediation_
 assert(accuracyRoute.includes("packetize_no_external_action_remediation_blocked_label_only"), "Accuracy route marker must expose P99 no external action packet label");
 assert(accuracyRoute.includes("packetize_release_gate_remediation_blocked_label_only"), "Accuracy route marker must expose P99 release blocked packet label");
 assert(accuracyRoute.includes("blocked operator-packet readiness rows"), "Accuracy route marker must expose P99 blocked copy");
+assert(helperSlice.includes("buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGate"), "Core evidence helper must expose P101 dispatch-gate builder");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-v1"'), "Core evidence dispatch-gate helper must expose P101 schema");
+assert(helperSlice.includes('stage: "P101-A"'), "Core evidence dispatch-gate helper must expose P101-A stage");
+assert(helperSlice.includes('status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate"'), "Core evidence dispatch-gate helper must expose P101 status");
+assert(helperSlice.includes('upstreamOperatorPacketStage: "P99-A"'), "Core evidence dispatch-gate helper must expose upstream P99 stage");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateRows: 40"), "Core evidence dispatch-gate helper must expose P101 row count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateFamilyCount: 4"), "Core evidence dispatch-gate helper must expose P101 family count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateReadyCount: 0"), "Core evidence dispatch-gate helper must expose P101 ready count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateBlockedCount: 40"), "Core evidence dispatch-gate helper must expose P101 blocked count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchedCount: 0"), "Core evidence dispatch-gate helper must expose P101 no dispatched count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateDeliveredCount: 0"), "Core evidence dispatch-gate helper must expose P101 no delivered count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateAcknowledgedCount: 0"), "Core evidence dispatch-gate helper must expose P101 no acknowledged count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateClosedCount: 0"), "Core evidence dispatch-gate helper must expose P101 no closed count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateExecutedCount: 0"), "Core evidence dispatch-gate helper must expose P101 no executed count");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate"'), "Core evidence dispatch-gate helper must expose P101 status label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOperatorPacketDispatchStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_status=not_dispatched"'), "Core evidence dispatch-gate helper must expose P101 not-dispatched label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateOnlyLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_only=true"'), "Core evidence dispatch-gate helper must expose P101 only label");
+assert(helperSlice.includes("gate_manifest_shape_operator_packet_dispatch_blocked_label_only"), "Core evidence dispatch-gate helper must expose manifest shape gate label");
+assert(helperSlice.includes("gate_operator_handoff_readiness_operator_packet_dispatch_blocked_label_only"), "Core evidence dispatch-gate helper must expose handoff readiness gate label");
+assert(helperSlice.includes("gate_no_external_action_operator_packet_dispatch_blocked_label_only"), "Core evidence dispatch-gate helper must expose no external action gate label");
+assert(helperSlice.includes("gate_release_gate_operator_packet_dispatch_blocked_label_only"), "Core evidence dispatch-gate helper must expose release blocked gate label");
+assert(preflightSlice.includes("P101 operator-packet dispatch gate"), "Core evidence pipeline UI must render P101 stage");
+assert(preflightSlice.includes("Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue operator packet dispatch gate"), "Core evidence P101 UI must render its heading");
+assert(accuracyRoute.includes("E102-A"), "Accuracy route marker must expose E102 frontend stage");
+assert(accuracyRoute.includes("P101-A"), "Accuracy route marker must expose P101 backend stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-v1"), "Accuracy route marker must expose P101 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate"), "Accuracy route marker must expose P101 status");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_rows=40"), "Accuracy route marker must expose P101 dispatch-gate row count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_family_count=4"), "Accuracy route marker must expose P101 family count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_ready_count=0"), "Accuracy route marker must expose P101 no ready gate count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_blocked_count=40"), "Accuracy route marker must expose P101 blocked gate count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatched_count=0"), "Accuracy route marker must expose P101 no dispatched packets count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_delivered_count=0"), "Accuracy route marker must expose P101 no delivered dispatch-gate count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_acknowledged_count=0"), "Accuracy route marker must expose P101 no acknowledged dispatch-gate count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_closed_count=0"), "Accuracy route marker must expose P101 no closed dispatch-gate count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_executed_count=0"), "Accuracy route marker must expose P101 no executed dispatch-gate count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate"), "Accuracy route marker must expose P101 dispatch-gate status label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_status=not_dispatched"), "Accuracy route marker must expose P101 not-dispatched label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_delivery_status=not_delivered"), "Accuracy route marker must expose P101 dispatch-gate delivery label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_acknowledgement_status=not_acknowledged"), "Accuracy route marker must expose P101 dispatch-gate acknowledgement label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_closure_status=not_closed"), "Accuracy route marker must expose P101 dispatch-gate closure label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_execution_status=not_executed"), "Accuracy route marker must expose P101 dispatch-gate execution label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_only=true"), "Accuracy route marker must expose P101 dispatch-gate-only label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_queue_operator_packet_dispatched=true"), "Accuracy route marker must expose P101 no packet dispatched label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_delivered=true"), "Accuracy route marker must expose P101 no dispatch-gate delivered label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_acknowledged=true"), "Accuracy route marker must expose P101 no dispatch-gate acknowledged label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_closed=true"), "Accuracy route marker must expose P101 no dispatch-gate closed label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_executed=true"), "Accuracy route marker must expose P101 no dispatch-gate executed label");
+assert(accuracyRoute.includes("gate_manifest_shape_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P101 manifest shape dispatch label");
+assert(accuracyRoute.includes("gate_operator_handoff_readiness_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P101 handoff readiness dispatch label");
+assert(accuracyRoute.includes("gate_no_external_action_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P101 no external action dispatch label");
+assert(accuracyRoute.includes("gate_release_gate_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P101 release blocked dispatch label");
+assert(accuracyRoute.includes("blocked operator-packet dispatch-gate rows"), "Accuracy route marker must expose P101 blocked dispatch-gate copy");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
