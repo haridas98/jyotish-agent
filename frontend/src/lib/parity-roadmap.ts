@@ -270,7 +270,7 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P77-A";
+  latestStage: "P79-A";
   stageSequence: [
     "P53 backlog",
     "P55 intake",
@@ -285,6 +285,7 @@ export type CoreEvidencePipeline = {
     "P73 external receipt gate",
     "P75 receipt manifest templates",
     "P77 receipt manifest preflight",
+    "P79 receipt manifest acceptance gate",
   ];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
@@ -435,8 +436,27 @@ export type CoreEvidencePipeline = {
     readyToMarkRows: 0;
     remainingNotReviewedRows: 20;
   };
+  externalReceiptManifestAcceptanceGateSummary: {
+    caseReceiptManifestAcceptanceGateRows: 5;
+    attachmentReceiptManifestAcceptanceGateRows: 10;
+    pendingExternalEvidenceReceiptManifestAcceptanceCount: 10;
+    pendingJhoraReceiptManifestAcceptanceCount: 5;
+    pendingParasharaLightReceiptManifestAcceptanceCount: 5;
+    receiptManifestReceivedCount: 0;
+    receiptManifestAcceptedCount: 0;
+    receiptManifestRejectedCount: 0;
+    evidenceReceivedCount: 0;
+    evidenceValidatedCount: 0;
+    evidenceFileRecordedCount: 0;
+    evidenceHashRecordedCount: 0;
+    evidenceUploadedCount: 0;
+    evidenceAttachedCount: 0;
+    readyToAttachRows: 0;
+    readyToMarkRows: 0;
+    remainingNotReviewedRows: 20;
+  };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
-  statusCopy: "blocked external evidence receipt manifest preflight labels";
+  statusCopy: "blocked external evidence receipt manifest acceptance gate labels";
 };
 
 export type CoreEvidenceAttachmentGate = {
@@ -1001,6 +1021,134 @@ export type CoreEvidenceExternalReceiptManifestPreflight = {
   cautionCopy: "no manifest, evidence, file, hash, upload, attachment, or mark command has happened; ready-to-attach is false; ready-to-mark is false; release remains blocked";
 };
 
+export type CoreEvidenceExternalReceiptManifestAcceptanceGate = {
+  title: "Core evidence external receipt manifest acceptance gate";
+  schemaVersion: "jyotish-core-evidence-external-receipt-manifest-acceptance-gate-v1";
+  stage: "P79-A";
+  status: "blocked_pending_external_evidence_receipt_manifest_acceptance";
+  upstreamPreflightSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-preflight-v1";
+  upstreamPreflightStage: "P77-A";
+  upstreamPreflightStatus: "blocked_pending_external_evidence_receipt_manifest_preflight";
+  upstreamTemplateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-templates-v1";
+  upstreamTemplateStage: "P75-A";
+  upstreamTemplateStatus: "blocked_pending_external_evidence_receipt_manifests";
+  caseReceiptManifestAcceptanceGateRows: 5;
+  attachmentReceiptManifestAcceptanceGateRows: 10;
+  pendingExternalEvidenceReceiptManifestAcceptanceCount: 10;
+  pendingJhoraReceiptManifestAcceptanceCount: 5;
+  pendingParasharaLightReceiptManifestAcceptanceCount: 5;
+  receiptManifestReceivedCount: 0;
+  receiptManifestAcceptedCount: 0;
+  receiptManifestRejectedCount: 0;
+  evidenceReceivedCount: 0;
+  evidenceValidatedCount: 0;
+  evidenceFileRecordedCount: 0;
+  evidenceHashRecordedCount: 0;
+  evidenceUploadedCount: 0;
+  evidenceAttachedCount: 0;
+  readyToAttachRows: 0;
+  readyToMarkRows: 0;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  paritySuccessClaimed: false;
+  releaseReadyClaimed: false;
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  slotFamilies: [
+    "jhora_screenshot_or_packet",
+    "parashara_light_manual_values_or_packet",
+  ];
+  receiptManifestAcceptanceStatus: "blocked_pending_external_evidence_receipt_manifest_acceptance";
+  receiptManifestPreflightStatus: "blocked_pending_external_evidence_receipt_manifest_preflight";
+  receiptManifestTemplateStatus: "blocked_pending_external_evidence_receipt_manifests";
+  receiptGateStatus: "blocked_pending_external_evidence_receipts";
+  intakeStatus: "blocked_pending_external_evidence_intake";
+  readinessStatus: "blocked_pending_external_evidence_attachment";
+  acceptanceGateStatusLabel: "acceptance_gate_status=blocked_pending_external_evidence_receipt_manifest_acceptance";
+  receiptManifestStatusLabel: "receipt_manifest_status=not_received";
+  receiptManifestAcceptanceStatusLabel: "receipt_manifest_acceptance_status=not_started";
+  receiptManifestRejectionStatusLabel: "receipt_manifest_rejection_status=not_started";
+  receiptManifestReceivedLabel: "receipt_manifest_received_count=0";
+  receiptManifestAcceptedLabel: "receipt_manifest_accepted_count=0";
+  receiptManifestRejectedLabel: "receipt_manifest_rejected_count=0";
+  evidenceReceivedLabel: "evidence_received_count=0";
+  evidenceValidatedLabel: "evidence_validated_count=0";
+  evidenceFileRecordedLabel: "evidence_file_recorded_count=0";
+  evidenceHashRecordedLabel: "evidence_hash_recorded_count=0";
+  evidenceUploadedLabel: "evidence_uploaded_count=0";
+  evidenceAttachedLabel: "evidence_attached_count=0";
+  readyToAttachLabel: "ready_to_attach=false";
+  readyToMarkLabel: "ready_to_mark=false";
+  paritySuccessClaimedLabel: "parity_success_claimed=false";
+  releaseReadyClaimedLabel: "release_ready_claimed=false";
+  noRawValuesInManifestLabel: "no_raw_values_in_manifest=true";
+  noPrivatePathsInManifestLabel: "no_private_paths_in_manifest=true";
+  noSecretsInManifestLabel: "no_secrets_in_manifest=true";
+  noEvidenceFileRecordedLabel: "no_evidence_file_recorded=true";
+  noEvidenceHashRecordedLabel: "no_evidence_hash_recorded=true";
+  noUploadExecutedLabel: "no_upload_executed=true";
+  noAttachmentExecutedLabel: "no_attachment_executed=true";
+  noMarkCommandExecutedLabel: "no_mark_command_executed=true";
+  safeAcceptanceLabels: [
+    "await_jhora_receipt_manifest_acceptance",
+    "await_parashara_light_receipt_manifest_acceptance",
+    "record_external_evidence_receipt_manifest_after_human_review",
+    "rerun_external_receipt_manifest_acceptance_gate_report",
+    "rerun_external_receipt_manifest_preflight_report",
+    "rerun_external_receipt_manifest_templates_report",
+    "rerun_external_receipt_gate_report",
+    "rerun_external_intake_contract_report",
+    "rerun_operator_packet_attachment_readiness_report",
+    "rerun_attachment_gate_report",
+    "preflight_witness_review",
+  ];
+  safeAcceptanceFields: [
+    "redacted_receipt_manifest_id",
+    "operator_acceptance_note_label",
+    "required_human_receipt_timestamp_utc",
+    "no_raw_values_in_manifest",
+    "no_private_paths_in_manifest",
+    "no_secrets_in_manifest",
+    "no_evidence_file_recorded",
+    "no_evidence_hash_recorded",
+    "no_upload_executed",
+    "no_attachment_executed",
+    "no_mark_command_executed",
+  ];
+  acceptanceCriteriaLabels: [
+    "require_human_receipt_timestamp_utc",
+    "require_redacted_receipt_manifest_id",
+    "require_operator_acceptance_note_label",
+    "require_no_raw_values_in_manifest",
+    "require_no_private_paths_in_manifest",
+    "require_no_secrets_in_manifest",
+    "require_no_evidence_file_recorded_before_acceptance",
+    "require_no_evidence_hash_recorded_before_acceptance",
+    "block_upload_until_manifest_accepted",
+    "block_attachment_until_manifest_accepted",
+    "block_mark_until_manifest_accepted",
+  ];
+  safeValidationCommandFamilies: [
+    "build_witness_core_evidence_external_receipt_manifest_acceptance_gate_report",
+    "build_witness_core_evidence_external_receipt_manifest_preflight_report",
+    "build_witness_core_evidence_external_receipt_manifest_templates_report",
+    "build_witness_core_evidence_external_receipt_gate_report",
+    "build_witness_core_evidence_external_intake_contract_report",
+    "build_witness_core_evidence_operator_packet_attachment_readiness_report",
+    "build_witness_core_evidence_attachment_gate_report",
+    "preflight_witness_review",
+  ];
+  operatorNote: "external receipt manifest acceptance gate is blocked; no manifest has been received, accepted, rejected, uploaded, attached, or marked";
+  statusCopy: "blocked acceptance gate for future human-submitted receipt manifests";
+  cautionCopy: "no manifest, evidence, file, hash, upload, attachment, or mark command has happened; ready-to-attach is false; ready-to-mark is false; release remains blocked";
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -1330,7 +1478,7 @@ export function buildCoreEvidenceReadiness(): CoreEvidenceReadiness {
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P77-A",
+    latestStage: "P79-A",
     stageSequence: [
       "P53 backlog",
       "P55 intake",
@@ -1345,6 +1493,7 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       "P73 external receipt gate",
       "P75 receipt manifest templates",
       "P77 receipt manifest preflight",
+      "P79 receipt manifest acceptance gate",
     ],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
@@ -1495,8 +1644,27 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       readyToMarkRows: 0,
       remainingNotReviewedRows: 20,
     },
+    externalReceiptManifestAcceptanceGateSummary: {
+      caseReceiptManifestAcceptanceGateRows: 5,
+      attachmentReceiptManifestAcceptanceGateRows: 10,
+      pendingExternalEvidenceReceiptManifestAcceptanceCount: 10,
+      pendingJhoraReceiptManifestAcceptanceCount: 5,
+      pendingParasharaLightReceiptManifestAcceptanceCount: 5,
+      receiptManifestReceivedCount: 0,
+      receiptManifestAcceptedCount: 0,
+      receiptManifestRejectedCount: 0,
+      evidenceReceivedCount: 0,
+      evidenceValidatedCount: 0,
+      evidenceFileRecordedCount: 0,
+      evidenceHashRecordedCount: 0,
+      evidenceUploadedCount: 0,
+      evidenceAttachedCount: 0,
+      readyToAttachRows: 0,
+      readyToMarkRows: 0,
+      remainingNotReviewedRows: 20,
+    },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
-    statusCopy: "blocked external evidence receipt manifest preflight labels",
+    statusCopy: "blocked external evidence receipt manifest acceptance gate labels",
   };
 }
 
@@ -2078,6 +2246,136 @@ export function buildCoreEvidenceExternalReceiptManifestPreflight(): CoreEvidenc
     ],
     operatorNote: "external receipt manifest preflight is blocked; preflight rows are labels only and no evidence file, hash, upload, attachment, or mark command is executed",
     statusCopy: "external evidence receipt manifest preflight remains blocked",
+    cautionCopy: "no manifest, evidence, file, hash, upload, attachment, or mark command has happened; ready-to-attach is false; ready-to-mark is false; release remains blocked",
+  };
+}
+
+export function buildCoreEvidenceExternalReceiptManifestAcceptanceGate(): CoreEvidenceExternalReceiptManifestAcceptanceGate {
+  return {
+    title: "Core evidence external receipt manifest acceptance gate",
+    schemaVersion: "jyotish-core-evidence-external-receipt-manifest-acceptance-gate-v1",
+    stage: "P79-A",
+    status: "blocked_pending_external_evidence_receipt_manifest_acceptance",
+    upstreamPreflightSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-preflight-v1",
+    upstreamPreflightStage: "P77-A",
+    upstreamPreflightStatus: "blocked_pending_external_evidence_receipt_manifest_preflight",
+    upstreamTemplateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-templates-v1",
+    upstreamTemplateStage: "P75-A",
+    upstreamTemplateStatus: "blocked_pending_external_evidence_receipt_manifests",
+    caseReceiptManifestAcceptanceGateRows: 5,
+    attachmentReceiptManifestAcceptanceGateRows: 10,
+    pendingExternalEvidenceReceiptManifestAcceptanceCount: 10,
+    pendingJhoraReceiptManifestAcceptanceCount: 5,
+    pendingParasharaLightReceiptManifestAcceptanceCount: 5,
+    receiptManifestReceivedCount: 0,
+    receiptManifestAcceptedCount: 0,
+    receiptManifestRejectedCount: 0,
+    evidenceReceivedCount: 0,
+    evidenceValidatedCount: 0,
+    evidenceFileRecordedCount: 0,
+    evidenceHashRecordedCount: 0,
+    evidenceUploadedCount: 0,
+    evidenceAttachedCount: 0,
+    readyToAttachRows: 0,
+    readyToMarkRows: 0,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    paritySuccessClaimed: false,
+    releaseReadyClaimed: false,
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    slotFamilies: [
+      "jhora_screenshot_or_packet",
+      "parashara_light_manual_values_or_packet",
+    ],
+    receiptManifestAcceptanceStatus: "blocked_pending_external_evidence_receipt_manifest_acceptance",
+    receiptManifestPreflightStatus: "blocked_pending_external_evidence_receipt_manifest_preflight",
+    receiptManifestTemplateStatus: "blocked_pending_external_evidence_receipt_manifests",
+    receiptGateStatus: "blocked_pending_external_evidence_receipts",
+    intakeStatus: "blocked_pending_external_evidence_intake",
+    readinessStatus: "blocked_pending_external_evidence_attachment",
+    acceptanceGateStatusLabel: "acceptance_gate_status=blocked_pending_external_evidence_receipt_manifest_acceptance",
+    receiptManifestStatusLabel: "receipt_manifest_status=not_received",
+    receiptManifestAcceptanceStatusLabel: "receipt_manifest_acceptance_status=not_started",
+    receiptManifestRejectionStatusLabel: "receipt_manifest_rejection_status=not_started",
+    receiptManifestReceivedLabel: "receipt_manifest_received_count=0",
+    receiptManifestAcceptedLabel: "receipt_manifest_accepted_count=0",
+    receiptManifestRejectedLabel: "receipt_manifest_rejected_count=0",
+    evidenceReceivedLabel: "evidence_received_count=0",
+    evidenceValidatedLabel: "evidence_validated_count=0",
+    evidenceFileRecordedLabel: "evidence_file_recorded_count=0",
+    evidenceHashRecordedLabel: "evidence_hash_recorded_count=0",
+    evidenceUploadedLabel: "evidence_uploaded_count=0",
+    evidenceAttachedLabel: "evidence_attached_count=0",
+    readyToAttachLabel: "ready_to_attach=false",
+    readyToMarkLabel: "ready_to_mark=false",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    releaseReadyClaimedLabel: "release_ready_claimed=false",
+    noRawValuesInManifestLabel: "no_raw_values_in_manifest=true",
+    noPrivatePathsInManifestLabel: "no_private_paths_in_manifest=true",
+    noSecretsInManifestLabel: "no_secrets_in_manifest=true",
+    noEvidenceFileRecordedLabel: "no_evidence_file_recorded=true",
+    noEvidenceHashRecordedLabel: "no_evidence_hash_recorded=true",
+    noUploadExecutedLabel: "no_upload_executed=true",
+    noAttachmentExecutedLabel: "no_attachment_executed=true",
+    noMarkCommandExecutedLabel: "no_mark_command_executed=true",
+    safeAcceptanceLabels: [
+      "await_jhora_receipt_manifest_acceptance",
+      "await_parashara_light_receipt_manifest_acceptance",
+      "record_external_evidence_receipt_manifest_after_human_review",
+      "rerun_external_receipt_manifest_acceptance_gate_report",
+      "rerun_external_receipt_manifest_preflight_report",
+      "rerun_external_receipt_manifest_templates_report",
+      "rerun_external_receipt_gate_report",
+      "rerun_external_intake_contract_report",
+      "rerun_operator_packet_attachment_readiness_report",
+      "rerun_attachment_gate_report",
+      "preflight_witness_review",
+    ],
+    safeAcceptanceFields: [
+      "redacted_receipt_manifest_id",
+      "operator_acceptance_note_label",
+      "required_human_receipt_timestamp_utc",
+      "no_raw_values_in_manifest",
+      "no_private_paths_in_manifest",
+      "no_secrets_in_manifest",
+      "no_evidence_file_recorded",
+      "no_evidence_hash_recorded",
+      "no_upload_executed",
+      "no_attachment_executed",
+      "no_mark_command_executed",
+    ],
+    acceptanceCriteriaLabels: [
+      "require_human_receipt_timestamp_utc",
+      "require_redacted_receipt_manifest_id",
+      "require_operator_acceptance_note_label",
+      "require_no_raw_values_in_manifest",
+      "require_no_private_paths_in_manifest",
+      "require_no_secrets_in_manifest",
+      "require_no_evidence_file_recorded_before_acceptance",
+      "require_no_evidence_hash_recorded_before_acceptance",
+      "block_upload_until_manifest_accepted",
+      "block_attachment_until_manifest_accepted",
+      "block_mark_until_manifest_accepted",
+    ],
+    safeValidationCommandFamilies: [
+      "build_witness_core_evidence_external_receipt_manifest_acceptance_gate_report",
+      "build_witness_core_evidence_external_receipt_manifest_preflight_report",
+      "build_witness_core_evidence_external_receipt_manifest_templates_report",
+      "build_witness_core_evidence_external_receipt_gate_report",
+      "build_witness_core_evidence_external_intake_contract_report",
+      "build_witness_core_evidence_operator_packet_attachment_readiness_report",
+      "build_witness_core_evidence_attachment_gate_report",
+      "preflight_witness_review",
+    ],
+    operatorNote: "external receipt manifest acceptance gate is blocked; no manifest has been received, accepted, rejected, uploaded, attached, or marked",
+    statusCopy: "blocked acceptance gate for future human-submitted receipt manifests",
     cautionCopy: "no manifest, evidence, file, hash, upload, attachment, or mark command has happened; ready-to-attach is false; ready-to-mark is false; release remains blocked",
   };
 }
