@@ -44,6 +44,7 @@ for (const marker of [
   "Core evidence external receipt manifest acceptance gate",
   "Core evidence external receipt manifest decision queue",
   "Core evidence external receipt manifest decision audit",
+  "Core evidence external receipt manifest decision audit work orders",
   "operator attachment manifest",
   "operator packet status",
   "operator packet QA status",
@@ -70,6 +71,7 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestAcceptanceGate",
   "coreEvidenceExternalReceiptManifestDecisionQueue",
   "coreEvidenceExternalReceiptManifestDecisionAudit",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -90,6 +92,7 @@ for (const marker of [
   "buildCoreEvidenceExternalReceiptManifestAcceptanceGate",
   "buildCoreEvidenceExternalReceiptManifestDecisionQueue",
   "buildCoreEvidenceExternalReceiptManifestDecisionAudit",
+  "buildCoreEvidenceExternalReceiptManifestDecisionAuditWorkOrders",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -109,6 +112,7 @@ for (const marker of [
   "P79-A",
   "P81-A",
   "P83-A",
+  "P85-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -125,6 +129,7 @@ for (const marker of [
   "jyotish-core-evidence-external-receipt-manifest-acceptance-gate-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-queue-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-v1",
+  "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-orders-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -151,6 +156,7 @@ for (const marker of [
   "blocked_pending_external_evidence_receipt_manifest_acceptance",
   "blocked_pending_external_evidence_receipt_manifest_decision",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit",
+  "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
@@ -730,6 +736,58 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditCriteriaLabels",
   "coreEvidenceExternalReceiptManifestDecisionAudit.safeValidationCommandFamilies",
   "coreEvidenceExternalReceiptManifestDecisionAudit.operatorNote",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.stage",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.schemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.status",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.upstreamDecisionAuditSchemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.upstreamDecisionAuditStage",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.upstreamDecisionAuditStatus",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.caseDecisionAuditWorkOrderRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.attachmentDecisionAuditWorkOrderRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.pendingExternalEvidenceDecisionAuditWorkOrderCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.pendingJhoraDecisionAuditWorkOrderCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.pendingParasharaLightDecisionAuditWorkOrderCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditWorkOrderReadyCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditWorkOrderBlockedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditReadyCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditBlockedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionRecordedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditPassedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditFailedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.readyToAttachRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.readyToMarkRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.remainingNotReviewedRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.selectedCaseIds",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.slotFamilies",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditWorkOrderStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionQueueStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.receiptGateStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.intakeStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.readinessStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.receiptManifestStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditRecordStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.workOrderDeliveryStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.humanDecisionAuditStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noRawValuesInManifestLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noPrivatePathsInManifestLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noSecretsInManifestLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noEvidenceFileRecordedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noEvidenceHashRecordedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noUploadExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noAttachmentExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noMarkCommandExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noAcceptExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noRejectExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noDeferExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noExternalNotificationSentLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.noExternalTicketCreatedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.safeDecisionAuditWorkOrderLabels",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.safeDecisionAuditWorkOrderFields",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.decisionAuditWorkOrderCriteriaLabels",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.safeValidationCommandFamilies",
+  "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -822,7 +880,8 @@ assert(!helperSlice.includes('latestStage: "P75-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P77-A"'), "Core evidence pipeline helper must not retain stale P77 latest stage");
 assert(!helperSlice.includes('latestStage: "P79-A"'), "Core evidence pipeline helper must not retain stale P79 latest stage");
 assert(!helperSlice.includes('latestStage: "P81-A"'), "Core evidence pipeline helper must not retain stale P81 latest stage");
-assert(helperSlice.includes('latestStage: "P83-A"'), "Core evidence pipeline helper must expose latest P83 stage");
+assert(!helperSlice.includes('latestStage: "P83-A"'), "Core evidence pipeline helper must not retain stale P83 latest stage");
+assert(helperSlice.includes('latestStage: "P85-A"'), "Core evidence pipeline helper must expose latest P85 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -836,6 +895,7 @@ assert(helperSlice.includes('"P77 receipt manifest preflight"'), "Core evidence 
 assert(helperSlice.includes('"P79 receipt manifest acceptance gate"'), "Core evidence pipeline helper must expose P79 stage sequence");
 assert(helperSlice.includes('"P81 receipt manifest decision queue"'), "Core evidence pipeline helper must expose P81 stage sequence");
 assert(helperSlice.includes('"P83 receipt manifest decision audit"'), "Core evidence pipeline helper must expose P83 stage sequence");
+assert(helperSlice.includes('"P85 decision audit work orders"'), "Core evidence pipeline helper must expose P85 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -1588,6 +1648,63 @@ assert(accuracyRoute.includes("block_attachment_until_manifest_decision_audited"
 assert(accuracyRoute.includes("block_mark_until_manifest_decision_audited"), "Accuracy route marker must expose P83 mark block criterion");
 assert(accuracyRoute.includes("blocked decision audit gate for future human-submitted receipt manifest decisions"), "Accuracy route marker must expose P83 blocked audit copy");
 assert(accuracyRoute.includes("no manifest decision has been recorded or audited"), "Accuracy route marker must expose P83 negative audit copy");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-orders-v1"'), "Core evidence decision audit work orders helper must expose P85 schema");
+assert(helperSlice.includes('stage: "P85-A"'), "Core evidence decision audit work orders helper must expose P85-A stage");
+assert(helperSlice.includes('status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders"'), "Core evidence decision audit work orders helper must expose blocked work-order status");
+assert(helperSlice.includes('upstreamDecisionAuditSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-v1"'), "Core evidence decision audit work orders helper must expose upstream P83 schema");
+assert(helperSlice.includes('upstreamDecisionAuditStage: "P83-A"'), "Core evidence decision audit work orders helper must expose upstream P83 stage");
+assert(helperSlice.includes('upstreamDecisionAuditStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit"'), "Core evidence decision audit work orders helper must expose upstream P83 status");
+assert(helperSlice.includes("caseDecisionAuditWorkOrderRows: 5"), "Core evidence decision audit work orders helper must expose 5 case rows");
+assert(helperSlice.includes("attachmentDecisionAuditWorkOrderRows: 10"), "Core evidence decision audit work orders helper must expose 10 attachment rows");
+assert(helperSlice.includes("pendingExternalEvidenceDecisionAuditWorkOrderCount: 10"), "Core evidence decision audit work orders helper must expose 10 pending work orders");
+assert(helperSlice.includes("pendingJhoraDecisionAuditWorkOrderCount: 5"), "Core evidence decision audit work orders helper must expose 5 JHora work orders");
+assert(helperSlice.includes("pendingParasharaLightDecisionAuditWorkOrderCount: 5"), "Core evidence decision audit work orders helper must expose 5 Parashara Light work orders");
+assert(helperSlice.includes("decisionAuditWorkOrderReadyCount: 0"), "Core evidence decision audit work orders helper must expose 0 ready work orders");
+assert(helperSlice.includes("decisionAuditWorkOrderBlockedCount: 10"), "Core evidence decision audit work orders helper must expose 10 blocked work orders");
+assert(helperSlice.includes("decisionAuditReadyCount: 0"), "Core evidence decision audit work orders helper must expose 0 audit-ready count");
+assert(helperSlice.includes("decisionAuditBlockedCount: 10"), "Core evidence decision audit work orders helper must expose 10 audit-blocked count");
+assert(helperSlice.includes("decisionRecordedCount: 0"), "Core evidence decision audit work orders helper must expose 0 decision-recorded count");
+assert(helperSlice.includes("decisionAuditedCount: 0"), "Core evidence decision audit work orders helper must expose 0 decision-audited count");
+assert(helperSlice.includes("decisionAuditPassedCount: 0"), "Core evidence decision audit work orders helper must expose 0 decision-audit-passed count");
+assert(helperSlice.includes("decisionAuditFailedCount: 0"), "Core evidence decision audit work orders helper must expose 0 decision-audit-failed count");
+assert(helperSlice.includes('decisionAuditWorkOrderStatusLabel: "decision_audit_work_order_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders"'), "Core evidence decision audit work orders helper must expose work-order status label");
+assert(helperSlice.includes('workOrderDeliveryStatusLabel: "work_order_delivery_status=not_delivered"'), "Core evidence decision audit work orders helper must expose delivery status label");
+assert(helperSlice.includes('humanDecisionAuditStatusLabel: "human_decision_audit_status=not_started"'), "Core evidence decision audit work orders helper must expose human audit status label");
+assert(helperSlice.includes('noAcceptExecutedLabel: "no_accept_executed=true"'), "Core evidence decision audit work orders helper must expose no-accept label");
+assert(helperSlice.includes('noRejectExecutedLabel: "no_reject_executed=true"'), "Core evidence decision audit work orders helper must expose no-reject label");
+assert(helperSlice.includes('noDeferExecutedLabel: "no_defer_executed=true"'), "Core evidence decision audit work orders helper must expose no-defer label");
+assert(helperSlice.includes('noExternalNotificationSentLabel: "no_external_notification_sent=true"'), "Core evidence decision audit work orders helper must expose no-notification label");
+assert(helperSlice.includes('noExternalTicketCreatedLabel: "no_external_ticket_created=true"'), "Core evidence decision audit work orders helper must expose no-ticket label");
+assert(helperSlice.includes('"await_jhora_receipt_manifest_decision_audit_work_order"'), "Core evidence decision audit work orders helper must expose JHora work-order label");
+assert(helperSlice.includes('"await_parashara_light_receipt_manifest_decision_audit_work_order"'), "Core evidence decision audit work orders helper must expose Parashara Light work-order label");
+assert(helperSlice.includes('"rerun_external_receipt_manifest_decision_audit_work_orders_report"'), "Core evidence decision audit work orders helper must expose rerun work-orders label");
+assert(helperSlice.includes('"build_witness_core_evidence_external_receipt_manifest_decision_audit_work_orders_report"'), "Core evidence decision audit work orders helper must expose P85 command family");
+assert(preflightSlice.includes("P85 decision audit work orders"), "Core evidence pipeline UI must render P85 stage");
+assert(preflightSlice.includes("Core evidence external receipt manifest decision audit work orders"), "Core evidence decision audit work orders UI must render its heading");
+assert(accuracyRoute.includes("P85-A"), "Accuracy route marker must expose P85 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-decision-audit-work-orders-v1"), "Accuracy route marker must expose P85 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders"), "Accuracy route marker must expose P85 status");
+assert(accuracyRoute.includes("case_decision_audit_work_order_rows=5"), "Accuracy route marker must expose P85 case count");
+assert(accuracyRoute.includes("attachment_decision_audit_work_order_rows=10"), "Accuracy route marker must expose P85 attachment count");
+assert(accuracyRoute.includes("pending_external_evidence_decision_audit_work_order_count=10"), "Accuracy route marker must expose P85 pending work-order count");
+assert(accuracyRoute.includes("pending_jhora_decision_audit_work_order_count=5"), "Accuracy route marker must expose P85 pending JHora count");
+assert(accuracyRoute.includes("pending_parashara_light_decision_audit_work_order_count=5"), "Accuracy route marker must expose P85 pending Parashara Light count");
+assert(accuracyRoute.includes("decision_audit_work_order_ready_count=0"), "Accuracy route marker must expose P85 ready work-order zero count");
+assert(accuracyRoute.includes("decision_audit_work_order_blocked_count=10"), "Accuracy route marker must expose P85 blocked work-order count");
+assert(accuracyRoute.includes("decision_audit_work_order_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders"), "Accuracy route marker must expose P85 work-order status label");
+assert(accuracyRoute.includes("work_order_delivery_status=not_delivered"), "Accuracy route marker must expose P85 delivery status");
+assert(accuracyRoute.includes("human_decision_audit_status=not_started"), "Accuracy route marker must expose P85 human audit status");
+assert(accuracyRoute.includes("no_accept_executed=true"), "Accuracy route marker must expose P85 no-accept label");
+assert(accuracyRoute.includes("no_reject_executed=true"), "Accuracy route marker must expose P85 no-reject label");
+assert(accuracyRoute.includes("no_defer_executed=true"), "Accuracy route marker must expose P85 no-defer label");
+assert(accuracyRoute.includes("no_external_notification_sent=true"), "Accuracy route marker must expose P85 no-notification label");
+assert(accuracyRoute.includes("no_external_ticket_created=true"), "Accuracy route marker must expose P85 no-ticket label");
+assert(accuracyRoute.includes("await_jhora_receipt_manifest_decision_audit_work_order"), "Accuracy route marker must expose P85 JHora work-order label");
+assert(accuracyRoute.includes("await_parashara_light_receipt_manifest_decision_audit_work_order"), "Accuracy route marker must expose P85 Parashara Light work-order label");
+assert(accuracyRoute.includes("rerun_external_receipt_manifest_decision_audit_work_orders_report"), "Accuracy route marker must expose P85 rerun label");
+assert(accuracyRoute.includes("build_witness_core_evidence_external_receipt_manifest_decision_audit_work_orders_report"), "Accuracy route marker must expose P85 command family");
+assert(accuracyRoute.includes("blocked internal decision-audit work-order handoff"), "Accuracy route marker must expose P85 blocked work-order copy");
+assert(accuracyRoute.includes("no work orders have been delivered to external systems"), "Accuracy route marker must expose P85 negative delivery copy");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
