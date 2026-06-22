@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildNextCoreReviewBatchPlan, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5674,7 +5674,7 @@ function AccuracyReportPanel({
   const artifactAvailabilityCheckpoint = buildArtifactAvailabilityCheckpoint(parityCollectionChecklistRows, releaseGateActionSummary);
   const coreReviewPreflightBlocker = buildCoreReviewPreflightBlocker();
   const coreReviewProgress = buildCoreReviewProgress();
-  const nextCoreReviewBatchPlan = buildNextCoreReviewBatchPlan();
+  const coreReviewBatchScan = buildCoreReviewBatchScan();
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5813,15 +5813,20 @@ function AccuracyReportPanel({
             <strong>{coreReviewProgress.failedRows}</strong>
             <small>real diff; max delta {coreReviewProgress.maxAbsDeltaArcseconds} arcseconds; no release readiness is claimed.</small>
           </div>
-          <h3>Next review batch</h3>
-          <p>{nextCoreReviewBatchPlan.batchStatus}.</p>
+          <h3>Core review batch scan</h3>
+          <p>{coreReviewBatchScan.stage}: {coreReviewBatchScan.statusCopy}.</p>
           <small>
-            recommended batch size: {nextCoreReviewBatchPlan.recommendedBatchSize} - {nextCoreReviewBatchPlan.safeCommandFamilies.join(" - ")}
+            requested close count: {coreReviewBatchScan.requestedCloseCount} - scanned candidates: {coreReviewBatchScan.scannedCandidates} - closed rows: {coreReviewBatchScan.closedRows} - skipped rows: {coreReviewBatchScan.skippedRows} - remaining not-reviewed rows: {coreReviewBatchScan.remainingNotReviewedRows}
           </small>
           <div>
-            <span>next command families</span>
-            <strong>{nextCoreReviewBatchPlan.recommendedBatchSize}</strong>
-            <small>{nextCoreReviewBatchPlan.cautionCopy}</small>
+            <span>{coreReviewBatchScan.evidenceTitle}</span>
+            <strong>{coreReviewBatchScan.closedRows}</strong>
+            <small>first skipped case: {coreReviewBatchScan.firstSkippedCaseId} - last skipped case: {coreReviewBatchScan.lastSkippedCaseId} - {coreReviewBatchScan.blockerLabels.join(" - ")}</small>
+          </div>
+          <div>
+            <span>next operator action</span>
+            <strong>{coreReviewBatchScan.skippedRows}</strong>
+            <small>{coreReviewBatchScan.nextOperatorAction}; {coreReviewBatchScan.safeCommandFamilies.join(" - ")}; {coreReviewBatchScan.cautionCopy}.</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">

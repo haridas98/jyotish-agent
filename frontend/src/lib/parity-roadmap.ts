@@ -140,16 +140,26 @@ export type CoreReviewProgress = {
   detailCopy: "first reviewed row is comparable and failed";
 };
 
-export type NextCoreReviewBatchPlan = {
-  title: "Next review batch";
-  recommendedBatchSize: 5;
-  batchStatus: "blocked until explicit review commands run";
+export type CoreReviewBatchScan = {
+  title: "Core review batch scan";
+  evidenceTitle: "Evidence backlog";
+  stage: "P51-A";
+  requestedCloseCount: 5;
+  scannedCandidates: 20;
+  closedRows: 0;
+  skippedRows: 20;
+  remainingNotReviewedRows: 20;
+  firstSkippedCaseId: "vrindavan-1990-08-15-1024";
+  lastSkippedCaseId: "mayapur-2026-01-01-0000";
+  blockerLabels: ["jhora_missing_or_blocked", "parashara_light_missing_or_blocked"];
+  statusCopy: "existing review commands found no reviewable rows because evidence/manual values are missing or blocked";
+  nextOperatorAction: "collect/attach missing JHora screenshots and Parashara Light evidence/manual values before running mark commands";
   safeCommandFamilies: [
     "preflight_witness_review",
     "mark_jhora_witness_reviewed",
     "mark_parashara_light_witness_reviewed",
   ];
-  cautionCopy: "No next-row review status or parity-passing result is claimed";
+  cautionCopy: "No batch row is reviewed or parity-passing from this scan";
 };
 
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
@@ -342,17 +352,27 @@ export function buildCoreReviewProgress(): CoreReviewProgress {
   };
 }
 
-export function buildNextCoreReviewBatchPlan(): NextCoreReviewBatchPlan {
+export function buildCoreReviewBatchScan(): CoreReviewBatchScan {
   return {
-    title: "Next review batch",
-    recommendedBatchSize: 5,
-    batchStatus: "blocked until explicit review commands run",
+    title: "Core review batch scan",
+    evidenceTitle: "Evidence backlog",
+    stage: "P51-A",
+    requestedCloseCount: 5,
+    scannedCandidates: 20,
+    closedRows: 0,
+    skippedRows: 20,
+    remainingNotReviewedRows: 20,
+    firstSkippedCaseId: "vrindavan-1990-08-15-1024",
+    lastSkippedCaseId: "mayapur-2026-01-01-0000",
+    blockerLabels: ["jhora_missing_or_blocked", "parashara_light_missing_or_blocked"],
+    statusCopy: "existing review commands found no reviewable rows because evidence/manual values are missing or blocked",
+    nextOperatorAction: "collect/attach missing JHora screenshots and Parashara Light evidence/manual values before running mark commands",
     safeCommandFamilies: [
       "preflight_witness_review",
       "mark_jhora_witness_reviewed",
       "mark_parashara_light_witness_reviewed",
     ],
-    cautionCopy: "No next-row review status or parity-passing result is claimed",
+    cautionCopy: "No batch row is reviewed or parity-passing from this scan",
   };
 }
 
