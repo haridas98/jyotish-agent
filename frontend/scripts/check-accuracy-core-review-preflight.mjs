@@ -35,8 +35,10 @@ for (const marker of [
   "Core evidence attachment work orders",
   "Core evidence attachment handoff",
   "Core evidence operator packets",
+  "Core evidence operator packet QA",
   "operator attachment manifest",
   "operator packet status",
+  "operator packet QA status",
   "Evidence backlog",
   "coreReviewPreflightBlocker",
   "coreReviewProgress",
@@ -49,6 +51,7 @@ for (const marker of [
   "coreEvidenceAttachmentWorkOrders",
   "coreEvidenceAttachmentHandoff",
   "coreEvidenceOperatorPackets",
+  "coreEvidenceOperatorPacketQa",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -60,6 +63,7 @@ for (const marker of [
   "buildCoreEvidenceAttachmentWorkOrders",
   "buildCoreEvidenceAttachmentHandoff",
   "buildCoreEvidenceOperatorPackets",
+  "buildCoreEvidenceOperatorPacketQa",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -70,6 +74,7 @@ for (const marker of [
   "P61-A",
   "P63-A",
   "P65-A",
+  "P67-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -77,6 +82,7 @@ for (const marker of [
   "jyotish-core-evidence-attachment-work-orders-v1",
   "jyotish-core-evidence-attachment-handoff-v1",
   "jyotish-core-evidence-operator-packets-v1",
+  "jyotish-core-evidence-operator-packet-qa-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -94,13 +100,16 @@ for (const marker of [
   "blocked_pending_attachments",
   "blocked_pending_operator_evidence",
   "blocked_pending_operator_packet_evidence",
+  "blocked_pending_operator_packet_qa",
   "ready_to_mark=false",
   "not_attached",
   "Evidence must be attached before mark commands are attempted",
   "work orders are labels only and do not collect evidence",
   "handoff rows are labels only and do not collect evidence",
   "operator packets are labels only and do not collect or attach evidence",
+  "operator packets are labels only",
   "external evidence has not been attached",
+  "mark commands remain blocked",
   "Evidence must be collected and attached before mark commands are attempted",
   "collect_jhora_screenshot",
   "attach_parashara_light_manual_values",
@@ -118,6 +127,7 @@ for (const marker of [
   "build_witness_core_evidence_attachment_work_orders_report",
   "build_witness_core_evidence_attachment_handoff_report",
   "build_witness_core_evidence_operator_packets_report",
+  "build_witness_core_evidence_operator_packet_qa_report",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
 ]) {
@@ -261,6 +271,23 @@ for (const marker of [
   "coreEvidenceOperatorPackets.readyToMarkLabel",
   "coreEvidenceOperatorPackets.safeValidationCommandFamilies",
   "coreEvidenceOperatorPackets.operatorNote",
+  "coreEvidenceOperatorPacketQa.stage",
+  "coreEvidenceOperatorPacketQa.schemaVersion",
+  "coreEvidenceOperatorPacketQa.operatorPacketQaRows",
+  "coreEvidenceOperatorPacketQa.attachmentSlotQaRows",
+  "coreEvidenceOperatorPacketQa.blockedPacketQaCount",
+  "coreEvidenceOperatorPacketQa.pendingAttachmentSlotQaCount",
+  "coreEvidenceOperatorPacketQa.pendingJhoraAttachmentSlotQaCount",
+  "coreEvidenceOperatorPacketQa.pendingParasharaLightAttachmentSlotQaCount",
+  "coreEvidenceOperatorPacketQa.readyToMarkRows",
+  "coreEvidenceOperatorPacketQa.remainingNotReviewedRows",
+  "coreEvidenceOperatorPacketQa.selectedCaseIds",
+  "coreEvidenceOperatorPacketQa.qaStatus",
+  "coreEvidenceOperatorPacketQa.packetStatus",
+  "coreEvidenceOperatorPacketQa.attachmentSlotStatus",
+  "coreEvidenceOperatorPacketQa.readyToMarkLabel",
+  "coreEvidenceOperatorPacketQa.safeValidationCommandFamilies",
+  "coreEvidenceOperatorPacketQa.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -344,11 +371,13 @@ assert(accuracyRoute.includes("Evidence must be collected and attached before ma
 assert(!helperSlice.includes('latestStage: "P59-A"'), "Core evidence pipeline helper must not retain stale P59 latest stage");
 assert(!helperSlice.includes('latestStage: "P61-A"'), "Core evidence pipeline helper must not retain stale P61 latest stage");
 assert(!helperSlice.includes('latestStage: "P63-A"'), "Core evidence pipeline helper must not retain stale P63 latest stage");
-assert(helperSlice.includes('latestStage: "P65-A"'), "Core evidence pipeline helper must expose latest P65 stage");
+assert(!helperSlice.includes('latestStage: "P65-A"'), "Core evidence pipeline helper must not retain stale P65 latest stage");
+assert(helperSlice.includes('latestStage: "P67-A"'), "Core evidence pipeline helper must expose latest P67 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
 assert(helperSlice.includes('"P65 operator packets"'), "Core evidence pipeline helper must expose P65 stage sequence");
+assert(helperSlice.includes('"P67 QA preflight"'), "Core evidence pipeline helper must expose P67 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -464,6 +493,49 @@ assert(preflightSlice.includes("P65 operator packets"), "Core evidence pipeline 
 assert(preflightSlice.includes("Core evidence operator packets"), "Core evidence operator packets UI must render its heading");
 assert(accuracyRoute.includes("P65-A"), "Accuracy route marker must expose P65 stage");
 assert(accuracyRoute.includes("jyotish-core-evidence-operator-packets-v1"), "Accuracy route marker must expose P65 schema");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-operator-packet-qa-v1"'), "Core evidence operator packet QA helper must expose schema version");
+assert(helperSlice.includes('stage: "P67-A"'), "Core evidence operator packet QA helper must expose P67-A stage");
+assert(helperSlice.includes("operatorPacketQaRows: 5"), "Core evidence operator packet QA helper must expose 5 operator packet QA rows");
+assert(helperSlice.includes("attachmentSlotQaRows: 10"), "Core evidence operator packet QA helper must expose 10 attachment slot QA rows");
+assert(helperSlice.includes("blockedPacketQaCount: 5"), "Core evidence operator packet QA helper must expose 5 blocked packet QA rows");
+assert(helperSlice.includes("pendingAttachmentSlotQaCount: 10"), "Core evidence operator packet QA helper must expose 10 pending attachment slot QA rows");
+assert(helperSlice.includes("pendingJhoraAttachmentSlotQaCount: 5"), "Core evidence operator packet QA helper must expose 5 pending JHora slot QA rows");
+assert(helperSlice.includes("pendingParasharaLightAttachmentSlotQaCount: 5"), "Core evidence operator packet QA helper must expose 5 pending Parashara Light slot QA rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence operator packet QA helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence operator packet QA helper must expose 20 remaining rows");
+assert(helperSlice.includes('qaStatus: "blocked_pending_operator_packet_qa"'), "Core evidence operator packet QA helper must expose blocked QA status");
+assert(helperSlice.includes('packetStatus: "blocked_pending_operator_packet_evidence"'), "Core evidence operator packet QA helper must expose blocked packet status");
+assert(helperSlice.includes('attachmentSlotStatus: "not_attached"'), "Core evidence operator packet QA helper must expose not-attached slot status");
+assert(helperSlice.includes('readyToMarkLabel: "ready_to_mark=false"'), "Core evidence operator packet QA helper must expose false ready-to-mark label");
+assert(helperSlice.includes('"build_witness_core_evidence_operator_packet_qa_report"'), "Core evidence operator packet QA helper must expose QA validation command");
+assert(helperSlice.includes("operator packets are labels only"), "Core evidence operator packet QA helper must expose labels-only note");
+assert(helperSlice.includes("external evidence has not been attached"), "Core evidence operator packet QA helper must expose external evidence blocker");
+assert(helperSlice.includes("mark commands remain blocked"), "Core evidence operator packet QA helper must expose mark-command blocker");
+assert(preflightSlice.includes("P67 QA preflight"), "Core evidence pipeline UI must render P67 stage");
+assert(preflightSlice.includes("Core evidence operator packet QA"), "Core evidence operator packet QA UI must render its heading");
+assert(accuracyRoute.includes("P67-A"), "Accuracy route marker must expose P67 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-operator-packet-qa-v1"), "Accuracy route marker must expose P67 schema");
+assert(accuracyRoute.includes("5 operator packet QA rows"), "Accuracy route marker must expose P67 operator packet QA rows");
+assert(accuracyRoute.includes("10 attachment slot QA rows"), "Accuracy route marker must expose P67 attachment slot QA rows");
+assert(accuracyRoute.includes("5 blocked packet QA"), "Accuracy route marker must expose P67 blocked packet QA count");
+assert(accuracyRoute.includes("10 pending attachment slot QA"), "Accuracy route marker must expose P67 pending attachment slot QA count");
+assert(accuracyRoute.includes("5 pending JHora slot QA"), "Accuracy route marker must expose P67 pending JHora slot QA count");
+assert(accuracyRoute.includes("5 pending Parashara Light slot QA"), "Accuracy route marker must expose P67 pending Parashara Light slot QA count");
+assert(accuracyRoute.includes("0 ready-to-mark"), "Accuracy route marker must expose P67 ready-to-mark count");
+assert(accuracyRoute.includes("20 remaining"), "Accuracy route marker must expose P67 remaining count");
+assert(accuracyRoute.includes("blocked_pending_operator_packet_qa"), "Accuracy route marker must expose P67 QA status");
+assert(accuracyRoute.includes("blocked_pending_operator_packet_evidence"), "Accuracy route marker must expose P67 packet status");
+assert(accuracyRoute.includes("not_attached"), "Accuracy route marker must expose P67 not-attached status");
+assert(accuracyRoute.includes("ready_to_mark=false"), "Accuracy route marker must expose P67 false ready-to-mark state");
+assert(accuracyRoute.includes("operator packets are labels only"), "Accuracy route marker must expose P67 labels-only note");
+assert(accuracyRoute.includes("external evidence has not been attached"), "Accuracy route marker must expose P67 external evidence blocker");
+assert(accuracyRoute.includes("mark commands remain blocked"), "Accuracy route marker must expose P67 mark-command blocker");
+assert(accuracyRoute.includes("build_witness_core_evidence_operator_packet_qa_report"), "Accuracy route marker must expose P67 QA command family");
+assert(accuracyRoute.includes("build_witness_core_evidence_operator_packets_report"), "Accuracy route marker must expose P65 command family retained for P67");
+assert(accuracyRoute.includes("build_witness_core_evidence_attachment_handoff_report"), "Accuracy route marker must expose P63 command family retained for P67");
+assert(accuracyRoute.includes("build_witness_core_evidence_attachment_work_orders_report"), "Accuracy route marker must expose P61 command family retained for P67");
+assert(accuracyRoute.includes("build_witness_core_evidence_attachment_gate_report"), "Accuracy route marker must expose P59 command family retained for P67");
+assert(accuracyRoute.includes("preflight_witness_review"), "Accuracy route marker must expose preflight command family retained for P67");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");

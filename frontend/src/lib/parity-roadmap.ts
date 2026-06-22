@@ -270,7 +270,7 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P65-A";
+  latestStage: "P67-A";
   stageSequence: [
     "P53 backlog",
     "P55 intake",
@@ -279,6 +279,7 @@ export type CoreEvidencePipeline = {
     "P61 work orders",
     "P63 handoff",
     "P65 operator packets",
+    "P67 QA preflight",
   ];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
@@ -347,8 +348,18 @@ export type CoreEvidencePipeline = {
     readyToMarkRows: 0;
     remainingNotReviewedRows: 20;
   };
+  operatorPacketQaSummary: {
+    operatorPacketQaRows: 5;
+    attachmentSlotQaRows: 10;
+    blockedPacketQaCount: 5;
+    pendingAttachmentSlotQaCount: 10;
+    pendingJhoraAttachmentSlotQaCount: 5;
+    pendingParasharaLightAttachmentSlotQaCount: 5;
+    readyToMarkRows: 0;
+    remainingNotReviewedRows: 20;
+  };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
-  statusCopy: "blocked evidence operator packet manifest";
+  statusCopy: "blocked evidence operator packet QA preflight";
 };
 
 export type CoreEvidenceAttachmentGate = {
@@ -508,6 +519,44 @@ export type CoreEvidenceOperatorPackets = {
   ];
   operatorNote: "external evidence has not been attached; operator packets are labels only and do not collect or attach evidence";
   statusCopy: "operator packet manifest remains blocked pending evidence attachment";
+  cautionCopy: "No evidence is attached and no release readiness is claimed";
+};
+
+export type CoreEvidenceOperatorPacketQa = {
+  title: "Core evidence operator packet QA";
+  schemaVersion: "jyotish-core-evidence-operator-packet-qa-v1";
+  stage: "P67-A";
+  operatorPacketQaRows: 5;
+  attachmentSlotQaRows: 10;
+  blockedPacketQaCount: 5;
+  pendingAttachmentSlotQaCount: 10;
+  pendingJhoraAttachmentSlotQaCount: 5;
+  pendingParasharaLightAttachmentSlotQaCount: 5;
+  readyToMarkRows: 0;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  qaStatus: "blocked_pending_operator_packet_qa";
+  packetStatus: "blocked_pending_operator_packet_evidence";
+  attachmentSlotStatus: "not_attached";
+  readyToMarkLabel: "ready_to_mark=false";
+  safeValidationCommandFamilies: [
+    "build_witness_core_evidence_operator_packet_qa_report",
+    "build_witness_core_evidence_operator_packets_report",
+    "build_witness_core_evidence_attachment_handoff_report",
+    "build_witness_core_evidence_attachment_work_orders_report",
+    "build_witness_core_evidence_attachment_gate_report",
+    "preflight_witness_review",
+  ];
+  operatorNote: "external evidence has not been attached; operator packets are labels only; mark commands remain blocked";
+  statusCopy: "QA preflight remains blocked pending operator packet evidence";
   cautionCopy: "No evidence is attached and no release readiness is claimed";
 };
 
@@ -840,7 +889,7 @@ export function buildCoreEvidenceReadiness(): CoreEvidenceReadiness {
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P65-A",
+    latestStage: "P67-A",
     stageSequence: [
       "P53 backlog",
       "P55 intake",
@@ -849,6 +898,7 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       "P61 work orders",
       "P63 handoff",
       "P65 operator packets",
+      "P67 QA preflight",
     ],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
@@ -917,8 +967,18 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       readyToMarkRows: 0,
       remainingNotReviewedRows: 20,
     },
+    operatorPacketQaSummary: {
+      operatorPacketQaRows: 5,
+      attachmentSlotQaRows: 10,
+      blockedPacketQaCount: 5,
+      pendingAttachmentSlotQaCount: 10,
+      pendingJhoraAttachmentSlotQaCount: 5,
+      pendingParasharaLightAttachmentSlotQaCount: 5,
+      readyToMarkRows: 0,
+      remainingNotReviewedRows: 20,
+    },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
-    statusCopy: "blocked evidence operator packet manifest",
+    statusCopy: "blocked evidence operator packet QA preflight",
   };
 }
 
@@ -1086,6 +1146,46 @@ export function buildCoreEvidenceOperatorPackets(): CoreEvidenceOperatorPackets 
     ],
     operatorNote: "external evidence has not been attached; operator packets are labels only and do not collect or attach evidence",
     statusCopy: "operator packet manifest remains blocked pending evidence attachment",
+    cautionCopy: "No evidence is attached and no release readiness is claimed",
+  };
+}
+
+export function buildCoreEvidenceOperatorPacketQa(): CoreEvidenceOperatorPacketQa {
+  return {
+    title: "Core evidence operator packet QA",
+    schemaVersion: "jyotish-core-evidence-operator-packet-qa-v1",
+    stage: "P67-A",
+    operatorPacketQaRows: 5,
+    attachmentSlotQaRows: 10,
+    blockedPacketQaCount: 5,
+    pendingAttachmentSlotQaCount: 10,
+    pendingJhoraAttachmentSlotQaCount: 5,
+    pendingParasharaLightAttachmentSlotQaCount: 5,
+    readyToMarkRows: 0,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    qaStatus: "blocked_pending_operator_packet_qa",
+    packetStatus: "blocked_pending_operator_packet_evidence",
+    attachmentSlotStatus: "not_attached",
+    readyToMarkLabel: "ready_to_mark=false",
+    safeValidationCommandFamilies: [
+      "build_witness_core_evidence_operator_packet_qa_report",
+      "build_witness_core_evidence_operator_packets_report",
+      "build_witness_core_evidence_attachment_handoff_report",
+      "build_witness_core_evidence_attachment_work_orders_report",
+      "build_witness_core_evidence_attachment_gate_report",
+      "preflight_witness_review",
+    ],
+    operatorNote: "external evidence has not been attached; operator packets are labels only; mark commands remain blocked",
+    statusCopy: "QA preflight remains blocked pending operator packet evidence",
     cautionCopy: "No evidence is attached and no release readiness is claimed",
   };
 }
