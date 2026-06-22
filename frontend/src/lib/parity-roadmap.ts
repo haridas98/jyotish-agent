@@ -270,8 +270,16 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P63-A";
-  stageSequence: ["P53 backlog", "P55 intake", "P57 readiness", "P59 attachment gate", "P61 work orders", "P63 handoff"];
+  latestStage: "P65-A";
+  stageSequence: [
+    "P53 backlog",
+    "P55 intake",
+    "P57 readiness",
+    "P59 attachment gate",
+    "P61 work orders",
+    "P63 handoff",
+    "P65 operator packets",
+  ];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
   backlogSummary: {
@@ -328,8 +336,19 @@ export type CoreEvidencePipeline = {
     readyToMarkRows: 0;
     remainingNotReviewedRows: 20;
   };
+  operatorPacketSummary: {
+    operatorPacketRows: 5;
+    operatorAttachmentSlotRows: 10;
+    pendingOperatorPacketCount: 5;
+    pendingOperatorAttachmentSlotCount: 10;
+    pendingJhoraAttachmentSlotCount: 5;
+    pendingParasharaLightAttachmentSlotCount: 5;
+    blockedPacketCount: 5;
+    readyToMarkRows: 0;
+    remainingNotReviewedRows: 20;
+  };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
-  statusCopy: "blocked evidence attachment handoff";
+  statusCopy: "blocked evidence operator packet manifest";
 };
 
 export type CoreEvidenceAttachmentGate = {
@@ -450,6 +469,45 @@ export type CoreEvidenceAttachmentHandoff = {
   ];
   operatorNote: "external evidence has not been attached; handoff rows are labels only and do not collect evidence";
   statusCopy: "handoff bundle remains blocked pending operator evidence";
+  cautionCopy: "No evidence is attached and no release readiness is claimed";
+};
+
+export type CoreEvidenceOperatorPackets = {
+  title: "Core evidence operator packets";
+  schemaVersion: "jyotish-core-evidence-operator-packets-v1";
+  stage: "P65-A";
+  operatorPacketRows: 5;
+  operatorAttachmentSlotRows: 10;
+  pendingOperatorPacketCount: 5;
+  pendingOperatorAttachmentSlotCount: 10;
+  pendingJhoraAttachmentSlotCount: 5;
+  pendingParasharaLightAttachmentSlotCount: 5;
+  blockedPacketCount: 5;
+  readyToMarkRows: 0;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  packetStatus: "blocked_pending_operator_packet_evidence";
+  handoffStatus: "blocked_pending_operator_evidence";
+  caseWorkOrderStatus: "blocked_pending_attachments";
+  evidenceFileStatus: "not_attached";
+  readyToMarkLabel: "ready_to_mark=false";
+  safeValidationCommandFamilies: [
+    "build_witness_core_evidence_operator_packets_report",
+    "build_witness_core_evidence_attachment_handoff_report",
+    "build_witness_core_evidence_attachment_work_orders_report",
+    "build_witness_core_evidence_attachment_gate_report",
+    "preflight_witness_review",
+  ];
+  operatorNote: "external evidence has not been attached; operator packets are labels only and do not collect or attach evidence";
+  statusCopy: "operator packet manifest remains blocked pending evidence attachment";
   cautionCopy: "No evidence is attached and no release readiness is claimed";
 };
 
@@ -782,8 +840,16 @@ export function buildCoreEvidenceReadiness(): CoreEvidenceReadiness {
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P63-A",
-    stageSequence: ["P53 backlog", "P55 intake", "P57 readiness", "P59 attachment gate", "P61 work orders", "P63 handoff"],
+    latestStage: "P65-A",
+    stageSequence: [
+      "P53 backlog",
+      "P55 intake",
+      "P57 readiness",
+      "P59 attachment gate",
+      "P61 work orders",
+      "P63 handoff",
+      "P65 operator packets",
+    ],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
     backlogSummary: {
@@ -840,8 +906,19 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       readyToMarkRows: 0,
       remainingNotReviewedRows: 20,
     },
+    operatorPacketSummary: {
+      operatorPacketRows: 5,
+      operatorAttachmentSlotRows: 10,
+      pendingOperatorPacketCount: 5,
+      pendingOperatorAttachmentSlotCount: 10,
+      pendingJhoraAttachmentSlotCount: 5,
+      pendingParasharaLightAttachmentSlotCount: 5,
+      blockedPacketCount: 5,
+      readyToMarkRows: 0,
+      remainingNotReviewedRows: 20,
+    },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
-    statusCopy: "blocked evidence attachment handoff",
+    statusCopy: "blocked evidence operator packet manifest",
   };
 }
 
@@ -968,6 +1045,47 @@ export function buildCoreEvidenceAttachmentHandoff(): CoreEvidenceAttachmentHand
     ],
     operatorNote: "external evidence has not been attached; handoff rows are labels only and do not collect evidence",
     statusCopy: "handoff bundle remains blocked pending operator evidence",
+    cautionCopy: "No evidence is attached and no release readiness is claimed",
+  };
+}
+
+export function buildCoreEvidenceOperatorPackets(): CoreEvidenceOperatorPackets {
+  return {
+    title: "Core evidence operator packets",
+    schemaVersion: "jyotish-core-evidence-operator-packets-v1",
+    stage: "P65-A",
+    operatorPacketRows: 5,
+    operatorAttachmentSlotRows: 10,
+    pendingOperatorPacketCount: 5,
+    pendingOperatorAttachmentSlotCount: 10,
+    pendingJhoraAttachmentSlotCount: 5,
+    pendingParasharaLightAttachmentSlotCount: 5,
+    blockedPacketCount: 5,
+    readyToMarkRows: 0,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    packetStatus: "blocked_pending_operator_packet_evidence",
+    handoffStatus: "blocked_pending_operator_evidence",
+    caseWorkOrderStatus: "blocked_pending_attachments",
+    evidenceFileStatus: "not_attached",
+    readyToMarkLabel: "ready_to_mark=false",
+    safeValidationCommandFamilies: [
+      "build_witness_core_evidence_operator_packets_report",
+      "build_witness_core_evidence_attachment_handoff_report",
+      "build_witness_core_evidence_attachment_work_orders_report",
+      "build_witness_core_evidence_attachment_gate_report",
+      "preflight_witness_review",
+    ],
+    operatorNote: "external evidence has not been attached; operator packets are labels only and do not collect or attach evidence",
+    statusCopy: "operator packet manifest remains blocked pending evidence attachment",
     cautionCopy: "No evidence is attached and no release readiness is claimed",
   };
 }
