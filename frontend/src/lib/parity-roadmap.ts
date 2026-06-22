@@ -270,7 +270,7 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P101-A";
+  latestStage: "P103-A";
   stageSequence: [
     "P53 backlog",
     "P55 intake",
@@ -297,6 +297,7 @@ export type CoreEvidencePipeline = {
     "P97 result-audit remediation queue",
     "P99 remediation operator packets",
     "P101 operator-packet dispatch gate",
+    "P103 dispatch-gate hold review",
   ];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
@@ -3006,10 +3007,47 @@ export type CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeV
   cautionCopy: "no dispatch, packet delivery, acknowledgement, closure, remediation execution, ticket creation, notification delivery, operator handoff delivery, parity pass, or release readiness is claimed";
 };
 
+export type CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReview = Omit<
+  CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGate,
+  "title" | "schemaVersion" | "stage" | "status" | "operatorNote" | "statusCopy" | "cautionCopy"
+> & {
+  title: "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue operator packet dispatch gate hold review";
+  schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-hold-review-v1";
+  stage: "P103-A";
+  status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review";
+  upstreamDispatchGateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-v1";
+  upstreamDispatchGateStage: "P101-A";
+  upstreamDispatchGateStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate";
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewRows: 40;
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewFamilyCount: 4;
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReadyCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewBlockedCount: 40;
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReleasedCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewDispatchedCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewEscalatedCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review";
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReleaseStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_release_status=not_released";
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewDispatchStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatch_status=not_dispatched";
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewEscalationStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalation_status=not_escalated";
+  safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewOnlyLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_only=true";
+  noSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReleasedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_released=true";
+  noSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewDispatchedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatched=true";
+  noSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewEscalatedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalated=true";
+  holdReviewFamilyLabels: [
+    "hold_review_manifest_shape_operator_packet_dispatch_blocked_label_only",
+    "hold_review_operator_handoff_readiness_operator_packet_dispatch_blocked_label_only",
+    "hold_review_no_external_action_operator_packet_dispatch_blocked_label_only",
+    "hold_review_release_gate_operator_packet_dispatch_blocked_label_only",
+  ];
+  operatorNote: "blocked safe-validation result-audit remediation queue operator-packet dispatch-gate hold review; no hold release, dispatch, escalation, packet delivery, acknowledgement, closure, remediation, ticket, notification, operator handoff, command execution, upload, attachment, mark, accept, reject, defer, parity pass, or release action is claimed";
+  statusCopy: "blocked hold-review rows for every operator-packet dispatch-gate row";
+  cautionCopy: "no hold release, dispatch, escalation, packet delivery, acknowledgement, closure, remediation execution, ticket creation, notification delivery, operator handoff delivery, parity pass, or release readiness is claimed";
+};
+
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P101-A",
+    latestStage: "P103-A",
     stageSequence: [
       "P53 backlog",
       "P55 intake",
@@ -3036,6 +3074,7 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       "P97 result-audit remediation queue",
       "P99 remediation operator packets",
       "P101 operator-packet dispatch gate",
+      "P103 dispatch-gate hold review",
     ],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
@@ -5459,6 +5498,44 @@ export function buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHan
     operatorNote: "blocked safe-validation result-audit remediation queue operator-packet dispatch gate; no dispatch, packet delivery, acknowledgement, closure, remediation, ticket, notification, operator handoff, command execution, upload, attachment, mark, accept, reject, defer, parity pass, or release action is claimed",
     statusCopy: "blocked dispatch-gate rows for every result-audit remediation operator-packet row",
     cautionCopy: "no dispatch, packet delivery, acknowledgement, closure, remediation execution, ticket creation, notification delivery, operator handoff delivery, parity pass, or release readiness is claimed",
+  };
+}
+
+export function buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReview(): CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReview {
+  const dispatchGate = buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGate();
+  return {
+    ...dispatchGate,
+    title: "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue operator packet dispatch gate hold review",
+    schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-hold-review-v1",
+    stage: "P103-A",
+    status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review",
+    upstreamDispatchGateSchemaVersion: dispatchGate.schemaVersion,
+    upstreamDispatchGateStage: dispatchGate.stage,
+    upstreamDispatchGateStatus: dispatchGate.status,
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewRows: 40,
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewFamilyCount: 4,
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReadyCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewBlockedCount: 40,
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReleasedCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewDispatchedCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewEscalatedCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review",
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReleaseStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_release_status=not_released",
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewDispatchStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatch_status=not_dispatched",
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewEscalationStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalation_status=not_escalated",
+    safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewOnlyLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_only=true",
+    noSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReleasedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_released=true",
+    noSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewDispatchedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatched=true",
+    noSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewEscalatedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalated=true",
+    holdReviewFamilyLabels: [
+      "hold_review_manifest_shape_operator_packet_dispatch_blocked_label_only",
+      "hold_review_operator_handoff_readiness_operator_packet_dispatch_blocked_label_only",
+      "hold_review_no_external_action_operator_packet_dispatch_blocked_label_only",
+      "hold_review_release_gate_operator_packet_dispatch_blocked_label_only",
+    ],
+    operatorNote: "blocked safe-validation result-audit remediation queue operator-packet dispatch-gate hold review; no hold release, dispatch, escalation, packet delivery, acknowledgement, closure, remediation, ticket, notification, operator handoff, command execution, upload, attachment, mark, accept, reject, defer, parity pass, or release action is claimed",
+    statusCopy: "blocked hold-review rows for every operator-packet dispatch-gate row",
+    cautionCopy: "no hold release, dispatch, escalation, packet delivery, acknowledgement, closure, remediation execution, ticket creation, notification delivery, operator handoff delivery, parity pass, or release readiness is claimed",
   };
 }
 

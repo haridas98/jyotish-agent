@@ -145,6 +145,8 @@ for (const marker of [
   "E100-A",
   "P101-A",
   "E102-A",
+  "P103-A",
+  "E104-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -170,6 +172,7 @@ for (const marker of [
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-v1",
+  "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-hold-review-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -205,6 +208,7 @@ for (const marker of [
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate",
+  "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review",
   "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff",
   "safe_validation_transcript_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript",
   "safe_validation_command_status=blocked_pending_external_evidence_and_operator_handoff",
@@ -231,6 +235,10 @@ for (const marker of [
   "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_acknowledgement_status=not_acknowledged",
   "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_closure_status=not_closed",
   "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_execution_status=not_executed",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_release_status=not_released",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatch_status=not_dispatched",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalation_status=not_escalated",
   "safe_validation_result_audit_remediation_execution_status=not_executed",
   "safe_validation_result_audit_remediation_ticket_status=not_created",
   "safe_validation_result_audit_remediation_notification_status=not_sent",
@@ -242,6 +250,7 @@ for (const marker of [
   "safe_validation_result_audit_remediation_queue_only=true",
   "safe_validation_result_audit_remediation_queue_operator_packet_only=true",
   "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_only=true",
+  "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_only=true",
   "no_command_execution_performed=true",
   "no_safe_validation_result_recorded=true",
   "no_safe_validation_result_accepted=true",
@@ -263,6 +272,9 @@ for (const marker of [
   "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_acknowledged=true",
   "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_closed=true",
   "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_executed=true",
+  "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_released=true",
+  "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatched=true",
+  "no_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalated=true",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
@@ -1082,7 +1094,8 @@ assert(!helperSlice.includes('latestStage: "P93-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P95-A"'), "Core evidence pipeline helper must not retain stale P95 latest stage");
 assert(!helperSlice.includes('latestStage: "P97-A"'), "Core evidence pipeline helper must not retain stale P97 latest stage");
 assert(!helperSlice.includes('latestStage: "P99-A"'), "Core evidence pipeline helper must not retain stale P99 latest stage");
-assert(helperSlice.includes('latestStage: "P101-A"'), "Core evidence pipeline helper must expose latest P101 stage");
+assert(!helperSlice.includes('latestStage: "P101-A"'), "Core evidence pipeline helper must not retain stale P101 latest stage");
+assert(helperSlice.includes('latestStage: "P103-A"'), "Core evidence pipeline helper must expose latest P103 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -1105,6 +1118,7 @@ assert(helperSlice.includes('"P95 safe-validation result audit"'), "Core evidenc
 assert(helperSlice.includes('"P97 result-audit remediation queue"'), "Core evidence pipeline helper must expose P97 stage sequence");
 assert(helperSlice.includes('"P99 remediation operator packets"'), "Core evidence pipeline helper must expose P99 stage sequence");
 assert(helperSlice.includes('"P101 operator-packet dispatch gate"'), "Core evidence pipeline helper must expose P101 stage sequence");
+assert(helperSlice.includes('"P103 dispatch-gate hold review"'), "Core evidence pipeline helper must expose P103 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -2078,7 +2092,8 @@ assert(!helperSlice.includes('latestStage: "P93-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P95-A"'), "Core evidence pipeline helper must not retain stale P95 latest stage");
 assert(!helperSlice.includes('latestStage: "P97-A"'), "Core evidence pipeline helper must not retain stale P97 latest stage");
 assert(!helperSlice.includes('latestStage: "P99-A"'), "Core evidence pipeline helper must not retain stale P99 latest stage");
-assert(helperSlice.includes('latestStage: "P101-A"'), "Core evidence pipeline helper must expose latest P101 stage");
+assert(!helperSlice.includes('latestStage: "P101-A"'), "Core evidence pipeline helper must not retain stale P101 latest stage");
+assert(helperSlice.includes('latestStage: "P103-A"'), "Core evidence pipeline helper must expose latest P103 stage");
 assert(helperSlice.includes('"P95 safe-validation result audit"'), "Core evidence pipeline helper must expose P95 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-v1"'), "Core evidence safe-validation result audit helper must expose P95 schema");
 assert(helperSlice.includes('stage: "P95-A"'), "Core evidence safe-validation result audit helper must expose P95-A stage");
@@ -2295,6 +2310,48 @@ assert(accuracyRoute.includes("gate_operator_handoff_readiness_operator_packet_d
 assert(accuracyRoute.includes("gate_no_external_action_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P101 no external action dispatch label");
 assert(accuracyRoute.includes("gate_release_gate_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P101 release blocked dispatch label");
 assert(accuracyRoute.includes("blocked operator-packet dispatch-gate rows"), "Accuracy route marker must expose P101 blocked dispatch-gate copy");
+assert(helperSlice.includes("buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReview"), "Core evidence helper must expose P103 hold-review builder");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-hold-review-v1"'), "Core evidence hold-review helper must expose P103 schema");
+assert(helperSlice.includes('stage: "P103-A"'), "Core evidence hold-review helper must expose P103-A stage");
+assert(helperSlice.includes('status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review"'), "Core evidence hold-review helper must expose P103 status");
+assert(helperSlice.includes('upstreamDispatchGateStage: "P101-A"'), "Core evidence hold-review helper must expose upstream P101 stage");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewRows: 40"), "Core evidence hold-review helper must expose P103 row count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewFamilyCount: 4"), "Core evidence hold-review helper must expose P103 family count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReadyCount: 0"), "Core evidence hold-review helper must expose P103 ready count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewBlockedCount: 40"), "Core evidence hold-review helper must expose P103 blocked count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReleasedCount: 0"), "Core evidence hold-review helper must expose P103 no released count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewDispatchedCount: 0"), "Core evidence hold-review helper must expose P103 no dispatched count");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewEscalatedCount: 0"), "Core evidence hold-review helper must expose P103 no escalated count");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review"'), "Core evidence hold-review helper must expose P103 status label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewReleaseStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_release_status=not_released"'), "Core evidence hold-review helper must expose P103 not-released label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewDispatchStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatch_status=not_dispatched"'), "Core evidence hold-review helper must expose P103 not-dispatched label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewEscalationStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalation_status=not_escalated"'), "Core evidence hold-review helper must expose P103 not-escalated label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOperatorPacketDispatchGateHoldReviewOnlyLabel: "safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_only=true"'), "Core evidence hold-review helper must expose P103 only label");
+assert(helperSlice.includes("hold_review_manifest_shape_operator_packet_dispatch_blocked_label_only"), "Core evidence hold-review helper must expose manifest shape hold-review label");
+assert(helperSlice.includes("hold_review_operator_handoff_readiness_operator_packet_dispatch_blocked_label_only"), "Core evidence hold-review helper must expose handoff readiness hold-review label");
+assert(helperSlice.includes("hold_review_no_external_action_operator_packet_dispatch_blocked_label_only"), "Core evidence hold-review helper must expose no external action hold-review label");
+assert(helperSlice.includes("hold_review_release_gate_operator_packet_dispatch_blocked_label_only"), "Core evidence hold-review helper must expose release blocked hold-review label");
+assert(preflightSlice.includes("P103 dispatch-gate hold review"), "Core evidence pipeline UI must render P103 stage");
+assert(preflightSlice.includes("Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue operator packet dispatch gate hold review"), "Core evidence P103 UI must render its heading");
+assert(accuracyRoute.includes("E104-A"), "Accuracy route marker must expose E104 frontend stage");
+assert(accuracyRoute.includes("P103-A"), "Accuracy route marker must expose P103 backend stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-dispatch-gate-hold-review-v1"), "Accuracy route marker must expose P103 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review"), "Accuracy route marker must expose P103 status");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_rows=40"), "Accuracy route marker must expose P103 hold-review row count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_family_count=4"), "Accuracy route marker must expose P103 hold-review family count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_ready_count=0"), "Accuracy route marker must expose P103 no ready count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_blocked_count=40"), "Accuracy route marker must expose P103 blocked count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_released_count=0"), "Accuracy route marker must expose P103 no released count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatched_count=0"), "Accuracy route marker must expose P103 no dispatched count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalated_count=0"), "Accuracy route marker must expose P103 no escalated count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_release_status=not_released"), "Accuracy route marker must expose P103 not-released label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_dispatch_status=not_dispatched"), "Accuracy route marker must expose P103 not-dispatched label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_operator_packet_dispatch_gate_hold_review_escalation_status=not_escalated"), "Accuracy route marker must expose P103 not-escalated label");
+assert(accuracyRoute.includes("hold_review_manifest_shape_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P103 manifest shape hold-review label");
+assert(accuracyRoute.includes("hold_review_operator_handoff_readiness_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P103 handoff readiness hold-review label");
+assert(accuracyRoute.includes("hold_review_no_external_action_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P103 no external action hold-review label");
+assert(accuracyRoute.includes("hold_review_release_gate_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P103 release blocked hold-review label");
+assert(accuracyRoute.includes("blocked label-only hold-review rows"), "Accuracy route marker must expose P103 blocked hold-review copy");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
