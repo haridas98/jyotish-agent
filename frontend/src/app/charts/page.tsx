@@ -56,9 +56,11 @@ export default function ChartsPage() {
   const [profiles, setProfiles] = useState<ChartProfile[]>([]);
   const [status, setStatus] = useState("Загружаю карты...");
   const [needsAuth, setNeedsAuth] = useState(false);
+  const [hasLoadError, setHasLoadError] = useState(false);
 
   const loadProfiles = useCallback(async () => {
     try {
+      setHasLoadError(false);
       const user = await fetchCurrentUser();
       if (!user) {
         setNeedsAuth(true);
@@ -71,7 +73,10 @@ export default function ChartsPage() {
       setNeedsAuth(false);
       setStatus("");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Не удалось загрузить карты.");
+      setNeedsAuth(false);
+      setProfiles([]);
+      setHasLoadError(true);
+      setStatus("Не удалось загрузить сохранённые карты. Можно открыть пример D1 без сохранения данных.");
     }
   }, []);
 
@@ -140,6 +145,19 @@ export default function ChartsPage() {
           </div>
           <a className="primary-link-button" href="/charts/new">Создать карту</a>
           <DemoD1Link label="Посмотреть пример" />
+        </section>
+      ) : null}
+
+      {hasLoadError && !profiles.length ? (
+        <section className="charts-empty-state" data-chart-load-error-fallback="true">
+          <div>
+            <strong>Сохранённые карты временно недоступны</strong>
+            <span>Пример D1 можно открыть без сохранения данных и без записи в аккаунт.</span>
+          </div>
+          <div className="charts-empty-actions">
+            <DemoD1Link label="Открыть пример D1" />
+            <a className="secondary-button" href="/charts/new">Создать карту</a>
+          </div>
         </section>
       ) : null}
 

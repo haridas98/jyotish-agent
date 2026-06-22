@@ -36,6 +36,10 @@ assert(page.includes("data-chart-demo-path"), "Charts dashboard must keep a dete
 assert(page.includes("E108-A"), "Charts dashboard must keep the E108 polish marker as a hook.");
 assert(page.includes("\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0440\u0438\u043c\u0435\u0440 D1"), "Charts dashboard must show product demo copy.");
 assert(page.includes("\u041f\u043e\u0441\u043c\u043e\u0442\u0440\u0435\u0442\u044c \u043f\u0440\u0438\u043c\u0435\u0440"), "Charts dashboard must show compact demo copy.");
+assert(page.includes("hasLoadError"), "Charts dashboard must track API/auth load errors separately from empty saved charts.");
+assert(page.includes("setProfiles([]);") && page.includes("setHasLoadError(true);"), "Charts dashboard error fallback must clear loaded profiles and expose demo affordance state.");
+assert(page.includes("hasLoadError && !profiles.length"), "Charts dashboard must render a no-profiles fallback when API/auth probing fails.");
+assert(page.includes('DemoD1Link label="\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0440\u0438\u043c\u0435\u0440 D1"'), "Charts dashboard error fallback must include the product demo D1 link.");
 assert(!page.includes(">P107-A read-only D1 demo<"), "Internal P107 label must not be the visible demo button text.");
 
 for (const forbidden of ["\u0420\u00a0\u0421\u2122", "\u0420\u00a0\u0432\u0402\u2122", "\u0420\u00a0\u0421\u045f", "source.pending", "Missing calculations", "rawEvidence"]) {
