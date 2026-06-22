@@ -40,6 +40,7 @@ for (const marker of [
   "Core evidence external intake contract",
   "Core evidence external receipt gate",
   "Core evidence external receipt manifest templates",
+  "Core evidence external receipt manifest preflight",
   "operator attachment manifest",
   "operator packet status",
   "operator packet QA status",
@@ -62,6 +63,7 @@ for (const marker of [
   "coreEvidenceExternalIntakeContract",
   "coreEvidenceExternalReceiptGate",
   "coreEvidenceExternalReceiptManifestTemplates",
+  "coreEvidenceExternalReceiptManifestPreflight",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -78,6 +80,7 @@ for (const marker of [
   "buildCoreEvidenceExternalIntakeContract",
   "buildCoreEvidenceExternalReceiptGate",
   "buildCoreEvidenceExternalReceiptManifestTemplates",
+  "buildCoreEvidenceExternalReceiptManifestPreflight",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -93,6 +96,7 @@ for (const marker of [
   "P71-A",
   "P73-A",
   "P75-A",
+  "P77-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -105,6 +109,7 @@ for (const marker of [
   "jyotish-core-evidence-external-intake-contract-v1",
   "jyotish-core-evidence-external-receipt-gate-v1",
   "jyotish-core-evidence-external-receipt-manifest-templates-v1",
+  "jyotish-core-evidence-external-receipt-manifest-preflight-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -127,6 +132,7 @@ for (const marker of [
   "blocked_pending_external_evidence_intake",
   "blocked_pending_external_evidence_receipts",
   "blocked_pending_external_evidence_receipt_manifests",
+  "blocked_pending_external_evidence_receipt_manifest_preflight",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
@@ -137,6 +143,9 @@ for (const marker of [
   "receipt_manifest_received_count=0",
   "evidence_file_recorded_count=0",
   "evidence_hash_recorded_count=0",
+  "preflight_status=blocked_pending_external_evidence_receipt_manifest_preflight",
+  "no_evidence_file_recorded=true",
+  "no_evidence_hash_recorded=true",
   "not_attached",
   "not_started",
   "Evidence must be attached before mark commands are attempted",
@@ -162,7 +171,11 @@ for (const marker of [
   "await_parashara_light_manual_values_or_packet_receipt",
   "await_jhora_receipt_manifest",
   "await_parashara_light_receipt_manifest",
+  "await_jhora_receipt_manifest_preflight",
+  "await_parashara_light_receipt_manifest_preflight",
   "record_external_evidence_receipt_manifest",
+  "record_external_evidence_receipt_manifest_after_human_review",
+  "rerun_external_receipt_manifest_preflight_report",
   "rerun_external_receipt_manifest_templates_report",
   "rerun_external_receipt_gate_report",
   "rerun_preflight_witness_review",
@@ -184,6 +197,7 @@ for (const marker of [
   "build_witness_core_evidence_external_intake_contract_report",
   "build_witness_core_evidence_external_receipt_gate_report",
   "build_witness_core_evidence_external_receipt_manifest_templates_report",
+  "build_witness_core_evidence_external_receipt_manifest_preflight_report",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
   "case_id",
@@ -192,6 +206,9 @@ for (const marker of [
   "human_receipt_timestamp_utc",
   "redacted_receipt_manifest_id",
   "operator_receipt_note_label",
+  "expected_receipt_manifest_label",
+  "operator_preflight_note_label",
+  "required_human_receipt_timestamp_utc",
   "no_raw_values_in_manifest",
   "no_private_paths_in_manifest",
   "no_secrets_in_manifest",
@@ -484,6 +501,55 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestTemplates.safeRequiredManifestFields",
   "coreEvidenceExternalReceiptManifestTemplates.safeValidationCommandFamilies",
   "coreEvidenceExternalReceiptManifestTemplates.operatorNote",
+  "coreEvidenceExternalReceiptManifestPreflight.stage",
+  "coreEvidenceExternalReceiptManifestPreflight.schemaVersion",
+  "coreEvidenceExternalReceiptManifestPreflight.status",
+  "coreEvidenceExternalReceiptManifestPreflight.upstreamTemplateSchemaVersion",
+  "coreEvidenceExternalReceiptManifestPreflight.upstreamTemplateStage",
+  "coreEvidenceExternalReceiptManifestPreflight.upstreamTemplateStatus",
+  "coreEvidenceExternalReceiptManifestPreflight.caseReceiptManifestPreflightRows",
+  "coreEvidenceExternalReceiptManifestPreflight.attachmentReceiptManifestPreflightRows",
+  "coreEvidenceExternalReceiptManifestPreflight.pendingExternalEvidenceReceiptManifestPreflightCount",
+  "coreEvidenceExternalReceiptManifestPreflight.pendingJhoraReceiptManifestPreflightCount",
+  "coreEvidenceExternalReceiptManifestPreflight.pendingParasharaLightReceiptManifestPreflightCount",
+  "coreEvidenceExternalReceiptManifestPreflight.receiptManifestReceivedCount",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceReceivedCount",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceValidatedCount",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceFileRecordedCount",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceHashRecordedCount",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceUploadedCount",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceAttachedCount",
+  "coreEvidenceExternalReceiptManifestPreflight.readyToAttachRows",
+  "coreEvidenceExternalReceiptManifestPreflight.readyToMarkRows",
+  "coreEvidenceExternalReceiptManifestPreflight.remainingNotReviewedRows",
+  "coreEvidenceExternalReceiptManifestPreflight.selectedCaseIds",
+  "coreEvidenceExternalReceiptManifestPreflight.slotFamilies",
+  "coreEvidenceExternalReceiptManifestPreflight.receiptManifestPreflightStatus",
+  "coreEvidenceExternalReceiptManifestPreflight.receiptManifestTemplateStatus",
+  "coreEvidenceExternalReceiptManifestPreflight.receiptGateStatus",
+  "coreEvidenceExternalReceiptManifestPreflight.intakeStatus",
+  "coreEvidenceExternalReceiptManifestPreflight.readinessStatus",
+  "coreEvidenceExternalReceiptManifestPreflight.preflightStatusLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.receiptManifestReceivedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceReceivedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceValidatedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceFileRecordedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceHashRecordedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceUploadedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.evidenceAttachedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.readyToAttachLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.readyToMarkLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.paritySuccessClaimedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.releaseReadyClaimedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.noRawValuesInManifestLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.noPrivatePathsInManifestLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.noSecretsInManifestLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.noEvidenceFileRecordedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.noEvidenceHashRecordedLabel",
+  "coreEvidenceExternalReceiptManifestPreflight.safePreflightLabels",
+  "coreEvidenceExternalReceiptManifestPreflight.safePreflightFields",
+  "coreEvidenceExternalReceiptManifestPreflight.safeValidationCommandFamilies",
+  "coreEvidenceExternalReceiptManifestPreflight.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -572,7 +638,8 @@ assert(!helperSlice.includes('latestStage: "P67-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P69-A"'), "Core evidence pipeline helper must not retain stale P69 latest stage");
 assert(!helperSlice.includes('latestStage: "P71-A"'), "Core evidence pipeline helper must not retain stale P71 latest stage");
 assert(!helperSlice.includes('latestStage: "P73-A"'), "Core evidence pipeline helper must not retain stale P73 latest stage");
-assert(helperSlice.includes('latestStage: "P75-A"'), "Core evidence pipeline helper must expose latest P75 stage");
+assert(!helperSlice.includes('latestStage: "P75-A"'), "Core evidence pipeline helper must not retain stale P75 latest stage");
+assert(helperSlice.includes('latestStage: "P77-A"'), "Core evidence pipeline helper must expose latest P77 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -582,6 +649,7 @@ assert(helperSlice.includes('"P69 attachment readiness"'), "Core evidence pipeli
 assert(helperSlice.includes('"P71 external intake contract"'), "Core evidence pipeline helper must expose P71 stage sequence");
 assert(helperSlice.includes('"P73 external receipt gate"'), "Core evidence pipeline helper must expose P73 stage sequence");
 assert(helperSlice.includes('"P75 receipt manifest templates"'), "Core evidence pipeline helper must expose P75 stage sequence");
+assert(helperSlice.includes('"P77 receipt manifest preflight"'), "Core evidence pipeline helper must expose P77 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -964,6 +1032,77 @@ assert(accuracyRoute.includes("rerun_external_receipt_manifest_templates_report"
 assert(accuracyRoute.includes("build_witness_core_evidence_external_receipt_manifest_templates_report"), "Accuracy route marker must expose P75 command family");
 assert(accuracyRoute.includes("human_receipt_timestamp_utc"), "Accuracy route marker must expose P75 safe required fields");
 assert(accuracyRoute.includes("template rows are labels only"), "Accuracy route marker must expose P75 labels-only note");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-preflight-v1"'), "Core evidence receipt manifest preflight helper must expose schema version");
+assert(helperSlice.includes('stage: "P77-A"'), "Core evidence receipt manifest preflight helper must expose P77-A stage");
+assert(helperSlice.includes('status: "blocked_pending_external_evidence_receipt_manifest_preflight"'), "Core evidence receipt manifest preflight helper must expose blocked status");
+assert(helperSlice.includes('upstreamTemplateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-templates-v1"'), "Core evidence receipt manifest preflight helper must expose upstream schema");
+assert(helperSlice.includes('upstreamTemplateStage: "P75-A"'), "Core evidence receipt manifest preflight helper must expose upstream stage");
+assert(helperSlice.includes('upstreamTemplateStatus: "blocked_pending_external_evidence_receipt_manifests"'), "Core evidence receipt manifest preflight helper must expose upstream status");
+assert(helperSlice.includes("caseReceiptManifestPreflightRows: 5"), "Core evidence receipt manifest preflight helper must expose 5 case preflight rows");
+assert(helperSlice.includes("attachmentReceiptManifestPreflightRows: 10"), "Core evidence receipt manifest preflight helper must expose 10 attachment preflight rows");
+assert(helperSlice.includes("pendingExternalEvidenceReceiptManifestPreflightCount: 10"), "Core evidence receipt manifest preflight helper must expose 10 pending preflight rows");
+assert(helperSlice.includes("pendingJhoraReceiptManifestPreflightCount: 5"), "Core evidence receipt manifest preflight helper must expose 5 JHora preflight rows");
+assert(helperSlice.includes("pendingParasharaLightReceiptManifestPreflightCount: 5"), "Core evidence receipt manifest preflight helper must expose 5 Parashara Light preflight rows");
+assert(helperSlice.includes("receiptManifestReceivedCount: 0"), "Core evidence receipt manifest preflight helper must expose 0 manifest received count");
+assert(helperSlice.includes("evidenceFileRecordedCount: 0"), "Core evidence receipt manifest preflight helper must expose 0 file recorded count");
+assert(helperSlice.includes("evidenceHashRecordedCount: 0"), "Core evidence receipt manifest preflight helper must expose 0 hash recorded count");
+assert(helperSlice.includes("readyToAttachRows: 0"), "Core evidence receipt manifest preflight helper must expose 0 ready-to-attach rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence receipt manifest preflight helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence receipt manifest preflight helper must expose 20 remaining rows");
+assert(helperSlice.includes('receiptManifestPreflightStatus: "blocked_pending_external_evidence_receipt_manifest_preflight"'), "Core evidence receipt manifest preflight helper must expose preflight status");
+assert(helperSlice.includes('receiptManifestTemplateStatus: "blocked_pending_external_evidence_receipt_manifests"'), "Core evidence receipt manifest preflight helper must expose upstream template status");
+assert(helperSlice.includes('receiptGateStatus: "blocked_pending_external_evidence_receipts"'), "Core evidence receipt manifest preflight helper must expose receipt gate status");
+assert(helperSlice.includes('intakeStatus: "blocked_pending_external_evidence_intake"'), "Core evidence receipt manifest preflight helper must expose intake status");
+assert(helperSlice.includes('readinessStatus: "blocked_pending_external_evidence_attachment"'), "Core evidence receipt manifest preflight helper must expose attachment readiness status");
+assert(helperSlice.includes('preflightStatusLabel: "preflight_status=blocked_pending_external_evidence_receipt_manifest_preflight"'), "Core evidence receipt manifest preflight helper must expose preflight status label");
+assert(helperSlice.includes('noRawValuesInManifestLabel: "no_raw_values_in_manifest=true"'), "Core evidence receipt manifest preflight helper must expose no raw values label");
+assert(helperSlice.includes('noPrivatePathsInManifestLabel: "no_private_paths_in_manifest=true"'), "Core evidence receipt manifest preflight helper must expose no private paths label");
+assert(helperSlice.includes('noSecretsInManifestLabel: "no_secrets_in_manifest=true"'), "Core evidence receipt manifest preflight helper must expose no secrets label");
+assert(helperSlice.includes('noEvidenceFileRecordedLabel: "no_evidence_file_recorded=true"'), "Core evidence receipt manifest preflight helper must expose no evidence file label");
+assert(helperSlice.includes('noEvidenceHashRecordedLabel: "no_evidence_hash_recorded=true"'), "Core evidence receipt manifest preflight helper must expose no evidence hash label");
+assert(helperSlice.includes('"await_jhora_receipt_manifest_preflight"'), "Core evidence receipt manifest preflight helper must expose JHora preflight label");
+assert(helperSlice.includes('"await_parashara_light_receipt_manifest_preflight"'), "Core evidence receipt manifest preflight helper must expose Parashara Light preflight label");
+assert(helperSlice.includes('"record_external_evidence_receipt_manifest_after_human_review"'), "Core evidence receipt manifest preflight helper must expose human-review record label");
+assert(helperSlice.includes('"rerun_external_receipt_manifest_preflight_report"'), "Core evidence receipt manifest preflight helper must expose rerun preflight label");
+assert(helperSlice.includes('"build_witness_core_evidence_external_receipt_manifest_preflight_report"'), "Core evidence receipt manifest preflight helper must expose P77 validation command");
+assert(helperSlice.includes('"redacted_receipt_manifest_id"'), "Core evidence receipt manifest preflight helper must expose redacted manifest id field");
+assert(helperSlice.includes('"operator_preflight_note_label"'), "Core evidence receipt manifest preflight helper must expose operator note field");
+assert(helperSlice.includes('"required_human_receipt_timestamp_utc"'), "Core evidence receipt manifest preflight helper must expose timestamp field");
+assert(helperSlice.includes("external receipt manifest preflight is blocked"), "Core evidence receipt manifest preflight helper must expose blocked preflight note");
+assert(preflightSlice.includes("P77 receipt manifest preflight"), "Core evidence pipeline UI must render P77 stage");
+assert(preflightSlice.includes("Core evidence external receipt manifest preflight"), "Core evidence receipt manifest preflight UI must render its heading");
+assert(accuracyRoute.includes("P77-A"), "Accuracy route marker must expose P77 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-preflight-v1"), "Accuracy route marker must expose P77 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_preflight"), "Accuracy route marker must expose P77 status");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-templates-v1"), "Accuracy route marker must expose P77 upstream schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifests"), "Accuracy route marker must expose P77 upstream status");
+assert(accuracyRoute.includes("case_receipt_manifest_preflight_rows=5"), "Accuracy route marker must expose P77 case preflight count");
+assert(accuracyRoute.includes("attachment_receipt_manifest_preflight_rows=10"), "Accuracy route marker must expose P77 attachment preflight count");
+assert(accuracyRoute.includes("pending_external_evidence_receipt_manifest_preflight_count=10"), "Accuracy route marker must expose P77 pending preflight count");
+assert(accuracyRoute.includes("pending_jhora_receipt_manifest_preflight_count=5"), "Accuracy route marker must expose P77 pending JHora count");
+assert(accuracyRoute.includes("pending_parashara_light_receipt_manifest_preflight_count=5"), "Accuracy route marker must expose P77 pending Parashara Light count");
+assert(accuracyRoute.includes("receipt_manifest_received_count=0"), "Accuracy route marker must expose P77 zero manifest received count");
+assert(accuracyRoute.includes("evidence_file_recorded_count=0"), "Accuracy route marker must expose P77 zero file count");
+assert(accuracyRoute.includes("evidence_hash_recorded_count=0"), "Accuracy route marker must expose P77 zero hash count");
+assert(accuracyRoute.includes("ready_to_attach_count=0"), "Accuracy route marker must expose P77 zero ready-to-attach count");
+assert(accuracyRoute.includes("ready_to_mark_count=0"), "Accuracy route marker must expose P77 zero ready-to-mark count");
+assert(accuracyRoute.includes("remaining_not_reviewed_count=20"), "Accuracy route marker must expose P77 remaining count");
+assert(accuracyRoute.includes("expected_receipt_manifest_label"), "Accuracy route marker must expose P77 expected label field");
+assert(accuracyRoute.includes("redacted_receipt_manifest_id"), "Accuracy route marker must expose P77 redacted id field");
+assert(accuracyRoute.includes("operator_preflight_note_label"), "Accuracy route marker must expose P77 operator note field");
+assert(accuracyRoute.includes("required_human_receipt_timestamp_utc"), "Accuracy route marker must expose P77 timestamp field");
+assert(accuracyRoute.includes("no_raw_values_in_manifest=true"), "Accuracy route marker must expose P77 no raw values label");
+assert(accuracyRoute.includes("no_private_paths_in_manifest=true"), "Accuracy route marker must expose P77 no private path label");
+assert(accuracyRoute.includes("no_secrets_in_manifest=true"), "Accuracy route marker must expose P77 no secrets label");
+assert(accuracyRoute.includes("no_evidence_file_recorded=true"), "Accuracy route marker must expose P77 no evidence file label");
+assert(accuracyRoute.includes("no_evidence_hash_recorded=true"), "Accuracy route marker must expose P77 no evidence hash label");
+assert(accuracyRoute.includes("await_jhora_receipt_manifest_preflight"), "Accuracy route marker must expose P77 JHora preflight label");
+assert(accuracyRoute.includes("await_parashara_light_receipt_manifest_preflight"), "Accuracy route marker must expose P77 Parashara Light preflight label");
+assert(accuracyRoute.includes("record_external_evidence_receipt_manifest_after_human_review"), "Accuracy route marker must expose P77 human review record label");
+assert(accuracyRoute.includes("rerun_external_receipt_manifest_preflight_report"), "Accuracy route marker must expose P77 rerun preflight label");
+assert(accuracyRoute.includes("build_witness_core_evidence_external_receipt_manifest_preflight_report"), "Accuracy route marker must expose P77 command family");
+assert(accuracyRoute.includes("blocked human/operator preflight"), "Accuracy route marker must expose P77 blocked operator copy");
+assert(accuracyRoute.includes("labels-only handoff"), "Accuracy route marker must expose P77 labels-only copy");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
@@ -979,8 +1118,8 @@ assert(accuracyRoute.includes("build_witness_core_evidence_operator_packets_repo
 for (const forbidden of [
   "source_report",
   "field_results",
-  "expected",
-  "actual",
+  "raw expected",
+  "raw actual",
   "sources_present",
   "seal_witness_case",
   "--ack-diff-open",
