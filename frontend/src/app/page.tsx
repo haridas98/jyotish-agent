@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceAttachmentGate, buildCoreEvidenceAttachmentHandoff, buildCoreEvidenceAttachmentWorkOrders, buildCoreEvidenceBacklog, buildCoreEvidenceExternalIntakeContract, buildCoreEvidenceExternalReceiptGate, buildCoreEvidenceIntakePlan, buildCoreEvidenceOperatorPacketAttachmentReadiness, buildCoreEvidenceOperatorPacketQa, buildCoreEvidenceOperatorPackets, buildCoreEvidencePipeline, buildCoreEvidenceReadiness, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceAttachmentGate, buildCoreEvidenceAttachmentHandoff, buildCoreEvidenceAttachmentWorkOrders, buildCoreEvidenceBacklog, buildCoreEvidenceExternalIntakeContract, buildCoreEvidenceExternalReceiptGate, buildCoreEvidenceExternalReceiptManifestTemplates, buildCoreEvidenceIntakePlan, buildCoreEvidenceOperatorPacketAttachmentReadiness, buildCoreEvidenceOperatorPacketQa, buildCoreEvidenceOperatorPackets, buildCoreEvidencePipeline, buildCoreEvidenceReadiness, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5687,6 +5687,7 @@ function AccuracyReportPanel({
   const coreEvidenceOperatorPacketAttachmentReadiness = buildCoreEvidenceOperatorPacketAttachmentReadiness();
   const coreEvidenceExternalIntakeContract = buildCoreEvidenceExternalIntakeContract();
   const coreEvidenceExternalReceiptGate = buildCoreEvidenceExternalReceiptGate();
+  const coreEvidenceExternalReceiptManifestTemplates = buildCoreEvidenceExternalReceiptManifestTemplates();
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -6021,6 +6022,21 @@ function AccuracyReportPanel({
             <span>external receipt labels</span>
             <strong>{coreEvidenceExternalReceiptGate.pendingExternalEvidenceReceiptCount}</strong>
             <small>{coreEvidenceExternalReceiptGate.slotFamilies.join(" - ")}; {coreEvidenceExternalReceiptGate.safeReceiptLabels.join(" - ")}; {coreEvidenceExternalReceiptGate.safeValidationCommandFamilies.join(" - ")}; {coreEvidenceExternalReceiptGate.operatorNote}; {coreEvidenceExternalReceiptGate.cautionCopy}.</small>
+          </div>
+          <h3>Core evidence external receipt manifest templates</h3>
+          <p>{coreEvidenceExternalReceiptManifestTemplates.stage}: P75 receipt manifest templates; {coreEvidenceExternalReceiptManifestTemplates.schemaVersion}; {coreEvidenceExternalReceiptManifestTemplates.statusCopy}.</p>
+          <small>
+            {coreEvidenceExternalReceiptManifestTemplates.caseReceiptManifestTemplateRows} case receipt manifest template rows - {coreEvidenceExternalReceiptManifestTemplates.attachmentReceiptManifestTemplateRows} attachment receipt manifest template rows - {coreEvidenceExternalReceiptManifestTemplates.pendingExternalEvidenceReceiptManifestCount} pending external evidence receipt manifests - {coreEvidenceExternalReceiptManifestTemplates.pendingJhoraReceiptManifestCount} pending JHora receipt manifests - {coreEvidenceExternalReceiptManifestTemplates.pendingParasharaLightReceiptManifestCount} pending Parashara Light receipt manifests - {coreEvidenceExternalReceiptManifestTemplates.receiptManifestReceivedCount} receipt manifests received - {coreEvidenceExternalReceiptManifestTemplates.evidenceReceivedCount} evidence received - {coreEvidenceExternalReceiptManifestTemplates.evidenceValidatedCount} validated - {coreEvidenceExternalReceiptManifestTemplates.evidenceFileRecordedCount} file recorded - {coreEvidenceExternalReceiptManifestTemplates.evidenceHashRecordedCount} hash recorded - {coreEvidenceExternalReceiptManifestTemplates.evidenceUploadedCount} uploaded - {coreEvidenceExternalReceiptManifestTemplates.evidenceAttachedCount} attached - {coreEvidenceExternalReceiptManifestTemplates.readyToAttachRows} ready-to-attach - {coreEvidenceExternalReceiptManifestTemplates.readyToMarkRows} ready-to-mark - {coreEvidenceExternalReceiptManifestTemplates.remainingNotReviewedRows} remaining - release: {coreEvidenceExternalReceiptManifestTemplates.releaseGateStatus} - command smoke: {coreEvidenceExternalReceiptManifestTemplates.commandSmokeMatrixStatus}
+          </small>
+          <div>
+            <span>external receipt manifest status</span>
+            <strong>{coreEvidenceExternalReceiptManifestTemplates.selectedCaseIds.length}</strong>
+            <small>{coreEvidenceExternalReceiptManifestTemplates.selectedCaseIds.map((caseId) => `${caseId}: ${coreEvidenceExternalReceiptManifestTemplates.receiptManifestTemplateStatus}; ${coreEvidenceExternalReceiptManifestTemplates.receiptGateStatus}; ${coreEvidenceExternalReceiptManifestTemplates.intakeStatus}; ${coreEvidenceExternalReceiptManifestTemplates.readinessStatus}; ${coreEvidenceExternalReceiptManifestTemplates.receiptManifestStatus}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceValidationStatus}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceFileStatus}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceHashStatus}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceUploadStatus}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceAttachmentStatus}; ${coreEvidenceExternalReceiptManifestTemplates.readyToAttachLabel}; ${coreEvidenceExternalReceiptManifestTemplates.readyToMarkLabel}; ${coreEvidenceExternalReceiptManifestTemplates.receiptManifestReceivedLabel}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceReceivedLabel}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceValidatedLabel}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceFileRecordedLabel}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceHashRecordedLabel}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceUploadedLabel}; ${coreEvidenceExternalReceiptManifestTemplates.evidenceAttachedLabel}; ${coreEvidenceExternalReceiptManifestTemplates.paritySuccessClaimedLabel}; ${coreEvidenceExternalReceiptManifestTemplates.releaseReadyClaimedLabel}`).join(" | ")}</small>
+          </div>
+          <div>
+            <span>receipt manifest template labels</span>
+            <strong>{coreEvidenceExternalReceiptManifestTemplates.pendingExternalEvidenceReceiptManifestCount}</strong>
+            <small>{coreEvidenceExternalReceiptManifestTemplates.slotFamilies.join(" - ")}; {coreEvidenceExternalReceiptManifestTemplates.safeManifestTemplateLabels.join(" - ")}; {coreEvidenceExternalReceiptManifestTemplates.safeRequiredManifestFields.join(" - ")}; {coreEvidenceExternalReceiptManifestTemplates.safeValidationCommandFamilies.join(" - ")}; {coreEvidenceExternalReceiptManifestTemplates.operatorNote}; {coreEvidenceExternalReceiptManifestTemplates.cautionCopy}.</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">
