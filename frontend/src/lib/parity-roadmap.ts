@@ -270,7 +270,7 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P97-A";
+  latestStage: "P99-A";
   stageSequence: [
     "P53 backlog",
     "P55 intake",
@@ -295,6 +295,7 @@ export type CoreEvidencePipeline = {
     "P93 safe-validation result ledger",
     "P95 safe-validation result audit",
     "P97 result-audit remediation queue",
+    "P99 remediation operator packets",
   ];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
@@ -671,6 +672,23 @@ export type CoreEvidencePipeline = {
     safeValidationResultAuditRemediationNotificationSentCount: 0;
     safeValidationResultAuditRemediationOperatorHandoffDeliveredCount: 0;
     safeValidationResultAuditRemediationClosedCount: 0;
+    remainingNotReviewedRows: 20;
+  };
+  externalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketSummary: {
+    safeValidationTranscriptCaseRows: 5;
+    safeValidationTranscriptAttachmentRows: 10;
+    safeValidationTranscriptCommandRows: 40;
+    safeValidationResultLedgerRows: 40;
+    safeValidationResultAuditRows: 40;
+    safeValidationResultAuditRemediationQueueRows: 40;
+    safeValidationResultAuditRemediationQueueOperatorPacketRows: 40;
+    safeValidationResultAuditRemediationQueueOperatorPacketFamilyCount: 4;
+    safeValidationResultAuditRemediationQueueOperatorPacketReadyCount: 0;
+    safeValidationResultAuditRemediationQueueOperatorPacketBlockedCount: 40;
+    safeValidationResultAuditRemediationQueueOperatorPacketDeliveredCount: 0;
+    safeValidationResultAuditRemediationQueueOperatorPacketAcknowledgedCount: 0;
+    safeValidationResultAuditRemediationQueueOperatorPacketClosedCount: 0;
+    safeValidationResultAuditRemediationQueueOperatorPacketExecutedCount: 0;
     remainingNotReviewedRows: 20;
   };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
@@ -2904,10 +2922,50 @@ export type CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeV
   cautionCopy: "no remediation execution, ticket creation, notification delivery, operator handoff delivery, closure, parity pass, or release readiness is claimed";
 };
 
+export type CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacket = Omit<
+  CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueue,
+  "title" | "schemaVersion" | "stage" | "status" | "operatorNote" | "statusCopy" | "cautionCopy"
+> & {
+  title: "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue operator packet";
+  schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-v1";
+  stage: "P99-A";
+  status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet";
+  upstreamRemediationQueueSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-v1";
+  upstreamRemediationQueueStage: "P97-A";
+  upstreamRemediationQueueStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue";
+  safeValidationResultAuditRemediationQueueOperatorPacketRows: 40;
+  safeValidationResultAuditRemediationQueueOperatorPacketFamilyCount: 4;
+  safeValidationResultAuditRemediationQueueOperatorPacketReadyCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketBlockedCount: 40;
+  safeValidationResultAuditRemediationQueueOperatorPacketDeliveredCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketAcknowledgedCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketClosedCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketExecutedCount: 0;
+  safeValidationResultAuditRemediationQueueOperatorPacketStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet";
+  safeValidationResultAuditRemediationQueueOperatorPacketDeliveryStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_delivery_status=not_delivered";
+  safeValidationResultAuditRemediationQueueOperatorPacketAcknowledgementStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_acknowledgement_status=not_acknowledged";
+  safeValidationResultAuditRemediationQueueOperatorPacketClosureStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_closure_status=not_closed";
+  safeValidationResultAuditRemediationQueueOperatorPacketExecutionStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_execution_status=not_executed";
+  safeValidationResultAuditRemediationQueueOperatorPacketOnlyLabel: "safe_validation_result_audit_remediation_queue_operator_packet_only=true";
+  noSafeValidationResultAuditRemediationQueueOperatorPacketDeliveredLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_delivered=true";
+  noSafeValidationResultAuditRemediationQueueOperatorPacketAcknowledgedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_acknowledged=true";
+  noSafeValidationResultAuditRemediationQueueOperatorPacketClosedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_closed=true";
+  noSafeValidationResultAuditRemediationQueueOperatorPacketExecutedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_executed=true";
+  operatorPacketFamilyLabels: [
+    "packetize_manifest_shape_remediation_blocked_label_only",
+    "packetize_operator_handoff_readiness_remediation_blocked_label_only",
+    "packetize_no_external_action_remediation_blocked_label_only",
+    "packetize_release_gate_remediation_blocked_label_only",
+  ];
+  operatorNote: "blocked safe-validation result-audit remediation queue operator packets; no packet delivery, acknowledgement, closure, remediation, ticket, notification, operator handoff, command execution, upload, attachment, mark, accept, reject, defer, parity pass, or release action is claimed";
+  statusCopy: "blocked operator-packet readiness rows for every result-audit remediation queue row";
+  cautionCopy: "no packet delivery, acknowledgement, closure, remediation execution, ticket creation, notification delivery, operator handoff delivery, parity pass, or release readiness is claimed";
+};
+
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P97-A",
+    latestStage: "P99-A",
     stageSequence: [
       "P53 backlog",
       "P55 intake",
@@ -2932,6 +2990,7 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       "P93 safe-validation result ledger",
       "P95 safe-validation result audit",
       "P97 result-audit remediation queue",
+      "P99 remediation operator packets",
     ],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
@@ -3308,6 +3367,23 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       safeValidationResultAuditRemediationNotificationSentCount: 0,
       safeValidationResultAuditRemediationOperatorHandoffDeliveredCount: 0,
       safeValidationResultAuditRemediationClosedCount: 0,
+      remainingNotReviewedRows: 20,
+    },
+    externalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacketSummary: {
+      safeValidationTranscriptCaseRows: 5,
+      safeValidationTranscriptAttachmentRows: 10,
+      safeValidationTranscriptCommandRows: 40,
+      safeValidationResultLedgerRows: 40,
+      safeValidationResultAuditRows: 40,
+      safeValidationResultAuditRemediationQueueRows: 40,
+      safeValidationResultAuditRemediationQueueOperatorPacketRows: 40,
+      safeValidationResultAuditRemediationQueueOperatorPacketFamilyCount: 4,
+      safeValidationResultAuditRemediationQueueOperatorPacketReadyCount: 0,
+      safeValidationResultAuditRemediationQueueOperatorPacketBlockedCount: 40,
+      safeValidationResultAuditRemediationQueueOperatorPacketDeliveredCount: 0,
+      safeValidationResultAuditRemediationQueueOperatorPacketAcknowledgedCount: 0,
+      safeValidationResultAuditRemediationQueueOperatorPacketClosedCount: 0,
+      safeValidationResultAuditRemediationQueueOperatorPacketExecutedCount: 0,
       remainingNotReviewedRows: 20,
     },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
@@ -5253,6 +5329,47 @@ export function buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHan
     operatorNote: "blocked safe-validation result-audit remediation queue; no remediation, ticket, notification, operator handoff, closure, command execution, upload, attachment, mark, accept, reject, defer, parity pass, or release action is claimed",
     statusCopy: "blocked remediation queue for every safe-validation result-audit row",
     cautionCopy: "no remediation execution, ticket creation, notification delivery, operator handoff delivery, closure, parity pass, or release readiness is claimed",
+  };
+}
+
+export function buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacket(): CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueueOperatorPacket {
+  const remediationQueue = buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueue();
+  return {
+    ...remediationQueue,
+    title: "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue operator packet",
+    schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-operator-packet-v1",
+    stage: "P99-A",
+    status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet",
+    upstreamRemediationQueueSchemaVersion: remediationQueue.schemaVersion,
+    upstreamRemediationQueueStage: remediationQueue.stage,
+    upstreamRemediationQueueStatus: remediationQueue.status,
+    safeValidationResultAuditRemediationQueueOperatorPacketRows: 40,
+    safeValidationResultAuditRemediationQueueOperatorPacketFamilyCount: 4,
+    safeValidationResultAuditRemediationQueueOperatorPacketReadyCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketBlockedCount: 40,
+    safeValidationResultAuditRemediationQueueOperatorPacketDeliveredCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketAcknowledgedCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketClosedCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketExecutedCount: 0,
+    safeValidationResultAuditRemediationQueueOperatorPacketStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue_operator_packet",
+    safeValidationResultAuditRemediationQueueOperatorPacketDeliveryStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_delivery_status=not_delivered",
+    safeValidationResultAuditRemediationQueueOperatorPacketAcknowledgementStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_acknowledgement_status=not_acknowledged",
+    safeValidationResultAuditRemediationQueueOperatorPacketClosureStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_closure_status=not_closed",
+    safeValidationResultAuditRemediationQueueOperatorPacketExecutionStatusLabel: "safe_validation_result_audit_remediation_queue_operator_packet_execution_status=not_executed",
+    safeValidationResultAuditRemediationQueueOperatorPacketOnlyLabel: "safe_validation_result_audit_remediation_queue_operator_packet_only=true",
+    noSafeValidationResultAuditRemediationQueueOperatorPacketDeliveredLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_delivered=true",
+    noSafeValidationResultAuditRemediationQueueOperatorPacketAcknowledgedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_acknowledged=true",
+    noSafeValidationResultAuditRemediationQueueOperatorPacketClosedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_closed=true",
+    noSafeValidationResultAuditRemediationQueueOperatorPacketExecutedLabel: "no_safe_validation_result_audit_remediation_queue_operator_packet_executed=true",
+    operatorPacketFamilyLabels: [
+      "packetize_manifest_shape_remediation_blocked_label_only",
+      "packetize_operator_handoff_readiness_remediation_blocked_label_only",
+      "packetize_no_external_action_remediation_blocked_label_only",
+      "packetize_release_gate_remediation_blocked_label_only",
+    ],
+    operatorNote: "blocked safe-validation result-audit remediation queue operator packets; no packet delivery, acknowledgement, closure, remediation, ticket, notification, operator handoff, command execution, upload, attachment, mark, accept, reject, defer, parity pass, or release action is claimed",
+    statusCopy: "blocked operator-packet readiness rows for every result-audit remediation queue row",
+    cautionCopy: "no packet delivery, acknowledgement, closure, remediation execution, ticket creation, notification delivery, operator handoff delivery, parity pass, or release readiness is claimed",
   };
 }
 
