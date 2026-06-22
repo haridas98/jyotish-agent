@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { ProductShell } from "@/app/product-shell";
 import { buildD1WorkbenchModel, type ChartWorkbenchScopeId } from "@/astrology/d1-workbench";
+import { buildD1WorkbenchSmokeModel, D1_WORKBENCH_SMOKE_CHART_ID, D1_WORKBENCH_SMOKE_ROUTE, D1_WORKBENCH_SMOKE_STATUS } from "@/astrology/d1-workbench-smoke-fixture";
 import {
   fetchChartProfile,
   fetchD1ChartWorkbench,
@@ -21,9 +22,15 @@ function profileIdFromParams(value: string | string[] | undefined) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+function chartIdFromParams(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default function ChartDetailPage() {
   const params = useParams<{ id: string }>();
-  const profileId = profileIdFromParams(params.id);
+  const chartId = chartIdFromParams(params.id);
+  const isSmokeDemoChart = chartId === D1_WORKBENCH_SMOKE_CHART_ID;
+  const profileId = isSmokeDemoChart ? null : profileIdFromParams(params.id);
   const [profile, setProfile] = useState<ChartProfile | null>(null);
   const [settings, setSettings] = useState<JyotishUserSettings | null>(null);
   const [workbench, setWorkbench] = useState<D1WorkbenchApiResponse | null>(null);
@@ -33,6 +40,13 @@ export default function ChartDetailPage() {
   useEffect(() => {
     let mounted = true;
     async function load() {
+      if (isSmokeDemoChart) {
+        setProfile(null);
+        setSettings(null);
+        setWorkbench(null);
+        setStatus(D1_WORKBENCH_SMOKE_STATUS);
+        return;
+      }
       if (!profileId) {
         setStatus("Карта не найдена.");
         return;
@@ -57,13 +71,16 @@ export default function ChartDetailPage() {
     return () => {
       mounted = false;
     };
-  }, [profileId, scope]);
+  }, [isSmokeDemoChart, profileId, scope]);
 
   const model = useMemo(() => {
+    if (isSmokeDemoChart) return buildD1WorkbenchSmokeModel();
     if (!profile || !workbench) return null;
     const scopeId = workbench.scope.toUpperCase() as ChartWorkbenchScopeId;
     return buildD1WorkbenchModel(profile, settings, workbench.calculation, scopeId, workbench);
-  }, [profile, settings, workbench]);
+  }, [isSmokeDemoChart, profile, settings, workbench]);
+
+  const renderedStatus = isSmokeDemoChart ? `${D1_WORKBENCH_SMOKE_STATUS} Route: ${D1_WORKBENCH_SMOKE_ROUTE}.` : status;
 
   return (
     <ProductShell active="charts">
@@ -74,9 +91,9 @@ export default function ChartDetailPage() {
         <span>Объяснение</span>
       </div>
       {model ? (
-        <D1ChartWorkbench model={model} status={status} onScopeChange={(nextScope) => setScope(nextScope.toLowerCase() as ChartWorkbenchScope)} />
+        <D1ChartWorkbench model={model} readOnlyFixture={isSmokeDemoChart} status={renderedStatus} onScopeChange={(nextScope) => setScope(nextScope.toLowerCase() as ChartWorkbenchScope)} />
       ) : (
-        <D1ChartWorkbenchShell status={status} />
+        <D1ChartWorkbenchShell status={renderedStatus} />
       )}
     </ProductShell>
   );

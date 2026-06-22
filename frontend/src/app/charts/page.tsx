@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
+import { D1_WORKBENCH_SMOKE_ROUTE } from "@/astrology/d1-workbench-smoke-fixture";
 import { deleteChartProfile, fetchCurrentUser, listChartProfiles, type ChartProfile } from "@/lib/api";
 
 const quickActions = [
@@ -122,6 +123,7 @@ export default function ChartsPage() {
             <span>После входа здесь появятся ваши сохранённые карты.</span>
           </div>
           <a className="primary-link-button" href="/charts/new">Создать карту</a>
+          <a className="secondary-button" href={D1_WORKBENCH_SMOKE_ROUTE}>P107-A read-only D1 demo</a>
         </section>
       ) : null}
 
@@ -133,6 +135,7 @@ export default function ChartsPage() {
           </div>
           <div className="charts-empty-actions">
             <a className="primary-link-button" href="/charts/new">Создать карту</a>
+            <a className="secondary-button" href={D1_WORKBENCH_SMOKE_ROUTE}>P107-A read-only D1 demo</a>
             <a className="secondary-button" href="/people">Люди</a>
             <a className="secondary-button" href="/transits">Транзиты</a>
           </div>

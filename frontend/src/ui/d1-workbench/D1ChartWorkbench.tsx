@@ -19,6 +19,7 @@ type D1ChartWorkbenchProps = {
   model: D1WorkbenchModel;
   onRecalculate?: () => void;
   onScopeChange?: (scopeId: ChartWorkbenchScopeId) => void;
+  readOnlyFixture?: boolean;
   status?: string;
 };
 
@@ -113,7 +114,7 @@ export function D1ChartWorkbenchShell({ status = "Открываю карту D1
   );
 }
 
-export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }: D1ChartWorkbenchProps) {
+export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnlyFixture = false, status }: D1ChartWorkbenchProps) {
   const [workbenchState, setWorkbenchState] = useState<ChartWorkbenchState>({
     scopeId: model.scopeId,
     mode: model.defaults.readerMode,
@@ -155,6 +156,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
     <section
       className={workbenchState.density === "compact" ? "d1-workbench d1-workbench-compact" : "d1-workbench"}
       data-density={workbenchState.density}
+      data-chart-detail-smoke-fixture={readOnlyFixture ? "P107-A" : undefined}
       aria-label="Карта D1"
     >
       <div className="d1-header">
@@ -163,12 +165,13 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
           <h1>{model.profile.title}</h1>
           <p>{model.profile.birthDate} · {model.profile.birthTime} · {model.profile.place}</p>
         </div>
-        <div className="d1-actions">
+        {readOnlyFixture ? <div className="d1-actions"><span className="d1-readonly-fixture-badge">P107-A read-only fixture</span></div> : null}
+        {!readOnlyFixture ? <div className="d1-actions">
           <a href={`/charts/${model.profile.id}/edit`}>Редактировать</a>
           <a href="/compatibility">Сравнить</a>
           <a href="/settings">Настройки</a>
           {onRecalculate ? <button type="button" onClick={onRecalculate}>Обновить расчёт</button> : null}
-        </div>
+        </div> : null}
       </div>
 
       <div className="d1-meta-row">
