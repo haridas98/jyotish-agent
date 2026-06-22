@@ -88,6 +88,8 @@ const TERM_LANGUAGE_STORAGE_KEY = "jyotish-term-language";
 const CHART_HOUSE_HINTS_STORAGE_KEY = "jyotish-chart-house-hints";
 const FORM_DRAFT_STORAGE_KEY = "jyotish-main-form-draft-v1";
 const CHART_VIEW_STORAGE_KEY = "jyotish-chart-view-v1";
+const INITIAL_CURRENT_CHART_DATE = "2000-01-01";
+const INITIAL_CURRENT_CHART_TIME = "00:00";
 
 type BirthFormDraft = {
   birthDate?: string;
@@ -7131,8 +7133,8 @@ function AccuracyReportPanel({
 
 
 export default function Home({ initialAnalysisTab = "overview" }: { initialAnalysisTab?: AnalysisTab } = {}) {
-  const [birthDate, setBirthDate] = useState(() => localDateInputValue());
-  const [birthTime, setBirthTime] = useState(() => localTimeInputValue());
+  const [birthDate, setBirthDate] = useState(INITIAL_CURRENT_CHART_DATE);
+  const [birthTime, setBirthTime] = useState(INITIAL_CURRENT_CHART_TIME);
   const [gender, setGender] = useState<"male" | "female" | "unknown">("male");
   const [placeName, setPlaceName] = useState("Маяпур");
   const [profileName, setProfileName] = useState("Карта на сейчас");
