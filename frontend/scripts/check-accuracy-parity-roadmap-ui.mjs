@@ -28,6 +28,23 @@ assert(
 assert(roadmapSlice.includes("integrated:") && roadmapSlice.includes("ready:"), "Parity roadmap counters must render separately from subtitle");
 
 for (const marker of [
+  "buildParityFiniteScopeCheckpoint",
+  "P109-A",
+  "bounded_parity_scope=true",
+  "parity_roadmap_total_items=19",
+  "parity_roadmap_pending_or_blocked_count=",
+  "next_concrete_evidence_gate=human_provided_external_receipt_manifests",
+  "parity_success_claimed=false",
+  "release_ready=false",
+  "release_gate_status=blocked",
+]) {
+  assert(roadmap.includes(marker) || roadmapSlice.includes(marker), `Finite-scope parity checkpoint marker missing: ${marker}`);
+}
+
+assert(roadmapSlice.includes("Finite JH/PL scope"), "Parity roadmap must show a product-facing finite-scope label.");
+assert(roadmapSlice.includes("next evidence gate"), "Parity roadmap must show the next concrete evidence gate.");
+
+for (const marker of [
   "Parity roadmap",
   "JH/PL launch ledger",
   "parityRoadmapItems",
@@ -68,6 +85,15 @@ for (const forbidden of [
   "--ack-diff-open",
   "authority",
   "authoritative",
+  "verified parity",
+  "accepted parity",
+  "JHora parity done",
+  "Parashara Light parity done",
+  "parity success",
+  "release ready",
+  "external notification sent",
+  "ticket created",
+  "upload executed",
 ]) {
   assert(!roadmapSlice.includes(forbidden), `Parity roadmap slice must not expose ${forbidden}`);
 }

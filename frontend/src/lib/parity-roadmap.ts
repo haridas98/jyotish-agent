@@ -65,6 +65,26 @@ export type ParityCollectionChecklistTotals = {
   waiting: number;
 };
 
+export type ParityFiniteScopeCheckpoint = {
+  stage: "P109-A";
+  status: "finite_parity_roadmap_scope_checkpoint";
+  boundedScopeLabel: "bounded_parity_scope=true";
+  totalRoadmapItemsLabel: "parity_roadmap_total_items=19";
+  pendingOrBlockedCountLabel: string;
+  nextConcreteEvidenceGateLabel: "next_concrete_evidence_gate=human_provided_external_receipt_manifests";
+  paritySuccessClaimedLabel: "parity_success_claimed=false";
+  releaseReadyLabel: "release_ready=false";
+  releaseGateStatusLabel: "release_gate_status=blocked";
+  totalRoadmapItems: number;
+  readyRoadmapItems: number;
+  reviewRoadmapItems: number;
+  waitingRoadmapItems: number;
+  pendingOrBlockedRoadmapItems: number;
+  nextEvidenceGate: "Human-provided external receipt manifests";
+  statusCopy: "finite JH/PL parity scope; release remains blocked";
+  cautionCopy: "no completed parity, release readiness, external delivery, ticket, notification, upload, or attachment is claimed";
+};
+
 export type ReleaseGateActionSummary = {
   totals: {
     collectReports: number;
@@ -2059,6 +2079,33 @@ export function buildParityCollectionChecklistTotals(rows: ParityRoadmapRow[]): 
     }),
     { ready: 0, review: 0, waiting: 0 },
   );
+}
+
+export function buildParityFiniteScopeCheckpoint(rows: ParityRoadmapRow[]): ParityFiniteScopeCheckpoint {
+  const readyRoadmapItems = rows.filter((row) => row.state === "ready").length;
+  const reviewRoadmapItems = rows.filter((row) => row.state === "review").length;
+  const waitingRoadmapItems = rows.filter((row) => row.state === "waiting").length;
+  const pendingOrBlockedRoadmapItems = reviewRoadmapItems + waitingRoadmapItems;
+
+  return {
+    stage: "P109-A",
+    status: "finite_parity_roadmap_scope_checkpoint",
+    boundedScopeLabel: "bounded_parity_scope=true",
+    totalRoadmapItemsLabel: "parity_roadmap_total_items=19",
+    pendingOrBlockedCountLabel: `parity_roadmap_pending_or_blocked_count=${pendingOrBlockedRoadmapItems}`,
+    nextConcreteEvidenceGateLabel: "next_concrete_evidence_gate=human_provided_external_receipt_manifests",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    releaseReadyLabel: "release_ready=false",
+    releaseGateStatusLabel: "release_gate_status=blocked",
+    totalRoadmapItems: rows.length,
+    readyRoadmapItems,
+    reviewRoadmapItems,
+    waitingRoadmapItems,
+    pendingOrBlockedRoadmapItems,
+    nextEvidenceGate: "Human-provided external receipt manifests",
+    statusCopy: "finite JH/PL parity scope; release remains blocked",
+    cautionCopy: "no completed parity, release readiness, external delivery, ticket, notification, upload, or attachment is claimed",
+  };
 }
 
 export function buildReleaseGateActionSummary(rows: ParityCollectionChecklistRow[]): ReleaseGateActionSummary {
