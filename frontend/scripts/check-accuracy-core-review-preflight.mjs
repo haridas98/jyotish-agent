@@ -32,6 +32,7 @@ for (const marker of [
   "Core evidence readiness",
   "operator packet manifest",
   "Core evidence attachment gate",
+  "Core evidence attachment work orders",
   "operator attachment manifest",
   "Evidence backlog",
   "coreReviewPreflightBlocker",
@@ -42,6 +43,7 @@ for (const marker of [
   "coreEvidencePipeline",
   "coreEvidenceReadiness",
   "coreEvidenceAttachmentGate",
+  "coreEvidenceAttachmentWorkOrders",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -50,6 +52,7 @@ for (const marker of [
   "buildCoreEvidencePipeline",
   "buildCoreEvidenceReadiness",
   "buildCoreEvidenceAttachmentGate",
+  "buildCoreEvidenceAttachmentWorkOrders",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -57,10 +60,12 @@ for (const marker of [
   "P55-A",
   "P57-A",
   "P59-A",
+  "P61-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
   "jyotish-core-evidence-attachment-gate-v1",
+  "jyotish-core-evidence-attachment-work-orders-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -74,9 +79,12 @@ for (const marker of [
   "missing",
   "blocked_missing_evidence",
   "blocked_no_attached_evidence",
+  "pending_not_attached",
+  "blocked_pending_attachments",
   "ready_to_mark=false",
   "not_attached",
   "Evidence must be attached before mark commands are attempted",
+  "work orders are labels only and do not collect evidence",
   "Evidence must be collected and attached before mark commands are attempted",
   "collect_jhora_screenshot",
   "attach_parashara_light_manual_values",
@@ -91,6 +99,7 @@ for (const marker of [
   "real diff",
   "preflight_witness_review",
   "build_witness_core_evidence_attachment_gate_report",
+  "build_witness_core_evidence_attachment_work_orders_report",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
 ]) {
@@ -184,6 +193,21 @@ for (const marker of [
   "coreEvidenceAttachmentGate.safeNextActions",
   "coreEvidenceAttachmentGate.safeValidationCommandFamilies",
   "coreEvidenceAttachmentGate.operatorNote",
+  "coreEvidenceAttachmentWorkOrders.stage",
+  "coreEvidenceAttachmentWorkOrders.schemaVersion",
+  "coreEvidenceAttachmentWorkOrders.workOrderRows",
+  "coreEvidenceAttachmentWorkOrders.pendingWorkOrderCount",
+  "coreEvidenceAttachmentWorkOrders.pendingJhoraWorkOrderCount",
+  "coreEvidenceAttachmentWorkOrders.pendingParasharaLightWorkOrderCount",
+  "coreEvidenceAttachmentWorkOrders.blockedCaseCount",
+  "coreEvidenceAttachmentWorkOrders.readyToMarkRows",
+  "coreEvidenceAttachmentWorkOrders.remainingNotReviewedRows",
+  "coreEvidenceAttachmentWorkOrders.selectedCaseIds",
+  "coreEvidenceAttachmentWorkOrders.workOrderStatus",
+  "coreEvidenceAttachmentWorkOrders.caseWorkOrderStatus",
+  "coreEvidenceAttachmentWorkOrders.readyToMarkLabel",
+  "coreEvidenceAttachmentWorkOrders.safeValidationCommandFamilies",
+  "coreEvidenceAttachmentWorkOrders.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -264,8 +288,10 @@ assert(accuracyRoute.includes("10 missing evidence slots"), "Accuracy route mark
 assert(accuracyRoute.includes("blocked_missing_evidence"), "Accuracy route marker must expose blocked evidence status");
 assert(accuracyRoute.includes("ready_to_mark=false"), "Accuracy route marker must expose false ready-to-mark state");
 assert(accuracyRoute.includes("Evidence must be collected and attached before mark commands are attempted"), "Accuracy route marker must expose blocked operator note");
-assert(helperSlice.includes('latestStage: "P59-A"'), "Core evidence pipeline helper must expose latest P59 stage");
+assert(!helperSlice.includes('latestStage: "P59-A"'), "Core evidence pipeline helper must not retain stale P59 latest stage");
+assert(helperSlice.includes('latestStage: "P61-A"'), "Core evidence pipeline helper must expose latest P61 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
+assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -302,6 +328,33 @@ assert(accuracyRoute.includes("blocked_no_attached_evidence"), "Accuracy route m
 assert(accuracyRoute.includes("rerun_evidence_attachment_gate"), "Accuracy route marker must expose rerun attachment gate action");
 assert(accuracyRoute.includes("build_witness_core_evidence_attachment_gate_report"), "Accuracy route marker must expose attachment validation command");
 assert(accuracyRoute.includes("Evidence must be attached before mark commands are attempted"), "Accuracy route marker must expose attachment operator note");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-work-orders-v1"'), "Core evidence work orders helper must expose schema version");
+assert(helperSlice.includes('stage: "P61-A"'), "Core evidence work orders helper must expose P61-A stage");
+assert(helperSlice.includes("workOrderRows: 10"), "Core evidence work orders helper must expose 10 work-order rows");
+assert(helperSlice.includes("pendingWorkOrderCount: 10"), "Core evidence work orders helper must expose 10 pending work orders");
+assert(helperSlice.includes("pendingJhoraWorkOrderCount: 5"), "Core evidence work orders helper must expose 5 pending JHora work orders");
+assert(helperSlice.includes("pendingParasharaLightWorkOrderCount: 5"), "Core evidence work orders helper must expose 5 pending Parashara Light work orders");
+assert(helperSlice.includes("blockedCaseCount: 5"), "Core evidence work orders helper must expose 5 blocked cases");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence work orders helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence work orders helper must expose 20 remaining rows");
+assert(helperSlice.includes('workOrderStatus: "pending_not_attached"'), "Core evidence work orders helper must expose pending work-order status");
+assert(helperSlice.includes('caseWorkOrderStatus: "blocked_pending_attachments"'), "Core evidence work orders helper must expose blocked case work-order status");
+assert(helperSlice.includes('readyToMarkLabel: "ready_to_mark=false"'), "Core evidence work orders helper must expose false ready-to-mark label");
+assert(helperSlice.includes('"build_witness_core_evidence_attachment_work_orders_report"'), "Core evidence work orders helper must expose work-order validation command");
+assert(helperSlice.includes("work orders are labels only and do not collect evidence"), "Core evidence work orders helper must expose labels-only operator note");
+assert(preflightSlice.includes("P61 work orders"), "Core evidence pipeline UI must render P61 stage");
+assert(preflightSlice.includes("Core evidence attachment work orders"), "Core evidence work orders UI must render its heading");
+assert(accuracyRoute.includes("P61-A"), "Accuracy route marker must expose P61 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-attachment-work-orders-v1"), "Accuracy route marker must expose P61 schema");
+assert(accuracyRoute.includes("10 work-order rows"), "Accuracy route marker must expose work-order row count");
+assert(accuracyRoute.includes("10 pending work orders"), "Accuracy route marker must expose pending work-order count");
+assert(accuracyRoute.includes("5 pending JHora"), "Accuracy route marker must expose pending JHora count");
+assert(accuracyRoute.includes("5 pending Parashara Light"), "Accuracy route marker must expose pending Parashara Light count");
+assert(accuracyRoute.includes("5 blocked cases"), "Accuracy route marker must expose blocked case count");
+assert(accuracyRoute.includes("pending_not_attached"), "Accuracy route marker must expose pending work-order status");
+assert(accuracyRoute.includes("blocked_pending_attachments"), "Accuracy route marker must expose blocked case work-order status");
+assert(accuracyRoute.includes("work orders are labels only and do not collect evidence"), "Accuracy route marker must expose labels-only operator note");
+assert(accuracyRoute.includes("build_witness_core_evidence_attachment_work_orders_report"), "Accuracy route marker must expose work-order validation command");
 
 for (const forbidden of [
   "source_report",

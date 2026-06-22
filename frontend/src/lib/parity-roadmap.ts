@@ -270,8 +270,8 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P59-A";
-  stageSequence: ["P53 backlog", "P55 intake", "P57 readiness", "P59 attachment gate"];
+  latestStage: "P61-A";
+  stageSequence: ["P53 backlog", "P55 intake", "P57 readiness", "P59 attachment gate", "P61 work orders"];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
   backlogSummary: {
@@ -309,8 +309,17 @@ export type CoreEvidencePipeline = {
     parasharaLightMissingCount: 5;
     remainingNotReviewedRows: 20;
   };
+  workOrderSummary: {
+    workOrderRows: 10;
+    pendingWorkOrderCount: 10;
+    pendingJhoraWorkOrderCount: 5;
+    pendingParasharaLightWorkOrderCount: 5;
+    blockedCaseCount: 5;
+    readyToMarkRows: 0;
+    remainingNotReviewedRows: 20;
+  };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
-  statusCopy: "blocked evidence attachment gate";
+  statusCopy: "blocked evidence attachment work-order gate";
 };
 
 export type CoreEvidenceAttachmentGate = {
@@ -364,6 +373,39 @@ export type CoreEvidenceAttachmentGate = {
   operatorNote: "Evidence must be attached before mark commands are attempted";
   statusCopy: "external evidence is not attached for every selected intake row";
   cautionCopy: "No mark command should run until evidence is attached";
+};
+
+export type CoreEvidenceAttachmentWorkOrders = {
+  title: "Core evidence attachment work orders";
+  schemaVersion: "jyotish-core-evidence-attachment-work-orders-v1";
+  stage: "P61-A";
+  workOrderRows: 10;
+  pendingWorkOrderCount: 10;
+  pendingJhoraWorkOrderCount: 5;
+  pendingParasharaLightWorkOrderCount: 5;
+  blockedCaseCount: 5;
+  readyToMarkRows: 0;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  workOrderStatus: "pending_not_attached";
+  caseWorkOrderStatus: "blocked_pending_attachments";
+  readyToMarkLabel: "ready_to_mark=false";
+  safeValidationCommandFamilies: [
+    "build_witness_core_evidence_attachment_work_orders_report",
+    "build_witness_core_evidence_attachment_gate_report",
+    "preflight_witness_review",
+  ];
+  operatorNote: "Evidence must be attached before mark commands are attempted; work orders are labels only and do not collect evidence";
+  statusCopy: "work orders remain pending because evidence is not attached";
+  cautionCopy: "No work order attaches evidence or permits mark commands";
 };
 
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
@@ -695,8 +737,8 @@ export function buildCoreEvidenceReadiness(): CoreEvidenceReadiness {
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P59-A",
-    stageSequence: ["P53 backlog", "P55 intake", "P57 readiness", "P59 attachment gate"],
+    latestStage: "P61-A",
+    stageSequence: ["P53 backlog", "P55 intake", "P57 readiness", "P59 attachment gate", "P61 work orders"],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
     backlogSummary: {
@@ -734,8 +776,17 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       parasharaLightMissingCount: 5,
       remainingNotReviewedRows: 20,
     },
+    workOrderSummary: {
+      workOrderRows: 10,
+      pendingWorkOrderCount: 10,
+      pendingJhoraWorkOrderCount: 5,
+      pendingParasharaLightWorkOrderCount: 5,
+      blockedCaseCount: 5,
+      readyToMarkRows: 0,
+      remainingNotReviewedRows: 20,
+    },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
-    statusCopy: "blocked evidence attachment gate",
+    statusCopy: "blocked evidence attachment work-order gate",
   };
 }
 
@@ -791,6 +842,41 @@ export function buildCoreEvidenceAttachmentGate(): CoreEvidenceAttachmentGate {
     operatorNote: "Evidence must be attached before mark commands are attempted",
     statusCopy: "external evidence is not attached for every selected intake row",
     cautionCopy: "No mark command should run until evidence is attached",
+  };
+}
+
+export function buildCoreEvidenceAttachmentWorkOrders(): CoreEvidenceAttachmentWorkOrders {
+  return {
+    title: "Core evidence attachment work orders",
+    schemaVersion: "jyotish-core-evidence-attachment-work-orders-v1",
+    stage: "P61-A",
+    workOrderRows: 10,
+    pendingWorkOrderCount: 10,
+    pendingJhoraWorkOrderCount: 5,
+    pendingParasharaLightWorkOrderCount: 5,
+    blockedCaseCount: 5,
+    readyToMarkRows: 0,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    workOrderStatus: "pending_not_attached",
+    caseWorkOrderStatus: "blocked_pending_attachments",
+    readyToMarkLabel: "ready_to_mark=false",
+    safeValidationCommandFamilies: [
+      "build_witness_core_evidence_attachment_work_orders_report",
+      "build_witness_core_evidence_attachment_gate_report",
+      "preflight_witness_review",
+    ],
+    operatorNote: "Evidence must be attached before mark commands are attempted; work orders are labels only and do not collect evidence",
+    statusCopy: "work orders remain pending because evidence is not attached",
+    cautionCopy: "No work order attaches evidence or permits mark commands",
   };
 }
 
