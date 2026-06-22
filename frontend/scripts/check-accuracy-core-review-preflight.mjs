@@ -36,9 +36,11 @@ for (const marker of [
   "Core evidence attachment handoff",
   "Core evidence operator packets",
   "Core evidence operator packet QA",
+  "Core evidence operator packet attachment readiness",
   "operator attachment manifest",
   "operator packet status",
   "operator packet QA status",
+  "attachment readiness status",
   "Evidence backlog",
   "coreReviewPreflightBlocker",
   "coreReviewProgress",
@@ -52,6 +54,7 @@ for (const marker of [
   "coreEvidenceAttachmentHandoff",
   "coreEvidenceOperatorPackets",
   "coreEvidenceOperatorPacketQa",
+  "coreEvidenceOperatorPacketAttachmentReadiness",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -64,6 +67,7 @@ for (const marker of [
   "buildCoreEvidenceAttachmentHandoff",
   "buildCoreEvidenceOperatorPackets",
   "buildCoreEvidenceOperatorPacketQa",
+  "buildCoreEvidenceOperatorPacketAttachmentReadiness",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -75,6 +79,7 @@ for (const marker of [
   "P63-A",
   "P65-A",
   "P67-A",
+  "P69-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -83,6 +88,7 @@ for (const marker of [
   "jyotish-core-evidence-attachment-handoff-v1",
   "jyotish-core-evidence-operator-packets-v1",
   "jyotish-core-evidence-operator-packet-qa-v1",
+  "jyotish-core-evidence-operator-packet-attachment-readiness-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -101,6 +107,8 @@ for (const marker of [
   "blocked_pending_operator_evidence",
   "blocked_pending_operator_packet_evidence",
   "blocked_pending_operator_packet_qa",
+  "blocked_pending_external_evidence_attachment",
+  "ready_to_attach=false",
   "ready_to_mark=false",
   "not_attached",
   "Evidence must be attached before mark commands are attempted",
@@ -109,6 +117,8 @@ for (const marker of [
   "operator packets are labels only and do not collect or attach evidence",
   "operator packets are labels only",
   "external evidence has not been attached",
+  "readiness rows are labels only",
+  "collection/upload/mark commands are not executed",
   "mark commands remain blocked",
   "Evidence must be collected and attached before mark commands are attempted",
   "collect_jhora_screenshot",
@@ -128,6 +138,7 @@ for (const marker of [
   "build_witness_core_evidence_attachment_handoff_report",
   "build_witness_core_evidence_operator_packets_report",
   "build_witness_core_evidence_operator_packet_qa_report",
+  "build_witness_core_evidence_operator_packet_attachment_readiness_report",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
 ]) {
@@ -288,6 +299,27 @@ for (const marker of [
   "coreEvidenceOperatorPacketQa.readyToMarkLabel",
   "coreEvidenceOperatorPacketQa.safeValidationCommandFamilies",
   "coreEvidenceOperatorPacketQa.operatorNote",
+  "coreEvidenceOperatorPacketAttachmentReadiness.stage",
+  "coreEvidenceOperatorPacketAttachmentReadiness.schemaVersion",
+  "coreEvidenceOperatorPacketAttachmentReadiness.caseAttachmentReadinessRows",
+  "coreEvidenceOperatorPacketAttachmentReadiness.attachmentReadinessSlotRows",
+  "coreEvidenceOperatorPacketAttachmentReadiness.blockedCaseAttachmentCount",
+  "coreEvidenceOperatorPacketAttachmentReadiness.pendingExternalEvidenceAttachmentCount",
+  "coreEvidenceOperatorPacketAttachmentReadiness.pendingJhoraExternalAttachmentCount",
+  "coreEvidenceOperatorPacketAttachmentReadiness.pendingParasharaLightExternalAttachmentCount",
+  "coreEvidenceOperatorPacketAttachmentReadiness.readyToAttachRows",
+  "coreEvidenceOperatorPacketAttachmentReadiness.readyToMarkRows",
+  "coreEvidenceOperatorPacketAttachmentReadiness.remainingNotReviewedRows",
+  "coreEvidenceOperatorPacketAttachmentReadiness.selectedCaseIds",
+  "coreEvidenceOperatorPacketAttachmentReadiness.slotFamilies",
+  "coreEvidenceOperatorPacketAttachmentReadiness.readinessStatus",
+  "coreEvidenceOperatorPacketAttachmentReadiness.qaStatus",
+  "coreEvidenceOperatorPacketAttachmentReadiness.packetStatus",
+  "coreEvidenceOperatorPacketAttachmentReadiness.attachmentSlotStatus",
+  "coreEvidenceOperatorPacketAttachmentReadiness.readyToAttachLabel",
+  "coreEvidenceOperatorPacketAttachmentReadiness.readyToMarkLabel",
+  "coreEvidenceOperatorPacketAttachmentReadiness.safeValidationCommandFamilies",
+  "coreEvidenceOperatorPacketAttachmentReadiness.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -372,12 +404,14 @@ assert(!helperSlice.includes('latestStage: "P59-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P61-A"'), "Core evidence pipeline helper must not retain stale P61 latest stage");
 assert(!helperSlice.includes('latestStage: "P63-A"'), "Core evidence pipeline helper must not retain stale P63 latest stage");
 assert(!helperSlice.includes('latestStage: "P65-A"'), "Core evidence pipeline helper must not retain stale P65 latest stage");
-assert(helperSlice.includes('latestStage: "P67-A"'), "Core evidence pipeline helper must expose latest P67 stage");
+assert(!helperSlice.includes('latestStage: "P67-A"'), "Core evidence pipeline helper must not retain stale P67 latest stage");
+assert(helperSlice.includes('latestStage: "P69-A"'), "Core evidence pipeline helper must expose latest P69 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
 assert(helperSlice.includes('"P65 operator packets"'), "Core evidence pipeline helper must expose P65 stage sequence");
 assert(helperSlice.includes('"P67 QA preflight"'), "Core evidence pipeline helper must expose P67 stage sequence");
+assert(helperSlice.includes('"P69 attachment readiness"'), "Core evidence pipeline helper must expose P69 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -536,6 +570,46 @@ assert(accuracyRoute.includes("build_witness_core_evidence_attachment_handoff_re
 assert(accuracyRoute.includes("build_witness_core_evidence_attachment_work_orders_report"), "Accuracy route marker must expose P61 command family retained for P67");
 assert(accuracyRoute.includes("build_witness_core_evidence_attachment_gate_report"), "Accuracy route marker must expose P59 command family retained for P67");
 assert(accuracyRoute.includes("preflight_witness_review"), "Accuracy route marker must expose preflight command family retained for P67");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-operator-packet-attachment-readiness-v1"'), "Core evidence operator packet attachment readiness helper must expose schema version");
+assert(helperSlice.includes('stage: "P69-A"'), "Core evidence operator packet attachment readiness helper must expose P69-A stage");
+assert(helperSlice.includes("caseAttachmentReadinessRows: 5"), "Core evidence operator packet attachment readiness helper must expose 5 case readiness rows");
+assert(helperSlice.includes("attachmentReadinessSlotRows: 10"), "Core evidence operator packet attachment readiness helper must expose 10 slot readiness rows");
+assert(helperSlice.includes("blockedCaseAttachmentCount: 5"), "Core evidence operator packet attachment readiness helper must expose 5 blocked case attachments");
+assert(helperSlice.includes("pendingExternalEvidenceAttachmentCount: 10"), "Core evidence operator packet attachment readiness helper must expose 10 pending external attachments");
+assert(helperSlice.includes("pendingJhoraExternalAttachmentCount: 5"), "Core evidence operator packet attachment readiness helper must expose 5 pending JHora external attachments");
+assert(helperSlice.includes("pendingParasharaLightExternalAttachmentCount: 5"), "Core evidence operator packet attachment readiness helper must expose 5 pending Parashara Light external attachments");
+assert(helperSlice.includes("readyToAttachRows: 0"), "Core evidence operator packet attachment readiness helper must expose 0 ready-to-attach rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence operator packet attachment readiness helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence operator packet attachment readiness helper must expose 20 remaining rows");
+assert(helperSlice.includes('readinessStatus: "blocked_pending_external_evidence_attachment"'), "Core evidence operator packet attachment readiness helper must expose blocked readiness status");
+assert(helperSlice.includes('qaStatus: "blocked_pending_operator_packet_qa"'), "Core evidence operator packet attachment readiness helper must expose blocked QA status");
+assert(helperSlice.includes('packetStatus: "blocked_pending_operator_packet_evidence"'), "Core evidence operator packet attachment readiness helper must expose blocked packet status");
+assert(helperSlice.includes('attachmentSlotStatus: "not_attached"'), "Core evidence operator packet attachment readiness helper must expose not-attached status");
+assert(helperSlice.includes('readyToAttachLabel: "ready_to_attach=false"'), "Core evidence operator packet attachment readiness helper must expose false ready-to-attach label");
+assert(helperSlice.includes('readyToMarkLabel: "ready_to_mark=false"'), "Core evidence operator packet attachment readiness helper must expose false ready-to-mark label");
+assert(helperSlice.includes('"build_witness_core_evidence_operator_packet_attachment_readiness_report"'), "Core evidence operator packet attachment readiness helper must expose P69 validation command");
+assert(helperSlice.includes("readiness rows are labels only"), "Core evidence operator packet attachment readiness helper must expose labels-only note");
+assert(helperSlice.includes("collection/upload/mark commands are not executed"), "Core evidence operator packet attachment readiness helper must expose non-execution note");
+assert(preflightSlice.includes("P69 attachment readiness"), "Core evidence pipeline UI must render P69 stage");
+assert(preflightSlice.includes("Core evidence operator packet attachment readiness"), "Core evidence operator packet attachment readiness UI must render its heading");
+assert(accuracyRoute.includes("P69-A"), "Accuracy route marker must expose P69 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-operator-packet-attachment-readiness-v1"), "Accuracy route marker must expose P69 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_attachment"), "Accuracy route marker must expose P69 status");
+assert(accuracyRoute.includes("5 case attachment readiness rows"), "Accuracy route marker must expose P69 case readiness rows");
+assert(accuracyRoute.includes("10 attachment readiness slot rows"), "Accuracy route marker must expose P69 slot readiness rows");
+assert(accuracyRoute.includes("5 blocked case attachments"), "Accuracy route marker must expose P69 blocked case attachments");
+assert(accuracyRoute.includes("10 pending external evidence attachments"), "Accuracy route marker must expose P69 pending external attachments");
+assert(accuracyRoute.includes("5 pending JHora external attachments"), "Accuracy route marker must expose P69 pending JHora external attachments");
+assert(accuracyRoute.includes("5 pending Parashara Light external attachments"), "Accuracy route marker must expose P69 pending Parashara Light external attachments");
+assert(accuracyRoute.includes("0 ready-to-attach"), "Accuracy route marker must expose P69 ready-to-attach count");
+assert(accuracyRoute.includes("0 ready-to-mark"), "Accuracy route marker must expose P69 ready-to-mark count");
+assert(accuracyRoute.includes("20 remaining"), "Accuracy route marker must expose P69 remaining count");
+assert(accuracyRoute.includes("jhora_screenshot_or_packet, parashara_light_manual_values_or_packet"), "Accuracy route marker must expose P69 slot family order");
+assert(accuracyRoute.includes("ready_to_attach=false"), "Accuracy route marker must expose P69 false ready-to-attach state");
+assert(accuracyRoute.includes("ready_to_mark=false"), "Accuracy route marker must expose P69 false ready-to-mark state");
+assert(accuracyRoute.includes("readiness rows are labels only"), "Accuracy route marker must expose P69 labels-only note");
+assert(accuracyRoute.includes("collection/upload/mark commands are not executed"), "Accuracy route marker must expose P69 non-execution note");
+assert(accuracyRoute.includes("build_witness_core_evidence_operator_packet_attachment_readiness_report"), "Accuracy route marker must expose P69 readiness command family");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
@@ -571,7 +645,15 @@ for (const forbidden of [
   "Parashara Light parity done",
   "parity success",
   "evidence available",
+  "external evidence attached",
+  "ready_to_attach=true",
+  "ready_to_mark=true",
+  "mark commands enabled",
+  "collection executed",
+  "upload executed",
   "release ready",
+  "sk-",
+  "OPENAI_API_KEY",
 ]) {
   assert(!preflightSlice.includes(forbidden), `Core review preflight slice must not expose or imply ${forbidden}`);
   assert(!helperSlice.includes(forbidden), `Core review preflight helper must not expose or imply ${forbidden}`);
