@@ -270,7 +270,7 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P69-A";
+  latestStage: "P71-A";
   stageSequence: [
     "P53 backlog",
     "P55 intake",
@@ -281,6 +281,7 @@ export type CoreEvidencePipeline = {
     "P65 operator packets",
     "P67 QA preflight",
     "P69 attachment readiness",
+    "P71 external intake contract",
   ];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
@@ -370,8 +371,21 @@ export type CoreEvidencePipeline = {
     readyToMarkRows: 0;
     remainingNotReviewedRows: 20;
   };
+  externalIntakeSummary: {
+    caseIntakeContractRows: 5;
+    attachmentIntakeSlotRows: 10;
+    pendingExternalEvidenceIntakeCount: 10;
+    pendingJhoraExternalIntakeCount: 5;
+    pendingParasharaLightExternalIntakeCount: 5;
+    evidenceCollectedCount: 0;
+    evidenceUploadedCount: 0;
+    evidenceAttachedCount: 0;
+    readyToAttachRows: 0;
+    readyToMarkRows: 0;
+    remainingNotReviewedRows: 20;
+  };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
-  statusCopy: "blocked evidence operator packet attachment-readiness labels";
+  statusCopy: "blocked external evidence intake contract labels";
 };
 
 export type CoreEvidenceAttachmentGate = {
@@ -616,6 +630,69 @@ export type CoreEvidenceOperatorPacketAttachmentReadiness = {
   operatorNote: "external evidence has not been attached; readiness rows are labels only; collection/upload/mark commands are not executed";
   statusCopy: "attachment-readiness labels exist while external evidence remains not attached";
   cautionCopy: "ready-to-attach is false; ready-to-mark is false; release remains blocked";
+};
+
+export type CoreEvidenceExternalIntakeContract = {
+  title: "Core evidence external intake contract";
+  schemaVersion: "jyotish-core-evidence-external-intake-contract-v1";
+  stage: "P71-A";
+  caseIntakeContractRows: 5;
+  attachmentIntakeSlotRows: 10;
+  pendingExternalEvidenceIntakeCount: 10;
+  pendingJhoraExternalIntakeCount: 5;
+  pendingParasharaLightExternalIntakeCount: 5;
+  evidenceCollectedCount: 0;
+  evidenceUploadedCount: 0;
+  evidenceAttachedCount: 0;
+  readyToAttachRows: 0;
+  readyToMarkRows: 0;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  slotFamilies: [
+    "jhora_screenshot_or_packet",
+    "parashara_light_manual_values_or_packet",
+  ];
+  intakeStatus: "blocked_pending_external_evidence_intake";
+  readinessStatus: "blocked_pending_external_evidence_attachment";
+  qaStatus: "blocked_pending_operator_packet_qa";
+  packetStatus: "blocked_pending_operator_packet_evidence";
+  evidenceFileStatus: "not_attached";
+  evidenceCollectionStatus: "not_started";
+  evidenceUploadStatus: "not_started";
+  evidenceAttachmentStatus: "not_attached";
+  readyToAttachLabel: "ready_to_attach=false";
+  readyToMarkLabel: "ready_to_mark=false";
+  evidenceCollectedLabel: "evidence_collected=false";
+  evidenceUploadedLabel: "evidence_uploaded=false";
+  evidenceAttachedLabel: "evidence_attached=false";
+  safeIntakeLabels: [
+    "request_jhora_screenshot_or_packet",
+    "request_parashara_light_manual_values_or_packet",
+    "receive_external_evidence_from_human",
+    "rerun_external_intake_contract_report",
+    "rerun_operator_packet_attachment_readiness_report",
+    "rerun_operator_packet_qa_report",
+    "rerun_attachment_gate_report",
+    "preflight_witness_review",
+  ];
+  safeValidationCommandFamilies: [
+    "build_witness_core_evidence_external_intake_contract_report",
+    "build_witness_core_evidence_operator_packet_attachment_readiness_report",
+    "build_witness_core_evidence_operator_packet_qa_report",
+    "build_witness_core_evidence_attachment_gate_report",
+    "preflight_witness_review",
+  ];
+  operatorNote: "external evidence has not been collected, uploaded, or attached; intake rows are labels only; mark commands are not executed";
+  statusCopy: "human-provided external evidence intake is requested as labels only";
+  cautionCopy: "nothing is collected, uploaded, or attached; ready-to-attach is false; ready-to-mark is false; release remains blocked";
 };
 
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
@@ -947,7 +1024,7 @@ export function buildCoreEvidenceReadiness(): CoreEvidenceReadiness {
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P69-A",
+    latestStage: "P71-A",
     stageSequence: [
       "P53 backlog",
       "P55 intake",
@@ -958,6 +1035,7 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       "P65 operator packets",
       "P67 QA preflight",
       "P69 attachment readiness",
+      "P71 external intake contract",
     ],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
@@ -1047,8 +1125,21 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       readyToMarkRows: 0,
       remainingNotReviewedRows: 20,
     },
+    externalIntakeSummary: {
+      caseIntakeContractRows: 5,
+      attachmentIntakeSlotRows: 10,
+      pendingExternalEvidenceIntakeCount: 10,
+      pendingJhoraExternalIntakeCount: 5,
+      pendingParasharaLightExternalIntakeCount: 5,
+      evidenceCollectedCount: 0,
+      evidenceUploadedCount: 0,
+      evidenceAttachedCount: 0,
+      readyToAttachRows: 0,
+      readyToMarkRows: 0,
+      remainingNotReviewedRows: 20,
+    },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
-    statusCopy: "blocked evidence operator packet attachment-readiness labels",
+    statusCopy: "blocked external evidence intake contract labels",
   };
 }
 
@@ -1305,6 +1396,71 @@ export function buildCoreEvidenceOperatorPacketAttachmentReadiness(): CoreEviden
     operatorNote: "external evidence has not been attached; readiness rows are labels only; collection/upload/mark commands are not executed",
     statusCopy: "attachment-readiness labels exist while external evidence remains not attached",
     cautionCopy: "ready-to-attach is false; ready-to-mark is false; release remains blocked",
+  };
+}
+
+export function buildCoreEvidenceExternalIntakeContract(): CoreEvidenceExternalIntakeContract {
+  return {
+    title: "Core evidence external intake contract",
+    schemaVersion: "jyotish-core-evidence-external-intake-contract-v1",
+    stage: "P71-A",
+    caseIntakeContractRows: 5,
+    attachmentIntakeSlotRows: 10,
+    pendingExternalEvidenceIntakeCount: 10,
+    pendingJhoraExternalIntakeCount: 5,
+    pendingParasharaLightExternalIntakeCount: 5,
+    evidenceCollectedCount: 0,
+    evidenceUploadedCount: 0,
+    evidenceAttachedCount: 0,
+    readyToAttachRows: 0,
+    readyToMarkRows: 0,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    slotFamilies: [
+      "jhora_screenshot_or_packet",
+      "parashara_light_manual_values_or_packet",
+    ],
+    intakeStatus: "blocked_pending_external_evidence_intake",
+    readinessStatus: "blocked_pending_external_evidence_attachment",
+    qaStatus: "blocked_pending_operator_packet_qa",
+    packetStatus: "blocked_pending_operator_packet_evidence",
+    evidenceFileStatus: "not_attached",
+    evidenceCollectionStatus: "not_started",
+    evidenceUploadStatus: "not_started",
+    evidenceAttachmentStatus: "not_attached",
+    readyToAttachLabel: "ready_to_attach=false",
+    readyToMarkLabel: "ready_to_mark=false",
+    evidenceCollectedLabel: "evidence_collected=false",
+    evidenceUploadedLabel: "evidence_uploaded=false",
+    evidenceAttachedLabel: "evidence_attached=false",
+    safeIntakeLabels: [
+      "request_jhora_screenshot_or_packet",
+      "request_parashara_light_manual_values_or_packet",
+      "receive_external_evidence_from_human",
+      "rerun_external_intake_contract_report",
+      "rerun_operator_packet_attachment_readiness_report",
+      "rerun_operator_packet_qa_report",
+      "rerun_attachment_gate_report",
+      "preflight_witness_review",
+    ],
+    safeValidationCommandFamilies: [
+      "build_witness_core_evidence_external_intake_contract_report",
+      "build_witness_core_evidence_operator_packet_attachment_readiness_report",
+      "build_witness_core_evidence_operator_packet_qa_report",
+      "build_witness_core_evidence_attachment_gate_report",
+      "preflight_witness_review",
+    ],
+    operatorNote: "external evidence has not been collected, uploaded, or attached; intake rows are labels only; mark commands are not executed",
+    statusCopy: "human-provided external evidence intake is requested as labels only",
+    cautionCopy: "nothing is collected, uploaded, or attached; ready-to-attach is false; ready-to-mark is false; release remains blocked",
   };
 }
 
