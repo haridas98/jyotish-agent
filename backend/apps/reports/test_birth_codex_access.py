@@ -2,10 +2,12 @@ from datetime import date, time
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from apps.charts.models import BirthProfile, Place
-from apps.reports.models import GeneratedAnalysisDraft
+from apps.reports.models import GeneratedAnalysisDraft, GeneratedAnalysisJob
 
 
 def _place() -> Place:
@@ -32,20 +34,18 @@ def _profile(user, *, display_name: str, is_self_profile: bool) -> BirthProfile:
 
 
 @pytest.mark.django_db
+@override_settings(CODEX_GENERATION_QUEUE_ENABLED=True)
 def test_birth_codex_allows_first_free_self_profile_analysis(monkeypatch):
     user = get_user_model().objects.create_user(username="self-free", password="strong-pass-108")
     profile = _profile(user, display_name="My chart", is_self_profile=True)
-    calls = {"count": 0}
+    cache.clear()
 
     monkeypatch.setattr("apps.reports.views._profile_context", lambda profile, **kwargs: {"profile": {"id": profile.id}})
 
-    def fake_generate(data, **kwargs):
-        calls["count"] += 1
-        assert data["profile_id"] == profile.id
-        assert data["billing_context"]["free_personal_analysis"] is True
-        return {"id": 101, "kind": "birth_chart_codex_cli", "sections": []}
-
-    monkeypatch.setattr("apps.reports.views.generate_birth_chart_codex_cli_analysis", fake_generate)
+    monkeypatch.setattr(
+        "apps.reports.views.generate_birth_chart_codex_cli_analysis",
+        lambda *args, **kwargs: pytest.fail("queued free self-profile analysis must not run Codex inline"),
+    )
     client = APIClient()
     client.force_authenticate(user=user)
 
@@ -60,9 +60,12 @@ def test_birth_codex_allows_first_free_self_profile_analysis(monkeypatch):
         format="json",
     )
 
-    assert response.status_code == 200
-    assert response.data["id"] == 101
-    assert calls["count"] == 1
+    assert response.status_code == 202
+    assert response.data["queued"] is True
+    assert response.data["job"]["status"] == GeneratedAnalysisJob.Status.QUEUED
+    job = GeneratedAnalysisJob.objects.get(user=user, kind="birth_chart_codex_cli")
+    assert job.request_snapshot["profile_id"] == profile.id
+    assert job.request_snapshot["billing_context"]["free_personal_analysis"] is True
 
 
 @pytest.mark.django_db
