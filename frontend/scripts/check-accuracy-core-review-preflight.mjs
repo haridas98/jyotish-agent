@@ -43,6 +43,7 @@ for (const marker of [
   "Core evidence external receipt manifest preflight",
   "Core evidence external receipt manifest acceptance gate",
   "Core evidence external receipt manifest decision queue",
+  "Core evidence external receipt manifest decision audit",
   "operator attachment manifest",
   "operator packet status",
   "operator packet QA status",
@@ -68,6 +69,7 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestPreflight",
   "coreEvidenceExternalReceiptManifestAcceptanceGate",
   "coreEvidenceExternalReceiptManifestDecisionQueue",
+  "coreEvidenceExternalReceiptManifestDecisionAudit",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -87,6 +89,7 @@ for (const marker of [
   "buildCoreEvidenceExternalReceiptManifestPreflight",
   "buildCoreEvidenceExternalReceiptManifestAcceptanceGate",
   "buildCoreEvidenceExternalReceiptManifestDecisionQueue",
+  "buildCoreEvidenceExternalReceiptManifestDecisionAudit",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -105,6 +108,7 @@ for (const marker of [
   "P77-A",
   "P79-A",
   "P81-A",
+  "P83-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -120,6 +124,7 @@ for (const marker of [
   "jyotish-core-evidence-external-receipt-manifest-preflight-v1",
   "jyotish-core-evidence-external-receipt-manifest-acceptance-gate-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-queue-v1",
+  "jyotish-core-evidence-external-receipt-manifest-decision-audit-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -144,6 +149,8 @@ for (const marker of [
   "blocked_pending_external_evidence_receipt_manifests",
   "blocked_pending_external_evidence_receipt_manifest_preflight",
   "blocked_pending_external_evidence_receipt_manifest_acceptance",
+  "blocked_pending_external_evidence_receipt_manifest_decision",
+  "blocked_pending_external_evidence_receipt_manifest_decision_audit",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
@@ -161,6 +168,15 @@ for (const marker of [
   "receipt_manifest_status=not_received",
   "receipt_manifest_acceptance_status=not_started",
   "receipt_manifest_rejection_status=not_started",
+  "no_raw_values_in_manifest=true",
+  "no_private_paths_in_manifest=true",
+  "no_secrets_in_manifest=true",
+  "decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision",
+  "decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit",
+  "decision_audit_record_status=not_started",
+  "decision_audited_count=0",
+  "decision_audit_passed_count=0",
+  "decision_audit_failed_count=0",
   "no_evidence_file_recorded=true",
   "no_evidence_hash_recorded=true",
   "no_upload_executed=true",
@@ -195,6 +211,12 @@ for (const marker of [
   "await_parashara_light_receipt_manifest_preflight",
   "await_jhora_receipt_manifest_acceptance",
   "await_parashara_light_receipt_manifest_acceptance",
+  "await_jhora_receipt_manifest_decision_audit",
+  "await_parashara_light_receipt_manifest_decision_audit",
+  "audit_external_evidence_receipt_manifest_decision_after_human_review",
+  "defer_external_evidence_receipt_manifest_decision_audit",
+  "rerun_external_receipt_manifest_decision_audit_report",
+  "rerun_external_receipt_manifest_decision_queue_report",
   "record_external_evidence_receipt_manifest",
   "record_external_evidence_receipt_manifest_after_human_review",
   "rerun_external_receipt_manifest_acceptance_gate_report",
@@ -222,6 +244,8 @@ for (const marker of [
   "build_witness_core_evidence_external_receipt_manifest_templates_report",
   "build_witness_core_evidence_external_receipt_manifest_preflight_report",
   "build_witness_core_evidence_external_receipt_manifest_acceptance_gate_report",
+  "build_witness_core_evidence_external_receipt_manifest_decision_queue_report",
+  "build_witness_core_evidence_external_receipt_manifest_decision_audit_report",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
   "case_id",
@@ -233,13 +257,22 @@ for (const marker of [
   "expected_receipt_manifest_label",
   "operator_preflight_note_label",
   "operator_acceptance_note_label",
+  "operator_decision_label",
+  "operator_decision_audit_label",
   "required_human_receipt_timestamp_utc",
+  "required_human_decision_timestamp_utc",
+  "required_human_decision_audit_timestamp_utc",
   "no_raw_values_in_manifest",
   "no_private_paths_in_manifest",
   "no_secrets_in_manifest",
   "require_human_receipt_timestamp_utc",
+  "require_human_decision_timestamp_utc",
+  "require_human_decision_audit_timestamp_utc",
   "require_redacted_receipt_manifest_id",
   "require_operator_acceptance_note_label",
+  "require_operator_decision_label",
+  "require_operator_decision_audit_label",
+  "require_accept_or_reject_or_defer_label",
   "require_no_raw_values_in_manifest",
   "require_no_private_paths_in_manifest",
   "require_no_secrets_in_manifest",
@@ -248,6 +281,9 @@ for (const marker of [
   "block_upload_until_manifest_accepted",
   "block_attachment_until_manifest_accepted",
   "block_mark_until_manifest_accepted",
+  "block_upload_until_manifest_decision_audited",
+  "block_attachment_until_manifest_decision_audited",
+  "block_mark_until_manifest_decision_audited",
 ]) {
   assert(preflightSlice.includes(marker) || helperSlice.includes(marker) || accuracyRoute.includes(marker), `Core review preflight marker missing: ${marker}`);
 }
@@ -634,6 +670,66 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestAcceptanceGate.acceptanceCriteriaLabels",
   "coreEvidenceExternalReceiptManifestAcceptanceGate.safeValidationCommandFamilies",
   "coreEvidenceExternalReceiptManifestAcceptanceGate.operatorNote",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.stage",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.schemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.status",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamDecisionQueueSchemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamDecisionQueueStage",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamDecisionQueueStatus",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamAcceptanceGateSchemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamAcceptanceGateStage",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamAcceptanceGateStatus",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamPreflightSchemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamPreflightStage",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamPreflightStatus",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamTemplateSchemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamTemplateStage",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.upstreamTemplateStatus",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.caseReceiptManifestDecisionAuditRows",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.attachmentReceiptManifestDecisionAuditRows",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.pendingExternalEvidenceReceiptManifestDecisionAuditCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.pendingJhoraReceiptManifestDecisionAuditCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.pendingParasharaLightReceiptManifestDecisionAuditCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionQueueRows",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditReadyCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditBlockedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionRecordedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditPassedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditFailedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.readyToAttachRows",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.readyToMarkRows",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.remainingNotReviewedRows",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.selectedCaseIds",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.slotFamilies",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.receiptGateStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.intakeStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.readinessStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionQueueStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.receiptManifestStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditRecordStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionRecordedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditPassedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditFailedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.readyToAttachLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.readyToMarkLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.paritySuccessClaimedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.releaseReadyClaimedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.noRawValuesInManifestLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.noPrivatePathsInManifestLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.noSecretsInManifestLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.noEvidenceFileRecordedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.noEvidenceHashRecordedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.noUploadExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.noAttachmentExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.noMarkCommandExecutedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.safeDecisionAuditLabels",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.safeDecisionAuditFields",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.decisionAuditCriteriaLabels",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.safeValidationCommandFamilies",
+  "coreEvidenceExternalReceiptManifestDecisionAudit.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -725,7 +821,8 @@ assert(!helperSlice.includes('latestStage: "P73-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P75-A"'), "Core evidence pipeline helper must not retain stale P75 latest stage");
 assert(!helperSlice.includes('latestStage: "P77-A"'), "Core evidence pipeline helper must not retain stale P77 latest stage");
 assert(!helperSlice.includes('latestStage: "P79-A"'), "Core evidence pipeline helper must not retain stale P79 latest stage");
-assert(helperSlice.includes('latestStage: "P81-A"'), "Core evidence pipeline helper must expose latest P81 stage");
+assert(!helperSlice.includes('latestStage: "P81-A"'), "Core evidence pipeline helper must not retain stale P81 latest stage");
+assert(helperSlice.includes('latestStage: "P83-A"'), "Core evidence pipeline helper must expose latest P83 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -738,6 +835,7 @@ assert(helperSlice.includes('"P75 receipt manifest templates"'), "Core evidence 
 assert(helperSlice.includes('"P77 receipt manifest preflight"'), "Core evidence pipeline helper must expose P77 stage sequence");
 assert(helperSlice.includes('"P79 receipt manifest acceptance gate"'), "Core evidence pipeline helper must expose P79 stage sequence");
 assert(helperSlice.includes('"P81 receipt manifest decision queue"'), "Core evidence pipeline helper must expose P81 stage sequence");
+assert(helperSlice.includes('"P83 receipt manifest decision audit"'), "Core evidence pipeline helper must expose P83 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -1377,6 +1475,119 @@ assert(accuracyRoute.includes("block_attachment_until_manifest_decision_recorded
 assert(accuracyRoute.includes("block_mark_until_manifest_decision_recorded"), "Accuracy route marker must expose P81 mark block criterion");
 assert(accuracyRoute.includes("blocked decision queue for future human-submitted receipt manifest decisions"), "Accuracy route marker must expose P81 blocked decision copy");
 assert(accuracyRoute.includes("no manifest has been received, accepted, rejected, deferred, decision-recorded, uploaded, attached, or marked"), "Accuracy route marker must expose P81 negative status copy");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-v1"'), "Core evidence receipt manifest decision audit helper must expose schema version");
+assert(helperSlice.includes('stage: "P83-A"'), "Core evidence receipt manifest decision audit helper must expose P83-A stage");
+assert(helperSlice.includes('status: "blocked_pending_external_evidence_receipt_manifest_decision_audit"'), "Core evidence receipt manifest decision audit helper must expose blocked status");
+assert(helperSlice.includes('upstreamDecisionQueueSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-queue-v1"'), "Core evidence receipt manifest decision audit helper must expose upstream P81 schema");
+assert(helperSlice.includes('upstreamDecisionQueueStage: "P81-A"'), "Core evidence receipt manifest decision audit helper must expose upstream P81 stage");
+assert(helperSlice.includes('upstreamDecisionQueueStatus: "blocked_pending_external_evidence_receipt_manifest_decision"'), "Core evidence receipt manifest decision audit helper must expose upstream P81 status");
+assert(helperSlice.includes('upstreamAcceptanceGateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-acceptance-gate-v1"'), "Core evidence receipt manifest decision audit helper must expose upstream P79 schema");
+assert(helperSlice.includes('upstreamAcceptanceGateStage: "P79-A"'), "Core evidence receipt manifest decision audit helper must expose upstream P79 stage");
+assert(helperSlice.includes('upstreamAcceptanceGateStatus: "blocked_pending_external_evidence_receipt_manifest_acceptance"'), "Core evidence receipt manifest decision audit helper must expose upstream P79 status");
+assert(helperSlice.includes('upstreamPreflightSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-preflight-v1"'), "Core evidence receipt manifest decision audit helper must expose upstream P77 schema");
+assert(helperSlice.includes('upstreamPreflightStage: "P77-A"'), "Core evidence receipt manifest decision audit helper must expose upstream P77 stage");
+assert(helperSlice.includes('upstreamPreflightStatus: "blocked_pending_external_evidence_receipt_manifest_preflight"'), "Core evidence receipt manifest decision audit helper must expose upstream P77 status");
+assert(helperSlice.includes('upstreamTemplateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-templates-v1"'), "Core evidence receipt manifest decision audit helper must expose upstream P75 schema");
+assert(helperSlice.includes('upstreamTemplateStage: "P75-A"'), "Core evidence receipt manifest decision audit helper must expose upstream P75 stage");
+assert(helperSlice.includes('upstreamTemplateStatus: "blocked_pending_external_evidence_receipt_manifests"'), "Core evidence receipt manifest decision audit helper must expose upstream P75 status");
+assert(helperSlice.includes("caseReceiptManifestDecisionAuditRows: 5"), "Core evidence receipt manifest decision audit helper must expose 5 case rows");
+assert(helperSlice.includes("attachmentReceiptManifestDecisionAuditRows: 10"), "Core evidence receipt manifest decision audit helper must expose 10 attachment rows");
+assert(helperSlice.includes("pendingExternalEvidenceReceiptManifestDecisionAuditCount: 10"), "Core evidence receipt manifest decision audit helper must expose 10 pending audit rows");
+assert(helperSlice.includes("pendingJhoraReceiptManifestDecisionAuditCount: 5"), "Core evidence receipt manifest decision audit helper must expose 5 JHora audit rows");
+assert(helperSlice.includes("pendingParasharaLightReceiptManifestDecisionAuditCount: 5"), "Core evidence receipt manifest decision audit helper must expose 5 Parashara Light audit rows");
+assert(helperSlice.includes("decisionQueueRows: 10"), "Core evidence receipt manifest decision audit helper must expose 10 decision queue rows");
+assert(helperSlice.includes("decisionAuditReadyCount: 0"), "Core evidence receipt manifest decision audit helper must expose 0 audit-ready count");
+assert(helperSlice.includes("decisionAuditBlockedCount: 10"), "Core evidence receipt manifest decision audit helper must expose 10 audit-blocked count");
+assert(helperSlice.includes("decisionRecordedCount: 0"), "Core evidence receipt manifest decision audit helper must expose 0 decision-recorded count");
+assert(helperSlice.includes("decisionAuditedCount: 0"), "Core evidence receipt manifest decision audit helper must expose 0 decision-audited count");
+assert(helperSlice.includes("decisionAuditPassedCount: 0"), "Core evidence receipt manifest decision audit helper must expose 0 decision-audit-passed count");
+assert(helperSlice.includes("decisionAuditFailedCount: 0"), "Core evidence receipt manifest decision audit helper must expose 0 decision-audit-failed count");
+assert(helperSlice.includes("readyToAttachRows: 0"), "Core evidence receipt manifest decision audit helper must expose 0 ready-to-attach rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence receipt manifest decision audit helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence receipt manifest decision audit helper must expose 20 remaining rows");
+assert(helperSlice.includes('receiptGateStatusLabel: "external_receipt_gate_status=blocked_pending_external_evidence_receipts"'), "Core evidence receipt manifest decision audit helper must expose receipt gate label");
+assert(helperSlice.includes('intakeStatusLabel: "external_intake_status=blocked_pending_external_evidence_intake"'), "Core evidence receipt manifest decision audit helper must expose intake label");
+assert(helperSlice.includes('readinessStatusLabel: "attachment_readiness_status=blocked_pending_external_evidence_attachment"'), "Core evidence receipt manifest decision audit helper must expose readiness label");
+assert(helperSlice.includes('decisionQueueStatusLabel: "decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision"'), "Core evidence receipt manifest decision audit helper must expose decision queue label");
+assert(helperSlice.includes('decisionAuditStatusLabel: "decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit"'), "Core evidence receipt manifest decision audit helper must expose decision audit label");
+assert(helperSlice.includes('receiptManifestStatusLabel: "receipt_manifest_status=not_received"'), "Core evidence receipt manifest decision audit helper must expose not-received label");
+assert(helperSlice.includes('decisionAuditRecordStatusLabel: "decision_audit_record_status=not_started"'), "Core evidence receipt manifest decision audit helper must expose not-started audit record label");
+assert(helperSlice.includes('noRawValuesInManifestLabel: "no_raw_values_in_manifest=true"'), "Core evidence receipt manifest decision audit helper must expose no raw values label");
+assert(helperSlice.includes('noPrivatePathsInManifestLabel: "no_private_paths_in_manifest=true"'), "Core evidence receipt manifest decision audit helper must expose no private paths label");
+assert(helperSlice.includes('noSecretsInManifestLabel: "no_secrets_in_manifest=true"'), "Core evidence receipt manifest decision audit helper must expose no secrets label");
+assert(helperSlice.includes('noEvidenceFileRecordedLabel: "no_evidence_file_recorded=true"'), "Core evidence receipt manifest decision audit helper must expose no file label");
+assert(helperSlice.includes('noEvidenceHashRecordedLabel: "no_evidence_hash_recorded=true"'), "Core evidence receipt manifest decision audit helper must expose no hash label");
+assert(helperSlice.includes('noUploadExecutedLabel: "no_upload_executed=true"'), "Core evidence receipt manifest decision audit helper must expose no upload label");
+assert(helperSlice.includes('noAttachmentExecutedLabel: "no_attachment_executed=true"'), "Core evidence receipt manifest decision audit helper must expose no attachment label");
+assert(helperSlice.includes('noMarkCommandExecutedLabel: "no_mark_command_executed=true"'), "Core evidence receipt manifest decision audit helper must expose no mark label");
+assert(helperSlice.includes('"await_jhora_receipt_manifest_decision_audit"'), "Core evidence receipt manifest decision audit helper must expose JHora audit label");
+assert(helperSlice.includes('"await_parashara_light_receipt_manifest_decision_audit"'), "Core evidence receipt manifest decision audit helper must expose Parashara Light audit label");
+assert(helperSlice.includes('"audit_external_evidence_receipt_manifest_decision_after_human_review"'), "Core evidence receipt manifest decision audit helper must expose human review audit label");
+assert(helperSlice.includes('"defer_external_evidence_receipt_manifest_decision_audit"'), "Core evidence receipt manifest decision audit helper must expose defer audit label");
+assert(helperSlice.includes('"rerun_external_receipt_manifest_decision_audit_report"'), "Core evidence receipt manifest decision audit helper must expose rerun audit label");
+assert(helperSlice.includes('"build_witness_core_evidence_external_receipt_manifest_decision_audit_report"'), "Core evidence receipt manifest decision audit helper must expose P83 command family");
+assert(helperSlice.includes('"operator_decision_audit_label"'), "Core evidence receipt manifest decision audit helper must expose operator audit field");
+assert(helperSlice.includes('"require_human_decision_audit_timestamp_utc"'), "Core evidence receipt manifest decision audit helper must expose human audit timestamp criterion");
+assert(helperSlice.includes('"require_operator_decision_audit_label"'), "Core evidence receipt manifest decision audit helper must expose operator audit criterion");
+assert(helperSlice.includes('"require_no_evidence_file_recorded_before_decision_audit"'), "Core evidence receipt manifest decision audit helper must expose no file audit criterion");
+assert(helperSlice.includes('"require_no_evidence_hash_recorded_before_decision_audit"'), "Core evidence receipt manifest decision audit helper must expose no hash audit criterion");
+assert(helperSlice.includes('"block_upload_until_manifest_decision_audited"'), "Core evidence receipt manifest decision audit helper must expose upload audit block criterion");
+assert(helperSlice.includes('"block_attachment_until_manifest_decision_audited"'), "Core evidence receipt manifest decision audit helper must expose attachment audit block criterion");
+assert(helperSlice.includes('"block_mark_until_manifest_decision_audited"'), "Core evidence receipt manifest decision audit helper must expose mark audit block criterion");
+assert(preflightSlice.includes("P83 receipt manifest decision audit"), "Core evidence pipeline UI must render P83 stage");
+assert(preflightSlice.includes("Core evidence external receipt manifest decision audit"), "Core evidence receipt manifest decision audit UI must render its heading");
+assert(accuracyRoute.includes("P83-A"), "Accuracy route marker must expose P83 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-decision-audit-v1"), "Accuracy route marker must expose P83 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_decision_audit"), "Accuracy route marker must expose P83 status");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-decision-queue-v1"), "Accuracy route marker must expose P83 upstream P81 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_decision"), "Accuracy route marker must expose P83 upstream P81 status");
+assert(accuracyRoute.includes("case_receipt_manifest_decision_audit_rows=5"), "Accuracy route marker must expose P83 case count");
+assert(accuracyRoute.includes("attachment_receipt_manifest_decision_audit_rows=10"), "Accuracy route marker must expose P83 attachment count");
+assert(accuracyRoute.includes("pending_external_evidence_receipt_manifest_decision_audit_count=10"), "Accuracy route marker must expose P83 pending audit count");
+assert(accuracyRoute.includes("pending_jhora_receipt_manifest_decision_audit_count=5"), "Accuracy route marker must expose P83 pending JHora audit count");
+assert(accuracyRoute.includes("pending_parashara_light_receipt_manifest_decision_audit_count=5"), "Accuracy route marker must expose P83 pending Parashara Light audit count");
+assert(accuracyRoute.includes("decision_queue_rows=10"), "Accuracy route marker must expose P83 decision queue count");
+assert(accuracyRoute.includes("decision_audit_ready_count=0"), "Accuracy route marker must expose P83 audit-ready zero count");
+assert(accuracyRoute.includes("decision_audit_blocked_count=10"), "Accuracy route marker must expose P83 audit-blocked count");
+assert(accuracyRoute.includes("decision_recorded_count=0"), "Accuracy route marker must expose P83 decision-recorded zero count");
+assert(accuracyRoute.includes("decision_audited_count=0"), "Accuracy route marker must expose P83 decision-audited zero count");
+assert(accuracyRoute.includes("decision_audit_passed_count=0"), "Accuracy route marker must expose P83 decision-audit-passed zero count");
+assert(accuracyRoute.includes("decision_audit_failed_count=0"), "Accuracy route marker must expose P83 decision-audit-failed zero count");
+assert(accuracyRoute.includes("ready_to_attach_count=0"), "Accuracy route marker must expose P83 zero ready-to-attach count");
+assert(accuracyRoute.includes("ready_to_mark_count=0"), "Accuracy route marker must expose P83 zero ready-to-mark count");
+assert(accuracyRoute.includes("remaining_not_reviewed_count=20"), "Accuracy route marker must expose P83 remaining count");
+assert(accuracyRoute.includes("external_receipt_gate_status=blocked_pending_external_evidence_receipts"), "Accuracy route marker must expose P83 receipt gate label");
+assert(accuracyRoute.includes("external_intake_status=blocked_pending_external_evidence_intake"), "Accuracy route marker must expose P83 intake label");
+assert(accuracyRoute.includes("attachment_readiness_status=blocked_pending_external_evidence_attachment"), "Accuracy route marker must expose P83 readiness label");
+assert(accuracyRoute.includes("decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision"), "Accuracy route marker must expose P83 decision queue label");
+assert(accuracyRoute.includes("decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit"), "Accuracy route marker must expose P83 decision audit label");
+assert(accuracyRoute.includes("receipt_manifest_status=not_received"), "Accuracy route marker must expose P83 not-received status");
+assert(accuracyRoute.includes("decision_audit_record_status=not_started"), "Accuracy route marker must expose P83 not-started audit record status");
+assert(accuracyRoute.includes("no_raw_values_in_manifest=true"), "Accuracy route marker must expose P83 no raw values label");
+assert(accuracyRoute.includes("no_private_paths_in_manifest=true"), "Accuracy route marker must expose P83 no private paths label");
+assert(accuracyRoute.includes("no_secrets_in_manifest=true"), "Accuracy route marker must expose P83 no secrets label");
+assert(accuracyRoute.includes("no_evidence_file_recorded=true"), "Accuracy route marker must expose P83 no file label");
+assert(accuracyRoute.includes("no_evidence_hash_recorded=true"), "Accuracy route marker must expose P83 no hash label");
+assert(accuracyRoute.includes("no_upload_executed=true"), "Accuracy route marker must expose P83 no-upload label");
+assert(accuracyRoute.includes("no_attachment_executed=true"), "Accuracy route marker must expose P83 no-attachment label");
+assert(accuracyRoute.includes("no_mark_command_executed=true"), "Accuracy route marker must expose P83 no-mark label");
+assert(accuracyRoute.includes("await_jhora_receipt_manifest_decision_audit"), "Accuracy route marker must expose P83 JHora audit label");
+assert(accuracyRoute.includes("await_parashara_light_receipt_manifest_decision_audit"), "Accuracy route marker must expose P83 Parashara Light audit label");
+assert(accuracyRoute.includes("audit_external_evidence_receipt_manifest_decision_after_human_review"), "Accuracy route marker must expose P83 human review audit label");
+assert(accuracyRoute.includes("defer_external_evidence_receipt_manifest_decision_audit"), "Accuracy route marker must expose P83 defer audit label");
+assert(accuracyRoute.includes("rerun_external_receipt_manifest_decision_audit_report"), "Accuracy route marker must expose P83 rerun audit label");
+assert(accuracyRoute.includes("build_witness_core_evidence_external_receipt_manifest_decision_audit_report"), "Accuracy route marker must expose P83 command family");
+assert(accuracyRoute.includes("operator_decision_audit_label"), "Accuracy route marker must expose P83 operator audit field");
+assert(accuracyRoute.includes("required_human_decision_audit_timestamp_utc"), "Accuracy route marker must expose P83 human audit timestamp field");
+assert(accuracyRoute.includes("require_human_decision_audit_timestamp_utc"), "Accuracy route marker must expose P83 audit timestamp criterion");
+assert(accuracyRoute.includes("require_operator_decision_audit_label"), "Accuracy route marker must expose P83 operator audit criterion");
+assert(accuracyRoute.includes("require_no_evidence_file_recorded_before_decision_audit"), "Accuracy route marker must expose P83 no file audit criterion");
+assert(accuracyRoute.includes("require_no_evidence_hash_recorded_before_decision_audit"), "Accuracy route marker must expose P83 no hash audit criterion");
+assert(accuracyRoute.includes("block_upload_until_manifest_decision_audited"), "Accuracy route marker must expose P83 upload block criterion");
+assert(accuracyRoute.includes("block_attachment_until_manifest_decision_audited"), "Accuracy route marker must expose P83 attachment block criterion");
+assert(accuracyRoute.includes("block_mark_until_manifest_decision_audited"), "Accuracy route marker must expose P83 mark block criterion");
+assert(accuracyRoute.includes("blocked decision audit gate for future human-submitted receipt manifest decisions"), "Accuracy route marker must expose P83 blocked audit copy");
+assert(accuracyRoute.includes("no manifest decision has been recorded or audited"), "Accuracy route marker must expose P83 negative audit copy");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
