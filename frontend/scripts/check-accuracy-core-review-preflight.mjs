@@ -38,6 +38,7 @@ for (const marker of [
   "Core evidence operator packet QA",
   "Core evidence operator packet attachment readiness",
   "Core evidence external intake contract",
+  "Core evidence external receipt gate",
   "operator attachment manifest",
   "operator packet status",
   "operator packet QA status",
@@ -58,6 +59,7 @@ for (const marker of [
   "coreEvidenceOperatorPacketQa",
   "coreEvidenceOperatorPacketAttachmentReadiness",
   "coreEvidenceExternalIntakeContract",
+  "coreEvidenceExternalReceiptGate",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -72,6 +74,7 @@ for (const marker of [
   "buildCoreEvidenceOperatorPacketQa",
   "buildCoreEvidenceOperatorPacketAttachmentReadiness",
   "buildCoreEvidenceExternalIntakeContract",
+  "buildCoreEvidenceExternalReceiptGate",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -85,6 +88,7 @@ for (const marker of [
   "P67-A",
   "P69-A",
   "P71-A",
+  "P73-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -95,6 +99,7 @@ for (const marker of [
   "jyotish-core-evidence-operator-packet-qa-v1",
   "jyotish-core-evidence-operator-packet-attachment-readiness-v1",
   "jyotish-core-evidence-external-intake-contract-v1",
+  "jyotish-core-evidence-external-receipt-gate-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -115,11 +120,14 @@ for (const marker of [
   "blocked_pending_operator_packet_qa",
   "blocked_pending_external_evidence_attachment",
   "blocked_pending_external_evidence_intake",
+  "blocked_pending_external_evidence_receipts",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
   "evidence_uploaded=false",
   "evidence_attached=false",
+  "evidence_received_count=0",
+  "evidence_validated_count=0",
   "not_attached",
   "not_started",
   "Evidence must be attached before mark commands are attempted",
@@ -140,6 +148,10 @@ for (const marker of [
   "request_jhora_screenshot_or_packet",
   "request_parashara_light_manual_values_or_packet",
   "receive_external_evidence_from_human",
+  "await_jhora_screenshot_or_packet_receipt",
+  "await_parashara_light_manual_values_or_packet_receipt",
+  "record_external_evidence_receipt_manifest",
+  "rerun_external_receipt_gate_report",
   "rerun_preflight_witness_review",
   "rerun_evidence_attachment_gate",
   "evidence/manual values are missing or blocked",
@@ -157,6 +169,7 @@ for (const marker of [
   "build_witness_core_evidence_operator_packet_qa_report",
   "build_witness_core_evidence_operator_packet_attachment_readiness_report",
   "build_witness_core_evidence_external_intake_contract_report",
+  "build_witness_core_evidence_external_receipt_gate_report",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
 ]) {
@@ -369,6 +382,41 @@ for (const marker of [
   "coreEvidenceExternalIntakeContract.safeIntakeLabels",
   "coreEvidenceExternalIntakeContract.safeValidationCommandFamilies",
   "coreEvidenceExternalIntakeContract.operatorNote",
+  "coreEvidenceExternalReceiptGate.stage",
+  "coreEvidenceExternalReceiptGate.schemaVersion",
+  "coreEvidenceExternalReceiptGate.caseReceiptGateRows",
+  "coreEvidenceExternalReceiptGate.attachmentReceiptSlotRows",
+  "coreEvidenceExternalReceiptGate.pendingExternalEvidenceReceiptCount",
+  "coreEvidenceExternalReceiptGate.pendingJhoraReceiptCount",
+  "coreEvidenceExternalReceiptGate.pendingParasharaLightReceiptCount",
+  "coreEvidenceExternalReceiptGate.evidenceReceivedCount",
+  "coreEvidenceExternalReceiptGate.evidenceValidatedCount",
+  "coreEvidenceExternalReceiptGate.evidenceUploadedCount",
+  "coreEvidenceExternalReceiptGate.evidenceAttachedCount",
+  "coreEvidenceExternalReceiptGate.readyToAttachRows",
+  "coreEvidenceExternalReceiptGate.readyToMarkRows",
+  "coreEvidenceExternalReceiptGate.remainingNotReviewedRows",
+  "coreEvidenceExternalReceiptGate.selectedCaseIds",
+  "coreEvidenceExternalReceiptGate.slotFamilies",
+  "coreEvidenceExternalReceiptGate.receiptGateStatus",
+  "coreEvidenceExternalReceiptGate.intakeStatus",
+  "coreEvidenceExternalReceiptGate.readinessStatus",
+  "coreEvidenceExternalReceiptGate.evidenceReceiptStatus",
+  "coreEvidenceExternalReceiptGate.evidenceValidationStatus",
+  "coreEvidenceExternalReceiptGate.evidenceFileStatus",
+  "coreEvidenceExternalReceiptGate.evidenceUploadStatus",
+  "coreEvidenceExternalReceiptGate.evidenceAttachmentStatus",
+  "coreEvidenceExternalReceiptGate.readyToAttachLabel",
+  "coreEvidenceExternalReceiptGate.readyToMarkLabel",
+  "coreEvidenceExternalReceiptGate.evidenceReceivedLabel",
+  "coreEvidenceExternalReceiptGate.evidenceValidatedLabel",
+  "coreEvidenceExternalReceiptGate.evidenceUploadedLabel",
+  "coreEvidenceExternalReceiptGate.evidenceAttachedLabel",
+  "coreEvidenceExternalReceiptGate.paritySuccessClaimedLabel",
+  "coreEvidenceExternalReceiptGate.releaseReadyClaimedLabel",
+  "coreEvidenceExternalReceiptGate.safeReceiptLabels",
+  "coreEvidenceExternalReceiptGate.safeValidationCommandFamilies",
+  "coreEvidenceExternalReceiptGate.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -455,7 +503,8 @@ assert(!helperSlice.includes('latestStage: "P63-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P65-A"'), "Core evidence pipeline helper must not retain stale P65 latest stage");
 assert(!helperSlice.includes('latestStage: "P67-A"'), "Core evidence pipeline helper must not retain stale P67 latest stage");
 assert(!helperSlice.includes('latestStage: "P69-A"'), "Core evidence pipeline helper must not retain stale P69 latest stage");
-assert(helperSlice.includes('latestStage: "P71-A"'), "Core evidence pipeline helper must expose latest P71 stage");
+assert(!helperSlice.includes('latestStage: "P71-A"'), "Core evidence pipeline helper must not retain stale P71 latest stage");
+assert(helperSlice.includes('latestStage: "P73-A"'), "Core evidence pipeline helper must expose latest P73 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -463,6 +512,7 @@ assert(helperSlice.includes('"P65 operator packets"'), "Core evidence pipeline h
 assert(helperSlice.includes('"P67 QA preflight"'), "Core evidence pipeline helper must expose P67 stage sequence");
 assert(helperSlice.includes('"P69 attachment readiness"'), "Core evidence pipeline helper must expose P69 stage sequence");
 assert(helperSlice.includes('"P71 external intake contract"'), "Core evidence pipeline helper must expose P71 stage sequence");
+assert(helperSlice.includes('"P73 external receipt gate"'), "Core evidence pipeline helper must expose P73 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -722,6 +772,72 @@ assert(accuracyRoute.includes("request_jhora_screenshot_or_packet"), "Accuracy r
 assert(accuracyRoute.includes("request_parashara_light_manual_values_or_packet"), "Accuracy route marker must expose P71 Parashara Light request label");
 assert(accuracyRoute.includes("receive_external_evidence_from_human"), "Accuracy route marker must expose P71 receive evidence label");
 assert(accuracyRoute.includes("build_witness_core_evidence_external_intake_contract_report"), "Accuracy route marker must expose P71 intake contract command family");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-gate-v1"'), "Core evidence external receipt gate helper must expose schema version");
+assert(helperSlice.includes('stage: "P73-A"'), "Core evidence external receipt gate helper must expose P73-A stage");
+assert(helperSlice.includes("caseReceiptGateRows: 5"), "Core evidence external receipt gate helper must expose 5 case receipt rows");
+assert(helperSlice.includes("attachmentReceiptSlotRows: 10"), "Core evidence external receipt gate helper must expose 10 receipt slot rows");
+assert(helperSlice.includes("pendingExternalEvidenceReceiptCount: 10"), "Core evidence external receipt gate helper must expose 10 pending receipts");
+assert(helperSlice.includes("pendingJhoraReceiptCount: 5"), "Core evidence external receipt gate helper must expose 5 pending JHora receipts");
+assert(helperSlice.includes("pendingParasharaLightReceiptCount: 5"), "Core evidence external receipt gate helper must expose 5 pending Parashara Light receipts");
+assert(helperSlice.includes("evidenceReceivedCount: 0"), "Core evidence external receipt gate helper must expose 0 received count");
+assert(helperSlice.includes("evidenceValidatedCount: 0"), "Core evidence external receipt gate helper must expose 0 validated count");
+assert(helperSlice.includes("evidenceUploadedCount: 0"), "Core evidence external receipt gate helper must expose 0 uploaded count");
+assert(helperSlice.includes("evidenceAttachedCount: 0"), "Core evidence external receipt gate helper must expose 0 attached count");
+assert(helperSlice.includes("readyToAttachRows: 0"), "Core evidence external receipt gate helper must expose 0 ready-to-attach rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence external receipt gate helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence external receipt gate helper must expose 20 remaining rows");
+assert(helperSlice.includes('receiptGateStatus: "blocked_pending_external_evidence_receipts"'), "Core evidence external receipt gate helper must expose blocked receipt status");
+assert(helperSlice.includes('intakeStatus: "blocked_pending_external_evidence_intake"'), "Core evidence external receipt gate helper must expose blocked intake status");
+assert(helperSlice.includes('readinessStatus: "blocked_pending_external_evidence_attachment"'), "Core evidence external receipt gate helper must expose blocked readiness status");
+assert(helperSlice.includes('evidenceReceiptStatus: "not_received"'), "Core evidence external receipt gate helper must expose not-received status");
+assert(helperSlice.includes('evidenceValidationStatus: "not_started"'), "Core evidence external receipt gate helper must expose not-started validation status");
+assert(helperSlice.includes('evidenceFileStatus: "not_attached"'), "Core evidence external receipt gate helper must expose not-attached file status");
+assert(helperSlice.includes('evidenceUploadStatus: "not_started"'), "Core evidence external receipt gate helper must expose not-started upload status");
+assert(helperSlice.includes('evidenceAttachmentStatus: "not_attached"'), "Core evidence external receipt gate helper must expose not-attached attachment status");
+assert(helperSlice.includes('readyToAttachLabel: "ready_to_attach=false"'), "Core evidence external receipt gate helper must expose false ready-to-attach label");
+assert(helperSlice.includes('readyToMarkLabel: "ready_to_mark=false"'), "Core evidence external receipt gate helper must expose false ready-to-mark label");
+assert(helperSlice.includes('evidenceReceivedLabel: "evidence_received_count=0"'), "Core evidence external receipt gate helper must expose zero received label");
+assert(helperSlice.includes('evidenceValidatedLabel: "evidence_validated_count=0"'), "Core evidence external receipt gate helper must expose zero validated label");
+assert(helperSlice.includes('paritySuccessClaimedLabel: "parity_success_claimed=false"'), "Core evidence external receipt gate helper must expose false parity-success label");
+assert(helperSlice.includes('releaseReadyClaimedLabel: "release_ready_claimed=false"'), "Core evidence external receipt gate helper must expose false release-ready label");
+assert(helperSlice.includes('"await_jhora_screenshot_or_packet_receipt"'), "Core evidence external receipt gate helper must expose JHora receipt label");
+assert(helperSlice.includes('"await_parashara_light_manual_values_or_packet_receipt"'), "Core evidence external receipt gate helper must expose Parashara Light receipt label");
+assert(helperSlice.includes('"record_external_evidence_receipt_manifest"'), "Core evidence external receipt gate helper must expose receipt manifest label");
+assert(helperSlice.includes('"build_witness_core_evidence_external_receipt_gate_report"'), "Core evidence external receipt gate helper must expose P73 validation command");
+assert(helperSlice.includes("external evidence receipts have not been received or validated"), "Core evidence external receipt gate helper must expose receipt blocker");
+assert(helperSlice.includes("receipt rows are labels only"), "Core evidence external receipt gate helper must expose labels-only note");
+assert(helperSlice.includes("collection/upload/attachment/mark commands are not executed"), "Core evidence external receipt gate helper must expose non-execution note");
+assert(preflightSlice.includes("P73 external receipt gate"), "Core evidence pipeline UI must render P73 stage");
+assert(preflightSlice.includes("Core evidence external receipt gate"), "Core evidence external receipt gate UI must render its heading");
+assert(accuracyRoute.includes("P73-A"), "Accuracy route marker must expose P73 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-gate-v1"), "Accuracy route marker must expose P73 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipts"), "Accuracy route marker must expose P73 status");
+assert(accuracyRoute.includes("5 case receipt gate rows"), "Accuracy route marker must expose P73 case receipt rows");
+assert(accuracyRoute.includes("10 attachment receipt slot rows"), "Accuracy route marker must expose P73 receipt slot rows");
+assert(accuracyRoute.includes("10 pending external evidence receipts"), "Accuracy route marker must expose P73 pending receipt count");
+assert(accuracyRoute.includes("5 pending JHora receipts"), "Accuracy route marker must expose P73 pending JHora receipt count");
+assert(accuracyRoute.includes("5 pending Parashara Light receipts"), "Accuracy route marker must expose P73 pending Parashara Light receipt count");
+assert(accuracyRoute.includes("0 received"), "Accuracy route marker must expose P73 received count");
+assert(accuracyRoute.includes("0 validated"), "Accuracy route marker must expose P73 validated count");
+assert(accuracyRoute.includes("0 uploaded"), "Accuracy route marker must expose P73 uploaded count");
+assert(accuracyRoute.includes("0 attached"), "Accuracy route marker must expose P73 attached count");
+assert(accuracyRoute.includes("0 ready-to-attach"), "Accuracy route marker must expose P73 ready-to-attach count");
+assert(accuracyRoute.includes("0 ready-to-mark"), "Accuracy route marker must expose P73 ready-to-mark count");
+assert(accuracyRoute.includes("20 remaining"), "Accuracy route marker must expose P73 remaining count");
+assert(accuracyRoute.includes("jhora_screenshot_or_packet, parashara_light_manual_values_or_packet"), "Accuracy route marker must expose P73 slot family order");
+assert(accuracyRoute.includes("not_received"), "Accuracy route marker must expose P73 not-received status");
+assert(accuracyRoute.includes("evidence_received_count=0"), "Accuracy route marker must expose P73 zero received label");
+assert(accuracyRoute.includes("evidence_validated_count=0"), "Accuracy route marker must expose P73 zero validated label");
+assert(accuracyRoute.includes("parity_success_claimed=false"), "Accuracy route marker must expose P73 false parity-success label");
+assert(accuracyRoute.includes("release_ready_claimed=false"), "Accuracy route marker must expose P73 false release-ready label");
+assert(accuracyRoute.includes("external evidence receipts have not been received or validated"), "Accuracy route marker must expose P73 receipt blocker");
+assert(accuracyRoute.includes("receipt rows are labels only"), "Accuracy route marker must expose P73 labels-only note");
+assert(accuracyRoute.includes("collection/upload/attachment/mark commands are not executed"), "Accuracy route marker must expose P73 non-execution note");
+assert(accuracyRoute.includes("await_jhora_screenshot_or_packet_receipt"), "Accuracy route marker must expose P73 JHora receipt label");
+assert(accuracyRoute.includes("await_parashara_light_manual_values_or_packet_receipt"), "Accuracy route marker must expose P73 Parashara Light receipt label");
+assert(accuracyRoute.includes("record_external_evidence_receipt_manifest"), "Accuracy route marker must expose P73 receipt manifest label");
+assert(accuracyRoute.includes("rerun_external_receipt_gate_report"), "Accuracy route marker must expose P73 rerun receipt label");
+assert(accuracyRoute.includes("build_witness_core_evidence_external_receipt_gate_report"), "Accuracy route marker must expose P73 receipt gate command family");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
@@ -750,6 +866,7 @@ for (const forbidden of [
   "/home/",
   ".env",
   "complete",
+  "done",
   "ready for release",
   "verified parity",
   "accepted parity",
@@ -757,6 +874,8 @@ for (const forbidden of [
   "Parashara Light parity done",
   "parity success",
   "evidence available",
+  "external evidence received",
+  "external evidence validated",
   "external evidence attached",
   "evidence collected",
   "evidence uploaded",
