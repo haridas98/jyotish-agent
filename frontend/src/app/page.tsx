@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceBacklog, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5675,6 +5675,7 @@ function AccuracyReportPanel({
   const coreReviewPreflightBlocker = buildCoreReviewPreflightBlocker();
   const coreReviewProgress = buildCoreReviewProgress();
   const coreReviewBatchScan = buildCoreReviewBatchScan();
+  const coreEvidenceBacklog = buildCoreEvidenceBacklog();
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5827,6 +5828,26 @@ function AccuracyReportPanel({
             <span>next operator action</span>
             <strong>{coreReviewBatchScan.skippedRows}</strong>
             <small>{coreReviewBatchScan.nextOperatorAction}; {coreReviewBatchScan.safeCommandFamilies.join(" - ")}; {coreReviewBatchScan.cautionCopy}.</small>
+          </div>
+          <h3>Core evidence backlog</h3>
+          <p>{coreEvidenceBacklog.stage}: {coreEvidenceBacklog.schemaVersion}; {coreEvidenceBacklog.statusCopy}.</p>
+          <small>
+            backlog rows: {coreEvidenceBacklog.backlogRows} - blocked rows: {coreEvidenceBacklog.blockedRows} - ready-to-mark: {coreEvidenceBacklog.readyToMarkRows} - remaining not-reviewed: {coreEvidenceBacklog.remainingNotReviewedRows}
+          </small>
+          <div>
+            <span>evidence families</span>
+            <strong>{coreEvidenceBacklog.readyToMarkRows}</strong>
+            <small>{coreEvidenceBacklog.requiredEvidenceFamilies.join(" - ")} - JHora evidence backlog: {coreEvidenceBacklog.jhoraEvidenceBacklog} - Parashara Light evidence backlog: {coreEvidenceBacklog.parasharaLightEvidenceBacklog} - release: {coreEvidenceBacklog.releaseGateStatus} - command smoke: {coreEvidenceBacklog.commandSmokeMatrixStatus}</small>
+          </div>
+          <div>
+            <span>backlog boundaries</span>
+            <strong>{coreEvidenceBacklog.blockedRows}</strong>
+            <small>first backlog case: {coreEvidenceBacklog.firstBacklogCaseId} - last backlog case: {coreEvidenceBacklog.lastBacklogCaseId}</small>
+          </div>
+          <div>
+            <span>safe next actions</span>
+            <strong>{coreEvidenceBacklog.nextActions.length}</strong>
+            <small>{coreEvidenceBacklog.nextActions.join(" - ")}; {coreEvidenceBacklog.safeCommandFamilies.join(" - ")}; {coreEvidenceBacklog.cautionCopy}.</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">

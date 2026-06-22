@@ -162,6 +162,35 @@ export type CoreReviewBatchScan = {
   cautionCopy: "No batch row is reviewed or parity-passing from this scan";
 };
 
+export type CoreEvidenceBacklog = {
+  title: "Core evidence backlog";
+  schemaVersion: "jyotish-core-evidence-backlog-v1";
+  stage: "P53-A";
+  backlogRows: 20;
+  blockedRows: 20;
+  readyToMarkRows: 0;
+  remainingNotReviewedRows: 20;
+  jhoraEvidenceBacklog: 20;
+  parasharaLightEvidenceBacklog: 20;
+  requiredEvidenceFamilies: ["jhora_screenshot_or_packet", "parashara_light_manual_values_or_packet"];
+  firstBacklogCaseId: "vrindavan-1990-08-15-1024";
+  lastBacklogCaseId: "mayapur-2026-01-01-0000";
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  nextActions: [
+    "collect_jhora_screenshot",
+    "attach_parashara_light_manual_values",
+    "rerun_preflight_witness_review",
+  ];
+  safeCommandFamilies: [
+    "preflight_witness_review",
+    "mark_jhora_witness_reviewed",
+    "mark_parashara_light_witness_reviewed",
+  ];
+  statusCopy: "evidence backlog is blocking mark commands";
+  cautionCopy: "No evidence availability, parity pass, or release readiness is claimed";
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -373,6 +402,37 @@ export function buildCoreReviewBatchScan(): CoreReviewBatchScan {
       "mark_parashara_light_witness_reviewed",
     ],
     cautionCopy: "No batch row is reviewed or parity-passing from this scan",
+  };
+}
+
+export function buildCoreEvidenceBacklog(): CoreEvidenceBacklog {
+  return {
+    title: "Core evidence backlog",
+    schemaVersion: "jyotish-core-evidence-backlog-v1",
+    stage: "P53-A",
+    backlogRows: 20,
+    blockedRows: 20,
+    readyToMarkRows: 0,
+    remainingNotReviewedRows: 20,
+    jhoraEvidenceBacklog: 20,
+    parasharaLightEvidenceBacklog: 20,
+    requiredEvidenceFamilies: ["jhora_screenshot_or_packet", "parashara_light_manual_values_or_packet"],
+    firstBacklogCaseId: "vrindavan-1990-08-15-1024",
+    lastBacklogCaseId: "mayapur-2026-01-01-0000",
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    nextActions: [
+      "collect_jhora_screenshot",
+      "attach_parashara_light_manual_values",
+      "rerun_preflight_witness_review",
+    ],
+    safeCommandFamilies: [
+      "preflight_witness_review",
+      "mark_jhora_witness_reviewed",
+      "mark_parashara_light_witness_reviewed",
+    ],
+    statusCopy: "evidence backlog is blocking mark commands",
+    cautionCopy: "No evidence availability, parity pass, or release readiness is claimed",
   };
 }
 

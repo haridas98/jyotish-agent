@@ -19,27 +19,37 @@ const roadmap = readFileSync(new URL("../src/lib/parity-roadmap.ts", import.meta
 const page = readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
 const accuracyRoute = readFileSync(new URL("../src/app/accuracy/page.tsx", import.meta.url), "utf8");
 const panel = sliceBetween(page, "function AccuracyReportPanel", "export default function Home");
-const preflightSlice = sliceBetween(panel, "Core review preflight", "JHora");
+const preflightSlice = sliceBetween(panel, "Core review preflight", "accuracy-summary-grid witness-summary-grid");
 const helperSlice = sliceBetween(roadmap, "export function buildCoreReviewPreflightBlocker", "function skippedCount");
 
 for (const marker of [
   "Core review preflight",
   "Core review progress",
   "Core review batch scan",
+  "Core evidence backlog",
   "Evidence backlog",
   "coreReviewPreflightBlocker",
   "coreReviewProgress",
   "coreReviewBatchScan",
+  "coreEvidenceBacklog",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
+  "buildCoreEvidenceBacklog",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
+  "P53-A",
+  "jyotish-core-evidence-backlog-v1",
   "vrindavan-1990-08-15-1024",
   "mayapur-2026-01-01-0000",
   "jhora_missing_or_blocked",
   "parashara_light_missing_or_blocked",
+  "jhora_screenshot_or_packet",
+  "parashara_light_manual_values_or_packet",
+  "collect_jhora_screenshot",
+  "attach_parashara_light_manual_values",
+  "rerun_preflight_witness_review",
   "evidence/manual values are missing or blocked",
   "collect/attach missing JHora screenshots and Parashara Light evidence/manual values before running mark commands",
   "not-reviewed witness rows",
@@ -76,6 +86,17 @@ for (const marker of [
   "coreReviewBatchScan.lastSkippedCaseId",
   "coreReviewBatchScan.blockerLabels",
   "coreReviewBatchScan.safeCommandFamilies",
+  "coreEvidenceBacklog.stage",
+  "coreEvidenceBacklog.schemaVersion",
+  "coreEvidenceBacklog.backlogRows",
+  "coreEvidenceBacklog.blockedRows",
+  "coreEvidenceBacklog.readyToMarkRows",
+  "coreEvidenceBacklog.remainingNotReviewedRows",
+  "coreEvidenceBacklog.jhoraEvidenceBacklog",
+  "coreEvidenceBacklog.parasharaLightEvidenceBacklog",
+  "coreEvidenceBacklog.firstBacklogCaseId",
+  "coreEvidenceBacklog.lastBacklogCaseId",
+  "coreEvidenceBacklog.nextActions",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -104,6 +125,21 @@ assert(helperSlice.includes("evidence/manual values are missing or blocked"), "C
 assert(helperSlice.includes("collect/attach missing JHora screenshots and Parashara Light evidence/manual values before running mark commands"), "Core review batch scan helper must gate mark commands behind evidence collection");
 assert(!helperSlice.includes("blocked until explicit review commands run"), "Core review batch scan helper must not retain stale mark-command wording");
 assert(!preflightSlice.includes("blocked until explicit review commands run"), "Core review batch scan UI must not retain stale mark-command wording");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-backlog-v1"'), "Core evidence backlog helper must expose schema version");
+assert(helperSlice.includes('stage: "P53-A"'), "Core evidence backlog helper must expose P53-A stage");
+assert(helperSlice.includes("backlogRows: 20"), "Core evidence backlog helper must expose 20 backlog rows");
+assert(helperSlice.includes("blockedRows: 20"), "Core evidence backlog helper must expose 20 blocked rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence backlog helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence backlog helper must expose 20 remaining rows");
+assert(helperSlice.includes("jhoraEvidenceBacklog: 20"), "Core evidence backlog helper must expose 20 JHora evidence rows");
+assert(helperSlice.includes("parasharaLightEvidenceBacklog: 20"), "Core evidence backlog helper must expose 20 Parashara Light evidence rows");
+assert(helperSlice.includes('firstBacklogCaseId: "vrindavan-1990-08-15-1024"'), "Core evidence backlog helper must expose first backlog case");
+assert(helperSlice.includes('lastBacklogCaseId: "mayapur-2026-01-01-0000"'), "Core evidence backlog helper must expose last backlog case");
+assert(helperSlice.includes('"collect_jhora_screenshot"'), "Core evidence backlog helper must expose JHora evidence action");
+assert(helperSlice.includes('"attach_parashara_light_manual_values"'), "Core evidence backlog helper must expose Parashara Light evidence action");
+assert(helperSlice.includes('"rerun_preflight_witness_review"'), "Core evidence backlog helper must expose rerun preflight action");
+assert(accuracyRoute.includes("jyotish-core-evidence-backlog-v1"), "Accuracy route marker must expose P53 backlog schema");
+assert(accuracyRoute.includes("ready-to-mark 0"), "Accuracy route marker must expose ready-to-mark count");
 
 for (const forbidden of [
   "source_report",
