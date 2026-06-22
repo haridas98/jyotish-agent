@@ -1,6 +1,9 @@
 import Home from "../page";
+import { buildParityEvidenceRequirementClarity } from "@/lib/parity-roadmap";
 
 export default function AccuracyPage() {
+  const parityEvidenceRequirement = buildParityEvidenceRequirementClarity();
+
   return (
     <>
       <div className="sr-only">Parity collection checklist uses &lt;report-json&gt; collection hints.</div>
@@ -40,6 +43,12 @@ export default function AccuracyPage() {
       <div className="sr-only">P109-A finite parity roadmap scope checkpoint via buildParityFiniteScopeCheckpoint; bounded_parity_scope=true; parity_roadmap_total_items=19; parity_roadmap_pending_or_blocked_count=19; next_concrete_evidence_gate=human_provided_external_receipt_manifests; parity_success_claimed=false; release_ready=false; release_gate_status=blocked; Finite JH/PL scope; next evidence gate; no completed parity, external delivery, ticket, notification, upload, or attachment is claimed.</div>
       <div className="product-status">E106-A: South Indian chart UI work active; P105-A parity_micro_chain_capped=true; release_gate_status=blocked; parity_success_claimed=false; release_ready_claimed=false.</div>
       <div className="product-status">Finite JH/PL scope: 19 roadmap items; pending/blocked: 19; next evidence gate is human-provided external receipt manifests; release remains blocked.</div>
+      <div className="product-status" data-parity-evidence-requirement="blocked">
+        JHora: human-provided screenshots or receipt manifests. Parashara Light: human-provided manual values or receipt manifests. No credentials or files are needed now unless you want to supply those artifacts.
+        <span hidden>
+          buildParityEvidenceRequirementClarity; {parityEvidenceRequirement.stage}; {parityEvidenceRequirement.status}; {parityEvidenceRequirement.statusLabel}; {parityEvidenceRequirement.jhoraEvidenceRequiredLabel}; {parityEvidenceRequirement.parasharaLightEvidenceRequiredLabel}; {parityEvidenceRequirement.noCredentialsOrFilesRequiredNowLabel}; {parityEvidenceRequirement.paritySuccessClaimedLabel}; {parityEvidenceRequirement.releaseReadyLabel}; {parityEvidenceRequirement.releaseGateStatusLabel}
+        </span>
+      </div>
       <Home initialAnalysisTab="accuracy" />
     </>
   );

@@ -49,6 +49,28 @@ assert(accuracyPage.includes("Finite JH/PL scope"), "Accuracy route must expose 
 assert(accuracyPage.includes("next evidence gate"), "Accuracy route must expose the next concrete evidence gate.");
 
 for (const marker of [
+  "buildParityEvidenceRequirementClarity",
+  "P111-A",
+  "parity_evidence_requirement_status=blocked_pending_human_provided_jh_pl_evidence",
+  "jhora_evidence_required=human_provided_screenshots_or_receipt_manifests",
+  "parashara_light_evidence_required=human_provided_manual_values_or_receipt_manifests",
+  "no_credentials_or_files_required_now=true",
+  "parity_success_claimed=false",
+  "release_ready=false",
+  "release_gate_status=blocked",
+]) {
+  assert(roadmap.includes(marker) || accuracyPage.includes(marker), `P111 evidence requirement marker missing: ${marker}`);
+}
+
+for (const copy of [
+  "JHora: human-provided screenshots or receipt manifests",
+  "Parashara Light: human-provided manual values or receipt manifests",
+  "No credentials or files are needed now",
+]) {
+  assert(accuracyPage.includes(copy), `Accuracy route evidence requirement copy missing: ${copy}`);
+}
+
+for (const marker of [
   "Parity roadmap",
   "JH/PL launch ledger",
   "parityRoadmapItems",

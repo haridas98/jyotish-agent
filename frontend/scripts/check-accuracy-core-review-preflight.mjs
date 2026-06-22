@@ -2376,6 +2376,23 @@ assert(accuracyRoute.includes("not_attached"), "Accuracy route marker must expos
 assert(accuracyRoute.includes("operator packets are labels only and do not collect or attach evidence"), "Accuracy route marker must expose labels-only packet note");
 assert(accuracyRoute.includes("build_witness_core_evidence_operator_packets_report"), "Accuracy route marker must expose operator packet validation command");
 
+for (const marker of [
+  "buildParityEvidenceRequirementClarity",
+  "P111-A",
+  "parity_evidence_requirement_status=blocked_pending_human_provided_jh_pl_evidence",
+  "jhora_evidence_required=human_provided_screenshots_or_receipt_manifests",
+  "parashara_light_evidence_required=human_provided_manual_values_or_receipt_manifests",
+  "no_credentials_or_files_required_now=true",
+  "parity_success_claimed=false",
+  "release_ready=false",
+  "release_gate_status=blocked",
+  "JHora: human-provided screenshots or receipt manifests",
+  "Parashara Light: human-provided manual values or receipt manifests",
+  "No credentials or files are needed now",
+]) {
+  assert(roadmap.includes(marker) || helperSlice.includes(marker) || accuracyRoute.includes(marker), `P111 evidence requirement marker missing: ${marker}`);
+}
+
 for (const forbidden of [
   "source_report",
   "field_results",

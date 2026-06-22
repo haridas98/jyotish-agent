@@ -85,6 +85,21 @@ export type ParityFiniteScopeCheckpoint = {
   cautionCopy: "no completed parity, release readiness, external delivery, ticket, notification, upload, or attachment is claimed";
 };
 
+export type ParityEvidenceRequirementClarity = {
+  stage: "P111-A";
+  status: "blocked_pending_human_provided_jh_pl_evidence";
+  statusLabel: "parity_evidence_requirement_status=blocked_pending_human_provided_jh_pl_evidence";
+  jhoraEvidenceRequiredLabel: "jhora_evidence_required=human_provided_screenshots_or_receipt_manifests";
+  parasharaLightEvidenceRequiredLabel: "parashara_light_evidence_required=human_provided_manual_values_or_receipt_manifests";
+  noCredentialsOrFilesRequiredNowLabel: "no_credentials_or_files_required_now=true";
+  paritySuccessClaimedLabel: "parity_success_claimed=false";
+  releaseReadyLabel: "release_ready=false";
+  releaseGateStatusLabel: "release_gate_status=blocked";
+  jhoraEvidenceCopy: "JHora: human-provided screenshots or receipt manifests";
+  parasharaLightEvidenceCopy: "Parashara Light: human-provided manual values or receipt manifests";
+  noCredentialsOrFilesCopy: "No credentials or files are needed now unless you want to supply those artifacts.";
+};
+
 export type ReleaseGateActionSummary = {
   totals: {
     collectReports: number;
@@ -2105,6 +2120,23 @@ export function buildParityFiniteScopeCheckpoint(rows: ParityRoadmapRow[]): Pari
     nextEvidenceGate: "Human-provided external receipt manifests",
     statusCopy: "finite JH/PL parity scope; release remains blocked",
     cautionCopy: "no completed parity, release readiness, external delivery, ticket, notification, upload, or attachment is claimed",
+  };
+}
+
+export function buildParityEvidenceRequirementClarity(): ParityEvidenceRequirementClarity {
+  return {
+    stage: "P111-A",
+    status: "blocked_pending_human_provided_jh_pl_evidence",
+    statusLabel: "parity_evidence_requirement_status=blocked_pending_human_provided_jh_pl_evidence",
+    jhoraEvidenceRequiredLabel: "jhora_evidence_required=human_provided_screenshots_or_receipt_manifests",
+    parasharaLightEvidenceRequiredLabel: "parashara_light_evidence_required=human_provided_manual_values_or_receipt_manifests",
+    noCredentialsOrFilesRequiredNowLabel: "no_credentials_or_files_required_now=true",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    releaseReadyLabel: "release_ready=false",
+    releaseGateStatusLabel: "release_gate_status=blocked",
+    jhoraEvidenceCopy: "JHora: human-provided screenshots or receipt manifests",
+    parasharaLightEvidenceCopy: "Parashara Light: human-provided manual values or receipt manifests",
+    noCredentialsOrFilesCopy: "No credentials or files are needed now unless you want to supply those artifacts.",
   };
 }
 
