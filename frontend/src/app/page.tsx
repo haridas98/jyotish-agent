@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceBacklog, buildCoreEvidenceIntakePlan, buildCoreEvidencePipeline, buildCoreEvidenceReadiness, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceAttachmentGate, buildCoreEvidenceBacklog, buildCoreEvidenceIntakePlan, buildCoreEvidencePipeline, buildCoreEvidenceReadiness, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5679,6 +5679,7 @@ function AccuracyReportPanel({
   const coreEvidenceIntakePlan = buildCoreEvidenceIntakePlan();
   const coreEvidencePipeline = buildCoreEvidencePipeline();
   const coreEvidenceReadiness = buildCoreEvidenceReadiness();
+  const coreEvidenceAttachmentGate = buildCoreEvidenceAttachmentGate();
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5877,7 +5878,7 @@ function AccuracyReportPanel({
           <h3>Core evidence pipeline</h3>
           <p>{coreEvidencePipeline.latestStage}: {coreEvidencePipeline.statusCopy}; release: {coreEvidencePipeline.releaseGateStatus}; command smoke: {coreEvidencePipeline.commandSmokeMatrixStatus}; {coreEvidencePipeline.operatorNote}.</p>
           <small>
-            {coreEvidencePipeline.stageSequence.join(" - ")}; P53 backlog: {coreEvidencePipeline.backlogSummary.blockedRows} blocked, {coreEvidencePipeline.backlogSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.backlogSummary.remainingNotReviewedRows} remaining; P55 intake: {coreEvidencePipeline.intakeSummary.intakeRows} intake rows, {coreEvidencePipeline.intakeSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.intakeSummary.evidenceFilesCommitted} evidence files committed, {coreEvidencePipeline.intakeSummary.remainingNotReviewedRows} remaining; P57 readiness: {coreEvidencePipeline.readinessSummary.readinessRows} readiness rows, {coreEvidencePipeline.readinessSummary.operatorPacketRows} operator packet rows, {coreEvidencePipeline.readinessSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.readinessSummary.blockedRows} blocked, {coreEvidencePipeline.readinessSummary.missingEvidenceSlots} missing evidence slots, {coreEvidencePipeline.readinessSummary.jhoraMissingCount} JHora missing, {coreEvidencePipeline.readinessSummary.parasharaLightMissingCount} Parashara Light missing, {coreEvidencePipeline.readinessSummary.remainingNotReviewedRows} remaining.
+            {coreEvidencePipeline.stageSequence.join(" - ")}; P53 backlog: {coreEvidencePipeline.backlogSummary.blockedRows} blocked, {coreEvidencePipeline.backlogSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.backlogSummary.remainingNotReviewedRows} remaining; P55 intake: {coreEvidencePipeline.intakeSummary.intakeRows} intake rows, {coreEvidencePipeline.intakeSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.intakeSummary.evidenceFilesCommitted} evidence files committed, {coreEvidencePipeline.intakeSummary.remainingNotReviewedRows} remaining; P57 readiness: {coreEvidencePipeline.readinessSummary.readinessRows} readiness rows, {coreEvidencePipeline.readinessSummary.operatorPacketRows} operator packet rows, {coreEvidencePipeline.readinessSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.readinessSummary.blockedRows} blocked, {coreEvidencePipeline.readinessSummary.missingEvidenceSlots} missing evidence slots, {coreEvidencePipeline.readinessSummary.jhoraMissingCount} JHora missing, {coreEvidencePipeline.readinessSummary.parasharaLightMissingCount} Parashara Light missing, {coreEvidencePipeline.readinessSummary.remainingNotReviewedRows} remaining; P59 attachment gate: {coreEvidencePipeline.attachmentSummary.attachmentRows} attachment rows, {coreEvidencePipeline.attachmentSummary.operatorAttachmentManifestRows} operator attachment manifest rows, {coreEvidencePipeline.attachmentSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.attachmentSummary.blockedRows} blocked, {coreEvidencePipeline.attachmentSummary.missingAttachmentSlots} missing attachment slots, {coreEvidencePipeline.attachmentSummary.attachedEvidenceFiles} attached evidence files, {coreEvidencePipeline.attachmentSummary.attachedEvidenceFamilyCount} attached evidence family count, {coreEvidencePipeline.attachmentSummary.jhoraAttachedCount} JHora attached, {coreEvidencePipeline.attachmentSummary.parasharaLightAttachedCount} Parashara Light attached, {coreEvidencePipeline.attachmentSummary.jhoraMissingCount} JHora missing, {coreEvidencePipeline.attachmentSummary.parasharaLightMissingCount} Parashara Light missing, {coreEvidencePipeline.attachmentSummary.remainingNotReviewedRows} remaining.
           </small>
           <div>
             <span>Core evidence readiness</span>
@@ -5893,6 +5894,21 @@ function AccuracyReportPanel({
             <span>operator packet manifest</span>
             <strong>{coreEvidenceReadiness.operatorPacketRows}</strong>
             <small>{coreEvidenceReadiness.safeNextActions.join(" - ")}; {coreEvidenceReadiness.safeValidationCommandFamilies.join(" - ")}; {coreEvidenceReadiness.operatorNote}; {coreEvidenceReadiness.cautionCopy}.</small>
+          </div>
+          <h3>Core evidence attachment gate</h3>
+          <p>{coreEvidenceAttachmentGate.stage}: {coreEvidenceAttachmentGate.schemaVersion}; {coreEvidenceAttachmentGate.statusCopy}.</p>
+          <small>
+            attachment rows: {coreEvidenceAttachmentGate.attachmentRows} - operator attachment manifest rows: {coreEvidenceAttachmentGate.operatorAttachmentManifestRows} - ready-to-mark: {coreEvidenceAttachmentGate.readyToMarkRows} - blocked_no_attached_evidence: {coreEvidenceAttachmentGate.blockedRows} - missing attachment slots: {coreEvidenceAttachmentGate.missingAttachmentSlots} - attached evidence files: {coreEvidenceAttachmentGate.attachedEvidenceFiles} - attached evidence family count: {coreEvidenceAttachmentGate.attachedEvidenceFamilyCount} - JHora attached: {coreEvidenceAttachmentGate.jhoraAttachedCount} - Parashara Light attached: {coreEvidenceAttachmentGate.parasharaLightAttachedCount} - JHora missing: {coreEvidenceAttachmentGate.jhoraMissingCount} - Parashara Light missing: {coreEvidenceAttachmentGate.parasharaLightMissingCount} - remaining not-reviewed: {coreEvidenceAttachmentGate.remainingNotReviewedRows} - release: {coreEvidenceAttachmentGate.releaseGateStatus} - command smoke: {coreEvidenceAttachmentGate.commandSmokeMatrixStatus}
+          </small>
+          <div>
+            <span>attachment selected cases</span>
+            <strong>{coreEvidenceAttachmentGate.selectedCaseIds.length}</strong>
+            <small>{coreEvidenceAttachmentGate.selectedCaseIds.map((caseId) => `${caseId}: jhora_screenshot_or_packet=${coreEvidenceAttachmentGate.p57EvidenceSlotStatus.jhora_screenshot_or_packet}/${coreEvidenceAttachmentGate.attachmentSlotStatus.jhora_screenshot_or_packet}; parashara_light_manual_values_or_packet=${coreEvidenceAttachmentGate.p57EvidenceSlotStatus.parashara_light_manual_values_or_packet}/${coreEvidenceAttachmentGate.attachmentSlotStatus.parashara_light_manual_values_or_packet}; ${coreEvidenceAttachmentGate.readyToMarkLabel}; ${coreEvidenceAttachmentGate.readinessStatus}; ${coreEvidenceAttachmentGate.attachmentGateStatus}`).join(" | ")}</small>
+          </div>
+          <div>
+            <span>operator attachment manifest</span>
+            <strong>{coreEvidenceAttachmentGate.operatorAttachmentManifestRows}</strong>
+            <small>{coreEvidenceAttachmentGate.safeNextActions.join(" - ")}; {coreEvidenceAttachmentGate.safeValidationCommandFamilies.join(" - ")}; {coreEvidencePipeline.operatorNote}; {coreEvidenceAttachmentGate.operatorNote}; {coreEvidenceAttachmentGate.cautionCopy}.</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">

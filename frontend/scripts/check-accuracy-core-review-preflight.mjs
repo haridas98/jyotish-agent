@@ -31,6 +31,8 @@ for (const marker of [
   "Core evidence pipeline",
   "Core evidence readiness",
   "operator packet manifest",
+  "Core evidence attachment gate",
+  "operator attachment manifest",
   "Evidence backlog",
   "coreReviewPreflightBlocker",
   "coreReviewProgress",
@@ -39,6 +41,7 @@ for (const marker of [
   "coreEvidenceIntakePlan",
   "coreEvidencePipeline",
   "coreEvidenceReadiness",
+  "coreEvidenceAttachmentGate",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -46,15 +49,18 @@ for (const marker of [
   "buildCoreEvidenceIntakePlan",
   "buildCoreEvidencePipeline",
   "buildCoreEvidenceReadiness",
+  "buildCoreEvidenceAttachmentGate",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
   "P53-A",
   "P55-A",
   "P57-A",
+  "P59-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
+  "jyotish-core-evidence-attachment-gate-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -67,11 +73,15 @@ for (const marker of [
   "parashara_light_manual_values_or_packet",
   "missing",
   "blocked_missing_evidence",
+  "blocked_no_attached_evidence",
   "ready_to_mark=false",
+  "not_attached",
+  "Evidence must be attached before mark commands are attempted",
   "Evidence must be collected and attached before mark commands are attempted",
   "collect_jhora_screenshot",
   "attach_parashara_light_manual_values",
   "rerun_preflight_witness_review",
+  "rerun_evidence_attachment_gate",
   "evidence/manual values are missing or blocked",
   "collect/attach missing JHora screenshots and Parashara Light evidence/manual values before running mark commands",
   "not-reviewed witness rows",
@@ -80,6 +90,7 @@ for (const marker of [
   "release remains blocked",
   "real diff",
   "preflight_witness_review",
+  "build_witness_core_evidence_attachment_gate_report",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
 ]) {
@@ -151,6 +162,28 @@ for (const marker of [
   "coreEvidenceReadiness.safeNextActions",
   "coreEvidenceReadiness.safeValidationCommandFamilies",
   "coreEvidenceReadiness.operatorNote",
+  "coreEvidenceAttachmentGate.stage",
+  "coreEvidenceAttachmentGate.schemaVersion",
+  "coreEvidenceAttachmentGate.attachmentRows",
+  "coreEvidenceAttachmentGate.operatorAttachmentManifestRows",
+  "coreEvidenceAttachmentGate.readyToMarkRows",
+  "coreEvidenceAttachmentGate.blockedRows",
+  "coreEvidenceAttachmentGate.missingAttachmentSlots",
+  "coreEvidenceAttachmentGate.attachedEvidenceFiles",
+  "coreEvidenceAttachmentGate.attachedEvidenceFamilyCount",
+  "coreEvidenceAttachmentGate.jhoraAttachedCount",
+  "coreEvidenceAttachmentGate.parasharaLightAttachedCount",
+  "coreEvidenceAttachmentGate.jhoraMissingCount",
+  "coreEvidenceAttachmentGate.parasharaLightMissingCount",
+  "coreEvidenceAttachmentGate.remainingNotReviewedRows",
+  "coreEvidenceAttachmentGate.selectedCaseIds",
+  "coreEvidenceAttachmentGate.p57EvidenceSlotStatus",
+  "coreEvidenceAttachmentGate.attachmentSlotStatus",
+  "coreEvidenceAttachmentGate.readyToMarkLabel",
+  "coreEvidenceAttachmentGate.attachmentGateStatus",
+  "coreEvidenceAttachmentGate.safeNextActions",
+  "coreEvidenceAttachmentGate.safeValidationCommandFamilies",
+  "coreEvidenceAttachmentGate.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -208,7 +241,7 @@ assert(accuracyRoute.includes("jyotish-core-evidence-backlog-v1"), "Accuracy rou
 assert(accuracyRoute.includes("jyotish-core-evidence-intake-plan-v1"), "Accuracy route marker must expose P55 intake schema");
 assert(accuracyRoute.includes("evidence files committed 0"), "Accuracy route marker must expose committed evidence file count");
 assert(accuracyRoute.includes("ready-to-mark 0"), "Accuracy route marker must expose ready-to-mark count");
-assert(helperSlice.includes('latestStage: "P57-A"'), "Core evidence pipeline helper must expose latest P57 stage");
+assert(!helperSlice.includes('latestStage: "P57-A"'), "Core evidence pipeline helper must not retain stale P57 latest stage");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-readiness-preflight-v1"'), "Core evidence readiness helper must expose schema version");
 assert(helperSlice.includes('stage: "P57-A"'), "Core evidence readiness helper must expose P57-A stage");
 assert(helperSlice.includes("readinessRows: 5"), "Core evidence readiness helper must expose 5 readiness rows");
@@ -231,6 +264,44 @@ assert(accuracyRoute.includes("10 missing evidence slots"), "Accuracy route mark
 assert(accuracyRoute.includes("blocked_missing_evidence"), "Accuracy route marker must expose blocked evidence status");
 assert(accuracyRoute.includes("ready_to_mark=false"), "Accuracy route marker must expose false ready-to-mark state");
 assert(accuracyRoute.includes("Evidence must be collected and attached before mark commands are attempted"), "Accuracy route marker must expose blocked operator note");
+assert(helperSlice.includes('latestStage: "P59-A"'), "Core evidence pipeline helper must expose latest P59 stage");
+assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
+assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
+assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
+assert(helperSlice.includes("operatorAttachmentManifestRows: 5"), "Core evidence attachment helper must expose 5 operator attachment rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence attachment helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("blockedRows: 5"), "Core evidence attachment helper must expose 5 blocked rows");
+assert(helperSlice.includes("missingAttachmentSlots: 10"), "Core evidence attachment helper must expose 10 missing attachment slots");
+assert(helperSlice.includes("attachedEvidenceFiles: 0"), "Core evidence attachment helper must expose 0 attached evidence files");
+assert(helperSlice.includes("attachedEvidenceFamilyCount: 0"), "Core evidence attachment helper must expose 0 attached evidence families");
+assert(helperSlice.includes("jhoraAttachedCount: 0"), "Core evidence attachment helper must expose 0 JHora attached rows");
+assert(helperSlice.includes("parasharaLightAttachedCount: 0"), "Core evidence attachment helper must expose 0 Parashara Light attached rows");
+assert(helperSlice.includes("jhoraMissingCount: 5"), "Core evidence attachment helper must expose 5 JHora missing rows");
+assert(helperSlice.includes("parasharaLightMissingCount: 5"), "Core evidence attachment helper must expose 5 Parashara Light missing rows");
+assert(helperSlice.includes('attachmentGateStatus: "blocked_no_attached_evidence"'), "Core evidence attachment helper must expose blocked attachment status");
+assert(helperSlice.includes('readyToMarkLabel: "ready_to_mark=false"'), "Core evidence attachment helper must expose false ready-to-mark label");
+assert(helperSlice.includes('jhora_screenshot_or_packet: "not_attached"'), "Core evidence attachment helper must expose not-attached JHora slot");
+assert(helperSlice.includes('parashara_light_manual_values_or_packet: "not_attached"'), "Core evidence attachment helper must expose not-attached Parashara Light slot");
+assert(helperSlice.includes('"rerun_evidence_attachment_gate"'), "Core evidence attachment helper must expose rerun attachment gate action");
+assert(helperSlice.includes('"build_witness_core_evidence_attachment_gate_report"'), "Core evidence attachment helper must expose attachment gate validation command");
+assert(helperSlice.includes("Evidence must be attached before mark commands are attempted"), "Core evidence attachment helper must expose attachment operator note");
+assert(preflightSlice.includes("P59 attachment gate"), "Core evidence pipeline UI must render P59 stage");
+assert(preflightSlice.includes("operator attachment manifest"), "Core evidence attachment UI must expose operator attachment manifest");
+assert(accuracyRoute.includes("P59-A"), "Accuracy route marker must expose P59 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-attachment-gate-v1"), "Accuracy route marker must expose P59 schema");
+assert(accuracyRoute.includes("5 attachment rows"), "Accuracy route marker must expose attachment row count");
+assert(accuracyRoute.includes("5 operator attachment manifest rows"), "Accuracy route marker must expose operator attachment row count");
+assert(accuracyRoute.includes("10 missing attachment slots"), "Accuracy route marker must expose missing attachment slots");
+assert(accuracyRoute.includes("0 attached evidence files"), "Accuracy route marker must expose attached evidence file count");
+assert(accuracyRoute.includes("0 attached evidence family count"), "Accuracy route marker must expose attached evidence family count");
+assert(accuracyRoute.includes("0 JHora attached"), "Accuracy route marker must expose JHora attached count");
+assert(accuracyRoute.includes("0 Parashara Light attached"), "Accuracy route marker must expose Parashara Light attached count");
+assert(accuracyRoute.includes("not_attached"), "Accuracy route marker must expose not-attached slot status");
+assert(accuracyRoute.includes("blocked_no_attached_evidence"), "Accuracy route marker must expose blocked attachment status");
+assert(accuracyRoute.includes("rerun_evidence_attachment_gate"), "Accuracy route marker must expose rerun attachment gate action");
+assert(accuracyRoute.includes("build_witness_core_evidence_attachment_gate_report"), "Accuracy route marker must expose attachment validation command");
+assert(accuracyRoute.includes("Evidence must be attached before mark commands are attempted"), "Accuracy route marker must expose attachment operator note");
 
 for (const forbidden of [
   "source_report",

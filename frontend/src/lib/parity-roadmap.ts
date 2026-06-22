@@ -270,8 +270,8 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P57-A";
-  stageSequence: ["P53 backlog", "P55 intake", "P57 readiness"];
+  latestStage: "P59-A";
+  stageSequence: ["P53 backlog", "P55 intake", "P57 readiness", "P59 attachment gate"];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
   backlogSummary: {
@@ -295,8 +295,75 @@ export type CoreEvidencePipeline = {
     parasharaLightMissingCount: 5;
     remainingNotReviewedRows: 20;
   };
+  attachmentSummary: {
+    attachmentRows: 5;
+    operatorAttachmentManifestRows: 5;
+    readyToMarkRows: 0;
+    blockedRows: 5;
+    missingAttachmentSlots: 10;
+    attachedEvidenceFiles: 0;
+    attachedEvidenceFamilyCount: 0;
+    jhoraAttachedCount: 0;
+    parasharaLightAttachedCount: 0;
+    jhoraMissingCount: 5;
+    parasharaLightMissingCount: 5;
+    remainingNotReviewedRows: 20;
+  };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
-  statusCopy: "blocked evidence readiness gate";
+  statusCopy: "blocked evidence attachment gate";
+};
+
+export type CoreEvidenceAttachmentGate = {
+  title: "Core evidence attachment gate";
+  schemaVersion: "jyotish-core-evidence-attachment-gate-v1";
+  stage: "P59-A";
+  attachmentRows: 5;
+  operatorAttachmentManifestRows: 5;
+  readyToMarkRows: 0;
+  blockedRows: 5;
+  missingAttachmentSlots: 10;
+  attachedEvidenceFiles: 0;
+  attachedEvidenceFamilyCount: 0;
+  jhoraAttachedCount: 0;
+  parasharaLightAttachedCount: 0;
+  jhoraMissingCount: 5;
+  parasharaLightMissingCount: 5;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  p57EvidenceSlotStatus: {
+    jhora_screenshot_or_packet: "missing";
+    parashara_light_manual_values_or_packet: "missing";
+  };
+  attachmentSlotStatus: {
+    jhora_screenshot_or_packet: "not_attached";
+    parashara_light_manual_values_or_packet: "not_attached";
+  };
+  readinessStatus: "blocked_missing_evidence";
+  attachmentGateStatus: "blocked_no_attached_evidence";
+  readyToMarkLabel: "ready_to_mark=false";
+  safeNextActions: [
+    "collect_jhora_screenshot",
+    "attach_parashara_light_manual_values",
+    "rerun_evidence_attachment_gate",
+    "rerun_preflight_witness_review",
+  ];
+  safeValidationCommandFamilies: [
+    "build_witness_core_evidence_attachment_gate_report",
+    "preflight_witness_review",
+    "mark_jhora_witness_reviewed",
+    "mark_parashara_light_witness_reviewed",
+  ];
+  operatorNote: "Evidence must be attached before mark commands are attempted";
+  statusCopy: "external evidence is not attached for every selected intake row";
+  cautionCopy: "No mark command should run until evidence is attached";
 };
 
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
@@ -628,8 +695,8 @@ export function buildCoreEvidenceReadiness(): CoreEvidenceReadiness {
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P57-A",
-    stageSequence: ["P53 backlog", "P55 intake", "P57 readiness"],
+    latestStage: "P59-A",
+    stageSequence: ["P53 backlog", "P55 intake", "P57 readiness", "P59 attachment gate"],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
     backlogSummary: {
@@ -653,8 +720,77 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       parasharaLightMissingCount: 5,
       remainingNotReviewedRows: 20,
     },
+    attachmentSummary: {
+      attachmentRows: 5,
+      operatorAttachmentManifestRows: 5,
+      readyToMarkRows: 0,
+      blockedRows: 5,
+      missingAttachmentSlots: 10,
+      attachedEvidenceFiles: 0,
+      attachedEvidenceFamilyCount: 0,
+      jhoraAttachedCount: 0,
+      parasharaLightAttachedCount: 0,
+      jhoraMissingCount: 5,
+      parasharaLightMissingCount: 5,
+      remainingNotReviewedRows: 20,
+    },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
-    statusCopy: "blocked evidence readiness gate",
+    statusCopy: "blocked evidence attachment gate",
+  };
+}
+
+export function buildCoreEvidenceAttachmentGate(): CoreEvidenceAttachmentGate {
+  return {
+    title: "Core evidence attachment gate",
+    schemaVersion: "jyotish-core-evidence-attachment-gate-v1",
+    stage: "P59-A",
+    attachmentRows: 5,
+    operatorAttachmentManifestRows: 5,
+    readyToMarkRows: 0,
+    blockedRows: 5,
+    missingAttachmentSlots: 10,
+    attachedEvidenceFiles: 0,
+    attachedEvidenceFamilyCount: 0,
+    jhoraAttachedCount: 0,
+    parasharaLightAttachedCount: 0,
+    jhoraMissingCount: 5,
+    parasharaLightMissingCount: 5,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    p57EvidenceSlotStatus: {
+      jhora_screenshot_or_packet: "missing",
+      parashara_light_manual_values_or_packet: "missing",
+    },
+    attachmentSlotStatus: {
+      jhora_screenshot_or_packet: "not_attached",
+      parashara_light_manual_values_or_packet: "not_attached",
+    },
+    readinessStatus: "blocked_missing_evidence",
+    attachmentGateStatus: "blocked_no_attached_evidence",
+    readyToMarkLabel: "ready_to_mark=false",
+    safeNextActions: [
+      "collect_jhora_screenshot",
+      "attach_parashara_light_manual_values",
+      "rerun_evidence_attachment_gate",
+      "rerun_preflight_witness_review",
+    ],
+    safeValidationCommandFamilies: [
+      "build_witness_core_evidence_attachment_gate_report",
+      "preflight_witness_review",
+      "mark_jhora_witness_reviewed",
+      "mark_parashara_light_witness_reviewed",
+    ],
+    operatorNote: "Evidence must be attached before mark commands are attempted",
+    statusCopy: "external evidence is not attached for every selected intake row",
+    cautionCopy: "No mark command should run until evidence is attached",
   };
 }
 
