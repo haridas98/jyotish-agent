@@ -1,0 +1,381 @@
+{
+  "schema_version": "jyotish-core-evidence-operator-packets-v1",
+  "domain": "witness_core_parity",
+  "stage": "P65-A",
+  "status": "blocked_pending_operator_packet_evidence",
+  "operator_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence.",
+  "summary": {
+    "source_case_handoff_rows": 5,
+    "source_handoff_work_order_rows": 10,
+    "operator_packet_rows": 5,
+    "operator_attachment_slot_rows": 10,
+    "pending_operator_packet_count": 5,
+    "pending_operator_attachment_slot_count": 10,
+    "pending_jhora_attachment_slot_count": 5,
+    "pending_parashara_light_attachment_slot_count": 5,
+    "blocked_packet_count": 5,
+    "ready_to_mark_count": 0,
+    "attached_evidence_files_count": 0,
+    "attached_evidence_family_count": 0,
+    "missing_attachment_slot_count": 10,
+    "remaining_not_reviewed_count": 20,
+    "release_gate_status": "blocked",
+    "command_smoke_matrix_status": "ready",
+    "parity_success_claimed": false,
+    "release_ready_claimed": false
+  },
+  "operator_packet_rows": [
+    {
+      "operator_packet_index": 1,
+      "case_id": "vrindavan-1990-08-15-1024",
+      "source_case_handoff_index": 1,
+      "source_handoff_work_order_indices": [
+        1,
+        2
+      ],
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_indices": [
+        1,
+        2
+      ],
+      "packet_status": "blocked_pending_operator_packet_evidence",
+      "case_handoff_status": "blocked_pending_operator_evidence",
+      "case_work_order_status": "blocked_pending_attachments",
+      "ready_to_mark": false,
+      "safe_packet_sequence_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_operator_packets_report",
+        "rerun_attachment_handoff_report",
+        "rerun_attachment_work_orders_report",
+        "rerun_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "safe_validation_command_families": [
+        "build_witness_core_evidence_operator_packets_report",
+        "build_witness_core_evidence_attachment_handoff_report",
+        "build_witness_core_evidence_attachment_work_orders_report",
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_packet_index": 2,
+      "case_id": "delhi-india-1947-08-15-000001",
+      "source_case_handoff_index": 2,
+      "source_handoff_work_order_indices": [
+        3,
+        4
+      ],
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_indices": [
+        3,
+        4
+      ],
+      "packet_status": "blocked_pending_operator_packet_evidence",
+      "case_handoff_status": "blocked_pending_operator_evidence",
+      "case_work_order_status": "blocked_pending_attachments",
+      "ready_to_mark": false,
+      "safe_packet_sequence_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_operator_packets_report",
+        "rerun_attachment_handoff_report",
+        "rerun_attachment_work_orders_report",
+        "rerun_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "safe_validation_command_families": [
+        "build_witness_core_evidence_operator_packets_report",
+        "build_witness_core_evidence_attachment_handoff_report",
+        "build_witness_core_evidence_attachment_work_orders_report",
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_packet_index": 3,
+      "case_id": "mayapur-2001-02-03-0910",
+      "source_case_handoff_index": 3,
+      "source_handoff_work_order_indices": [
+        5,
+        6
+      ],
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_indices": [
+        5,
+        6
+      ],
+      "packet_status": "blocked_pending_operator_packet_evidence",
+      "case_handoff_status": "blocked_pending_operator_evidence",
+      "case_work_order_status": "blocked_pending_attachments",
+      "ready_to_mark": false,
+      "safe_packet_sequence_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_operator_packets_report",
+        "rerun_attachment_handoff_report",
+        "rerun_attachment_work_orders_report",
+        "rerun_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "safe_validation_command_families": [
+        "build_witness_core_evidence_operator_packets_report",
+        "build_witness_core_evidence_attachment_handoff_report",
+        "build_witness_core_evidence_attachment_work_orders_report",
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_packet_index": 4,
+      "case_id": "new-york-2026-03-08-0155",
+      "source_case_handoff_index": 4,
+      "source_handoff_work_order_indices": [
+        7,
+        8
+      ],
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_indices": [
+        7,
+        8
+      ],
+      "packet_status": "blocked_pending_operator_packet_evidence",
+      "case_handoff_status": "blocked_pending_operator_evidence",
+      "case_work_order_status": "blocked_pending_attachments",
+      "ready_to_mark": false,
+      "safe_packet_sequence_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_operator_packets_report",
+        "rerun_attachment_handoff_report",
+        "rerun_attachment_work_orders_report",
+        "rerun_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "safe_validation_command_families": [
+        "build_witness_core_evidence_operator_packets_report",
+        "build_witness_core_evidence_attachment_handoff_report",
+        "build_witness_core_evidence_attachment_work_orders_report",
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_packet_index": 5,
+      "case_id": "new-york-2026-11-01-0130",
+      "source_case_handoff_index": 5,
+      "source_handoff_work_order_indices": [
+        9,
+        10
+      ],
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_indices": [
+        9,
+        10
+      ],
+      "packet_status": "blocked_pending_operator_packet_evidence",
+      "case_handoff_status": "blocked_pending_operator_evidence",
+      "case_work_order_status": "blocked_pending_attachments",
+      "ready_to_mark": false,
+      "safe_packet_sequence_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_operator_packets_report",
+        "rerun_attachment_handoff_report",
+        "rerun_attachment_work_orders_report",
+        "rerun_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "safe_validation_command_families": [
+        "build_witness_core_evidence_operator_packets_report",
+        "build_witness_core_evidence_attachment_handoff_report",
+        "build_witness_core_evidence_attachment_work_orders_report",
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review"
+      ],
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    }
+  ],
+  "operator_attachment_slot_rows": [
+    {
+      "operator_attachment_slot_index": 1,
+      "operator_packet_index": 1,
+      "source_handoff_work_order_index": 1,
+      "case_id": "vrindavan-1990-08-15-1024",
+      "evidence_family": "jhora_screenshot_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "collect_jhora_screenshot",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 2,
+      "operator_packet_index": 1,
+      "source_handoff_work_order_index": 2,
+      "case_id": "vrindavan-1990-08-15-1024",
+      "evidence_family": "parashara_light_manual_values_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "attach_parashara_light_manual_values",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 3,
+      "operator_packet_index": 2,
+      "source_handoff_work_order_index": 3,
+      "case_id": "delhi-india-1947-08-15-000001",
+      "evidence_family": "jhora_screenshot_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "collect_jhora_screenshot",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 4,
+      "operator_packet_index": 2,
+      "source_handoff_work_order_index": 4,
+      "case_id": "delhi-india-1947-08-15-000001",
+      "evidence_family": "parashara_light_manual_values_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "attach_parashara_light_manual_values",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 5,
+      "operator_packet_index": 3,
+      "source_handoff_work_order_index": 5,
+      "case_id": "mayapur-2001-02-03-0910",
+      "evidence_family": "jhora_screenshot_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "collect_jhora_screenshot",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 6,
+      "operator_packet_index": 3,
+      "source_handoff_work_order_index": 6,
+      "case_id": "mayapur-2001-02-03-0910",
+      "evidence_family": "parashara_light_manual_values_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "attach_parashara_light_manual_values",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 7,
+      "operator_packet_index": 4,
+      "source_handoff_work_order_index": 7,
+      "case_id": "new-york-2026-03-08-0155",
+      "evidence_family": "jhora_screenshot_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "collect_jhora_screenshot",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 8,
+      "operator_packet_index": 4,
+      "source_handoff_work_order_index": 8,
+      "case_id": "new-york-2026-03-08-0155",
+      "evidence_family": "parashara_light_manual_values_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "attach_parashara_light_manual_values",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 9,
+      "operator_packet_index": 5,
+      "source_handoff_work_order_index": 9,
+      "case_id": "new-york-2026-11-01-0130",
+      "evidence_family": "jhora_screenshot_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "collect_jhora_screenshot",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    },
+    {
+      "operator_attachment_slot_index": 10,
+      "operator_packet_index": 5,
+      "source_handoff_work_order_index": 10,
+      "case_id": "new-york-2026-11-01-0130",
+      "evidence_family": "parashara_light_manual_values_or_packet",
+      "p57_evidence_slot_status": "missing",
+      "p59_attachment_slot_status": "not_attached",
+      "p61_work_order_status": "pending_not_attached",
+      "p63_handoff_status": "blocked_pending_operator_evidence",
+      "p65_packet_status": "blocked_pending_operator_packet_evidence",
+      "evidence_file_status": "not_attached",
+      "ready_to_mark": false,
+      "safe_action_label": "attach_parashara_light_manual_values",
+      "blocked_note": "External evidence has not been attached; operator packets are labels only and do not collect or attach evidence."
+    }
+  ]
+}
