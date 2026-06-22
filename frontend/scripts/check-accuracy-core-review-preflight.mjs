@@ -49,6 +49,7 @@ for (const marker of [
   "Core evidence external receipt manifest decision audit operator handoff smoke matrix",
   "Core evidence external receipt manifest decision audit operator handoff safe-validation transcript",
   "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit",
+  "Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue",
   "operator attachment manifest",
   "operator packet status",
   "operator packet QA status",
@@ -80,6 +81,7 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix",
   "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationTranscript",
   "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAudit",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueue",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -106,6 +108,7 @@ for (const marker of [
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationTranscript",
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultLedger",
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAudit",
+  "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultAuditRemediationQueue",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -131,6 +134,7 @@ for (const marker of [
   "P91-A",
   "P93-A",
   "P95-A",
+  "P97-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -153,6 +157,7 @@ for (const marker of [
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-transcript-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-ledger-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-v1",
+  "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -185,6 +190,7 @@ for (const marker of [
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit",
+  "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue",
   "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff",
   "safe_validation_transcript_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript",
   "safe_validation_command_status=blocked_pending_external_evidence_and_operator_handoff",
@@ -199,9 +205,16 @@ for (const marker of [
   "safe_validation_result_audit_record_status=not_recorded",
   "safe_validation_result_audit_pass_status=not_passed",
   "safe_validation_result_audit_failure_status=not_failed",
+  "safe_validation_result_audit_remediation_queue_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue",
+  "safe_validation_result_audit_remediation_execution_status=not_executed",
+  "safe_validation_result_audit_remediation_ticket_status=not_created",
+  "safe_validation_result_audit_remediation_notification_status=not_sent",
+  "safe_validation_result_audit_remediation_operator_handoff_status=not_delivered",
+  "safe_validation_result_audit_remediation_closure_status=not_closed",
   "safe_validation_only=true",
   "safe_validation_result_ledger_only=true",
   "safe_validation_result_audit_only=true",
+  "safe_validation_result_audit_remediation_queue_only=true",
   "no_command_execution_performed=true",
   "no_safe_validation_result_recorded=true",
   "no_safe_validation_result_accepted=true",
@@ -209,6 +222,11 @@ for (const marker of [
   "no_safe_validation_result_audit_performed=true",
   "no_safe_validation_result_audit_passed=true",
   "no_safe_validation_result_audit_failed=true",
+  "no_safe_validation_result_audit_remediation_executed=true",
+  "no_safe_validation_result_audit_remediation_ticket_created=true",
+  "no_safe_validation_result_audit_remediation_notification_sent=true",
+  "no_safe_validation_result_audit_remediation_operator_handoff_delivered=true",
+  "no_safe_validation_result_audit_remediation_closed=true",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
@@ -1025,7 +1043,8 @@ assert(!helperSlice.includes('latestStage: "P87-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P89-A"'), "Core evidence pipeline helper must not retain stale P89 latest stage");
 assert(!helperSlice.includes('latestStage: "P91-A"'), "Core evidence pipeline helper must not retain stale P91 latest stage");
 assert(!helperSlice.includes('latestStage: "P93-A"'), "Core evidence pipeline helper must not retain stale P93 latest stage");
-assert(helperSlice.includes('latestStage: "P95-A"'), "Core evidence pipeline helper must expose latest P95 stage");
+assert(!helperSlice.includes('latestStage: "P95-A"'), "Core evidence pipeline helper must not retain stale P95 latest stage");
+assert(helperSlice.includes('latestStage: "P97-A"'), "Core evidence pipeline helper must expose latest P97 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -1045,6 +1064,7 @@ assert(helperSlice.includes('"P89 operator handoff smoke matrix"'), "Core eviden
 assert(helperSlice.includes('"P91 safe-validation transcript"'), "Core evidence pipeline helper must expose P91 stage sequence");
 assert(helperSlice.includes('"P93 safe-validation result ledger"'), "Core evidence pipeline helper must expose P93 stage sequence");
 assert(helperSlice.includes('"P95 safe-validation result audit"'), "Core evidence pipeline helper must expose P95 stage sequence");
+assert(helperSlice.includes('"P97 result-audit remediation queue"'), "Core evidence pipeline helper must expose P97 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -2015,7 +2035,8 @@ assert(accuracyRoute.includes("validate_release_gate_blocked_blocked_result_labe
 assert(accuracyRoute.includes("blocked safe-validation result ledger"), "Accuracy route marker must expose P93 blocked result ledger copy");
 assert(accuracyRoute.includes("no safe-validation result has been recorded, accepted, or failed"), "Accuracy route marker must expose P93 negative result copy");
 assert(!helperSlice.includes('latestStage: "P93-A"'), "Core evidence pipeline helper must not retain stale P93 latest stage");
-assert(helperSlice.includes('latestStage: "P95-A"'), "Core evidence pipeline helper must expose latest P95 stage");
+assert(!helperSlice.includes('latestStage: "P95-A"'), "Core evidence pipeline helper must not retain stale P95 latest stage");
+assert(helperSlice.includes('latestStage: "P97-A"'), "Core evidence pipeline helper must expose latest P97 stage");
 assert(helperSlice.includes('"P95 safe-validation result audit"'), "Core evidence pipeline helper must expose P95 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-v1"'), "Core evidence safe-validation result audit helper must expose P95 schema");
 assert(helperSlice.includes('stage: "P95-A"'), "Core evidence safe-validation result audit helper must expose P95-A stage");
@@ -2065,6 +2086,67 @@ assert(accuracyRoute.includes("audit_no_external_action_blocked_label_only"), "A
 assert(accuracyRoute.includes("audit_release_gate_blocked_label_only"), "Accuracy route marker must expose P95 release blocked audit label");
 assert(accuracyRoute.includes("blocked safe-validation result audit"), "Accuracy route marker must expose P95 blocked audit copy");
 assert(accuracyRoute.includes("no safe-validation result audit has been performed, passed, or failed"), "Accuracy route marker must expose P95 negative audit copy");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-v1"'), "Core evidence safe-validation result-audit remediation queue helper must expose P97 schema");
+assert(helperSlice.includes('stage: "P97-A"'), "Core evidence safe-validation result-audit remediation queue helper must expose P97-A stage");
+assert(helperSlice.includes('status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue"'), "Core evidence safe-validation result-audit remediation queue helper must expose blocked remediation queue status");
+assert(helperSlice.includes('upstreamSafeValidationResultAuditSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-v1"'), "Core evidence safe-validation result-audit remediation queue helper must expose upstream P95 schema");
+assert(helperSlice.includes('upstreamSafeValidationResultAuditStage: "P95-A"'), "Core evidence safe-validation result-audit remediation queue helper must expose upstream P95 stage");
+assert(helperSlice.includes("safeValidationResultAuditRemediationQueueRows: 40"), "Core evidence safe-validation result-audit remediation queue helper must expose 40 remediation rows");
+assert(helperSlice.includes("safeValidationResultAuditRemediationFamilyCount: 4"), "Core evidence safe-validation result-audit remediation queue helper must expose 4 remediation families");
+assert(helperSlice.includes("safeValidationResultAuditRemediationReadyCount: 0"), "Core evidence safe-validation result-audit remediation queue helper must expose 0 ready remediations");
+assert(helperSlice.includes("safeValidationResultAuditRemediationBlockedCount: 40"), "Core evidence safe-validation result-audit remediation queue helper must expose 40 blocked remediations");
+assert(helperSlice.includes("safeValidationResultAuditRemediationExecutedCount: 0"), "Core evidence safe-validation result-audit remediation queue helper must expose 0 executed remediations");
+assert(helperSlice.includes("safeValidationResultAuditRemediationTicketCreatedCount: 0"), "Core evidence safe-validation result-audit remediation queue helper must expose 0 remediation tickets");
+assert(helperSlice.includes("safeValidationResultAuditRemediationNotificationSentCount: 0"), "Core evidence safe-validation result-audit remediation queue helper must expose 0 remediation notifications");
+assert(helperSlice.includes("safeValidationResultAuditRemediationOperatorHandoffDeliveredCount: 0"), "Core evidence safe-validation result-audit remediation queue helper must expose 0 remediation handoffs");
+assert(helperSlice.includes("safeValidationResultAuditRemediationClosedCount: 0"), "Core evidence safe-validation result-audit remediation queue helper must expose 0 remediation closures");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueStatusLabel: "safe_validation_result_audit_remediation_queue_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue"'), "Core evidence safe-validation result-audit remediation queue helper must expose remediation queue status label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationExecutionStatusLabel: "safe_validation_result_audit_remediation_execution_status=not_executed"'), "Core evidence safe-validation result-audit remediation queue helper must expose remediation execution status label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationTicketStatusLabel: "safe_validation_result_audit_remediation_ticket_status=not_created"'), "Core evidence safe-validation result-audit remediation queue helper must expose remediation ticket status label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationNotificationStatusLabel: "safe_validation_result_audit_remediation_notification_status=not_sent"'), "Core evidence safe-validation result-audit remediation queue helper must expose remediation notification status label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationOperatorHandoffStatusLabel: "safe_validation_result_audit_remediation_operator_handoff_status=not_delivered"'), "Core evidence safe-validation result-audit remediation queue helper must expose remediation handoff status label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationClosureStatusLabel: "safe_validation_result_audit_remediation_closure_status=not_closed"'), "Core evidence safe-validation result-audit remediation queue helper must expose remediation closure status label");
+assert(helperSlice.includes('safeValidationResultAuditRemediationQueueOnlyLabel: "safe_validation_result_audit_remediation_queue_only=true"'), "Core evidence safe-validation result-audit remediation queue helper must expose remediation-only label");
+assert(helperSlice.includes('noSafeValidationResultAuditRemediationExecutedLabel: "no_safe_validation_result_audit_remediation_executed=true"'), "Core evidence safe-validation result-audit remediation queue helper must expose no remediation executed label");
+assert(helperSlice.includes('noSafeValidationResultAuditRemediationTicketCreatedLabel: "no_safe_validation_result_audit_remediation_ticket_created=true"'), "Core evidence safe-validation result-audit remediation queue helper must expose no remediation ticket label");
+assert(helperSlice.includes('noSafeValidationResultAuditRemediationNotificationSentLabel: "no_safe_validation_result_audit_remediation_notification_sent=true"'), "Core evidence safe-validation result-audit remediation queue helper must expose no remediation notification label");
+assert(helperSlice.includes('noSafeValidationResultAuditRemediationOperatorHandoffDeliveredLabel: "no_safe_validation_result_audit_remediation_operator_handoff_delivered=true"'), "Core evidence safe-validation result-audit remediation queue helper must expose no remediation handoff label");
+assert(helperSlice.includes('noSafeValidationResultAuditRemediationClosedLabel: "no_safe_validation_result_audit_remediation_closed=true"'), "Core evidence safe-validation result-audit remediation queue helper must expose no remediation closure label");
+assert(helperSlice.includes("remediate_manifest_shape_blocked_label_only"), "Core evidence safe-validation result-audit remediation queue helper must expose manifest shape remediation label");
+assert(helperSlice.includes("remediate_operator_handoff_readiness_blocked_label_only"), "Core evidence safe-validation result-audit remediation queue helper must expose handoff readiness remediation label");
+assert(helperSlice.includes("remediate_no_external_action_blocked_label_only"), "Core evidence safe-validation result-audit remediation queue helper must expose no external action remediation label");
+assert(helperSlice.includes("remediate_release_gate_blocked_label_only"), "Core evidence safe-validation result-audit remediation queue helper must expose release blocked remediation label");
+assert(preflightSlice.includes("P97 result-audit remediation queue"), "Core evidence pipeline UI must render P97 stage");
+assert(preflightSlice.includes("Core evidence external receipt manifest decision audit operator handoff safe-validation result audit remediation queue"), "Core evidence safe-validation result-audit remediation queue UI must render its heading");
+assert(accuracyRoute.includes("P97-A"), "Accuracy route marker must expose P97 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-audit-remediation-queue-v1"), "Accuracy route marker must expose P97 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue"), "Accuracy route marker must expose P97 status");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_rows=40"), "Accuracy route marker must expose P97 remediation queue count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_family_count=4"), "Accuracy route marker must expose P97 remediation family count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_ready_count=0"), "Accuracy route marker must expose P97 no ready remediations count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_blocked_count=40"), "Accuracy route marker must expose P97 blocked remediation count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_executed_count=0"), "Accuracy route marker must expose P97 no executed remediation count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_ticket_created_count=0"), "Accuracy route marker must expose P97 no ticket-created remediation count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_notification_sent_count=0"), "Accuracy route marker must expose P97 no notification-sent remediation count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_operator_handoff_delivered_count=0"), "Accuracy route marker must expose P97 no handoff-delivered remediation count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_closed_count=0"), "Accuracy route marker must expose P97 no closed remediation count");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_audit_remediation_queue"), "Accuracy route marker must expose P97 remediation status label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_execution_status=not_executed"), "Accuracy route marker must expose P97 remediation not-executed label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_ticket_status=not_created"), "Accuracy route marker must expose P97 remediation ticket not-created label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_notification_status=not_sent"), "Accuracy route marker must expose P97 remediation notification not-sent label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_operator_handoff_status=not_delivered"), "Accuracy route marker must expose P97 remediation handoff not-delivered label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_closure_status=not_closed"), "Accuracy route marker must expose P97 remediation closure not-closed label");
+assert(accuracyRoute.includes("safe_validation_result_audit_remediation_queue_only=true"), "Accuracy route marker must expose P97 remediation-only label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_executed=true"), "Accuracy route marker must expose P97 no remediation executed label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_ticket_created=true"), "Accuracy route marker must expose P97 no remediation ticket label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_notification_sent=true"), "Accuracy route marker must expose P97 no remediation notification label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_operator_handoff_delivered=true"), "Accuracy route marker must expose P97 no remediation handoff label");
+assert(accuracyRoute.includes("no_safe_validation_result_audit_remediation_closed=true"), "Accuracy route marker must expose P97 no remediation closure label");
+assert(accuracyRoute.includes("remediate_manifest_shape_blocked_label_only"), "Accuracy route marker must expose P97 manifest shape remediation label");
+assert(accuracyRoute.includes("remediate_operator_handoff_readiness_blocked_label_only"), "Accuracy route marker must expose P97 handoff readiness remediation label");
+assert(accuracyRoute.includes("remediate_no_external_action_blocked_label_only"), "Accuracy route marker must expose P97 no external action remediation label");
+assert(accuracyRoute.includes("remediate_release_gate_blocked_label_only"), "Accuracy route marker must expose P97 release blocked remediation label");
+assert(accuracyRoute.includes("blocked safe-validation result-audit remediation queue"), "Accuracy route marker must expose P97 blocked remediation copy");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
