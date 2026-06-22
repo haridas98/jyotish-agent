@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceBacklog, buildCoreEvidenceIntakePlan, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceBacklog, buildCoreEvidenceIntakePlan, buildCoreEvidencePipeline, buildCoreEvidenceReadiness, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5677,6 +5677,8 @@ function AccuracyReportPanel({
   const coreReviewBatchScan = buildCoreReviewBatchScan();
   const coreEvidenceBacklog = buildCoreEvidenceBacklog();
   const coreEvidenceIntakePlan = buildCoreEvidenceIntakePlan();
+  const coreEvidencePipeline = buildCoreEvidencePipeline();
+  const coreEvidenceReadiness = buildCoreEvidenceReadiness();
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5871,6 +5873,26 @@ function AccuracyReportPanel({
             <span>intake actions</span>
             <strong>{coreEvidenceIntakePlan.safeNextActions.length}</strong>
             <small>{coreEvidenceIntakePlan.safeNextActions.join(" - ")}; {coreEvidenceIntakePlan.safeValidationCommandFamilies.join(" - ")}; {coreEvidenceIntakePlan.cautionCopy}.</small>
+          </div>
+          <h3>Core evidence pipeline</h3>
+          <p>{coreEvidencePipeline.latestStage}: {coreEvidencePipeline.statusCopy}; release: {coreEvidencePipeline.releaseGateStatus}; command smoke: {coreEvidencePipeline.commandSmokeMatrixStatus}; {coreEvidencePipeline.operatorNote}.</p>
+          <small>
+            {coreEvidencePipeline.stageSequence.join(" - ")}; P53 backlog: {coreEvidencePipeline.backlogSummary.blockedRows} blocked, {coreEvidencePipeline.backlogSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.backlogSummary.remainingNotReviewedRows} remaining; P55 intake: {coreEvidencePipeline.intakeSummary.intakeRows} intake rows, {coreEvidencePipeline.intakeSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.intakeSummary.evidenceFilesCommitted} evidence files committed, {coreEvidencePipeline.intakeSummary.remainingNotReviewedRows} remaining; P57 readiness: {coreEvidencePipeline.readinessSummary.readinessRows} readiness rows, {coreEvidencePipeline.readinessSummary.operatorPacketRows} operator packet rows, {coreEvidencePipeline.readinessSummary.readyToMarkRows} ready-to-mark, {coreEvidencePipeline.readinessSummary.blockedRows} blocked, {coreEvidencePipeline.readinessSummary.missingEvidenceSlots} missing evidence slots, {coreEvidencePipeline.readinessSummary.jhoraMissingCount} JHora missing, {coreEvidencePipeline.readinessSummary.parasharaLightMissingCount} Parashara Light missing, {coreEvidencePipeline.readinessSummary.remainingNotReviewedRows} remaining.
+          </small>
+          <div>
+            <span>Core evidence readiness</span>
+            <strong>{coreEvidenceReadiness.blockedRows}</strong>
+            <small>{coreEvidenceReadiness.stage}: {coreEvidenceReadiness.schemaVersion}; readiness rows: {coreEvidenceReadiness.readinessRows}; operator packet rows: {coreEvidenceReadiness.operatorPacketRows}; ready-to-mark: {coreEvidenceReadiness.readyToMarkRows}; missing evidence slots: {coreEvidenceReadiness.missingEvidenceSlots}; JHora missing: {coreEvidenceReadiness.jhoraMissingCount}; Parashara Light missing: {coreEvidenceReadiness.parasharaLightMissingCount}; remaining not-reviewed: {coreEvidenceReadiness.remainingNotReviewedRows}; release: {coreEvidenceReadiness.releaseGateStatus}; command smoke: {coreEvidenceReadiness.commandSmokeMatrixStatus}</small>
+          </div>
+          <div>
+            <span>readiness selected cases</span>
+            <strong>{coreEvidenceReadiness.selectedCaseIds.length}</strong>
+            <small>{coreEvidenceReadiness.selectedCaseIds.map((caseId) => `${caseId}: jhora_screenshot_or_packet=${coreEvidenceReadiness.evidenceSlotStatus.jhora_screenshot_or_packet}; parashara_light_manual_values_or_packet=${coreEvidenceReadiness.evidenceSlotStatus.parashara_light_manual_values_or_packet}; ${coreEvidenceReadiness.readyToMarkLabel}; ${coreEvidenceReadiness.readinessStatus}`).join(" | ")}</small>
+          </div>
+          <div>
+            <span>operator packet manifest</span>
+            <strong>{coreEvidenceReadiness.operatorPacketRows}</strong>
+            <small>{coreEvidenceReadiness.safeNextActions.join(" - ")}; {coreEvidenceReadiness.safeValidationCommandFamilies.join(" - ")}; {coreEvidenceReadiness.operatorNote}; {coreEvidenceReadiness.cautionCopy}.</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">

@@ -226,6 +226,79 @@ export type CoreEvidenceIntakePlan = {
   cautionCopy: "No mark command should run until evidence is collected/attached";
 };
 
+export type CoreEvidenceReadiness = {
+  title: "Core evidence readiness";
+  schemaVersion: "jyotish-core-evidence-readiness-preflight-v1";
+  stage: "P57-A";
+  readinessRows: 5;
+  operatorPacketRows: 5;
+  readyToMarkRows: 0;
+  blockedRows: 5;
+  missingEvidenceSlots: 10;
+  jhoraMissingCount: 5;
+  parasharaLightMissingCount: 5;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  evidenceSlotStatus: {
+    jhora_screenshot_or_packet: "missing";
+    parashara_light_manual_values_or_packet: "missing";
+  };
+  readinessStatus: "blocked_missing_evidence";
+  readyToMarkLabel: "ready_to_mark=false";
+  safeNextActions: [
+    "collect_jhora_screenshot",
+    "attach_parashara_light_manual_values",
+    "rerun_preflight_witness_review",
+  ];
+  safeValidationCommandFamilies: [
+    "preflight_witness_review",
+    "mark_jhora_witness_reviewed",
+    "mark_parashara_light_witness_reviewed",
+  ];
+  operatorNote: "Evidence must be collected and attached before mark commands are attempted";
+  statusCopy: "external evidence is missing for every selected intake row";
+  cautionCopy: "No parity pass or release readiness is claimed";
+};
+
+export type CoreEvidencePipeline = {
+  title: "Core evidence pipeline";
+  latestStage: "P57-A";
+  stageSequence: ["P53 backlog", "P55 intake", "P57 readiness"];
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  backlogSummary: {
+    blockedRows: 20;
+    readyToMarkRows: 0;
+    remainingNotReviewedRows: 20;
+  };
+  intakeSummary: {
+    intakeRows: 5;
+    readyToMarkRows: 0;
+    evidenceFilesCommitted: 0;
+    remainingNotReviewedRows: 20;
+  };
+  readinessSummary: {
+    readinessRows: 5;
+    operatorPacketRows: 5;
+    readyToMarkRows: 0;
+    blockedRows: 5;
+    missingEvidenceSlots: 10;
+    jhoraMissingCount: 5;
+    parasharaLightMissingCount: 5;
+    remainingNotReviewedRows: 20;
+  };
+  operatorNote: "Evidence must be collected and attached before mark commands are attempted";
+  statusCopy: "blocked evidence readiness gate";
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -505,6 +578,83 @@ export function buildCoreEvidenceIntakePlan(): CoreEvidenceIntakePlan {
     ],
     statusCopy: "first evidence intake batch is blocked until evidence is collected",
     cautionCopy: "No mark command should run until evidence is collected/attached",
+  };
+}
+
+export function buildCoreEvidenceReadiness(): CoreEvidenceReadiness {
+  return {
+    title: "Core evidence readiness",
+    schemaVersion: "jyotish-core-evidence-readiness-preflight-v1",
+    stage: "P57-A",
+    readinessRows: 5,
+    operatorPacketRows: 5,
+    readyToMarkRows: 0,
+    blockedRows: 5,
+    missingEvidenceSlots: 10,
+    jhoraMissingCount: 5,
+    parasharaLightMissingCount: 5,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    evidenceSlotStatus: {
+      jhora_screenshot_or_packet: "missing",
+      parashara_light_manual_values_or_packet: "missing",
+    },
+    readinessStatus: "blocked_missing_evidence",
+    readyToMarkLabel: "ready_to_mark=false",
+    safeNextActions: [
+      "collect_jhora_screenshot",
+      "attach_parashara_light_manual_values",
+      "rerun_preflight_witness_review",
+    ],
+    safeValidationCommandFamilies: [
+      "preflight_witness_review",
+      "mark_jhora_witness_reviewed",
+      "mark_parashara_light_witness_reviewed",
+    ],
+    operatorNote: "Evidence must be collected and attached before mark commands are attempted",
+    statusCopy: "external evidence is missing for every selected intake row",
+    cautionCopy: "No parity pass or release readiness is claimed",
+  };
+}
+
+export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
+  return {
+    title: "Core evidence pipeline",
+    latestStage: "P57-A",
+    stageSequence: ["P53 backlog", "P55 intake", "P57 readiness"],
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    backlogSummary: {
+      blockedRows: 20,
+      readyToMarkRows: 0,
+      remainingNotReviewedRows: 20,
+    },
+    intakeSummary: {
+      intakeRows: 5,
+      readyToMarkRows: 0,
+      evidenceFilesCommitted: 0,
+      remainingNotReviewedRows: 20,
+    },
+    readinessSummary: {
+      readinessRows: 5,
+      operatorPacketRows: 5,
+      readyToMarkRows: 0,
+      blockedRows: 5,
+      missingEvidenceSlots: 10,
+      jhoraMissingCount: 5,
+      parasharaLightMissingCount: 5,
+      remainingNotReviewedRows: 20,
+    },
+    operatorNote: "Evidence must be collected and attached before mark commands are attempted",
+    statusCopy: "blocked evidence readiness gate",
   };
 }
 

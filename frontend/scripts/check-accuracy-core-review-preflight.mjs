@@ -28,24 +28,33 @@ for (const marker of [
   "Core review batch scan",
   "Core evidence backlog",
   "Core evidence intake plan",
+  "Core evidence pipeline",
+  "Core evidence readiness",
+  "operator packet manifest",
   "Evidence backlog",
   "coreReviewPreflightBlocker",
   "coreReviewProgress",
   "coreReviewBatchScan",
   "coreEvidenceBacklog",
   "coreEvidenceIntakePlan",
+  "coreEvidencePipeline",
+  "coreEvidenceReadiness",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
   "buildCoreEvidenceBacklog",
   "buildCoreEvidenceIntakePlan",
+  "buildCoreEvidencePipeline",
+  "buildCoreEvidenceReadiness",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
   "P53-A",
   "P55-A",
+  "P57-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
+  "jyotish-core-evidence-readiness-preflight-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -57,6 +66,9 @@ for (const marker of [
   "jhora_screenshot_or_packet",
   "parashara_light_manual_values_or_packet",
   "missing",
+  "blocked_missing_evidence",
+  "ready_to_mark=false",
+  "Evidence must be collected and attached before mark commands are attempted",
   "collect_jhora_screenshot",
   "attach_parashara_light_manual_values",
   "rerun_preflight_witness_review",
@@ -117,6 +129,28 @@ for (const marker of [
   "coreEvidenceIntakePlan.evidenceSlotStatus",
   "coreEvidenceIntakePlan.safeNextActions",
   "coreEvidenceIntakePlan.safeValidationCommandFamilies",
+  "coreEvidencePipeline.latestStage",
+  "coreEvidencePipeline.backlogSummary",
+  "coreEvidencePipeline.intakeSummary",
+  "coreEvidencePipeline.readinessSummary",
+  "coreEvidencePipeline.operatorNote",
+  "coreEvidenceReadiness.stage",
+  "coreEvidenceReadiness.schemaVersion",
+  "coreEvidenceReadiness.readinessRows",
+  "coreEvidenceReadiness.operatorPacketRows",
+  "coreEvidenceReadiness.readyToMarkRows",
+  "coreEvidenceReadiness.blockedRows",
+  "coreEvidenceReadiness.missingEvidenceSlots",
+  "coreEvidenceReadiness.jhoraMissingCount",
+  "coreEvidenceReadiness.parasharaLightMissingCount",
+  "coreEvidenceReadiness.remainingNotReviewedRows",
+  "coreEvidenceReadiness.selectedCaseIds",
+  "coreEvidenceReadiness.evidenceSlotStatus",
+  "coreEvidenceReadiness.readyToMarkLabel",
+  "coreEvidenceReadiness.readinessStatus",
+  "coreEvidenceReadiness.safeNextActions",
+  "coreEvidenceReadiness.safeValidationCommandFamilies",
+  "coreEvidenceReadiness.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -174,6 +208,29 @@ assert(accuracyRoute.includes("jyotish-core-evidence-backlog-v1"), "Accuracy rou
 assert(accuracyRoute.includes("jyotish-core-evidence-intake-plan-v1"), "Accuracy route marker must expose P55 intake schema");
 assert(accuracyRoute.includes("evidence files committed 0"), "Accuracy route marker must expose committed evidence file count");
 assert(accuracyRoute.includes("ready-to-mark 0"), "Accuracy route marker must expose ready-to-mark count");
+assert(helperSlice.includes('latestStage: "P57-A"'), "Core evidence pipeline helper must expose latest P57 stage");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-readiness-preflight-v1"'), "Core evidence readiness helper must expose schema version");
+assert(helperSlice.includes('stage: "P57-A"'), "Core evidence readiness helper must expose P57-A stage");
+assert(helperSlice.includes("readinessRows: 5"), "Core evidence readiness helper must expose 5 readiness rows");
+assert(helperSlice.includes("operatorPacketRows: 5"), "Core evidence readiness helper must expose 5 operator packet rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence readiness helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("blockedRows: 5"), "Core evidence readiness helper must expose 5 blocked rows");
+assert(helperSlice.includes("missingEvidenceSlots: 10"), "Core evidence readiness helper must expose 10 missing evidence slots");
+assert(helperSlice.includes("jhoraMissingCount: 5"), "Core evidence readiness helper must expose 5 JHora missing rows");
+assert(helperSlice.includes("parasharaLightMissingCount: 5"), "Core evidence readiness helper must expose 5 Parashara Light missing rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence readiness helper must expose 20 remaining rows");
+assert(helperSlice.includes('readinessStatus: "blocked_missing_evidence"'), "Core evidence readiness helper must expose blocked missing evidence status");
+assert(helperSlice.includes('readyToMarkLabel: "ready_to_mark=false"'), "Core evidence readiness helper must expose false ready-to-mark label");
+assert(helperSlice.includes("Evidence must be collected and attached before mark commands are attempted"), "Core evidence readiness helper must expose blocked operator note");
+assert(preflightSlice.includes("P53 backlog") && preflightSlice.includes("P55 intake") && preflightSlice.includes("P57 readiness"), "Core evidence pipeline UI must render all three stages");
+assert(preflightSlice.includes("operator packet manifest"), "Core evidence readiness UI must expose operator packet manifest");
+assert(accuracyRoute.includes("Core evidence pipeline"), "Accuracy route marker must expose core evidence pipeline");
+assert(accuracyRoute.includes("jyotish-core-evidence-readiness-preflight-v1"), "Accuracy route marker must expose P57 readiness schema");
+assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
+assert(accuracyRoute.includes("10 missing evidence slots"), "Accuracy route marker must expose missing evidence slot count");
+assert(accuracyRoute.includes("blocked_missing_evidence"), "Accuracy route marker must expose blocked evidence status");
+assert(accuracyRoute.includes("ready_to_mark=false"), "Accuracy route marker must expose false ready-to-mark state");
+assert(accuracyRoute.includes("Evidence must be collected and attached before mark commands are attempted"), "Accuracy route marker must expose blocked operator note");
 
 for (const forbidden of [
   "source_report",
