@@ -56,6 +56,25 @@ FAMILY_ORDER = [
 ]
 
 
+EXACT_MARKER_LABELS = [
+    "external_receipt_gate_status=blocked_pending_external_evidence_receipts",
+    "external_intake_status=blocked_pending_external_evidence_intake",
+    "attachment_readiness_status=blocked_pending_external_evidence_attachment",
+    "decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision",
+    "decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit",
+    "receipt_manifest_status=not_received",
+    "decision_audit_record_status=not_started",
+    "no_raw_values_in_manifest=true",
+    "no_private_paths_in_manifest=true",
+    "no_secrets_in_manifest=true",
+    "no_evidence_file_recorded=true",
+    "no_evidence_hash_recorded=true",
+    "no_upload_executed=true",
+    "no_attachment_executed=true",
+    "no_mark_command_executed=true",
+]
+
+
 class ExternalReceiptManifestDecisionAuditTests(SimpleTestCase):
     def test_decision_audit_preserves_p81_order_and_blocks_missing_audits(self):
         decision_queue_path = self._write_payload("decision-queue.json", _p81_payload())
@@ -144,6 +163,7 @@ class ExternalReceiptManifestDecisionAuditTests(SimpleTestCase):
             "audit_external_evidence_receipt_manifest_decision_after_human_review",
             report["safe_next_action_labels"],
         )
+        self.assertTrue(_contains_exact_marker_labels(report))
         self.assertTrue(_serialized_safe(report))
 
     def test_command_writes_json_without_mutating_p81_or_running_external_actions(self):
@@ -166,6 +186,7 @@ class ExternalReceiptManifestDecisionAuditTests(SimpleTestCase):
             "jyotish-core-evidence-external-receipt-manifest-decision-audit-v1",
         )
         self.assertEqual(written["summary"], _expected_summary())
+        self.assertTrue(_contains_exact_marker_labels(written))
         self.assertTrue(_serialized_safe(written))
         self.assertEqual(decision_queue_path.read_text(encoding="utf-8"), before)
 
@@ -198,6 +219,7 @@ class ExternalReceiptManifestDecisionAuditTests(SimpleTestCase):
         self.assertTrue(all(row["decision_audit_record_status"] == "not_started" for row in report["attachment_receipt_manifest_decision_audit_rows"]))
         self.assertTrue(all(row["ready_to_attach"] is False for row in report["attachment_receipt_manifest_decision_audit_rows"]))
         self.assertTrue(all(row["ready_to_mark"] is False for row in report["attachment_receipt_manifest_decision_audit_rows"]))
+        self.assertTrue(_contains_exact_marker_labels(report))
         self.assertTrue(_serialized_safe(report))
 
     def test_stage_does_not_change_forbidden_files(self):
@@ -408,3 +430,8 @@ def _read_json(path: Path):
 def _serialized_safe(payload) -> bool:
     text = json.dumps(payload, ensure_ascii=False).lower()
     return all(marker.lower() not in text for marker in FORBIDDEN_MARKERS)
+
+
+def _contains_exact_marker_labels(payload) -> bool:
+    text = json.dumps(payload, ensure_ascii=False)
+    return all(marker in text for marker in EXACT_MARKER_LABELS)

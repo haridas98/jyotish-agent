@@ -81,6 +81,25 @@ SAFE_VALIDATION_COMMAND_FAMILIES = [
     "build_witness_core_evidence_attachment_gate_report",
     "preflight_witness_review",
 ]
+STATUS_LABELS = [
+    "external_receipt_gate_status=blocked_pending_external_evidence_receipts",
+    "external_intake_status=blocked_pending_external_evidence_intake",
+    "attachment_readiness_status=blocked_pending_external_evidence_attachment",
+    "decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision",
+    "decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit",
+    "receipt_manifest_status=not_received",
+    "decision_audit_record_status=not_started",
+]
+SAFETY_LABELS = [
+    "no_raw_values_in_manifest=true",
+    "no_private_paths_in_manifest=true",
+    "no_secrets_in_manifest=true",
+    "no_evidence_file_recorded=true",
+    "no_evidence_hash_recorded=true",
+    "no_upload_executed=true",
+    "no_attachment_executed=true",
+    "no_mark_command_executed=true",
+]
 BLOCKED_NOTE = (
     "Receipt manifest decision audit is blocked; no decision has been recorded or audited; "
     "rows are labels only and no upload, attachment, mark, accept, reject, or defer command is executed."
@@ -179,6 +198,8 @@ def build_witness_core_evidence_external_receipt_manifest_decision_audit_report(
         "decision_audit_criteria_labels": DECISION_AUDIT_CRITERIA_LABELS,
         "safe_next_action_labels": SAFE_NEXT_ACTION_LABELS,
         "safe_validation_command_families": SAFE_VALIDATION_COMMAND_FAMILIES,
+        "status_labels": STATUS_LABELS,
+        "safety_labels": SAFETY_LABELS,
         "operator_note": BLOCKED_NOTE,
         "summary": {
             "source_case_receipt_manifest_decision_queue_rows": _safe_int(
@@ -284,6 +305,8 @@ def _case_decision_audit_row(
         "decision_audit_criteria_labels": DECISION_AUDIT_CRITERIA_LABELS,
         "safe_next_action_labels": SAFE_NEXT_ACTION_LABELS,
         "safe_validation_command_families": SAFE_VALIDATION_COMMAND_FAMILIES,
+        "status_labels": STATUS_LABELS,
+        "safety_labels": SAFETY_LABELS,
         "blocked_note": BLOCKED_NOTE,
     }
 
@@ -345,6 +368,8 @@ def _attachment_decision_audit_row(
         "decision_audit_criteria_labels": DECISION_AUDIT_CRITERIA_LABELS,
         "safe_next_action_labels": SAFE_NEXT_ACTION_LABELS,
         "safe_validation_command_families": SAFE_VALIDATION_COMMAND_FAMILIES,
+        "status_labels": STATUS_LABELS,
+        "safety_labels": SAFETY_LABELS,
         "blocked_note": SLOT_BLOCKED_NOTE,
     }
 
