@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 from io import StringIO
+from pathlib import Path
 
 from django.core.management import call_command
 
@@ -145,6 +146,25 @@ def test_core_review_preflight_command_writes_json(tmp_path):
     assert _serialized_safe(written)
 
 
+def test_p49_first_core_review_row_closed_without_closing_unrelated_rows():
+    repo_root = Path(__file__).resolve().parents[3]
+    preflight = _read_json(repo_root / ".tmp" / "witness-review" / "core-review-preflight-report.json")
+    core = _read_json(repo_root / ".tmp" / "witness-review" / "core-parity-report.json")
+    target_id = "sterlitamak-1998-04-30-1345"
+
+    assert _serialized_safe(preflight)
+    assert _serialized_safe(core)
+    assert preflight["summary"]["not_reviewed_count"] == 20
+    assert target_id not in {row["case_id"] for row in preflight["rows"]}
+    assert core["summary"]["not_reviewed_count"] == 20
+    target_core = next(row for row in core["cases"] if row["case_id"] == target_id)
+    assert target_core["comparison_status"] != "not_reviewed"
+    assert sum(row["comparison_status"] != "not_reviewed" for row in core["cases"]) == 1
+    assert {row["case_id"] for row in preflight["rows"]} == {
+        row["case_id"] for row in core["cases"] if row["comparison_status"] == "not_reviewed"
+    }
+
+
 def test_core_review_preflight_stage_does_not_change_forbidden_files():
     changed = subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()
     forbidden_exact = {
@@ -243,3 +263,7 @@ def _collection_plan():
 def _serialized_safe(payload):
     text = json.dumps(payload, ensure_ascii=False).lower()
     return all(marker.lower() not in text for marker in FORBIDDEN_MARKERS)
+
+
+def _read_json(path):
+    return json.loads(path.read_text(encoding="utf-8-sig"))

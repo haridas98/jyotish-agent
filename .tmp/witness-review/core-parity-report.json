@@ -1,7 +1,7 @@
 {
   "schema_version": "jyotish-core-parity-report-v1",
   "metadata": {
-    "generated_at": "2026-06-21T18:27:42.924450+00:00",
+    "generated_at": "2026-06-21T20:40:29.068383+00:00",
     "target_reviewed_count": 20,
     "tolerance_profile": {
       "planet_longitude_arcseconds": 1.0,
@@ -14,11 +14,11 @@
   },
   "summary": {
     "case_count": 21,
-    "comparable_count": 0,
+    "comparable_count": 1,
     "passed_count": 0,
-    "failed_count": 0,
+    "failed_count": 1,
     "missing_witness_count": 0,
-    "not_reviewed_count": 21,
+    "not_reviewed_count": 20,
     "not_comparable_count": 0,
     "target_reviewed_count": 20,
     "target_met": false
@@ -26,11 +26,33 @@
   "cases": [
     {
       "case_id": "sterlitamak-1998-04-30-1345",
-      "review_status": "draft",
-      "comparison_status": "not_reviewed",
-      "missing_fields": [],
-      "failed_fields": [],
-      "max_abs_delta_arcseconds": 0.0
+      "review_status": "draft,jhora_verified,reviewed",
+      "comparison_status": "failed",
+      "missing_fields": [
+        "jhora.ascendant.rashi_index",
+        "jhora.grahas.Budha.rashi_index",
+        "jhora.grahas.Chandra.rashi_index",
+        "jhora.grahas.Guru.rashi_index",
+        "jhora.grahas.Ketu.rashi_index",
+        "jhora.grahas.Mangala.rashi_index",
+        "jhora.grahas.Rahu.rashi_index",
+        "jhora.grahas.Shani.rashi_index",
+        "jhora.grahas.Shukra.rashi_index",
+        "jhora.grahas.Surya.rashi_index"
+      ],
+      "failed_fields": [
+        "ascendant.longitude",
+        "grahas.Budha.longitude",
+        "grahas.Chandra.longitude",
+        "grahas.Guru.longitude",
+        "grahas.Ketu.longitude",
+        "grahas.Mangala.longitude",
+        "grahas.Rahu.longitude",
+        "grahas.Shani.longitude",
+        "grahas.Shukra.longitude",
+        "grahas.Surya.longitude"
+      ],
+      "max_abs_delta_arcseconds": 94.064472
     },
     {
       "case_id": "vrindavan-1990-08-15-1024",

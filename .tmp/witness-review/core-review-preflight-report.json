@@ -21,43 +21,12 @@
   ],
   "summary": {
     "case_count": 21,
-    "not_reviewed_count": 21,
+    "not_reviewed_count": 20,
     "blocked_by": "review_witness_rows",
     "parity_success_claimed": false,
     "release_ready_claimed": false
   },
   "rows": [
-    {
-      "case_id": "sterlitamak-1998-04-30-1345",
-      "review_status": "draft",
-      "comparison_status": "not_reviewed",
-      "source_family": "both",
-      "jhora_evidence_paths": [
-        ".tmp/jhora/batch-queue/sterlitamak-1998-04-30-1345/packet.json",
-        ".tmp/jhora/sterlitamak-1998/packet.json"
-      ],
-      "parashara_light_evidence_paths": [
-        ".tmp/pl7/batch-queue/sterlitamak-1998-04-30-1345/packet.json",
-        ".tmp/pl7/haridas-current/verification-packet/packet.json",
-        ".tmp/pl7/haridas-verification-packet/packet.json"
-      ],
-      "review_blockers": {
-        "jhora": [
-          "jhora_review_status",
-          "reviewer",
-          "reviewed_at"
-        ],
-        "parashara_light": [
-          "pl_reviewer_note",
-          "pl_review_status"
-        ]
-      },
-      "next_command_families": [
-        "preflight_witness_review",
-        "mark_jhora_witness_reviewed",
-        "mark_parashara_light_witness_reviewed"
-      ]
-    },
     {
       "case_id": "vrindavan-1990-08-15-1024",
       "review_status": "draft",
