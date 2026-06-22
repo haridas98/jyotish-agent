@@ -33,6 +33,7 @@ for (const marker of [
   "operator packet manifest",
   "Core evidence attachment gate",
   "Core evidence attachment work orders",
+  "Core evidence attachment handoff",
   "operator attachment manifest",
   "Evidence backlog",
   "coreReviewPreflightBlocker",
@@ -44,6 +45,7 @@ for (const marker of [
   "coreEvidenceReadiness",
   "coreEvidenceAttachmentGate",
   "coreEvidenceAttachmentWorkOrders",
+  "coreEvidenceAttachmentHandoff",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -53,6 +55,7 @@ for (const marker of [
   "buildCoreEvidenceReadiness",
   "buildCoreEvidenceAttachmentGate",
   "buildCoreEvidenceAttachmentWorkOrders",
+  "buildCoreEvidenceAttachmentHandoff",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -61,11 +64,13 @@ for (const marker of [
   "P57-A",
   "P59-A",
   "P61-A",
+  "P63-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
   "jyotish-core-evidence-attachment-gate-v1",
   "jyotish-core-evidence-attachment-work-orders-v1",
+  "jyotish-core-evidence-attachment-handoff-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -81,10 +86,13 @@ for (const marker of [
   "blocked_no_attached_evidence",
   "pending_not_attached",
   "blocked_pending_attachments",
+  "blocked_pending_operator_evidence",
   "ready_to_mark=false",
   "not_attached",
   "Evidence must be attached before mark commands are attempted",
   "work orders are labels only and do not collect evidence",
+  "handoff rows are labels only and do not collect evidence",
+  "external evidence has not been attached",
   "Evidence must be collected and attached before mark commands are attempted",
   "collect_jhora_screenshot",
   "attach_parashara_light_manual_values",
@@ -100,6 +108,7 @@ for (const marker of [
   "preflight_witness_review",
   "build_witness_core_evidence_attachment_gate_report",
   "build_witness_core_evidence_attachment_work_orders_report",
+  "build_witness_core_evidence_attachment_handoff_report",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
 ]) {
@@ -208,6 +217,22 @@ for (const marker of [
   "coreEvidenceAttachmentWorkOrders.readyToMarkLabel",
   "coreEvidenceAttachmentWorkOrders.safeValidationCommandFamilies",
   "coreEvidenceAttachmentWorkOrders.operatorNote",
+  "coreEvidenceAttachmentHandoff.stage",
+  "coreEvidenceAttachmentHandoff.schemaVersion",
+  "coreEvidenceAttachmentHandoff.caseHandoffRows",
+  "coreEvidenceAttachmentHandoff.handoffWorkOrderRows",
+  "coreEvidenceAttachmentHandoff.pendingHandoffCount",
+  "coreEvidenceAttachmentHandoff.pendingJhoraHandoffCount",
+  "coreEvidenceAttachmentHandoff.pendingParasharaLightHandoffCount",
+  "coreEvidenceAttachmentHandoff.blockedCaseCount",
+  "coreEvidenceAttachmentHandoff.readyToMarkRows",
+  "coreEvidenceAttachmentHandoff.remainingNotReviewedRows",
+  "coreEvidenceAttachmentHandoff.selectedCaseIds",
+  "coreEvidenceAttachmentHandoff.handoffStatus",
+  "coreEvidenceAttachmentHandoff.caseWorkOrderStatus",
+  "coreEvidenceAttachmentHandoff.readyToMarkLabel",
+  "coreEvidenceAttachmentHandoff.safeValidationCommandFamilies",
+  "coreEvidenceAttachmentHandoff.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -289,9 +314,11 @@ assert(accuracyRoute.includes("blocked_missing_evidence"), "Accuracy route marke
 assert(accuracyRoute.includes("ready_to_mark=false"), "Accuracy route marker must expose false ready-to-mark state");
 assert(accuracyRoute.includes("Evidence must be collected and attached before mark commands are attempted"), "Accuracy route marker must expose blocked operator note");
 assert(!helperSlice.includes('latestStage: "P59-A"'), "Core evidence pipeline helper must not retain stale P59 latest stage");
-assert(helperSlice.includes('latestStage: "P61-A"'), "Core evidence pipeline helper must expose latest P61 stage");
+assert(!helperSlice.includes('latestStage: "P61-A"'), "Core evidence pipeline helper must not retain stale P61 latest stage");
+assert(helperSlice.includes('latestStage: "P63-A"'), "Core evidence pipeline helper must expose latest P63 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
+assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -355,6 +382,35 @@ assert(accuracyRoute.includes("pending_not_attached"), "Accuracy route marker mu
 assert(accuracyRoute.includes("blocked_pending_attachments"), "Accuracy route marker must expose blocked case work-order status");
 assert(accuracyRoute.includes("work orders are labels only and do not collect evidence"), "Accuracy route marker must expose labels-only operator note");
 assert(accuracyRoute.includes("build_witness_core_evidence_attachment_work_orders_report"), "Accuracy route marker must expose work-order validation command");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-handoff-v1"'), "Core evidence handoff helper must expose schema version");
+assert(helperSlice.includes('stage: "P63-A"'), "Core evidence handoff helper must expose P63-A stage");
+assert(helperSlice.includes("caseHandoffRows: 5"), "Core evidence handoff helper must expose 5 case handoff rows");
+assert(helperSlice.includes("handoffWorkOrderRows: 10"), "Core evidence handoff helper must expose 10 handoff work-order rows");
+assert(helperSlice.includes("pendingHandoffCount: 10"), "Core evidence handoff helper must expose 10 pending handoff rows");
+assert(helperSlice.includes("pendingJhoraHandoffCount: 5"), "Core evidence handoff helper must expose 5 pending JHora handoff rows");
+assert(helperSlice.includes("pendingParasharaLightHandoffCount: 5"), "Core evidence handoff helper must expose 5 pending Parashara Light handoff rows");
+assert(helperSlice.includes("blockedCaseCount: 5"), "Core evidence handoff helper must expose 5 blocked cases");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence handoff helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence handoff helper must expose 20 remaining rows");
+assert(helperSlice.includes('handoffStatus: "blocked_pending_operator_evidence"'), "Core evidence handoff helper must expose blocked handoff status");
+assert(helperSlice.includes('caseWorkOrderStatus: "blocked_pending_attachments"'), "Core evidence handoff helper must expose blocked case work-order status");
+assert(helperSlice.includes('readyToMarkLabel: "ready_to_mark=false"'), "Core evidence handoff helper must expose false ready-to-mark label");
+assert(helperSlice.includes('"build_witness_core_evidence_attachment_handoff_report"'), "Core evidence handoff helper must expose handoff validation command");
+assert(helperSlice.includes("handoff rows are labels only and do not collect evidence"), "Core evidence handoff helper must expose labels-only operator note");
+assert(helperSlice.includes("external evidence has not been attached"), "Core evidence handoff helper must expose external evidence blocker");
+assert(preflightSlice.includes("P63 handoff"), "Core evidence pipeline UI must render P63 stage");
+assert(preflightSlice.includes("Core evidence attachment handoff"), "Core evidence handoff UI must render its heading");
+assert(accuracyRoute.includes("P63-A"), "Accuracy route marker must expose P63 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-attachment-handoff-v1"), "Accuracy route marker must expose P63 schema");
+assert(accuracyRoute.includes("5 case handoff rows"), "Accuracy route marker must expose case handoff row count");
+assert(accuracyRoute.includes("10 handoff work-order rows"), "Accuracy route marker must expose handoff work-order row count");
+assert(accuracyRoute.includes("10 pending handoff"), "Accuracy route marker must expose pending handoff count");
+assert(accuracyRoute.includes("5 pending JHora handoff"), "Accuracy route marker must expose pending JHora handoff count");
+assert(accuracyRoute.includes("5 pending Parashara Light handoff"), "Accuracy route marker must expose pending Parashara Light handoff count");
+assert(accuracyRoute.includes("blocked_pending_operator_evidence"), "Accuracy route marker must expose blocked handoff status");
+assert(accuracyRoute.includes("handoff rows are labels only and do not collect evidence"), "Accuracy route marker must expose labels-only handoff note");
+assert(accuracyRoute.includes("external evidence has not been attached"), "Accuracy route marker must expose external evidence blocker");
+assert(accuracyRoute.includes("build_witness_core_evidence_attachment_handoff_report"), "Accuracy route marker must expose handoff validation command");
 
 for (const forbidden of [
   "source_report",
