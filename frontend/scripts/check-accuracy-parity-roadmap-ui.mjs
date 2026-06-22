@@ -17,6 +17,7 @@ function sliceBetween(source, start, end) {
 
 const roadmap = readFileSync(new URL("../src/lib/parity-roadmap.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
+const accuracyPage = readFileSync(new URL("../src/app/accuracy/page.tsx", import.meta.url), "utf8");
 const panel = sliceBetween(page, "function AccuracyReportPanel", "export default function Home");
 const roadmapSlice = sliceBetween(panel, "Parity roadmap", "JHora");
 const subtitleMatch = roadmapSlice.match(/<p>\s*JH\/PL launch ledger\s*<\/p>/);
@@ -39,10 +40,13 @@ for (const marker of [
   "release_gate_status=blocked",
 ]) {
   assert(roadmap.includes(marker) || roadmapSlice.includes(marker), `Finite-scope parity checkpoint marker missing: ${marker}`);
+  assert(accuracyPage.includes(marker), `Rendered accuracy route finite-scope marker missing: ${marker}`);
 }
 
 assert(roadmapSlice.includes("Finite JH/PL scope"), "Parity roadmap must show a product-facing finite-scope label.");
 assert(roadmapSlice.includes("next evidence gate"), "Parity roadmap must show the next concrete evidence gate.");
+assert(accuracyPage.includes("Finite JH/PL scope"), "Accuracy route must expose the finite-scope label.");
+assert(accuracyPage.includes("next evidence gate"), "Accuracy route must expose the next concrete evidence gate.");
 
 for (const marker of [
   "Parity roadmap",
