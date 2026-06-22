@@ -792,6 +792,38 @@ body .chart-profile-form textarea {
   font-weight: 700;
 }
 
+.d1-orientation-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -2px 0 12px;
+}
+
+.d1-orientation-legend span {
+  align-items: center;
+  background: #f8fbfb;
+  border: 1px solid rgba(63, 82, 98, 0.16);
+  border-radius: 8px;
+  color: #334b59;
+  display: inline-flex;
+  flex: 1 1 190px;
+  gap: 6px;
+  min-height: 34px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 7px 9px;
+}
+
+.d1-orientation-legend span[hidden] {
+  display: none;
+}
+
+.d1-orientation-legend strong {
+  color: #0b3740;
+  flex: 0 0 auto;
+  font-size: 0.76rem;
+}
+
 .d1-north-chart {
   position: relative;
   width: min(620px, 100%);

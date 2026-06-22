@@ -139,6 +139,9 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
   const tabIds = availableTabs(model);
   const activeScopeMeta = model.vargaScopes.find((scope) => scope.code === model.scopeId);
   const activeAccuracyGate = model.accuracyGates[model.scopeId];
+  const orientationLagna = model.specialPoints.find((item) => item.code === "LAGNA")?.rashiName ?? "-";
+  const activeOrientationCopy = workbenchState.chartStyle === "south" ? "South Indian: sign-fixed layout" : "North Indian: house-fixed layout";
+  const activeOrientationMode = workbenchState.chartStyle === "south" ? "sign-fixed" : "house-fixed";
 
   const setActiveEntityId = (activeEntityId: EntityId | null) => setWorkbenchState((state) => ({ ...state, activeEntityId }));
   const setChartStyle = (chartStyle: D1ChartStyle) => setWorkbenchState((state) => ({ ...state, chartStyle }));
@@ -221,6 +224,29 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
         <button type="button" className={workbenchState.density === "compact" ? "active" : ""} onClick={() => setDensity("compact")}>Компактный</button>
       </div>
       <p className="d1-style-explainer">North = house-fixed. South = sign-fixed.</p>
+      <div
+        className="d1-orientation-legend"
+        data-chart-orientation-stage="E110-A"
+        data-chart-orientation-mode={activeOrientationMode}
+        data-chart-orientation-readonly={readOnlyFixture ? "read-only-demo" : "standard-chart"}
+        aria-label="D1 chart orientation"
+      >
+        <span>
+          <strong>Active style</strong>
+          {activeOrientationCopy}
+        </span>
+        <span>
+          <strong>Lagna</strong>
+          {orientationLagna}
+        </span>
+        {readOnlyFixture ? (
+          <span>
+            <strong>Demo</strong>
+            read-only example
+          </span>
+        ) : null}
+        <span hidden>E110-A orientation legend</span>
+      </div>
 
       {status ? <div className="product-status">{status}</div> : null}
       {workbenchState.mode === "astrologer" && activeScopeMeta ? (
