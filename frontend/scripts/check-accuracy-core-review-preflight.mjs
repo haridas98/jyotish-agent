@@ -46,6 +46,7 @@ for (const marker of [
   "Core evidence external receipt manifest decision audit",
   "Core evidence external receipt manifest decision audit work orders",
   "Core evidence external receipt manifest decision audit work-order readiness",
+  "Core evidence external receipt manifest decision audit operator handoff smoke matrix",
   "operator attachment manifest",
   "operator packet status",
   "operator packet QA status",
@@ -74,6 +75,7 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestDecisionAudit",
   "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrders",
   "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrderReadiness",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
@@ -96,6 +98,7 @@ for (const marker of [
   "buildCoreEvidenceExternalReceiptManifestDecisionAudit",
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditWorkOrders",
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditWorkOrderReadiness",
+  "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -117,6 +120,7 @@ for (const marker of [
   "P83-A",
   "P85-A",
   "P87-A",
+  "P89-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -135,6 +139,7 @@ for (const marker of [
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-orders-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-order-readiness-v1",
+  "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-smoke-matrix-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -163,6 +168,10 @@ for (const marker of [
   "blocked_pending_external_evidence_receipt_manifest_decision_audit",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness",
+  "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix",
+  "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff",
+  "safe_validation_only=true",
+  "no_command_execution_performed=true",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
@@ -843,6 +852,44 @@ for (const marker of [
   "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrderReadiness.safeDecisionAuditWorkOrderReadinessFields",
   "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrderReadiness.safeValidationCommandFamilies",
   "coreEvidenceExternalReceiptManifestDecisionAuditWorkOrderReadiness.operatorNote",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.stage",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.schemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.status",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.upstreamDecisionAuditWorkOrderReadinessSchemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.upstreamDecisionAuditWorkOrderReadinessStage",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.upstreamDecisionAuditWorkOrderReadinessStatus",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.upstreamDecisionAuditWorkOrdersSchemaVersion",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.upstreamDecisionAuditWorkOrdersStage",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.upstreamDecisionAuditWorkOrdersStatus",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.operatorHandoffCasePacketRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.operatorHandoffAttachmentPacketRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.operatorHandoffSmokeCaseRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.operatorHandoffSmokeAttachmentRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.safeValidationCommandFamilyCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.unsafeExternalActionCommandCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.commandExecutionPerformedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.commandSmokeMatrixReadyCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.commandSmokeMatrixBlockedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.operatorHandoffReadyCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.operatorHandoffBlockedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.workOrderDeliveryReadyCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.workOrderDeliveryBlockedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.pendingExternalEvidenceDecisionAuditWorkOrderCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.pendingJhoraDecisionAuditWorkOrderCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.pendingParasharaLightDecisionAuditWorkOrderCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.decisionRecordedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.decisionAuditedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.decisionAuditPassedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.decisionAuditFailedCount",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.readyToAttachRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.readyToMarkRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.remainingNotReviewedRows",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.operatorHandoffSmokeMatrixStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.commandSmokeMatrixStatusLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.safeValidationOnlyLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.noCommandExecutionPerformedLabel",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.safeValidationCommandFamilies",
+  "coreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix.operatorNote",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -937,7 +984,8 @@ assert(!helperSlice.includes('latestStage: "P79-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P81-A"'), "Core evidence pipeline helper must not retain stale P81 latest stage");
 assert(!helperSlice.includes('latestStage: "P83-A"'), "Core evidence pipeline helper must not retain stale P83 latest stage");
 assert(!helperSlice.includes('latestStage: "P85-A"'), "Core evidence pipeline helper must not retain stale P85 latest stage");
-assert(helperSlice.includes('latestStage: "P87-A"'), "Core evidence pipeline helper must expose latest P87 stage");
+assert(!helperSlice.includes('latestStage: "P87-A"'), "Core evidence pipeline helper must not retain stale P87 latest stage");
+assert(helperSlice.includes('latestStage: "P89-A"'), "Core evidence pipeline helper must expose latest P89 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -953,6 +1001,7 @@ assert(helperSlice.includes('"P81 receipt manifest decision queue"'), "Core evid
 assert(helperSlice.includes('"P83 receipt manifest decision audit"'), "Core evidence pipeline helper must expose P83 stage sequence");
 assert(helperSlice.includes('"P85 decision audit work orders"'), "Core evidence pipeline helper must expose P85 stage sequence");
 assert(helperSlice.includes('"P87 work-order readiness"'), "Core evidence pipeline helper must expose P87 stage sequence");
+assert(helperSlice.includes('"P89 operator handoff smoke matrix"'), "Core evidence pipeline helper must expose P89 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -1799,6 +1848,49 @@ assert(accuracyRoute.includes("prepare_operator_handoff_readiness_packet"), "Acc
 assert(accuracyRoute.includes("build_witness_core_evidence_external_receipt_manifest_decision_audit_work_order_readiness_report"), "Accuracy route marker must expose P87 command family");
 assert(accuracyRoute.includes("blocked operator handoff readiness packet"), "Accuracy route marker must expose P87 blocked readiness copy");
 assert(accuracyRoute.includes("no operator handoff has been delivered"), "Accuracy route marker must expose P87 negative handoff copy");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-smoke-matrix-v1"'), "Core evidence operator handoff smoke matrix helper must expose P89 schema");
+assert(helperSlice.includes('stage: "P89-A"'), "Core evidence operator handoff smoke matrix helper must expose P89-A stage");
+assert(helperSlice.includes('status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix"'), "Core evidence operator handoff smoke matrix helper must expose blocked smoke status");
+assert(helperSlice.includes('upstreamDecisionAuditWorkOrderReadinessSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-order-readiness-v1"'), "Core evidence operator handoff smoke matrix helper must expose upstream P87 schema");
+assert(helperSlice.includes('upstreamDecisionAuditWorkOrderReadinessStage: "P87-A"'), "Core evidence operator handoff smoke matrix helper must expose upstream P87 stage");
+assert(helperSlice.includes('upstreamDecisionAuditWorkOrderReadinessStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness"'), "Core evidence operator handoff smoke matrix helper must expose upstream P87 status");
+assert(helperSlice.includes("operatorHandoffSmokeCaseRows: 5"), "Core evidence operator handoff smoke matrix helper must expose 5 smoke case rows");
+assert(helperSlice.includes("operatorHandoffSmokeAttachmentRows: 10"), "Core evidence operator handoff smoke matrix helper must expose 10 smoke attachment rows");
+assert(helperSlice.includes("safeValidationCommandFamilyCount: 4"), "Core evidence operator handoff smoke matrix helper must expose 4 safe validation families");
+assert(helperSlice.includes("unsafeExternalActionCommandCount: 0"), "Core evidence operator handoff smoke matrix helper must expose 0 unsafe external action commands");
+assert(helperSlice.includes("commandExecutionPerformedCount: 0"), "Core evidence operator handoff smoke matrix helper must expose 0 command executions");
+assert(helperSlice.includes("commandSmokeMatrixReadyCount: 0"), "Core evidence operator handoff smoke matrix helper must expose 0 smoke ready rows");
+assert(helperSlice.includes("commandSmokeMatrixBlockedCount: 10"), "Core evidence operator handoff smoke matrix helper must expose 10 smoke blocked rows");
+assert(helperSlice.includes('operatorHandoffSmokeMatrixStatusLabel: "operator_handoff_smoke_matrix_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix"'), "Core evidence operator handoff smoke matrix helper must expose smoke matrix status label");
+assert(helperSlice.includes('commandSmokeMatrixStatusLabel: "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff"'), "Core evidence operator handoff smoke matrix helper must expose blocked command smoke label");
+assert(helperSlice.includes('safeValidationOnlyLabel: "safe_validation_only=true"'), "Core evidence operator handoff smoke matrix helper must expose validation-only label");
+assert(helperSlice.includes('noCommandExecutionPerformedLabel: "no_command_execution_performed=true"'), "Core evidence operator handoff smoke matrix helper must expose no command execution label");
+assert(helperSlice.includes('"validate_manifest_shape"'), "Core evidence operator handoff smoke matrix helper must expose manifest shape validation label");
+assert(helperSlice.includes('"validate_operator_handoff_readiness"'), "Core evidence operator handoff smoke matrix helper must expose handoff readiness validation label");
+assert(helperSlice.includes('"validate_no_external_action"'), "Core evidence operator handoff smoke matrix helper must expose no external action validation label");
+assert(helperSlice.includes('"validate_release_gate_blocked"'), "Core evidence operator handoff smoke matrix helper must expose release blocked validation label");
+assert(preflightSlice.includes("P89 operator handoff smoke matrix"), "Core evidence pipeline UI must render P89 stage");
+assert(preflightSlice.includes("Core evidence external receipt manifest decision audit operator handoff smoke matrix"), "Core evidence operator handoff smoke matrix UI must render its heading");
+assert(accuracyRoute.includes("P89-A"), "Accuracy route marker must expose P89 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-smoke-matrix-v1"), "Accuracy route marker must expose P89 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix"), "Accuracy route marker must expose P89 status");
+assert(accuracyRoute.includes("operator_handoff_smoke_case_rows=5"), "Accuracy route marker must expose P89 smoke case row count");
+assert(accuracyRoute.includes("operator_handoff_smoke_attachment_rows=10"), "Accuracy route marker must expose P89 smoke attachment row count");
+assert(accuracyRoute.includes("safe_validation_command_family_count=4"), "Accuracy route marker must expose P89 safe validation family count");
+assert(accuracyRoute.includes("unsafe_external_action_command_count=0"), "Accuracy route marker must expose P89 unsafe action zero count");
+assert(accuracyRoute.includes("command_execution_performed_count=0"), "Accuracy route marker must expose P89 no command execution count");
+assert(accuracyRoute.includes("command_smoke_matrix_ready_count=0"), "Accuracy route marker must expose P89 matrix-ready zero count");
+assert(accuracyRoute.includes("command_smoke_matrix_blocked_count=10"), "Accuracy route marker must expose P89 matrix-blocked count");
+assert(accuracyRoute.includes("operator_handoff_smoke_matrix_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix"), "Accuracy route marker must expose P89 smoke matrix status label");
+assert(accuracyRoute.includes("command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff"), "Accuracy route marker must expose P89 command smoke status label");
+assert(accuracyRoute.includes("safe_validation_only=true"), "Accuracy route marker must expose P89 validation-only label");
+assert(accuracyRoute.includes("no_command_execution_performed=true"), "Accuracy route marker must expose P89 no command execution label");
+assert(accuracyRoute.includes("validate_manifest_shape"), "Accuracy route marker must expose P89 manifest shape validation label");
+assert(accuracyRoute.includes("validate_operator_handoff_readiness"), "Accuracy route marker must expose P89 handoff readiness validation label");
+assert(accuracyRoute.includes("validate_no_external_action"), "Accuracy route marker must expose P89 no external action validation label");
+assert(accuracyRoute.includes("validate_release_gate_blocked"), "Accuracy route marker must expose P89 release blocked validation label");
+assert(accuracyRoute.includes("blocked safe command-smoke matrix"), "Accuracy route marker must expose P89 blocked smoke matrix copy");
+assert(accuracyRoute.includes("no validation commands have been executed"), "Accuracy route marker must expose P89 negative command execution copy");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");

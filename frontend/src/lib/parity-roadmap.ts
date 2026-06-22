@@ -270,7 +270,7 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P87-A";
+  latestStage: "P89-A";
   stageSequence: [
     "P53 backlog",
     "P55 intake",
@@ -290,6 +290,7 @@ export type CoreEvidencePipeline = {
     "P83 receipt manifest decision audit",
     "P85 decision audit work orders",
     "P87 work-order readiness",
+    "P89 operator handoff smoke matrix",
   ];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
@@ -537,8 +538,33 @@ export type CoreEvidencePipeline = {
     readyToMarkRows: 0;
     remainingNotReviewedRows: 20;
   };
+  externalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrixSummary: {
+    operatorHandoffCasePacketRows: 5;
+    operatorHandoffAttachmentPacketRows: 10;
+    operatorHandoffSmokeCaseRows: 5;
+    operatorHandoffSmokeAttachmentRows: 10;
+    safeValidationCommandFamilyCount: 4;
+    unsafeExternalActionCommandCount: 0;
+    commandExecutionPerformedCount: 0;
+    commandSmokeMatrixReadyCount: 0;
+    commandSmokeMatrixBlockedCount: 10;
+    operatorHandoffReadyCount: 0;
+    operatorHandoffBlockedCount: 10;
+    workOrderDeliveryReadyCount: 0;
+    workOrderDeliveryBlockedCount: 10;
+    pendingExternalEvidenceDecisionAuditWorkOrderCount: 10;
+    pendingJhoraDecisionAuditWorkOrderCount: 5;
+    pendingParasharaLightDecisionAuditWorkOrderCount: 5;
+    decisionRecordedCount: 0;
+    decisionAuditedCount: 0;
+    decisionAuditPassedCount: 0;
+    decisionAuditFailedCount: 0;
+    readyToAttachRows: 0;
+    readyToMarkRows: 0;
+    remainingNotReviewedRows: 20;
+  };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
-  statusCopy: "blocked external evidence receipt manifest decision audit work-order readiness labels";
+  statusCopy: "blocked external evidence receipt manifest decision audit operator handoff smoke matrix labels";
 };
 
 export type CoreEvidenceAttachmentGate = {
@@ -2138,10 +2164,138 @@ export function buildCoreEvidenceReadiness(): CoreEvidenceReadiness {
   };
 }
 
+export type CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix = {
+  title: "Core evidence external receipt manifest decision audit operator handoff smoke matrix";
+  schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-smoke-matrix-v1";
+  stage: "P89-A";
+  status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix";
+  upstreamDecisionAuditWorkOrderReadinessSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-order-readiness-v1";
+  upstreamDecisionAuditWorkOrderReadinessStage: "P87-A";
+  upstreamDecisionAuditWorkOrderReadinessStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness";
+  upstreamDecisionAuditWorkOrdersSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-orders-v1";
+  upstreamDecisionAuditWorkOrdersStage: "P85-A";
+  upstreamDecisionAuditWorkOrdersStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders";
+  upstreamDecisionAuditSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-v1";
+  upstreamDecisionAuditStage: "P83-A";
+  upstreamDecisionAuditStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit";
+  upstreamDecisionQueueSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-queue-v1";
+  upstreamDecisionQueueStage: "P81-A";
+  upstreamDecisionQueueStatus: "blocked_pending_external_evidence_receipt_manifest_decision";
+  upstreamAcceptanceGateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-acceptance-gate-v1";
+  upstreamAcceptanceGateStage: "P79-A";
+  upstreamAcceptanceGateStatus: "blocked_pending_external_evidence_receipt_manifest_acceptance";
+  upstreamPreflightSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-preflight-v1";
+  upstreamPreflightStage: "P77-A";
+  upstreamPreflightStatus: "blocked_pending_external_evidence_receipt_manifest_preflight";
+  upstreamTemplateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-templates-v1";
+  upstreamTemplateStage: "P75-A";
+  upstreamTemplateStatus: "blocked_pending_external_evidence_receipt_manifests";
+  operatorHandoffCasePacketRows: 5;
+  operatorHandoffAttachmentPacketRows: 10;
+  operatorHandoffSmokeCaseRows: 5;
+  operatorHandoffSmokeAttachmentRows: 10;
+  safeValidationCommandFamilyCount: 4;
+  unsafeExternalActionCommandCount: 0;
+  commandExecutionPerformedCount: 0;
+  commandSmokeMatrixReadyCount: 0;
+  commandSmokeMatrixBlockedCount: 10;
+  operatorHandoffReadyCount: 0;
+  operatorHandoffBlockedCount: 10;
+  workOrderDeliveryReadyCount: 0;
+  workOrderDeliveryBlockedCount: 10;
+  pendingExternalEvidenceDecisionAuditWorkOrderCount: 10;
+  pendingJhoraDecisionAuditWorkOrderCount: 5;
+  pendingParasharaLightDecisionAuditWorkOrderCount: 5;
+  decisionRecordedCount: 0;
+  decisionAuditedCount: 0;
+  decisionAuditPassedCount: 0;
+  decisionAuditFailedCount: 0;
+  readyToAttachRows: 0;
+  readyToMarkRows: 0;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  paritySuccessClaimed: false;
+  releaseReadyClaimed: false;
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  slotFamilies: [
+    "jhora_screenshot_or_packet",
+    "parashara_light_manual_values_or_packet",
+  ];
+  operatorHandoffSmokeMatrixStatusLabel: "operator_handoff_smoke_matrix_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix";
+  decisionAuditWorkOrderReadinessStatusLabel: "decision_audit_work_order_readiness_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness";
+  decisionAuditWorkOrderStatusLabel: "decision_audit_work_order_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders";
+  decisionAuditStatusLabel: "decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit";
+  decisionQueueStatusLabel: "decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision";
+  receiptGateStatusLabel: "external_receipt_gate_status=blocked_pending_external_evidence_receipts";
+  intakeStatusLabel: "external_intake_status=blocked_pending_external_evidence_intake";
+  readinessStatusLabel: "attachment_readiness_status=blocked_pending_external_evidence_attachment";
+  receiptManifestStatusLabel: "receipt_manifest_status=not_received";
+  decisionAuditRecordStatusLabel: "decision_audit_record_status=not_started";
+  workOrderDeliveryStatusLabel: "work_order_delivery_status=not_delivered";
+  operatorHandoffStatusLabel: "operator_handoff_status=not_delivered";
+  humanDecisionAuditStatusLabel: "human_decision_audit_status=not_started";
+  commandSmokeMatrixStatusLabel: "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff";
+  safeValidationOnlyLabel: "safe_validation_only=true";
+  noCommandExecutionPerformedLabel: "no_command_execution_performed=true";
+  decisionRecordedLabel: "decision_recorded_count=0";
+  decisionAuditedLabel: "decision_audited_count=0";
+  decisionAuditPassedLabel: "decision_audit_passed_count=0";
+  decisionAuditFailedLabel: "decision_audit_failed_count=0";
+  readyToAttachLabel: "ready_to_attach=false";
+  readyToMarkLabel: "ready_to_mark=false";
+  paritySuccessClaimedLabel: "parity_success_claimed=false";
+  releaseReadyClaimedLabel: "release_ready_claimed=false";
+  noRawValuesInManifestLabel: "no_raw_values_in_manifest=true";
+  noPrivatePathsInManifestLabel: "no_private_paths_in_manifest=true";
+  noSecretsInManifestLabel: "no_secrets_in_manifest=true";
+  noEvidenceFileRecordedLabel: "no_evidence_file_recorded=true";
+  noEvidenceHashRecordedLabel: "no_evidence_hash_recorded=true";
+  noUploadExecutedLabel: "no_upload_executed=true";
+  noAttachmentExecutedLabel: "no_attachment_executed=true";
+  noMarkCommandExecutedLabel: "no_mark_command_executed=true";
+  noAcceptExecutedLabel: "no_accept_executed=true";
+  noRejectExecutedLabel: "no_reject_executed=true";
+  noDeferExecutedLabel: "no_defer_executed=true";
+  noWorkOrderDeliveryExecutedLabel: "no_work_order_delivery_executed=true";
+  noOperatorHandoffDeliveredLabel: "no_operator_handoff_delivered=true";
+  noExternalNotificationSentLabel: "no_external_notification_sent=true";
+  noExternalTicketCreatedLabel: "no_external_ticket_created=true";
+  safeValidationCommandFamilies: [
+    "validate_manifest_shape",
+    "validate_operator_handoff_readiness",
+    "validate_no_external_action",
+    "validate_release_gate_blocked",
+  ];
+  safeOperatorSmokeLabels: [
+    "rerun_external_receipt_manifest_decision_audit_operator_handoff_smoke_matrix_report",
+    "rerun_external_receipt_manifest_decision_audit_work_order_readiness_report",
+    "rerun_external_receipt_manifest_decision_audit_work_orders_report",
+    "rerun_external_receipt_manifest_decision_audit_report",
+    "rerun_external_receipt_manifest_decision_queue_report",
+    "rerun_external_receipt_manifest_acceptance_gate_report",
+    "rerun_external_receipt_manifest_preflight_report",
+    "rerun_external_receipt_manifest_templates_report",
+    "rerun_external_receipt_gate_report",
+    "rerun_external_intake_contract_report",
+    "rerun_operator_packet_attachment_readiness_report",
+    "rerun_attachment_gate_report",
+    "preflight_witness_review",
+  ];
+  operatorNote: "blocked safe command-smoke matrix; no validation commands have been executed, and external evidence, operator handoff, upload, attachment, mark, accept, reject, defer, ticket, notification, and release remain blocked";
+  statusCopy: "blocked safe command-smoke matrix for future operator validation";
+  cautionCopy: "no validation command execution, external action, parity pass, or release readiness is claimed";
+};
+
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P87-A",
+    latestStage: "P89-A",
     stageSequence: [
       "P53 backlog",
       "P55 intake",
@@ -2161,6 +2315,7 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       "P83 receipt manifest decision audit",
       "P85 decision audit work orders",
       "P87 work-order readiness",
+      "P89 operator handoff smoke matrix",
     ],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
@@ -2408,8 +2563,33 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       readyToMarkRows: 0,
       remainingNotReviewedRows: 20,
     },
+    externalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrixSummary: {
+      operatorHandoffCasePacketRows: 5,
+      operatorHandoffAttachmentPacketRows: 10,
+      operatorHandoffSmokeCaseRows: 5,
+      operatorHandoffSmokeAttachmentRows: 10,
+      safeValidationCommandFamilyCount: 4,
+      unsafeExternalActionCommandCount: 0,
+      commandExecutionPerformedCount: 0,
+      commandSmokeMatrixReadyCount: 0,
+      commandSmokeMatrixBlockedCount: 10,
+      operatorHandoffReadyCount: 0,
+      operatorHandoffBlockedCount: 10,
+      workOrderDeliveryReadyCount: 0,
+      workOrderDeliveryBlockedCount: 10,
+      pendingExternalEvidenceDecisionAuditWorkOrderCount: 10,
+      pendingJhoraDecisionAuditWorkOrderCount: 5,
+      pendingParasharaLightDecisionAuditWorkOrderCount: 5,
+      decisionRecordedCount: 0,
+      decisionAuditedCount: 0,
+      decisionAuditPassedCount: 0,
+      decisionAuditFailedCount: 0,
+      readyToAttachRows: 0,
+      readyToMarkRows: 0,
+      remainingNotReviewedRows: 20,
+    },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
-    statusCopy: "blocked external evidence receipt manifest decision audit work-order readiness labels",
+    statusCopy: "blocked external evidence receipt manifest decision audit operator handoff smoke matrix labels",
   };
 }
 
@@ -3711,6 +3891,136 @@ export function buildCoreEvidenceExternalReceiptManifestDecisionAuditWorkOrderRe
     operatorNote: "blocked operator handoff readiness packet; no operator handoff has been delivered, and work-order delivery, notification, ticket, upload, attachment, mark, accept, reject, defer, and release remain blocked",
     statusCopy: "blocked operator handoff readiness packet for future human decision audit",
     cautionCopy: "no operator handoff, work-order delivery, external notification, external ticket, accept, reject, defer, upload, attachment, mark, parity pass, or release readiness is claimed",
+  };
+}
+
+export function buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix(): CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix {
+  return {
+    title: "Core evidence external receipt manifest decision audit operator handoff smoke matrix",
+    schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-smoke-matrix-v1",
+    stage: "P89-A",
+    status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix",
+    upstreamDecisionAuditWorkOrderReadinessSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-order-readiness-v1",
+    upstreamDecisionAuditWorkOrderReadinessStage: "P87-A",
+    upstreamDecisionAuditWorkOrderReadinessStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness",
+    upstreamDecisionAuditWorkOrdersSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-orders-v1",
+    upstreamDecisionAuditWorkOrdersStage: "P85-A",
+    upstreamDecisionAuditWorkOrdersStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders",
+    upstreamDecisionAuditSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-v1",
+    upstreamDecisionAuditStage: "P83-A",
+    upstreamDecisionAuditStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit",
+    upstreamDecisionQueueSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-queue-v1",
+    upstreamDecisionQueueStage: "P81-A",
+    upstreamDecisionQueueStatus: "blocked_pending_external_evidence_receipt_manifest_decision",
+    upstreamAcceptanceGateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-acceptance-gate-v1",
+    upstreamAcceptanceGateStage: "P79-A",
+    upstreamAcceptanceGateStatus: "blocked_pending_external_evidence_receipt_manifest_acceptance",
+    upstreamPreflightSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-preflight-v1",
+    upstreamPreflightStage: "P77-A",
+    upstreamPreflightStatus: "blocked_pending_external_evidence_receipt_manifest_preflight",
+    upstreamTemplateSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-templates-v1",
+    upstreamTemplateStage: "P75-A",
+    upstreamTemplateStatus: "blocked_pending_external_evidence_receipt_manifests",
+    operatorHandoffCasePacketRows: 5,
+    operatorHandoffAttachmentPacketRows: 10,
+    operatorHandoffSmokeCaseRows: 5,
+    operatorHandoffSmokeAttachmentRows: 10,
+    safeValidationCommandFamilyCount: 4,
+    unsafeExternalActionCommandCount: 0,
+    commandExecutionPerformedCount: 0,
+    commandSmokeMatrixReadyCount: 0,
+    commandSmokeMatrixBlockedCount: 10,
+    operatorHandoffReadyCount: 0,
+    operatorHandoffBlockedCount: 10,
+    workOrderDeliveryReadyCount: 0,
+    workOrderDeliveryBlockedCount: 10,
+    pendingExternalEvidenceDecisionAuditWorkOrderCount: 10,
+    pendingJhoraDecisionAuditWorkOrderCount: 5,
+    pendingParasharaLightDecisionAuditWorkOrderCount: 5,
+    decisionRecordedCount: 0,
+    decisionAuditedCount: 0,
+    decisionAuditPassedCount: 0,
+    decisionAuditFailedCount: 0,
+    readyToAttachRows: 0,
+    readyToMarkRows: 0,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    paritySuccessClaimed: false,
+    releaseReadyClaimed: false,
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    slotFamilies: [
+      "jhora_screenshot_or_packet",
+      "parashara_light_manual_values_or_packet",
+    ],
+    operatorHandoffSmokeMatrixStatusLabel: "operator_handoff_smoke_matrix_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix",
+    decisionAuditWorkOrderReadinessStatusLabel: "decision_audit_work_order_readiness_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness",
+    decisionAuditWorkOrderStatusLabel: "decision_audit_work_order_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders",
+    decisionAuditStatusLabel: "decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit",
+    decisionQueueStatusLabel: "decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision",
+    receiptGateStatusLabel: "external_receipt_gate_status=blocked_pending_external_evidence_receipts",
+    intakeStatusLabel: "external_intake_status=blocked_pending_external_evidence_intake",
+    readinessStatusLabel: "attachment_readiness_status=blocked_pending_external_evidence_attachment",
+    receiptManifestStatusLabel: "receipt_manifest_status=not_received",
+    decisionAuditRecordStatusLabel: "decision_audit_record_status=not_started",
+    workOrderDeliveryStatusLabel: "work_order_delivery_status=not_delivered",
+    operatorHandoffStatusLabel: "operator_handoff_status=not_delivered",
+    humanDecisionAuditStatusLabel: "human_decision_audit_status=not_started",
+    commandSmokeMatrixStatusLabel: "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff",
+    safeValidationOnlyLabel: "safe_validation_only=true",
+    noCommandExecutionPerformedLabel: "no_command_execution_performed=true",
+    decisionRecordedLabel: "decision_recorded_count=0",
+    decisionAuditedLabel: "decision_audited_count=0",
+    decisionAuditPassedLabel: "decision_audit_passed_count=0",
+    decisionAuditFailedLabel: "decision_audit_failed_count=0",
+    readyToAttachLabel: "ready_to_attach=false",
+    readyToMarkLabel: "ready_to_mark=false",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    releaseReadyClaimedLabel: "release_ready_claimed=false",
+    noRawValuesInManifestLabel: "no_raw_values_in_manifest=true",
+    noPrivatePathsInManifestLabel: "no_private_paths_in_manifest=true",
+    noSecretsInManifestLabel: "no_secrets_in_manifest=true",
+    noEvidenceFileRecordedLabel: "no_evidence_file_recorded=true",
+    noEvidenceHashRecordedLabel: "no_evidence_hash_recorded=true",
+    noUploadExecutedLabel: "no_upload_executed=true",
+    noAttachmentExecutedLabel: "no_attachment_executed=true",
+    noMarkCommandExecutedLabel: "no_mark_command_executed=true",
+    noAcceptExecutedLabel: "no_accept_executed=true",
+    noRejectExecutedLabel: "no_reject_executed=true",
+    noDeferExecutedLabel: "no_defer_executed=true",
+    noWorkOrderDeliveryExecutedLabel: "no_work_order_delivery_executed=true",
+    noOperatorHandoffDeliveredLabel: "no_operator_handoff_delivered=true",
+    noExternalNotificationSentLabel: "no_external_notification_sent=true",
+    noExternalTicketCreatedLabel: "no_external_ticket_created=true",
+    safeValidationCommandFamilies: [
+      "validate_manifest_shape",
+      "validate_operator_handoff_readiness",
+      "validate_no_external_action",
+      "validate_release_gate_blocked",
+    ],
+    safeOperatorSmokeLabels: [
+      "rerun_external_receipt_manifest_decision_audit_operator_handoff_smoke_matrix_report",
+      "rerun_external_receipt_manifest_decision_audit_work_order_readiness_report",
+      "rerun_external_receipt_manifest_decision_audit_work_orders_report",
+      "rerun_external_receipt_manifest_decision_audit_report",
+      "rerun_external_receipt_manifest_decision_queue_report",
+      "rerun_external_receipt_manifest_acceptance_gate_report",
+      "rerun_external_receipt_manifest_preflight_report",
+      "rerun_external_receipt_manifest_templates_report",
+      "rerun_external_receipt_gate_report",
+      "rerun_external_intake_contract_report",
+      "rerun_operator_packet_attachment_readiness_report",
+      "rerun_attachment_gate_report",
+      "preflight_witness_review",
+    ],
+    operatorNote: "blocked safe command-smoke matrix; no validation commands have been executed, and external evidence, operator handoff, upload, attachment, mark, accept, reject, defer, ticket, notification, and release remain blocked",
+    statusCopy: "blocked safe command-smoke matrix for future operator validation",
+    cautionCopy: "no validation command execution, external action, parity pass, or release readiness is claimed",
   };
 }
 
