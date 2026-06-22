@@ -60,7 +60,7 @@ const NORTH_POSITIONS: Record<number, { x: number; y: number }> = {
   12: { x: 12, y: 18 },
 };
 
-const SOUTH_GRID: Record<number, { col: number; row: number }> = {
+const SOUTH_SIGN_GRID: Record<number, { col: number; row: number }> = {
   12: { col: 1, row: 1 },
   1: { col: 2, row: 1 },
   2: { col: 3, row: 1 },
@@ -73,6 +73,23 @@ const SOUTH_GRID: Record<number, { col: number; row: number }> = {
   8: { col: 2, row: 4 },
   7: { col: 3, row: 4 },
   6: { col: 4, row: 4 },
+};
+
+const SOUTH_GRID = SOUTH_SIGN_GRID;
+const SOUTH_SIGN_ORDER = [12, 1, 2, 3, 11, 4, 10, 5, 9, 8, 7, 6] as const;
+const SOUTH_SIGN_LABELS: Record<number, { name: string; short: string; entityId: EntityId }> = {
+  1: { name: "Mesha / Aries", short: "Ar", entityId: "rashi.Aries" as EntityId },
+  2: { name: "Vrishabha / Taurus", short: "Ta", entityId: "rashi.Taurus" as EntityId },
+  3: { name: "Mithuna / Gemini", short: "Ge", entityId: "rashi.Gemini" as EntityId },
+  4: { name: "Karka / Cancer", short: "Ca", entityId: "rashi.Cancer" as EntityId },
+  5: { name: "Simha / Leo", short: "Le", entityId: "rashi.Leo" as EntityId },
+  6: { name: "Kanya / Virgo", short: "Vi", entityId: "rashi.Virgo" as EntityId },
+  7: { name: "Tula / Libra", short: "Li", entityId: "rashi.Libra" as EntityId },
+  8: { name: "Vrischika / Scorpio", short: "Sc", entityId: "rashi.Scorpio" as EntityId },
+  9: { name: "Dhanu / Sagittarius", short: "Sg", entityId: "rashi.Sagittarius" as EntityId },
+  10: { name: "Makara / Capricorn", short: "Cp", entityId: "rashi.Capricorn" as EntityId },
+  11: { name: "Kumbha / Aquarius", short: "Aq", entityId: "rashi.Aquarius" as EntityId },
+  12: { name: "Meena / Pisces", short: "Pi", entityId: "rashi.Pisces" as EntityId },
 };
 
 export function D1ChartWorkbenchShell({ status = "Открываю карту D1..." }: { status?: string }) {
@@ -175,8 +192,8 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
           </div>
         ))}
         <strong>Стиль</strong>
-        <button type="button" className={workbenchState.chartStyle === "north" ? "active" : ""} onClick={() => setChartStyle("north")}>Северный</button>
-        <button type="button" className={workbenchState.chartStyle === "south" ? "active" : ""} onClick={() => setChartStyle("south")}>Южный</button>
+        <button type="button" className={workbenchState.chartStyle === "north" ? "active" : ""} aria-pressed={workbenchState.chartStyle === "north"} aria-label="North chart style, house-fixed" onClick={() => setChartStyle("north")}>Северный</button>
+        <button type="button" className={workbenchState.chartStyle === "south" ? "active" : ""} aria-pressed={workbenchState.chartStyle === "south"} aria-label="South chart style, sign-fixed" onClick={() => setChartStyle("south")}>Южный</button>
         <strong>Режим</strong>
         <button type="button" className={workbenchState.mode === "novice" ? "active" : ""} onClick={() => setMode("novice")}>Новичок</button>
         <button type="button" className={workbenchState.mode === "astrologer" ? "active" : ""} onClick={() => setMode("astrologer")}>Астролог</button>
@@ -190,6 +207,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
         <button type="button" className={workbenchState.density === "comfortable" ? "active" : ""} onClick={() => setDensity("comfortable")}>Обычный</button>
         <button type="button" className={workbenchState.density === "compact" ? "active" : ""} onClick={() => setDensity("compact")}>Компактный</button>
       </div>
+      <p className="d1-style-explainer">North = house-fixed. South = sign-fixed.</p>
 
       {status ? <div className="product-status">{status}</div> : null}
       {workbenchState.mode === "astrologer" && activeScopeMeta ? (
@@ -235,7 +253,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, status }
 function NorthChart({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
   return (
     <section className="d1-chart-card">
-      <div className="d1-chart-title"><h2>{model.scopeId} Раши</h2><span>Нажмите на дом, знак, граху или Лагну</span></div>
+      <div className="d1-chart-title"><h2>{model.scopeId} Раши</h2><span>North = house-fixed; houses stay in position</span></div>
       <div className="d1-north-chart">
         <svg viewBox="0 0 100 100" aria-hidden="true">
           <path d="M0 0 L100 100 M100 0 L0 100" />
@@ -254,15 +272,56 @@ function NorthChart({ model, state, onSelect }: { model: D1WorkbenchModel; state
 function SouthChart({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
   return (
     <section className="d1-chart-card">
-      <div className="d1-chart-title"><h2>{model.scopeId} Раши</h2><span>Южноиндийская сетка знаков</span></div>
-      <div className="d1-south-chart">
-        {model.houses.map((house) => {
-          const position = SOUTH_GRID[house.house];
-          return <ChartCell key={house.house} house={house} grahas={grahasForHouse(model, house.house)} specialPoints={specialPointsForHouse(model, house.house)} state={state} onSelect={onSelect} style={{ gridColumn: position.col, gridRow: position.row }} />;
+      <div className="d1-chart-title"><h2>{model.scopeId} Раши</h2><span>South = sign-fixed; grahas and houses move through fixed rashi cells</span></div>
+      <div className="d1-south-chart" aria-label="South Indian sign-fixed chart">
+        {SOUTH_SIGN_ORDER.map((rashiIndex) => {
+          const position = SOUTH_SIGN_GRID[rashiIndex];
+          const house = houseForRashi(model, rashiIndex);
+          return (
+            <SouthSignCell
+              key={rashiIndex}
+              rashiIndex={rashiIndex}
+              house={house}
+              grahas={grahasForRashi(model, rashiIndex)}
+              specialPoints={specialPointsForRashi(model, rashiIndex)}
+              state={state}
+              onSelect={onSelect}
+              style={{ gridColumn: position.col, gridRow: position.row }}
+            />
+          );
         })}
-        <div className="d1-south-center">{model.scopeId}</div>
+        <div className="d1-south-center"><strong>{model.scopeId}</strong><span>sign-fixed</span></div>
       </div>
     </section>
+  );
+}
+
+function SouthSignCell({ rashiIndex, house, grahas, specialPoints, state, onSelect, style }: { rashiIndex: number; house: D1HouseCell | null; grahas: D1GrahaRow[]; specialPoints: D1SpecialPointRow[]; state: ChartWorkbenchState; onSelect: (id: EntityId) => void; style: CSSProperties }) {
+  const sign = SOUTH_SIGN_LABELS[rashiIndex];
+  const rashiEntityId = house?.rashiEntityId ?? sign.entityId;
+  return (
+    <div
+      className="d1-chart-cell d1-south-sign-cell"
+      data-south-sign-fixed="true"
+      data-rashi-index={rashiIndex}
+      style={style}
+      aria-label={`${sign.name}; ${house ? `house ${house.house}` : "house not mapped"}`}
+    >
+      {state.displayLayers.rashiLabels ? <button type="button" className="d1-rashi-button" onClick={() => onSelect(rashiEntityId)}>{sign.short} {sign.name}</button> : null}
+      {state.displayLayers.houseNumbers && house ? <button type="button" className="d1-house-button" onClick={() => onSelect(house.houseEntityId)}>House {house.house}</button> : null}
+      <div className="d1-graha-stack">
+        {state.displayLayers.specialPoints ? specialPoints.map((point) => (
+          <button key={point.code} type="button" className={point.code === "LAGNA" ? "d1-lagna-marker" : undefined} onClick={() => onSelect(point.entityId)}>
+            {point.code === "LAGNA" ? "Lagna" : placementLabel(point, state.terminologyMode)}{state.displayLayers.degrees && state.mode === "astrologer" ? ` ${point.degreeInSign}` : ""}
+          </button>
+        )) : null}
+        {state.displayLayers.grahas ? grahas.map((graha) => (
+          <button key={graha.code} type="button" onClick={() => onSelect(graha.placementEntityId ?? graha.entityId)}>
+            {placementLabel(graha, state.terminologyMode)}{graha.retrograde && state.displayLayers.retrograde ? " (R)" : ""}{state.displayLayers.degrees && state.mode === "astrologer" ? ` ${graha.degreeInSign}` : ""}
+          </button>
+        )) : null}
+      </div>
+    </div>
   );
 }
 
@@ -412,6 +471,18 @@ function grahasForHouse(model: D1WorkbenchModel, house: number) {
 
 function specialPointsForHouse(model: D1WorkbenchModel, house: number) {
   return model.specialPoints.filter((point) => point.house === house);
+}
+
+function houseForRashi(model: D1WorkbenchModel, rashiIndex: number) {
+  return model.houses.find((house) => house.rashiIndex === rashiIndex) ?? null;
+}
+
+function grahasForRashi(model: D1WorkbenchModel, rashiIndex: number) {
+  return model.grahas.filter((graha) => graha.rashiIndex === rashiIndex);
+}
+
+function specialPointsForRashi(model: D1WorkbenchModel, rashiIndex: number) {
+  return model.specialPoints.filter((point) => point.rashiIndex === rashiIndex);
 }
 
 function selectedFacts(model: D1WorkbenchModel, entityId: EntityId | null): string[] {

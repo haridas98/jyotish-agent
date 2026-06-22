@@ -3044,6 +3044,32 @@ export type CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeV
   cautionCopy: "no hold release, dispatch, escalation, packet delivery, acknowledgement, closure, remediation execution, ticket creation, notification delivery, operator handoff delivery, parity pass, or release readiness is claimed";
 };
 
+export function buildCoreEvidenceUiHandoff() {
+  return {
+    title: "Core evidence UI handoff",
+    schemaVersion: "jyotish-core-evidence-ui-handoff-v1",
+    stage: "P105-A",
+    status: "blocked_parity_micro_chain_capped_pending_ui_product_implementation",
+    frontendStage: "E106-A",
+    nextStageRecommendedFocus: "south_indian_chart_ui_and_accuracy_dashboard_cleanup",
+    parityMicroChainCappedLabel: "parity_micro_chain_capped=true",
+    nextStageUiProductImplementationLabel: "next_stage_should_be_ui_product_implementation=true",
+    nextStageRecommendedIdLabel: "next_stage_recommended_id=E106-A",
+    releaseGateStatusLabel: "release_gate_status=blocked",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    releaseReadyClaimedLabel: "release_ready_claimed=false",
+    holdReviewRows: 40,
+    holdReviewFamilyCount: 4,
+    holdReviewReadyCount: 0,
+    holdReviewBlockedCount: 40,
+    holdReviewReleasedCount: 0,
+    holdReviewDispatchedCount: 0,
+    holdReviewEscalatedCount: 0,
+    statusCopy: "parity micro-chain capped; product UI work is active while release remains blocked",
+    cautionCopy: "no parity pass, release readiness, dispatch, escalation, upload, attachment, mark, notification, or external ticket is claimed",
+  } as const;
+}
+
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",

@@ -67,6 +67,14 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("terminologyMode"), "D1 workbench must keep terminology mode in shared state");
   assert(component.includes("activeTab"), "D1 workbench must keep active data tab in shared state");
   assert(component.includes("chartStyle === \"north\"") && component.includes("chartStyle === \"south\""), "D1 workbench must support north/south style toggle");
+  assert(component.includes("SOUTH_SIGN_GRID"), "South Indian chart must use a named sign-fixed grid map");
+  assert(component.includes("SOUTH_SIGN_ORDER"), "South Indian chart must render signs in deterministic sign order");
+  assert(component.includes("SOUTH_SIGN_LABELS"), "South Indian chart must expose fixed rashi/sign labels");
+  assert(component.includes("grahasForRashi"), "South Indian chart must place grahas by rashi, not house position");
+  assert(component.includes("specialPointsForRashi"), "South Indian chart must place Lagna/special points by rashi, not house position");
+  assert(component.includes("data-south-sign-fixed"), "South Indian cells must expose sign-fixed markers");
+  assert(component.includes("d1-lagna-marker"), "South Indian chart must render a clear Lagna marker");
+  assert(component.includes("North = house-fixed") && component.includes("South = sign-fixed"), "D1 workbench must explain the North/South layout distinction");
   assert(component.includes("mode === \"novice\"") && component.includes("mode === \"astrologer\""), "D1 workbench must support novice/astrologer mode");
   assert(!/calculate(?:House|Nakshatra|Dasha|Varga)\s*\(/.test(component), "React component must not calculate astrology formulas");
   for (const forbidden of ["AI", "source.pending", "Missing calculations", "Block is not registered yet"]) {

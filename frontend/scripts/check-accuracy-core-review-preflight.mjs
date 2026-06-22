@@ -2352,6 +2352,18 @@ assert(accuracyRoute.includes("hold_review_operator_handoff_readiness_operator_p
 assert(accuracyRoute.includes("hold_review_no_external_action_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P103 no external action hold-review label");
 assert(accuracyRoute.includes("hold_review_release_gate_operator_packet_dispatch_blocked_label_only"), "Accuracy route marker must expose P103 release blocked hold-review label");
 assert(accuracyRoute.includes("blocked label-only hold-review rows"), "Accuracy route marker must expose P103 blocked hold-review copy");
+assert(helperSlice.includes("buildCoreEvidenceUiHandoff"), "Core evidence helper must expose P105 UI handoff builder");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-ui-handoff-v1"'), "Core evidence UI handoff helper must expose P105 schema");
+assert(helperSlice.includes('stage: "P105-A"'), "Core evidence UI handoff helper must expose P105-A stage");
+assert(helperSlice.includes('frontendStage: "E106-A"'), "Core evidence UI handoff helper must expose E106-A frontend stage");
+assert(helperSlice.includes('status: "blocked_parity_micro_chain_capped_pending_ui_product_implementation"'), "Core evidence UI handoff helper must expose capped P105 status");
+assert(helperSlice.includes('nextStageRecommendedFocus: "south_indian_chart_ui_and_accuracy_dashboard_cleanup"'), "Core evidence UI handoff helper must expose E106 focus");
+assert(preflightSlice.includes("South Indian chart UI work active"), "Core evidence pipeline UI must foreground E106 chart work");
+assert(preflightSlice.includes("parity_micro_chain_capped=true"), "Core evidence pipeline UI must expose capped parity chain");
+assert(accuracyRoute.includes("E106-A"), "Accuracy route marker must expose E106 frontend stage");
+assert(accuracyRoute.includes("P105-A"), "Accuracy route marker must expose P105 handoff stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-ui-handoff-v1"), "Accuracy route marker must expose P105 handoff schema");
+assert(accuracyRoute.includes("next_stage_recommended_focus=south_indian_chart_ui_and_accuracy_dashboard_cleanup"), "Accuracy route marker must expose E106 focus");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
