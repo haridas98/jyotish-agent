@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
-import { D1_WORKBENCH_SMOKE_ROUTE } from "@/astrology/d1-workbench-smoke-fixture";
+import { D1_WORKBENCH_POLISH_STAGE, D1_WORKBENCH_SMOKE_INTERNAL_MARKER, D1_WORKBENCH_SMOKE_ROUTE } from "@/astrology/d1-workbench-smoke-fixture";
 import { deleteChartProfile, fetchCurrentUser, listChartProfiles, type ChartProfile } from "@/lib/api";
 
 const quickActions = [
@@ -34,6 +34,22 @@ function profileMeta(profile: ChartProfile) {
 
 function latestProfile(profiles: ChartProfile[]) {
   return [...profiles].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0] ?? null;
+}
+
+function DemoD1Link({ label }: { label: string }) {
+  return (
+    <a
+      className="secondary-button"
+      href={D1_WORKBENCH_SMOKE_ROUTE}
+      data-chart-demo-path={D1_WORKBENCH_SMOKE_ROUTE}
+      data-chart-detail-smoke-fixture={D1_WORKBENCH_SMOKE_INTERNAL_MARKER}
+      data-chart-detail-polish-stage={D1_WORKBENCH_POLISH_STAGE}
+      aria-label={`${label}: пример D1, только просмотр`}
+    >
+      {label}
+      <span hidden>P107-A E108-A read-only D1 demo path</span>
+    </a>
+  );
 }
 
 export default function ChartsPage() {
@@ -123,7 +139,7 @@ export default function ChartsPage() {
             <span>После входа здесь появятся ваши сохранённые карты.</span>
           </div>
           <a className="primary-link-button" href="/charts/new">Создать карту</a>
-          <a className="secondary-button" href={D1_WORKBENCH_SMOKE_ROUTE}>P107-A read-only D1 demo</a>
+          <DemoD1Link label="Посмотреть пример" />
         </section>
       ) : null}
 
@@ -135,7 +151,7 @@ export default function ChartsPage() {
           </div>
           <div className="charts-empty-actions">
             <a className="primary-link-button" href="/charts/new">Создать карту</a>
-            <a className="secondary-button" href={D1_WORKBENCH_SMOKE_ROUTE}>P107-A read-only D1 demo</a>
+            <DemoD1Link label="Открыть пример D1" />
             <a className="secondary-button" href="/people">Люди</a>
             <a className="secondary-button" href="/transits">Транзиты</a>
           </div>

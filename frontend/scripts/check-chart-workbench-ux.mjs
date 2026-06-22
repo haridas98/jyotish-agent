@@ -50,8 +50,17 @@ for (const required of [
   "compact",
   "data-density",
   "d1-workbench-compact",
+  "data-chart-detail-polish-stage",
+  "data-chart-demo-kind",
+  "E108-A",
+  "\u041f\u0440\u0438\u043c\u0435\u0440 D1",
+  "\u0442\u043e\u043b\u044c\u043a\u043e \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440",
 ]) {
   assert(combined.includes(required), `Missing required chart workbench contract: ${required}`);
+}
+
+for (const oldVisibleText of [">P107-A read-only fixture<", "P107-A read-only D1 demo"]) {
+  assert(!component.includes(oldVisibleText), `Internal smoke marker must not be primary visible workbench copy: ${oldVisibleText}`);
 }
 
 for (const forbidden of [

@@ -157,6 +157,8 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
       className={workbenchState.density === "compact" ? "d1-workbench d1-workbench-compact" : "d1-workbench"}
       data-density={workbenchState.density}
       data-chart-detail-smoke-fixture={readOnlyFixture ? "P107-A" : undefined}
+      data-chart-detail-polish-stage={readOnlyFixture ? "E108-A" : undefined}
+      data-chart-demo-kind={readOnlyFixture ? "read-only-example" : undefined}
       aria-label="Карта D1"
     >
       <div className="d1-header">
@@ -165,7 +167,15 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
           <h1>{model.profile.title}</h1>
           <p>{model.profile.birthDate} · {model.profile.birthTime} · {model.profile.place}</p>
         </div>
-        {readOnlyFixture ? <div className="d1-actions"><span className="d1-readonly-fixture-badge">P107-A read-only fixture</span></div> : null}
+        {readOnlyFixture ? (
+          <div className="d1-actions">
+            <span className="d1-readonly-fixture-badge">
+              Пример D1 · только просмотр
+              <span className="d1-readonly-fixture-note">это не сохранённая карта пользователя</span>
+              <span hidden>P107-A E108-A read-only chart detail smoke path</span>
+            </span>
+          </div>
+        ) : null}
         {!readOnlyFixture ? <div className="d1-actions">
           <a href={`/charts/${model.profile.id}/edit`}>Редактировать</a>
           <a href="/compatibility">Сравнить</a>

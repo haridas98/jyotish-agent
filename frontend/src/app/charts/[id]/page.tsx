@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { ProductShell } from "@/app/product-shell";
 import { buildD1WorkbenchModel, type ChartWorkbenchScopeId } from "@/astrology/d1-workbench";
-import { buildD1WorkbenchSmokeModel, D1_WORKBENCH_SMOKE_CHART_ID, D1_WORKBENCH_SMOKE_ROUTE, D1_WORKBENCH_SMOKE_STATUS } from "@/astrology/d1-workbench-smoke-fixture";
+import { buildD1WorkbenchSmokeModel, D1_WORKBENCH_POLISH_STAGE, D1_WORKBENCH_SMOKE_CHART_ID, D1_WORKBENCH_SMOKE_ROUTE, D1_WORKBENCH_SMOKE_USER_STATUS } from "@/astrology/d1-workbench-smoke-fixture";
 import {
   fetchChartProfile,
   fetchD1ChartWorkbench,
@@ -44,7 +44,7 @@ export default function ChartDetailPage() {
         setProfile(null);
         setSettings(null);
         setWorkbench(null);
-        setStatus(D1_WORKBENCH_SMOKE_STATUS);
+        setStatus(D1_WORKBENCH_SMOKE_USER_STATUS);
         return;
       }
       if (!profileId) {
@@ -80,11 +80,13 @@ export default function ChartDetailPage() {
     return buildD1WorkbenchModel(profile, settings, workbench.calculation, scopeId, workbench);
   }, [isSmokeDemoChart, profile, settings, workbench]);
 
-  const renderedStatus = isSmokeDemoChart ? `${D1_WORKBENCH_SMOKE_STATUS} Route: ${D1_WORKBENCH_SMOKE_ROUTE}.` : status;
+  const renderedStatus = isSmokeDemoChart ? D1_WORKBENCH_SMOKE_USER_STATUS : status;
 
   return (
     <ProductShell active="charts">
       <div className="chart-detail-static-shell" aria-hidden={Boolean(model)}>
+        <span>{D1_WORKBENCH_POLISH_STAGE}</span>
+        <span>{D1_WORKBENCH_SMOKE_ROUTE}</span>
         <span>Карта D1</span>
         <span>Стиль карты</span>
         <span>Режим</span>

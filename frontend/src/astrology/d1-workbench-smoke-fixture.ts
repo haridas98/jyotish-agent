@@ -3,7 +3,10 @@ import type { BirthChart, ChartCalculationRecord, ChartProfile, JyotishUserSetti
 
 export const D1_WORKBENCH_SMOKE_CHART_ID = "demo-d1";
 export const D1_WORKBENCH_SMOKE_ROUTE = "/charts/demo-d1";
-export const D1_WORKBENCH_SMOKE_STATUS = "P107-A read-only D1 chart detail smoke fixture; no saved chart record is created.";
+export const D1_WORKBENCH_SMOKE_INTERNAL_MARKER = "P107-A";
+export const D1_WORKBENCH_POLISH_STAGE = "E108-A";
+export const D1_WORKBENCH_SMOKE_USER_STATUS = "Пример D1: только просмотр; это не сохранённая карта пользователя.";
+export const D1_WORKBENCH_SMOKE_STATUS = D1_WORKBENCH_SMOKE_USER_STATUS;
 
 const calculationSettings: NonNullable<BirthChart["settings"]> = {
   zodiac: "sidereal",
@@ -21,14 +24,14 @@ const calculationSettings: NonNullable<BirthChart["settings"]> = {
 
 const profile: ChartProfile = {
   id: 107,
-  display_name: "P107-A D1 smoke fixture",
+  display_name: "Пример D1 · Вриндаван",
   birth_date: "1990-08-15",
   birth_time: "10:24:00",
   birth_time_accuracy: "exact",
   gender: "unknown",
   timezone: "Asia/Kolkata",
   is_self_profile: false,
-  notes: "read-only D1 chart detail smoke fixture",
+  notes: "Демо-карта D1 только для просмотра",
   calculation_settings: calculationSettings,
   place: {
     id: 107,
