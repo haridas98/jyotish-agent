@@ -24,13 +24,22 @@ const helperSlice = sliceBetween(roadmap, "export function buildCoreReviewPrefli
 
 for (const marker of [
   "Core review preflight",
+  "Core review progress",
+  "Next review batch",
   "coreReviewPreflightBlocker",
+  "coreReviewProgress",
+  "nextCoreReviewBatchPlan",
   "buildCoreReviewPreflightBlocker",
+  "buildCoreReviewProgress",
+  "buildNextCoreReviewBatchPlan",
   "witness_core_parity",
+  "sterlitamak-1998-04-30-1345",
   "not-reviewed witness rows",
   "source family coverage",
   "both",
   "release remains blocked",
+  "real diff",
+  "blocked until explicit review commands run",
   "preflight_witness_review",
   "mark_jhora_witness_reviewed",
   "mark_parashara_light_witness_reviewed",
@@ -44,13 +53,30 @@ for (const marker of [
   "coreReviewPreflightBlocker.sourceFamilyCoverage",
   "coreReviewPreflightBlocker.releaseGateStatus",
   "coreReviewPreflightBlocker.safeCommandFamilies",
+  "coreReviewProgress.targetCaseId",
+  "coreReviewProgress.reviewedRows",
+  "coreReviewProgress.remainingNotReviewedRows",
+  "coreReviewProgress.comparableRows",
+  "coreReviewProgress.failedRows",
+  "coreReviewProgress.maxAbsDeltaArcseconds",
+  "nextCoreReviewBatchPlan.recommendedBatchSize",
+  "nextCoreReviewBatchPlan.batchStatus",
+  "nextCoreReviewBatchPlan.safeCommandFamilies",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
 
-assert(helperSlice.includes("notReviewedRows: 21"), "Core review preflight helper must expose 21 not-reviewed rows");
+assert(helperSlice.includes("notReviewedRows: 20"), "Core review preflight helper must expose 20 remaining not-reviewed rows");
+assert(!helperSlice.includes("notReviewedRows: 21"), "Core review preflight helper must not expose stale 21 count");
+assert(!accuracyRoute.includes("21 not-reviewed witness rows"), "Accuracy route marker must not expose stale 21 count");
 assert(helperSlice.includes('sourceFamilyCoverage: "both"'), "Core review preflight helper must expose both source family coverage");
 assert(preflightSlice.includes("join(\" - \")"), "Core review preflight command families should render as compact joined helper data");
+assert(helperSlice.includes("reviewedRows: 1"), "Core review progress helper must expose one reviewed row");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core review progress helper must expose 20 remaining rows");
+assert(helperSlice.includes("comparableRows: 1"), "Core review progress helper must expose one comparable row");
+assert(helperSlice.includes("failedRows: 1"), "Core review progress helper must expose one failed row");
+assert(helperSlice.includes("maxAbsDeltaArcseconds: 94.064472"), "Core review progress helper must expose max delta");
+assert(helperSlice.includes("recommendedBatchSize: 5"), "Next review batch helper must expose batch size 5");
 
 for (const forbidden of [
   "source_report",

@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreReviewPreflightBlocker, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildNextCoreReviewBatchPlan, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5673,6 +5673,8 @@ function AccuracyReportPanel({
   const collectionPlanRunbook = buildCollectionPlanSnapshotRunbook(parityCollectionChecklistRows, releaseGateActionSummary);
   const artifactAvailabilityCheckpoint = buildArtifactAvailabilityCheckpoint(parityCollectionChecklistRows, releaseGateActionSummary);
   const coreReviewPreflightBlocker = buildCoreReviewPreflightBlocker();
+  const coreReviewProgress = buildCoreReviewProgress();
+  const nextCoreReviewBatchPlan = buildNextCoreReviewBatchPlan();
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5795,6 +5797,31 @@ function AccuracyReportPanel({
             <span>review gate</span>
             <strong>{coreReviewPreflightBlocker.releaseGateStatus}</strong>
             <small>{coreReviewPreflightBlocker.cautionCopy}</small>
+          </div>
+          <h3>Core review progress</h3>
+          <p>{coreReviewProgress.targetCaseId}: {coreReviewProgress.statusCopy}.</p>
+          <small>
+            reviewed rows: {coreReviewProgress.reviewedRows} - remaining not-reviewed rows: {coreReviewProgress.remainingNotReviewedRows} - comparable rows: {coreReviewProgress.comparableRows} - failed rows: {coreReviewProgress.failedRows} - max delta: {coreReviewProgress.maxAbsDeltaArcseconds} arcseconds
+          </small>
+          <div>
+            <span>reviewed target</span>
+            <strong>{coreReviewProgress.targetCaseId}</strong>
+            <small>{coreReviewProgress.detailCopy}; release remains blocked.</small>
+          </div>
+          <div>
+            <span>core diff status</span>
+            <strong>{coreReviewProgress.failedRows}</strong>
+            <small>real diff; max delta {coreReviewProgress.maxAbsDeltaArcseconds} arcseconds; no release readiness is claimed.</small>
+          </div>
+          <h3>Next review batch</h3>
+          <p>{nextCoreReviewBatchPlan.batchStatus}.</p>
+          <small>
+            recommended batch size: {nextCoreReviewBatchPlan.recommendedBatchSize} - {nextCoreReviewBatchPlan.safeCommandFamilies.join(" - ")}
+          </small>
+          <div>
+            <span>next command families</span>
+            <strong>{nextCoreReviewBatchPlan.recommendedBatchSize}</strong>
+            <small>{nextCoreReviewBatchPlan.cautionCopy}</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">

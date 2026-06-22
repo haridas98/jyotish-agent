@@ -114,7 +114,7 @@ export type ArtifactAvailabilityCheckpoint = {
 export type CoreReviewPreflightBlocker = {
   title: "Core review preflight";
   domainKey: "witness_core_parity";
-  notReviewedRows: 21;
+  notReviewedRows: 20;
   sourceFamilyLabel: "source family coverage";
   sourceFamilyCoverage: "both";
   releaseGateStatus: "blocked";
@@ -126,6 +126,30 @@ export type CoreReviewPreflightBlocker = {
     "mark_parashara_light_witness_reviewed",
   ];
   cautionCopy: "No acceptance or release readiness is claimed";
+};
+
+export type CoreReviewProgress = {
+  title: "Core review progress";
+  targetCaseId: "sterlitamak-1998-04-30-1345";
+  reviewedRows: 1;
+  remainingNotReviewedRows: 20;
+  comparableRows: 1;
+  failedRows: 1;
+  maxAbsDeltaArcseconds: 94.064472;
+  statusCopy: "real diff; release remains blocked";
+  detailCopy: "first reviewed row is comparable and failed";
+};
+
+export type NextCoreReviewBatchPlan = {
+  title: "Next review batch";
+  recommendedBatchSize: 5;
+  batchStatus: "blocked until explicit review commands run";
+  safeCommandFamilies: [
+    "preflight_witness_review",
+    "mark_jhora_witness_reviewed",
+    "mark_parashara_light_witness_reviewed",
+  ];
+  cautionCopy: "No next-row review status or parity-passing result is claimed";
 };
 
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
@@ -289,7 +313,7 @@ export function buildCoreReviewPreflightBlocker(): CoreReviewPreflightBlocker {
   return {
     title: "Core review preflight",
     domainKey: "witness_core_parity",
-    notReviewedRows: 21,
+    notReviewedRows: 20,
     sourceFamilyLabel: "source family coverage",
     sourceFamilyCoverage: "both",
     releaseGateStatus: "blocked",
@@ -301,6 +325,34 @@ export function buildCoreReviewPreflightBlocker(): CoreReviewPreflightBlocker {
       "mark_parashara_light_witness_reviewed",
     ],
     cautionCopy: "No acceptance or release readiness is claimed",
+  };
+}
+
+export function buildCoreReviewProgress(): CoreReviewProgress {
+  return {
+    title: "Core review progress",
+    targetCaseId: "sterlitamak-1998-04-30-1345",
+    reviewedRows: 1,
+    remainingNotReviewedRows: 20,
+    comparableRows: 1,
+    failedRows: 1,
+    maxAbsDeltaArcseconds: 94.064472,
+    statusCopy: "real diff; release remains blocked",
+    detailCopy: "first reviewed row is comparable and failed",
+  };
+}
+
+export function buildNextCoreReviewBatchPlan(): NextCoreReviewBatchPlan {
+  return {
+    title: "Next review batch",
+    recommendedBatchSize: 5,
+    batchStatus: "blocked until explicit review commands run",
+    safeCommandFamilies: [
+      "preflight_witness_review",
+      "mark_jhora_witness_reviewed",
+      "mark_parashara_light_witness_reviewed",
+    ],
+    cautionCopy: "No next-row review status or parity-passing result is claimed",
   };
 }
 
