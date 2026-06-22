@@ -270,7 +270,7 @@ export type CoreEvidenceReadiness = {
 
 export type CoreEvidencePipeline = {
   title: "Core evidence pipeline";
-  latestStage: "P91-A";
+  latestStage: "P93-A";
   stageSequence: [
     "P53 backlog",
     "P55 intake",
@@ -292,6 +292,7 @@ export type CoreEvidencePipeline = {
     "P87 work-order readiness",
     "P89 operator handoff smoke matrix",
     "P91 safe-validation transcript",
+    "P93 safe-validation result ledger",
   ];
   releaseGateStatus: "blocked";
   commandSmokeMatrixStatus: "ready";
@@ -595,8 +596,44 @@ export type CoreEvidencePipeline = {
     readyToMarkRows: 0;
     remainingNotReviewedRows: 20;
   };
+  externalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultLedgerSummary: {
+    safeValidationTranscriptCaseRows: 5;
+    safeValidationTranscriptAttachmentRows: 10;
+    safeValidationTranscriptCommandRows: 40;
+    safeValidationResultLedgerRows: 40;
+    safeValidationCommandFamilyCount: 4;
+    safeValidationCommandExecutionPerformedCount: 0;
+    safeValidationCommandReadyCount: 0;
+    safeValidationCommandBlockedCount: 40;
+    safeValidationResultRecordedCount: 0;
+    safeValidationResultAcceptedCount: 0;
+    safeValidationResultFailedCount: 0;
+    safeValidationResultBlockedCount: 40;
+    operatorHandoffCasePacketRows: 5;
+    operatorHandoffAttachmentPacketRows: 10;
+    operatorHandoffSmokeCaseRows: 5;
+    operatorHandoffSmokeAttachmentRows: 10;
+    unsafeExternalActionCommandCount: 0;
+    commandExecutionPerformedCount: 0;
+    commandSmokeMatrixReadyCount: 0;
+    commandSmokeMatrixBlockedCount: 10;
+    operatorHandoffReadyCount: 0;
+    operatorHandoffBlockedCount: 10;
+    workOrderDeliveryReadyCount: 0;
+    workOrderDeliveryBlockedCount: 10;
+    pendingExternalEvidenceDecisionAuditWorkOrderCount: 10;
+    pendingJhoraDecisionAuditWorkOrderCount: 5;
+    pendingParasharaLightDecisionAuditWorkOrderCount: 5;
+    decisionRecordedCount: 0;
+    decisionAuditedCount: 0;
+    decisionAuditPassedCount: 0;
+    decisionAuditFailedCount: 0;
+    readyToAttachRows: 0;
+    readyToMarkRows: 0;
+    remainingNotReviewedRows: 20;
+  };
   operatorNote: "Evidence must be collected and attached before mark commands are attempted";
-  statusCopy: "blocked external evidence receipt manifest decision audit operator handoff safe-validation transcript labels";
+  statusCopy: "blocked external evidence receipt manifest decision audit operator handoff safe-validation result ledger labels";
 };
 
 export type CoreEvidenceAttachmentGate = {
@@ -2465,10 +2502,133 @@ export type CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeV
   cautionCopy: "no command execution, operator handoff, external action, parity pass, or release readiness is claimed";
 };
 
+export type CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultLedger = {
+  title: "Core evidence external receipt manifest decision audit operator handoff safe-validation result ledger";
+  schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-ledger-v1";
+  stage: "P93-A";
+  status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger";
+  upstreamSafeValidationTranscriptSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-transcript-v1";
+  upstreamSafeValidationTranscriptStage: "P91-A";
+  upstreamSafeValidationTranscriptStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript";
+  upstreamOperatorHandoffSmokeMatrixSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-smoke-matrix-v1";
+  upstreamOperatorHandoffSmokeMatrixStage: "P89-A";
+  upstreamOperatorHandoffSmokeMatrixStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix";
+  safeValidationTranscriptCaseRows: 5;
+  safeValidationTranscriptAttachmentRows: 10;
+  safeValidationTranscriptCommandRows: 40;
+  safeValidationResultLedgerRows: 40;
+  safeValidationCommandFamilyCount: 4;
+  safeValidationCommandExecutionPerformedCount: 0;
+  safeValidationCommandReadyCount: 0;
+  safeValidationCommandBlockedCount: 40;
+  safeValidationResultRecordedCount: 0;
+  safeValidationResultAcceptedCount: 0;
+  safeValidationResultFailedCount: 0;
+  safeValidationResultBlockedCount: 40;
+  operatorHandoffCasePacketRows: 5;
+  operatorHandoffAttachmentPacketRows: 10;
+  operatorHandoffSmokeCaseRows: 5;
+  operatorHandoffSmokeAttachmentRows: 10;
+  unsafeExternalActionCommandCount: 0;
+  commandExecutionPerformedCount: 0;
+  commandSmokeMatrixReadyCount: 0;
+  commandSmokeMatrixBlockedCount: 10;
+  operatorHandoffReadyCount: 0;
+  operatorHandoffBlockedCount: 10;
+  workOrderDeliveryReadyCount: 0;
+  workOrderDeliveryBlockedCount: 10;
+  pendingExternalEvidenceDecisionAuditWorkOrderCount: 10;
+  pendingJhoraDecisionAuditWorkOrderCount: 5;
+  pendingParasharaLightDecisionAuditWorkOrderCount: 5;
+  decisionRecordedCount: 0;
+  decisionAuditedCount: 0;
+  decisionAuditPassedCount: 0;
+  decisionAuditFailedCount: 0;
+  readyToAttachRows: 0;
+  readyToMarkRows: 0;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  paritySuccessClaimed: false;
+  releaseReadyClaimed: false;
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  slotFamilies: [
+    "jhora_screenshot_or_packet",
+    "parashara_light_manual_values_or_packet",
+  ];
+  safeValidationResultLedgerStatusLabel: "safe_validation_result_ledger_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger";
+  safeValidationResultExecutionStatusLabel: "safe_validation_result_execution_status=not_executed";
+  safeValidationResultRecordStatusLabel: "safe_validation_result_record_status=not_recorded";
+  safeValidationResultAcceptanceStatusLabel: "safe_validation_result_acceptance_status=not_accepted";
+  safeValidationResultFailureStatusLabel: "safe_validation_result_failure_status=not_failed";
+  safeValidationTranscriptStatusLabel: "safe_validation_transcript_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript";
+  safeValidationCommandStatusLabel: "safe_validation_command_status=blocked_pending_external_evidence_and_operator_handoff";
+  safeValidationCommandExecutionStatusLabel: "safe_validation_command_execution_status=not_executed";
+  operatorHandoffSmokeMatrixStatusLabel: "operator_handoff_smoke_matrix_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix";
+  decisionAuditWorkOrderReadinessStatusLabel: "decision_audit_work_order_readiness_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness";
+  decisionAuditWorkOrderStatusLabel: "decision_audit_work_order_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders";
+  decisionAuditStatusLabel: "decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit";
+  decisionQueueStatusLabel: "decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision";
+  receiptGateStatusLabel: "external_receipt_gate_status=blocked_pending_external_evidence_receipts";
+  intakeStatusLabel: "external_intake_status=blocked_pending_external_evidence_intake";
+  readinessStatusLabel: "attachment_readiness_status=blocked_pending_external_evidence_attachment";
+  receiptManifestStatusLabel: "receipt_manifest_status=not_received";
+  decisionAuditRecordStatusLabel: "decision_audit_record_status=not_started";
+  workOrderDeliveryStatusLabel: "work_order_delivery_status=not_delivered";
+  operatorHandoffStatusLabel: "operator_handoff_status=not_delivered";
+  humanDecisionAuditStatusLabel: "human_decision_audit_status=not_started";
+  commandSmokeMatrixStatusLabel: "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff";
+  safeValidationOnlyLabel: "safe_validation_only=true";
+  safeValidationResultLedgerOnlyLabel: "safe_validation_result_ledger_only=true";
+  noCommandExecutionPerformedLabel: "no_command_execution_performed=true";
+  noSafeValidationResultRecordedLabel: "no_safe_validation_result_recorded=true";
+  noSafeValidationResultAcceptedLabel: "no_safe_validation_result_accepted=true";
+  noSafeValidationResultFailedLabel: "no_safe_validation_result_failed=true";
+  readyToAttachLabel: "ready_to_attach=false";
+  readyToMarkLabel: "ready_to_mark=false";
+  paritySuccessClaimedLabel: "parity_success_claimed=false";
+  releaseReadyClaimedLabel: "release_ready_claimed=false";
+  noRawValuesInManifestLabel: "no_raw_values_in_manifest=true";
+  noPrivatePathsInManifestLabel: "no_private_paths_in_manifest=true";
+  noSecretsInManifestLabel: "no_secrets_in_manifest=true";
+  noEvidenceFileRecordedLabel: "no_evidence_file_recorded=true";
+  noEvidenceHashRecordedLabel: "no_evidence_hash_recorded=true";
+  noUploadExecutedLabel: "no_upload_executed=true";
+  noAttachmentExecutedLabel: "no_attachment_executed=true";
+  noMarkCommandExecutedLabel: "no_mark_command_executed=true";
+  noAcceptExecutedLabel: "no_accept_executed=true";
+  noRejectExecutedLabel: "no_reject_executed=true";
+  noDeferExecutedLabel: "no_defer_executed=true";
+  noWorkOrderDeliveryExecutedLabel: "no_work_order_delivery_executed=true";
+  noOperatorHandoffDeliveredLabel: "no_operator_handoff_delivered=true";
+  noExternalNotificationSentLabel: "no_external_notification_sent=true";
+  noExternalTicketCreatedLabel: "no_external_ticket_created=true";
+  safeValidationCommandFamilies: [
+    "validate_manifest_shape",
+    "validate_operator_handoff_readiness",
+    "validate_no_external_action",
+    "validate_release_gate_blocked",
+  ];
+  safeValidationResultFamilyLabels: [
+    "validate_manifest_shape_blocked_result_label_only",
+    "validate_operator_handoff_readiness_blocked_result_label_only",
+    "validate_no_external_action_blocked_result_label_only",
+    "validate_release_gate_blocked_blocked_result_label_only",
+  ];
+  operatorNote: "blocked safe-validation result ledger; no safe-validation result has been recorded, accepted, or failed, and no command execution, external evidence, operator handoff, upload, attachment, mark, accept, reject, defer, ticket, notification, or release action is claimed";
+  statusCopy: "blocked safe-validation result ledger for future operator validation";
+  cautionCopy: "no result recording, command execution, operator handoff, external action, parity pass, or release readiness is claimed";
+};
+
 export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
   return {
     title: "Core evidence pipeline",
-    latestStage: "P91-A",
+    latestStage: "P93-A",
     stageSequence: [
       "P53 backlog",
       "P55 intake",
@@ -2490,6 +2650,7 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       "P87 work-order readiness",
       "P89 operator handoff smoke matrix",
       "P91 safe-validation transcript",
+      "P93 safe-validation result ledger",
     ],
     releaseGateStatus: "blocked",
     commandSmokeMatrixStatus: "ready",
@@ -2793,8 +2954,44 @@ export function buildCoreEvidencePipeline(): CoreEvidencePipeline {
       readyToMarkRows: 0,
       remainingNotReviewedRows: 20,
     },
+    externalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultLedgerSummary: {
+      safeValidationTranscriptCaseRows: 5,
+      safeValidationTranscriptAttachmentRows: 10,
+      safeValidationTranscriptCommandRows: 40,
+      safeValidationResultLedgerRows: 40,
+      safeValidationCommandFamilyCount: 4,
+      safeValidationCommandExecutionPerformedCount: 0,
+      safeValidationCommandReadyCount: 0,
+      safeValidationCommandBlockedCount: 40,
+      safeValidationResultRecordedCount: 0,
+      safeValidationResultAcceptedCount: 0,
+      safeValidationResultFailedCount: 0,
+      safeValidationResultBlockedCount: 40,
+      operatorHandoffCasePacketRows: 5,
+      operatorHandoffAttachmentPacketRows: 10,
+      operatorHandoffSmokeCaseRows: 5,
+      operatorHandoffSmokeAttachmentRows: 10,
+      unsafeExternalActionCommandCount: 0,
+      commandExecutionPerformedCount: 0,
+      commandSmokeMatrixReadyCount: 0,
+      commandSmokeMatrixBlockedCount: 10,
+      operatorHandoffReadyCount: 0,
+      operatorHandoffBlockedCount: 10,
+      workOrderDeliveryReadyCount: 0,
+      workOrderDeliveryBlockedCount: 10,
+      pendingExternalEvidenceDecisionAuditWorkOrderCount: 10,
+      pendingJhoraDecisionAuditWorkOrderCount: 5,
+      pendingParasharaLightDecisionAuditWorkOrderCount: 5,
+      decisionRecordedCount: 0,
+      decisionAuditedCount: 0,
+      decisionAuditPassedCount: 0,
+      decisionAuditFailedCount: 0,
+      readyToAttachRows: 0,
+      readyToMarkRows: 0,
+      remainingNotReviewedRows: 20,
+    },
     operatorNote: "Evidence must be collected and attached before mark commands are attempted",
-    statusCopy: "blocked external evidence receipt manifest decision audit operator handoff safe-validation transcript labels",
+    statusCopy: "blocked external evidence receipt manifest decision audit operator handoff safe-validation result ledger labels",
   };
 }
 
@@ -4369,6 +4566,131 @@ export function buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHan
     operatorNote: "blocked safe-validation transcript bundle; no safe validation commands have been executed, and external evidence, operator handoff, upload, attachment, mark, accept, reject, defer, ticket, notification, and release remain blocked",
     statusCopy: "blocked safe-validation transcript bundle for future operator validation",
     cautionCopy: "no command execution, operator handoff, external action, parity pass, or release readiness is claimed",
+  };
+}
+
+export function buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultLedger(): CoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultLedger {
+  return {
+    title: "Core evidence external receipt manifest decision audit operator handoff safe-validation result ledger",
+    schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-ledger-v1",
+    stage: "P93-A",
+    status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger",
+    upstreamSafeValidationTranscriptSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-transcript-v1",
+    upstreamSafeValidationTranscriptStage: "P91-A",
+    upstreamSafeValidationTranscriptStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript",
+    upstreamOperatorHandoffSmokeMatrixSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-smoke-matrix-v1",
+    upstreamOperatorHandoffSmokeMatrixStage: "P89-A",
+    upstreamOperatorHandoffSmokeMatrixStatus: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix",
+    safeValidationTranscriptCaseRows: 5,
+    safeValidationTranscriptAttachmentRows: 10,
+    safeValidationTranscriptCommandRows: 40,
+    safeValidationResultLedgerRows: 40,
+    safeValidationCommandFamilyCount: 4,
+    safeValidationCommandExecutionPerformedCount: 0,
+    safeValidationCommandReadyCount: 0,
+    safeValidationCommandBlockedCount: 40,
+    safeValidationResultRecordedCount: 0,
+    safeValidationResultAcceptedCount: 0,
+    safeValidationResultFailedCount: 0,
+    safeValidationResultBlockedCount: 40,
+    operatorHandoffCasePacketRows: 5,
+    operatorHandoffAttachmentPacketRows: 10,
+    operatorHandoffSmokeCaseRows: 5,
+    operatorHandoffSmokeAttachmentRows: 10,
+    unsafeExternalActionCommandCount: 0,
+    commandExecutionPerformedCount: 0,
+    commandSmokeMatrixReadyCount: 0,
+    commandSmokeMatrixBlockedCount: 10,
+    operatorHandoffReadyCount: 0,
+    operatorHandoffBlockedCount: 10,
+    workOrderDeliveryReadyCount: 0,
+    workOrderDeliveryBlockedCount: 10,
+    pendingExternalEvidenceDecisionAuditWorkOrderCount: 10,
+    pendingJhoraDecisionAuditWorkOrderCount: 5,
+    pendingParasharaLightDecisionAuditWorkOrderCount: 5,
+    decisionRecordedCount: 0,
+    decisionAuditedCount: 0,
+    decisionAuditPassedCount: 0,
+    decisionAuditFailedCount: 0,
+    readyToAttachRows: 0,
+    readyToMarkRows: 0,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    paritySuccessClaimed: false,
+    releaseReadyClaimed: false,
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    slotFamilies: [
+      "jhora_screenshot_or_packet",
+      "parashara_light_manual_values_or_packet",
+    ],
+    safeValidationResultLedgerStatusLabel: "safe_validation_result_ledger_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger",
+    safeValidationResultExecutionStatusLabel: "safe_validation_result_execution_status=not_executed",
+    safeValidationResultRecordStatusLabel: "safe_validation_result_record_status=not_recorded",
+    safeValidationResultAcceptanceStatusLabel: "safe_validation_result_acceptance_status=not_accepted",
+    safeValidationResultFailureStatusLabel: "safe_validation_result_failure_status=not_failed",
+    safeValidationTranscriptStatusLabel: "safe_validation_transcript_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript",
+    safeValidationCommandStatusLabel: "safe_validation_command_status=blocked_pending_external_evidence_and_operator_handoff",
+    safeValidationCommandExecutionStatusLabel: "safe_validation_command_execution_status=not_executed",
+    operatorHandoffSmokeMatrixStatusLabel: "operator_handoff_smoke_matrix_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix",
+    decisionAuditWorkOrderReadinessStatusLabel: "decision_audit_work_order_readiness_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness",
+    decisionAuditWorkOrderStatusLabel: "decision_audit_work_order_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_work_orders",
+    decisionAuditStatusLabel: "decision_audit_status=blocked_pending_external_evidence_receipt_manifest_decision_audit",
+    decisionQueueStatusLabel: "decision_queue_status=blocked_pending_external_evidence_receipt_manifest_decision",
+    receiptGateStatusLabel: "external_receipt_gate_status=blocked_pending_external_evidence_receipts",
+    intakeStatusLabel: "external_intake_status=blocked_pending_external_evidence_intake",
+    readinessStatusLabel: "attachment_readiness_status=blocked_pending_external_evidence_attachment",
+    receiptManifestStatusLabel: "receipt_manifest_status=not_received",
+    decisionAuditRecordStatusLabel: "decision_audit_record_status=not_started",
+    workOrderDeliveryStatusLabel: "work_order_delivery_status=not_delivered",
+    operatorHandoffStatusLabel: "operator_handoff_status=not_delivered",
+    humanDecisionAuditStatusLabel: "human_decision_audit_status=not_started",
+    commandSmokeMatrixStatusLabel: "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff",
+    safeValidationOnlyLabel: "safe_validation_only=true",
+    safeValidationResultLedgerOnlyLabel: "safe_validation_result_ledger_only=true",
+    noCommandExecutionPerformedLabel: "no_command_execution_performed=true",
+    noSafeValidationResultRecordedLabel: "no_safe_validation_result_recorded=true",
+    noSafeValidationResultAcceptedLabel: "no_safe_validation_result_accepted=true",
+    noSafeValidationResultFailedLabel: "no_safe_validation_result_failed=true",
+    readyToAttachLabel: "ready_to_attach=false",
+    readyToMarkLabel: "ready_to_mark=false",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    releaseReadyClaimedLabel: "release_ready_claimed=false",
+    noRawValuesInManifestLabel: "no_raw_values_in_manifest=true",
+    noPrivatePathsInManifestLabel: "no_private_paths_in_manifest=true",
+    noSecretsInManifestLabel: "no_secrets_in_manifest=true",
+    noEvidenceFileRecordedLabel: "no_evidence_file_recorded=true",
+    noEvidenceHashRecordedLabel: "no_evidence_hash_recorded=true",
+    noUploadExecutedLabel: "no_upload_executed=true",
+    noAttachmentExecutedLabel: "no_attachment_executed=true",
+    noMarkCommandExecutedLabel: "no_mark_command_executed=true",
+    noAcceptExecutedLabel: "no_accept_executed=true",
+    noRejectExecutedLabel: "no_reject_executed=true",
+    noDeferExecutedLabel: "no_defer_executed=true",
+    noWorkOrderDeliveryExecutedLabel: "no_work_order_delivery_executed=true",
+    noOperatorHandoffDeliveredLabel: "no_operator_handoff_delivered=true",
+    noExternalNotificationSentLabel: "no_external_notification_sent=true",
+    noExternalTicketCreatedLabel: "no_external_ticket_created=true",
+    safeValidationCommandFamilies: [
+      "validate_manifest_shape",
+      "validate_operator_handoff_readiness",
+      "validate_no_external_action",
+      "validate_release_gate_blocked",
+    ],
+    safeValidationResultFamilyLabels: [
+      "validate_manifest_shape_blocked_result_label_only",
+      "validate_operator_handoff_readiness_blocked_result_label_only",
+      "validate_no_external_action_blocked_result_label_only",
+      "validate_release_gate_blocked_blocked_result_label_only",
+    ],
+    operatorNote: "blocked safe-validation result ledger; no safe-validation result has been recorded, accepted, or failed, and no command execution, external evidence, operator handoff, upload, attachment, mark, accept, reject, defer, ticket, notification, or release action is claimed",
+    statusCopy: "blocked safe-validation result ledger for future operator validation",
+    cautionCopy: "no result recording, command execution, operator handoff, external action, parity pass, or release readiness is claimed",
   };
 }
 

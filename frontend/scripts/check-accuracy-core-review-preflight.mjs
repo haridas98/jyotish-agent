@@ -102,6 +102,7 @@ for (const marker of [
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditWorkOrderReadiness",
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSmokeMatrix",
   "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationTranscript",
+  "buildCoreEvidenceExternalReceiptManifestDecisionAuditOperatorHandoffSafeValidationResultLedger",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
@@ -125,6 +126,7 @@ for (const marker of [
   "P87-A",
   "P89-A",
   "P91-A",
+  "P93-A",
   "jyotish-core-evidence-backlog-v1",
   "jyotish-core-evidence-intake-plan-v1",
   "jyotish-core-evidence-readiness-preflight-v1",
@@ -145,6 +147,7 @@ for (const marker of [
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-work-order-readiness-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-smoke-matrix-v1",
   "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-transcript-v1",
+  "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-ledger-v1",
   "vrindavan-1990-08-15-1024",
   "delhi-india-1947-08-15-000001",
   "mayapur-2001-02-03-0910",
@@ -175,12 +178,22 @@ for (const marker of [
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_work_order_readiness",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_smoke_matrix",
   "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript",
+  "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger",
   "command_smoke_matrix_status=blocked_pending_external_evidence_and_operator_handoff",
   "safe_validation_transcript_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript",
   "safe_validation_command_status=blocked_pending_external_evidence_and_operator_handoff",
   "safe_validation_command_execution_status=not_executed",
+  "safe_validation_result_ledger_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger",
+  "safe_validation_result_execution_status=not_executed",
+  "safe_validation_result_record_status=not_recorded",
+  "safe_validation_result_acceptance_status=not_accepted",
+  "safe_validation_result_failure_status=not_failed",
   "safe_validation_only=true",
+  "safe_validation_result_ledger_only=true",
   "no_command_execution_performed=true",
+  "no_safe_validation_result_recorded=true",
+  "no_safe_validation_result_accepted=true",
+  "no_safe_validation_result_failed=true",
   "ready_to_attach=false",
   "ready_to_mark=false",
   "evidence_collected=false",
@@ -995,7 +1008,8 @@ assert(!helperSlice.includes('latestStage: "P83-A"'), "Core evidence pipeline he
 assert(!helperSlice.includes('latestStage: "P85-A"'), "Core evidence pipeline helper must not retain stale P85 latest stage");
 assert(!helperSlice.includes('latestStage: "P87-A"'), "Core evidence pipeline helper must not retain stale P87 latest stage");
 assert(!helperSlice.includes('latestStage: "P89-A"'), "Core evidence pipeline helper must not retain stale P89 latest stage");
-assert(helperSlice.includes('latestStage: "P91-A"'), "Core evidence pipeline helper must expose latest P91 stage");
+assert(!helperSlice.includes('latestStage: "P91-A"'), "Core evidence pipeline helper must not retain stale P91 latest stage");
+assert(helperSlice.includes('latestStage: "P93-A"'), "Core evidence pipeline helper must expose latest P93 stage");
 assert(helperSlice.includes('"P59 attachment gate"'), "Core evidence pipeline helper must expose P59 stage sequence");
 assert(helperSlice.includes('"P61 work orders"'), "Core evidence pipeline helper must expose P61 stage sequence");
 assert(helperSlice.includes('"P63 handoff"'), "Core evidence pipeline helper must expose P63 stage sequence");
@@ -1013,6 +1027,7 @@ assert(helperSlice.includes('"P85 decision audit work orders"'), "Core evidence 
 assert(helperSlice.includes('"P87 work-order readiness"'), "Core evidence pipeline helper must expose P87 stage sequence");
 assert(helperSlice.includes('"P89 operator handoff smoke matrix"'), "Core evidence pipeline helper must expose P89 stage sequence");
 assert(helperSlice.includes('"P91 safe-validation transcript"'), "Core evidence pipeline helper must expose P91 stage sequence");
+assert(helperSlice.includes('"P93 safe-validation result ledger"'), "Core evidence pipeline helper must expose P93 stage sequence");
 assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-attachment-gate-v1"'), "Core evidence attachment helper must expose schema version");
 assert(helperSlice.includes('stage: "P59-A"'), "Core evidence attachment helper must expose P59-A stage");
 assert(helperSlice.includes("attachmentRows: 5"), "Core evidence attachment helper must expose 5 attachment rows");
@@ -1934,6 +1949,54 @@ assert(accuracyRoute.includes("safe_validation_command_execution_status=not_exec
 assert(accuracyRoute.includes("rerun_external_receipt_manifest_decision_audit_operator_handoff_safe_validation_transcript_report"), "Accuracy route marker must expose P91 rerun label");
 assert(accuracyRoute.includes("blocked safe-validation transcript bundle"), "Accuracy route marker must expose P91 blocked transcript copy");
 assert(accuracyRoute.includes("no safe validation commands have been executed"), "Accuracy route marker must expose P91 negative command execution copy");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-ledger-v1"'), "Core evidence safe-validation result ledger helper must expose P93 schema");
+assert(helperSlice.includes('stage: "P93-A"'), "Core evidence safe-validation result ledger helper must expose P93-A stage");
+assert(helperSlice.includes('status: "blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger"'), "Core evidence safe-validation result ledger helper must expose blocked result ledger status");
+assert(helperSlice.includes('upstreamSafeValidationTranscriptSchemaVersion: "jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-transcript-v1"'), "Core evidence safe-validation result ledger helper must expose upstream P91 schema");
+assert(helperSlice.includes('upstreamSafeValidationTranscriptStage: "P91-A"'), "Core evidence safe-validation result ledger helper must expose upstream P91 stage");
+assert(helperSlice.includes("safeValidationResultLedgerRows: 40"), "Core evidence safe-validation result ledger helper must expose 40 ledger rows");
+assert(helperSlice.includes("safeValidationResultRecordedCount: 0"), "Core evidence safe-validation result ledger helper must expose 0 recorded results");
+assert(helperSlice.includes("safeValidationResultAcceptedCount: 0"), "Core evidence safe-validation result ledger helper must expose 0 accepted results");
+assert(helperSlice.includes("safeValidationResultFailedCount: 0"), "Core evidence safe-validation result ledger helper must expose 0 failed results");
+assert(helperSlice.includes("safeValidationResultBlockedCount: 40"), "Core evidence safe-validation result ledger helper must expose 40 blocked results");
+assert(helperSlice.includes('safeValidationResultLedgerStatusLabel: "safe_validation_result_ledger_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger"'), "Core evidence safe-validation result ledger helper must expose result ledger status label");
+assert(helperSlice.includes('safeValidationResultExecutionStatusLabel: "safe_validation_result_execution_status=not_executed"'), "Core evidence safe-validation result ledger helper must expose result execution status label");
+assert(helperSlice.includes('safeValidationResultRecordStatusLabel: "safe_validation_result_record_status=not_recorded"'), "Core evidence safe-validation result ledger helper must expose result record status label");
+assert(helperSlice.includes('safeValidationResultAcceptanceStatusLabel: "safe_validation_result_acceptance_status=not_accepted"'), "Core evidence safe-validation result ledger helper must expose result acceptance status label");
+assert(helperSlice.includes('safeValidationResultFailureStatusLabel: "safe_validation_result_failure_status=not_failed"'), "Core evidence safe-validation result ledger helper must expose result failure status label");
+assert(helperSlice.includes('safeValidationResultLedgerOnlyLabel: "safe_validation_result_ledger_only=true"'), "Core evidence safe-validation result ledger helper must expose ledger-only label");
+assert(helperSlice.includes('noSafeValidationResultRecordedLabel: "no_safe_validation_result_recorded=true"'), "Core evidence safe-validation result ledger helper must expose no recorded result label");
+assert(helperSlice.includes('noSafeValidationResultAcceptedLabel: "no_safe_validation_result_accepted=true"'), "Core evidence safe-validation result ledger helper must expose no accepted result label");
+assert(helperSlice.includes('noSafeValidationResultFailedLabel: "no_safe_validation_result_failed=true"'), "Core evidence safe-validation result ledger helper must expose no failed result label");
+assert(helperSlice.includes("validate_manifest_shape_blocked_result_label_only"), "Core evidence safe-validation result ledger helper must expose manifest shape result label");
+assert(helperSlice.includes("validate_operator_handoff_readiness_blocked_result_label_only"), "Core evidence safe-validation result ledger helper must expose handoff readiness result label");
+assert(helperSlice.includes("validate_no_external_action_blocked_result_label_only"), "Core evidence safe-validation result ledger helper must expose no external action result label");
+assert(helperSlice.includes("validate_release_gate_blocked_blocked_result_label_only"), "Core evidence safe-validation result ledger helper must expose release blocked result label");
+assert(preflightSlice.includes("P93 safe-validation result ledger"), "Core evidence pipeline UI must render P93 stage");
+assert(preflightSlice.includes("Core evidence external receipt manifest decision audit operator handoff safe-validation result ledger"), "Core evidence safe-validation result ledger UI must render its heading");
+assert(accuracyRoute.includes("P93-A"), "Accuracy route marker must expose P93 stage");
+assert(accuracyRoute.includes("jyotish-core-evidence-external-receipt-manifest-decision-audit-operator-handoff-safe-validation-result-ledger-v1"), "Accuracy route marker must expose P93 schema");
+assert(accuracyRoute.includes("blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger"), "Accuracy route marker must expose P93 status");
+assert(accuracyRoute.includes("safe_validation_result_ledger_rows=40"), "Accuracy route marker must expose P93 result ledger count");
+assert(accuracyRoute.includes("safe_validation_result_recorded_count=0"), "Accuracy route marker must expose P93 no recorded results count");
+assert(accuracyRoute.includes("safe_validation_result_accepted_count=0"), "Accuracy route marker must expose P93 no accepted results count");
+assert(accuracyRoute.includes("safe_validation_result_failed_count=0"), "Accuracy route marker must expose P93 no failed results count");
+assert(accuracyRoute.includes("safe_validation_result_blocked_count=40"), "Accuracy route marker must expose P93 blocked result count");
+assert(accuracyRoute.includes("safe_validation_result_ledger_status=blocked_pending_external_evidence_receipt_manifest_decision_audit_operator_handoff_safe_validation_result_ledger"), "Accuracy route marker must expose P93 ledger status label");
+assert(accuracyRoute.includes("safe_validation_result_execution_status=not_executed"), "Accuracy route marker must expose P93 result not-executed label");
+assert(accuracyRoute.includes("safe_validation_result_record_status=not_recorded"), "Accuracy route marker must expose P93 result not-recorded label");
+assert(accuracyRoute.includes("safe_validation_result_acceptance_status=not_accepted"), "Accuracy route marker must expose P93 result not-accepted label");
+assert(accuracyRoute.includes("safe_validation_result_failure_status=not_failed"), "Accuracy route marker must expose P93 result not-failed label");
+assert(accuracyRoute.includes("safe_validation_result_ledger_only=true"), "Accuracy route marker must expose P93 ledger-only label");
+assert(accuracyRoute.includes("no_safe_validation_result_recorded=true"), "Accuracy route marker must expose P93 no result recorded label");
+assert(accuracyRoute.includes("no_safe_validation_result_accepted=true"), "Accuracy route marker must expose P93 no result accepted label");
+assert(accuracyRoute.includes("no_safe_validation_result_failed=true"), "Accuracy route marker must expose P93 no result failed label");
+assert(accuracyRoute.includes("validate_manifest_shape_blocked_result_label_only"), "Accuracy route marker must expose P93 manifest shape blocked result label");
+assert(accuracyRoute.includes("validate_operator_handoff_readiness_blocked_result_label_only"), "Accuracy route marker must expose P93 handoff readiness blocked result label");
+assert(accuracyRoute.includes("validate_no_external_action_blocked_result_label_only"), "Accuracy route marker must expose P93 no external action blocked result label");
+assert(accuracyRoute.includes("validate_release_gate_blocked_blocked_result_label_only"), "Accuracy route marker must expose P93 release blocked result label");
+assert(accuracyRoute.includes("blocked safe-validation result ledger"), "Accuracy route marker must expose P93 blocked result ledger copy");
+assert(accuracyRoute.includes("no safe-validation result has been recorded, accepted, or failed"), "Accuracy route marker must expose P93 negative result copy");
 assert(accuracyRoute.includes("5 operator packet rows"), "Accuracy route marker must expose operator packet row count");
 assert(accuracyRoute.includes("10 operator attachment slot rows"), "Accuracy route marker must expose operator attachment slot row count");
 assert(accuracyRoute.includes("5 pending operator packets"), "Accuracy route marker must expose pending operator packet count");
