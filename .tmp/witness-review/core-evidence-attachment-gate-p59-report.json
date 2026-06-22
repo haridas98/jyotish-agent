@@ -1,0 +1,370 @@
+{
+  "schema_version": "jyotish-core-evidence-attachment-gate-v1",
+  "domain": "witness_core_parity",
+  "stage": "P59-A",
+  "status": "blocked_no_attached_evidence",
+  "operator_note": "Evidence must be attached before mark commands are attempted.",
+  "summary": {
+    "readiness_rows": 5,
+    "attachment_rows": 5,
+    "operator_attachment_manifest_rows": 5,
+    "attached_evidence_files_count": 0,
+    "attached_evidence_family_count": 0,
+    "missing_attachment_slot_count": 10,
+    "jhora_attached_count": 0,
+    "parashara_light_attached_count": 0,
+    "jhora_missing_count": 5,
+    "parashara_light_missing_count": 5,
+    "ready_to_mark_count": 0,
+    "blocked_no_attached_evidence_count": 5,
+    "remaining_not_reviewed_count": 20,
+    "release_gate_status": "blocked",
+    "command_smoke_matrix_status": "ready",
+    "parity_success_claimed": false,
+    "release_ready_claimed": false
+  },
+  "rows": [
+    {
+      "attachment_index": 1,
+      "readiness_index": 1,
+      "intake_index": 1,
+      "candidate_index": 1,
+      "case_id": "vrindavan-1990-08-15-1024",
+      "source_family": "both",
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "p57_evidence_slot_status": {
+        "jhora_screenshot_or_packet": "missing",
+        "parashara_light_manual_values_or_packet": "missing"
+      },
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "attached_evidence_family_count": 0,
+      "ready_to_mark": false,
+      "attachment_gate_status": "blocked_no_attached_evidence",
+      "missing_attachment_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "safe_next_actions": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "safe_validation_commands": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "attachment_index": 2,
+      "readiness_index": 2,
+      "intake_index": 2,
+      "candidate_index": 2,
+      "case_id": "delhi-india-1947-08-15-000001",
+      "source_family": "both",
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "p57_evidence_slot_status": {
+        "jhora_screenshot_or_packet": "missing",
+        "parashara_light_manual_values_or_packet": "missing"
+      },
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "attached_evidence_family_count": 0,
+      "ready_to_mark": false,
+      "attachment_gate_status": "blocked_no_attached_evidence",
+      "missing_attachment_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "safe_next_actions": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "safe_validation_commands": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "attachment_index": 3,
+      "readiness_index": 3,
+      "intake_index": 3,
+      "candidate_index": 3,
+      "case_id": "mayapur-2001-02-03-0910",
+      "source_family": "both",
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "p57_evidence_slot_status": {
+        "jhora_screenshot_or_packet": "missing",
+        "parashara_light_manual_values_or_packet": "missing"
+      },
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "attached_evidence_family_count": 0,
+      "ready_to_mark": false,
+      "attachment_gate_status": "blocked_no_attached_evidence",
+      "missing_attachment_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "safe_next_actions": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "safe_validation_commands": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "attachment_index": 4,
+      "readiness_index": 4,
+      "intake_index": 4,
+      "candidate_index": 4,
+      "case_id": "new-york-2026-03-08-0155",
+      "source_family": "both",
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "p57_evidence_slot_status": {
+        "jhora_screenshot_or_packet": "missing",
+        "parashara_light_manual_values_or_packet": "missing"
+      },
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "attached_evidence_family_count": 0,
+      "ready_to_mark": false,
+      "attachment_gate_status": "blocked_no_attached_evidence",
+      "missing_attachment_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "safe_next_actions": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "safe_validation_commands": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    },
+    {
+      "attachment_index": 5,
+      "readiness_index": 5,
+      "intake_index": 5,
+      "candidate_index": 5,
+      "case_id": "new-york-2026-11-01-0130",
+      "source_family": "both",
+      "required_evidence_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "p57_evidence_slot_status": {
+        "jhora_screenshot_or_packet": "missing",
+        "parashara_light_manual_values_or_packet": "missing"
+      },
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "attached_evidence_family_count": 0,
+      "ready_to_mark": false,
+      "attachment_gate_status": "blocked_no_attached_evidence",
+      "missing_attachment_families": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "safe_next_actions": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "safe_validation_commands": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ]
+    }
+  ],
+  "operator_attachment_manifest": [
+    {
+      "attachment_index": 1,
+      "readiness_index": 1,
+      "intake_index": 1,
+      "candidate_index": 1,
+      "case_id": "vrindavan-1990-08-15-1024",
+      "source_family": "both",
+      "evidence_families_to_attach": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "safe_action_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "validation_command_families": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ],
+      "blocked_note": "Evidence must be attached before mark commands are attempted."
+    },
+    {
+      "attachment_index": 2,
+      "readiness_index": 2,
+      "intake_index": 2,
+      "candidate_index": 2,
+      "case_id": "delhi-india-1947-08-15-000001",
+      "source_family": "both",
+      "evidence_families_to_attach": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "safe_action_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "validation_command_families": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ],
+      "blocked_note": "Evidence must be attached before mark commands are attempted."
+    },
+    {
+      "attachment_index": 3,
+      "readiness_index": 3,
+      "intake_index": 3,
+      "candidate_index": 3,
+      "case_id": "mayapur-2001-02-03-0910",
+      "source_family": "both",
+      "evidence_families_to_attach": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "safe_action_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "validation_command_families": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ],
+      "blocked_note": "Evidence must be attached before mark commands are attempted."
+    },
+    {
+      "attachment_index": 4,
+      "readiness_index": 4,
+      "intake_index": 4,
+      "candidate_index": 4,
+      "case_id": "new-york-2026-03-08-0155",
+      "source_family": "both",
+      "evidence_families_to_attach": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "safe_action_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "validation_command_families": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ],
+      "blocked_note": "Evidence must be attached before mark commands are attempted."
+    },
+    {
+      "attachment_index": 5,
+      "readiness_index": 5,
+      "intake_index": 5,
+      "candidate_index": 5,
+      "case_id": "new-york-2026-11-01-0130",
+      "source_family": "both",
+      "evidence_families_to_attach": [
+        "jhora_screenshot_or_packet",
+        "parashara_light_manual_values_or_packet"
+      ],
+      "attachment_slot_status": {
+        "jhora_screenshot_or_packet": "not_attached",
+        "parashara_light_manual_values_or_packet": "not_attached"
+      },
+      "safe_action_labels": [
+        "collect_jhora_screenshot",
+        "attach_parashara_light_manual_values",
+        "rerun_evidence_attachment_gate",
+        "rerun_preflight_witness_review"
+      ],
+      "validation_command_families": [
+        "build_witness_core_evidence_attachment_gate_report",
+        "preflight_witness_review",
+        "mark_jhora_witness_reviewed",
+        "mark_parashara_light_witness_reviewed"
+      ],
+      "blocked_note": "Evidence must be attached before mark commands are attempted."
+    }
+  ]
+}
