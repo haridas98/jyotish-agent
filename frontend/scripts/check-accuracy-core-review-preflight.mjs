@@ -27,26 +27,36 @@ for (const marker of [
   "Core review progress",
   "Core review batch scan",
   "Core evidence backlog",
+  "Core evidence intake plan",
   "Evidence backlog",
   "coreReviewPreflightBlocker",
   "coreReviewProgress",
   "coreReviewBatchScan",
   "coreEvidenceBacklog",
+  "coreEvidenceIntakePlan",
   "buildCoreReviewPreflightBlocker",
   "buildCoreReviewProgress",
   "buildCoreReviewBatchScan",
   "buildCoreEvidenceBacklog",
+  "buildCoreEvidenceIntakePlan",
   "witness_core_parity",
   "sterlitamak-1998-04-30-1345",
   "P51-A",
   "P53-A",
+  "P55-A",
   "jyotish-core-evidence-backlog-v1",
+  "jyotish-core-evidence-intake-plan-v1",
   "vrindavan-1990-08-15-1024",
+  "delhi-india-1947-08-15-000001",
+  "mayapur-2001-02-03-0910",
+  "new-york-2026-03-08-0155",
+  "new-york-2026-11-01-0130",
   "mayapur-2026-01-01-0000",
   "jhora_missing_or_blocked",
   "parashara_light_missing_or_blocked",
   "jhora_screenshot_or_packet",
   "parashara_light_manual_values_or_packet",
+  "missing",
   "collect_jhora_screenshot",
   "attach_parashara_light_manual_values",
   "rerun_preflight_witness_review",
@@ -97,6 +107,16 @@ for (const marker of [
   "coreEvidenceBacklog.firstBacklogCaseId",
   "coreEvidenceBacklog.lastBacklogCaseId",
   "coreEvidenceBacklog.nextActions",
+  "coreEvidenceIntakePlan.stage",
+  "coreEvidenceIntakePlan.schemaVersion",
+  "coreEvidenceIntakePlan.intakeRows",
+  "coreEvidenceIntakePlan.readyToMarkRows",
+  "coreEvidenceIntakePlan.evidenceFilesCommitted",
+  "coreEvidenceIntakePlan.remainingNotReviewedRows",
+  "coreEvidenceIntakePlan.selectedCaseIds",
+  "coreEvidenceIntakePlan.evidenceSlotStatus",
+  "coreEvidenceIntakePlan.safeNextActions",
+  "coreEvidenceIntakePlan.safeValidationCommandFamilies",
 ]) {
   assert(preflightSlice.includes(marker), `Core review preflight UI must render helper data: ${marker}`);
 }
@@ -138,7 +158,21 @@ assert(helperSlice.includes('lastBacklogCaseId: "mayapur-2026-01-01-0000"'), "Co
 assert(helperSlice.includes('"collect_jhora_screenshot"'), "Core evidence backlog helper must expose JHora evidence action");
 assert(helperSlice.includes('"attach_parashara_light_manual_values"'), "Core evidence backlog helper must expose Parashara Light evidence action");
 assert(helperSlice.includes('"rerun_preflight_witness_review"'), "Core evidence backlog helper must expose rerun preflight action");
+assert(helperSlice.includes('schemaVersion: "jyotish-core-evidence-intake-plan-v1"'), "Core evidence intake helper must expose schema version");
+assert(helperSlice.includes('stage: "P55-A"'), "Core evidence intake helper must expose P55-A stage");
+assert(helperSlice.includes("intakeRows: 5"), "Core evidence intake helper must expose 5 intake rows");
+assert(helperSlice.includes("readyToMarkRows: 0"), "Core evidence intake helper must expose 0 ready-to-mark rows");
+assert(helperSlice.includes("evidenceFilesCommitted: 0"), "Core evidence intake helper must expose 0 committed evidence files");
+assert(helperSlice.includes("remainingNotReviewedRows: 20"), "Core evidence intake helper must expose 20 remaining rows");
+assert(helperSlice.includes('"delhi-india-1947-08-15-000001"'), "Core evidence intake helper must expose second selected case");
+assert(helperSlice.includes('"mayapur-2001-02-03-0910"'), "Core evidence intake helper must expose third selected case");
+assert(helperSlice.includes('"new-york-2026-03-08-0155"'), "Core evidence intake helper must expose fourth selected case");
+assert(helperSlice.includes('"new-york-2026-11-01-0130"'), "Core evidence intake helper must expose fifth selected case");
+assert(helperSlice.includes('jhora_screenshot_or_packet: "missing"'), "Core evidence intake helper must expose missing JHora slot");
+assert(helperSlice.includes('parashara_light_manual_values_or_packet: "missing"'), "Core evidence intake helper must expose missing Parashara Light slot");
 assert(accuracyRoute.includes("jyotish-core-evidence-backlog-v1"), "Accuracy route marker must expose P53 backlog schema");
+assert(accuracyRoute.includes("jyotish-core-evidence-intake-plan-v1"), "Accuracy route marker must expose P55 intake schema");
+assert(accuracyRoute.includes("evidence files committed 0"), "Accuracy route marker must expose committed evidence file count");
 assert(accuracyRoute.includes("ready-to-mark 0"), "Accuracy route marker must expose ready-to-mark count");
 
 for (const forbidden of [
@@ -163,6 +197,8 @@ for (const forbidden of [
   "JHora parity done",
   "Parashara Light parity done",
   "parity success",
+  "evidence available",
+  "release ready",
 ]) {
   assert(!preflightSlice.includes(forbidden), `Core review preflight slice must not expose or imply ${forbidden}`);
   assert(!helperSlice.includes(forbidden), `Core review preflight helper must not expose or imply ${forbidden}`);

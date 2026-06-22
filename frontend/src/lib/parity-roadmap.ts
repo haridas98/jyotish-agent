@@ -191,6 +191,41 @@ export type CoreEvidenceBacklog = {
   cautionCopy: "No evidence availability, parity pass, or release readiness is claimed";
 };
 
+export type CoreEvidenceIntakePlan = {
+  title: "Core evidence intake plan";
+  schemaVersion: "jyotish-core-evidence-intake-plan-v1";
+  stage: "P55-A";
+  intakeRows: 5;
+  readyToMarkRows: 0;
+  evidenceFilesCommitted: 0;
+  remainingNotReviewedRows: 20;
+  releaseGateStatus: "blocked";
+  commandSmokeMatrixStatus: "ready";
+  selectedCaseIds: [
+    "vrindavan-1990-08-15-1024",
+    "delhi-india-1947-08-15-000001",
+    "mayapur-2001-02-03-0910",
+    "new-york-2026-03-08-0155",
+    "new-york-2026-11-01-0130",
+  ];
+  evidenceSlotStatus: {
+    jhora_screenshot_or_packet: "missing";
+    parashara_light_manual_values_or_packet: "missing";
+  };
+  safeNextActions: [
+    "collect_jhora_screenshot",
+    "attach_parashara_light_manual_values",
+    "rerun_preflight_witness_review",
+  ];
+  safeValidationCommandFamilies: [
+    "preflight_witness_review",
+    "mark_jhora_witness_reviewed",
+    "mark_parashara_light_witness_reviewed",
+  ];
+  statusCopy: "first evidence intake batch is blocked until evidence is collected";
+  cautionCopy: "No mark command should run until evidence is collected/attached";
+};
+
 export const parityRoadmapItems: Array<{ key: ParityKey; label: string }> = [
   { key: "witness_core_parity", label: "Core parity" },
   { key: "witness_varga_parity", label: "Varga parity" },
@@ -433,6 +468,43 @@ export function buildCoreEvidenceBacklog(): CoreEvidenceBacklog {
     ],
     statusCopy: "evidence backlog is blocking mark commands",
     cautionCopy: "No evidence availability, parity pass, or release readiness is claimed",
+  };
+}
+
+export function buildCoreEvidenceIntakePlan(): CoreEvidenceIntakePlan {
+  return {
+    title: "Core evidence intake plan",
+    schemaVersion: "jyotish-core-evidence-intake-plan-v1",
+    stage: "P55-A",
+    intakeRows: 5,
+    readyToMarkRows: 0,
+    evidenceFilesCommitted: 0,
+    remainingNotReviewedRows: 20,
+    releaseGateStatus: "blocked",
+    commandSmokeMatrixStatus: "ready",
+    selectedCaseIds: [
+      "vrindavan-1990-08-15-1024",
+      "delhi-india-1947-08-15-000001",
+      "mayapur-2001-02-03-0910",
+      "new-york-2026-03-08-0155",
+      "new-york-2026-11-01-0130",
+    ],
+    evidenceSlotStatus: {
+      jhora_screenshot_or_packet: "missing",
+      parashara_light_manual_values_or_packet: "missing",
+    },
+    safeNextActions: [
+      "collect_jhora_screenshot",
+      "attach_parashara_light_manual_values",
+      "rerun_preflight_witness_review",
+    ],
+    safeValidationCommandFamilies: [
+      "preflight_witness_review",
+      "mark_jhora_witness_reviewed",
+      "mark_parashara_light_witness_reviewed",
+    ],
+    statusCopy: "first evidence intake batch is blocked until evidence is collected",
+    cautionCopy: "No mark command should run until evidence is collected/attached",
   };
 }
 

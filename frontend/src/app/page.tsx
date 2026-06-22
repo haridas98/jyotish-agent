@@ -76,7 +76,7 @@ import {
   northIndianHousePolygons,
   safeSymbolCenterY,
 } from "@/lib/northIndianChartGeometry";
-import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceBacklog, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
+import { buildArtifactAvailabilityCheckpoint, buildCollectionPlanSnapshotRunbook, buildCoreEvidenceBacklog, buildCoreEvidenceIntakePlan, buildCoreReviewBatchScan, buildCoreReviewPreflightBlocker, buildCoreReviewProgress, buildParityCollectionChecklistRows, buildParityCollectionChecklistTotals, buildParityRoadmapRows, buildReleaseGateActionSummary } from "@/lib/parity-roadmap";
 import { INTERFACE_MODE_STORAGE_KEY, type InterfaceMode } from "@/app/interface-mode-switch";
 import { AppNavigation, type AppNavKey } from "@/app/app-navigation";
 import { HouseTerms, VargaTerms, requestAiExplanation, type HelpAiQuestionDetail } from "@/app/relationship-help";
@@ -5676,6 +5676,7 @@ function AccuracyReportPanel({
   const coreReviewProgress = buildCoreReviewProgress();
   const coreReviewBatchScan = buildCoreReviewBatchScan();
   const coreEvidenceBacklog = buildCoreEvidenceBacklog();
+  const coreEvidenceIntakePlan = buildCoreEvidenceIntakePlan();
 
   return (
     <section className="panel accuracy-panel" id="accuracy">
@@ -5848,6 +5849,28 @@ function AccuracyReportPanel({
             <span>safe next actions</span>
             <strong>{coreEvidenceBacklog.nextActions.length}</strong>
             <small>{coreEvidenceBacklog.nextActions.join(" - ")}; {coreEvidenceBacklog.safeCommandFamilies.join(" - ")}; {coreEvidenceBacklog.cautionCopy}.</small>
+          </div>
+          <h3>Core evidence intake plan</h3>
+          <p>{coreEvidenceIntakePlan.stage}: {coreEvidenceIntakePlan.schemaVersion}; {coreEvidenceIntakePlan.statusCopy}.</p>
+          <small>
+            intake rows: {coreEvidenceIntakePlan.intakeRows} - ready-to-mark: {coreEvidenceIntakePlan.readyToMarkRows} - evidence files committed: {coreEvidenceIntakePlan.evidenceFilesCommitted} - remaining not-reviewed: {coreEvidenceIntakePlan.remainingNotReviewedRows} - release: {coreEvidenceIntakePlan.releaseGateStatus} - command smoke: {coreEvidenceIntakePlan.commandSmokeMatrixStatus}
+          </small>
+          <div>
+            <span>selected intake cases</span>
+            <strong>{coreEvidenceIntakePlan.selectedCaseIds.length}</strong>
+            <small>{coreEvidenceIntakePlan.selectedCaseIds.join(" - ")}</small>
+          </div>
+          <div>
+            <span>evidence slot status</span>
+            <strong>{coreEvidenceIntakePlan.readyToMarkRows}</strong>
+            <small>
+              jhora_screenshot_or_packet: {coreEvidenceIntakePlan.evidenceSlotStatus.jhora_screenshot_or_packet} - parashara_light_manual_values_or_packet: {coreEvidenceIntakePlan.evidenceSlotStatus.parashara_light_manual_values_or_packet}
+            </small>
+          </div>
+          <div>
+            <span>intake actions</span>
+            <strong>{coreEvidenceIntakePlan.safeNextActions.length}</strong>
+            <small>{coreEvidenceIntakePlan.safeNextActions.join(" - ")}; {coreEvidenceIntakePlan.safeValidationCommandFamilies.join(" - ")}; {coreEvidenceIntakePlan.cautionCopy}.</small>
           </div>
         </div>
         <div className="accuracy-summary-grid witness-summary-grid">
