@@ -1178,6 +1178,50 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.ai-review-grounded-drafts {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d7e5e8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-grounded-drafts-head {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-review-grounded-draft-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-review-grounded-draft-grid section {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.ai-review-grounded-drafts strong {
+  color: var(--green);
+}
+
+.ai-review-grounded-drafts span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
@@ -1224,6 +1268,10 @@ body .chart-profile-form textarea {
   }
 
   .ai-review-calculation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-grounded-draft-grid {
     grid-template-columns: 1fr;
   }
 }

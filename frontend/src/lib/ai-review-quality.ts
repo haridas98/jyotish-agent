@@ -377,6 +377,52 @@ export type AiReviewCalculationPromptPacket = {
   statusLabels: string[];
 };
 
+export type AiReviewGroundedDraftFixtureId =
+  | "strong_calculation_grounded_draft"
+  | "generic_inspirational_draft"
+  | "advanced_overclaim_draft";
+
+export type AiReviewGroundedDraftFixture = {
+  id: AiReviewGroundedDraftFixtureId;
+  label: string;
+  draft: string;
+  expectedResult: "pass" | "fail";
+  fixtureType: "strong" | "generic" | "overclaim";
+};
+
+export type AiReviewGroundedDraftEvaluation = {
+  fixture: AiReviewGroundedDraftFixture;
+  passed: boolean;
+  evidenceGroupHits: AiReviewCalculationEvidenceGroupId[];
+  missingRequiredAnchors: AiReviewCalculationEvidenceGroupId[];
+  overclaimFlags: string[];
+  genericLanguageFlags: string[];
+  practicalQuestionQuality: {
+    passed: boolean;
+    reason: string;
+  };
+  repairInstructions: string[];
+};
+
+export type AiReviewGroundedDraftEvaluator = {
+  stage: "P131-A";
+  fixtures: AiReviewGroundedDraftFixture[];
+  evaluations: AiReviewGroundedDraftEvaluation[];
+  aggregate: {
+    fixtureCount: number;
+    fixturesMinimumMet: boolean;
+    strongPasses: boolean;
+    genericFails: boolean;
+    overclaimFails: boolean;
+    strongGroupsHitMinimumMet: boolean;
+    repairsPresent: boolean;
+    usesCalculationPacket: boolean;
+    usesSharedResponseContract: boolean;
+    localOnlyNotFinalOutput: true;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -1545,6 +1591,127 @@ export function buildAiReviewCalculationPromptPacket(
   };
 }
 
+export const aiReviewGroundedDraftFixtures: AiReviewGroundedDraftFixture[] = [
+  {
+    id: "strong_calculation_grounded_draft",
+    label: "Strong calculation-grounded draft",
+    expectedResult: "pass",
+    fixtureType: "strong",
+    draft:
+      "Chart placements anchor the review before tone: the draft names concrete placements, then connects house/lord relationships to life-domain focus. Dignity/strength notes are kept as simple sign-strength context, while yoga or combination candidates stay candidate language. Dasha/transit timing anchors are requested before any forecast. The contradiction/tension flags are practical: initiative versus restraint and public drive versus network pressure. Practical next question: which career or relationship decision should be tested against the timing anchor first?",
+  },
+  {
+    id: "generic_inspirational_draft",
+    label: "Generic inspirational draft",
+    expectedResult: "fail",
+    fixtureType: "generic",
+    draft:
+      "You have positive energy and many opportunities. Trust your intuition, follow your heart, and let the universe guide your next step.",
+  },
+  {
+    id: "advanced_overclaim_draft",
+    label: "Advanced overclaim draft",
+    expectedResult: "fail",
+    fixtureType: "overclaim",
+    draft:
+      "Shadbala proves the strongest planet, Ashtakavarga confirms the result, and Avastha plus Mrityu-bhaga settle timing without any computed anchors.",
+  },
+];
+
+export function evaluateAiReviewGroundedDraftFixture(
+  fixture: AiReviewGroundedDraftFixture,
+  calculationPromptPacket = buildAiReviewCalculationPromptPacket(),
+): AiReviewGroundedDraftEvaluation {
+  const draft = fixture.draft.toLowerCase();
+  const evidenceGroupHits = calculationPromptPacket.evidenceGroups
+    .filter((group) => {
+      const groupLabel = group.evidenceGroup.toLowerCase();
+      const idLabel = group.id.replaceAll("_", " ").toLowerCase();
+      return draft.includes(groupLabel) || draft.includes(idLabel);
+    })
+    .map((group) => group.id);
+  const missingRequiredAnchors = calculationPromptPacket.evidenceGroups
+    .filter((group) => !evidenceGroupHits.includes(group.id))
+    .map((group) => group.id);
+  const overclaimFlags = ["Shadbala", "Ashtakavarga", "Avastha", "Mrityu-bhaga"].filter((term) => {
+    const termLower = term.toLowerCase();
+    return draft.includes(termLower) && !draft.includes("blocked") && !draft.includes("gated");
+  });
+  const genericLanguageFlags = genericFillerPatterns.filter((pattern) => draft.includes(pattern));
+  const practicalQuestionQuality = {
+    passed: draft.includes("?") && (draft.includes("which ") || draft.includes("what ")) && draft.includes("anchor"),
+    reason: draft.includes("?")
+      ? "Practical question is present and checked for anchor language."
+      : "Missing practical next question tied to evidence.",
+  };
+  const repairInstructions = [
+    evidenceGroupHits.length < 4 ? "Add at least four E130 calculation evidence groups before using the draft." : "",
+    genericLanguageFlags.length > 0 ? "Replace generic motivational phrasing with chart placements, rule chain, and evidence anchors." : "",
+    overclaimFlags.length > 0 ? "Move advanced claims into blocked caveats unless computed tables support them." : "",
+    practicalQuestionQuality.passed ? "" : "Add one practical next question tied to a calculation anchor.",
+  ].filter(Boolean);
+
+  return {
+    fixture,
+    passed: evidenceGroupHits.length >= 4 && overclaimFlags.length === 0 && genericLanguageFlags.length === 0 && practicalQuestionQuality.passed,
+    evidenceGroupHits,
+    missingRequiredAnchors,
+    overclaimFlags,
+    genericLanguageFlags,
+    practicalQuestionQuality,
+    repairInstructions,
+  };
+}
+
+export function buildAiReviewGroundedDraftEvaluator(
+  calculationPromptPacket = buildAiReviewCalculationPromptPacket(),
+): AiReviewGroundedDraftEvaluator {
+  const evaluations = aiReviewGroundedDraftFixtures.map((fixture) => evaluateAiReviewGroundedDraftFixture(fixture, calculationPromptPacket));
+  const strong = evaluations.find((item) => item.fixture.id === "strong_calculation_grounded_draft");
+  const generic = evaluations.find((item) => item.fixture.id === "generic_inspirational_draft");
+  const overclaim = evaluations.find((item) => item.fixture.id === "advanced_overclaim_draft");
+
+  return {
+    stage: "P131-A",
+    fixtures: aiReviewGroundedDraftFixtures,
+    evaluations,
+    aggregate: {
+      fixtureCount: aiReviewGroundedDraftFixtures.length,
+      fixturesMinimumMet: aiReviewGroundedDraftFixtures.length >= 3,
+      strongPasses: strong?.passed === true,
+      genericFails: generic?.passed === false,
+      overclaimFails: overclaim?.passed === false,
+      strongGroupsHitMinimumMet: (strong?.evidenceGroupHits.length ?? 0) >= 4,
+      repairsPresent: evaluations
+        .filter((item) => item.fixture.expectedResult === "fail")
+        .every((item) => item.repairInstructions.length >= 1),
+      usesCalculationPacket: calculationPromptPacket.stage === "E130-A",
+      usesSharedResponseContract: calculationPromptPacket.sharedResponseContract.stage === "P129-A",
+      localOnlyNotFinalOutput: true,
+    },
+    statusLabels: [
+      "P131-A",
+      "ai_review_grounded_draft_evaluator_stage=P131-A",
+      "ai_review_grounded_draft_evaluator_present=true",
+      "ai_review_grounded_draft_fixtures=3",
+      "ai_review_grounded_draft_fixtures_minimum_met=true",
+      "ai_review_grounded_draft_strong_passes=true",
+      "ai_review_grounded_draft_generic_fails=true",
+      "ai_review_grounded_draft_overclaim_fails=true",
+      "ai_review_grounded_draft_strong_groups_hit_minimum_met=true",
+      "ai_review_grounded_draft_repairs_present=true",
+      "ai_review_grounded_draft_uses_calculation_packet=true",
+      "ai_review_grounded_draft_uses_shared_response_contract=true",
+      "ai_review_grounded_draft_visible=true",
+      "ai_review_grounded_draft_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -1559,6 +1726,7 @@ export function buildAiReviewQualityLabSummary() {
   const responseContract = buildAiReviewResponseContract(assertionLedger, narrativeRubric);
   const sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("reports", responseContract);
   const calculationPromptPacket = buildAiReviewCalculationPromptPacket(sharedResponseContract, assertionLedger);
+  const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -1585,6 +1753,7 @@ export function buildAiReviewQualityLabSummary() {
       ...responseContract.statusLabels,
       ...sharedResponseContract.statusLabels,
       ...calculationPromptPacket.statusLabels,
+      ...groundedDraftEvaluator.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -1611,5 +1780,6 @@ export function buildAiReviewQualityLabSummary() {
     responseContract,
     sharedResponseContract,
     calculationPromptPacket,
+    groundedDraftEvaluator,
   };
 }

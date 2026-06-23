@@ -52,6 +52,7 @@ for (const marker of [
   "E128-A",
   "P129-A",
   "E130-A",
+  "P131-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -64,6 +65,7 @@ for (const marker of [
   "ai_review_response_contract_stage=E128-A",
   "ai_review_response_contract_shared_stage=P129-A",
   "ai_review_calculation_packet_stage=E130-A",
+  "ai_review_grounded_draft_evaluator_stage=P131-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -176,6 +178,18 @@ for (const marker of [
   "ai_review_prompt_packet_uses_sanitized_benchmarks=true",
   "ai_review_prompt_packet_visible=true",
   "ai_review_prompt_packet_not_final_output=true",
+  "ai_review_grounded_draft_evaluator_present=true",
+  "ai_review_grounded_draft_fixtures=3",
+  "ai_review_grounded_draft_fixtures_minimum_met=true",
+  "ai_review_grounded_draft_strong_passes=true",
+  "ai_review_grounded_draft_generic_fails=true",
+  "ai_review_grounded_draft_overclaim_fails=true",
+  "ai_review_grounded_draft_strong_groups_hit_minimum_met=true",
+  "ai_review_grounded_draft_repairs_present=true",
+  "ai_review_grounded_draft_uses_calculation_packet=true",
+  "ai_review_grounded_draft_uses_shared_response_contract=true",
+  "ai_review_grounded_draft_visible=true",
+  "ai_review_grounded_draft_not_final_output=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -301,6 +315,14 @@ for (const label of [
   "Required anchor type",
   "Benchmark-covered status",
   "sanitized benchmark cases",
+  "Grounded draft evaluator",
+  "strong_calculation_grounded_draft",
+  "generic_inspirational_draft",
+  "advanced_overclaim_draft",
+  "Expected result",
+  "Actual result",
+  "Evidence groups hit",
+  "Repair summary",
   "Shadbala",
   "Ashtakavarga",
   "Avastha",
@@ -329,6 +351,7 @@ assert(typeof helper.buildAiReviewNarrativeQualityRubric === "function", "buildA
 assert(typeof helper.buildAiReviewResponseContract === "function", "buildAiReviewResponseContract must be exported.");
 assert(typeof helper.buildAiReviewSharedResponseContractSurfaceSummary === "function", "buildAiReviewSharedResponseContractSurfaceSummary must be exported.");
 assert(typeof helper.buildAiReviewCalculationPromptPacket === "function", "buildAiReviewCalculationPromptPacket must be exported.");
+assert(typeof helper.buildAiReviewGroundedDraftEvaluator === "function", "buildAiReviewGroundedDraftEvaluator must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -345,6 +368,7 @@ const responseContract = helper.buildAiReviewResponseContract();
 const reportsSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSummary("reports");
 const mockSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSummary("report-mock-review");
 const calculationPromptPacket = helper.buildAiReviewCalculationPromptPacket();
+const groundedDraftEvaluator = helper.buildAiReviewGroundedDraftEvaluator();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -547,6 +571,32 @@ for (const leaked of ["Haridev", "Seva", "ChatExport", "message default clearfix
 assert(page.includes("calculationPromptPacket"), "/reports must render calculation prompt packet.");
 assert(mockReviewPage.includes("calculationPromptPacket"), "/report-mock-review must render calculation prompt packet.");
 assert(mockReviewPage.includes('data-ai-review-calculation-packet-stage="E130-A"'), "/report-mock-review must expose E130 hook.");
+assert(groundedDraftEvaluator.stage === "P131-A", "Grounded draft evaluator stage must be P131-A.");
+assert(groundedDraftEvaluator.statusLabels.includes("ai_review_grounded_draft_evaluator_stage=P131-A"), "Grounded draft evaluator labels missing P131 stage.");
+assert(groundedDraftEvaluator.fixtures.length >= 3, "Grounded draft evaluator must include at least three fixtures.");
+assert(groundedDraftEvaluator.aggregate.fixtureCount >= 3, "Grounded draft fixture aggregate must be at least three.");
+assert(groundedDraftEvaluator.aggregate.strongPasses === true, "Strong grounded draft fixture must pass.");
+assert(groundedDraftEvaluator.aggregate.genericFails === true, "Generic draft fixture must fail.");
+assert(groundedDraftEvaluator.aggregate.overclaimFails === true, "Overclaim draft fixture must fail.");
+assert(groundedDraftEvaluator.aggregate.strongGroupsHitMinimumMet === true, "Strong draft must hit at least four E130 groups.");
+assert(groundedDraftEvaluator.aggregate.repairsPresent === true, "Failing draft fixtures must include repair instructions.");
+assert(groundedDraftEvaluator.aggregate.usesCalculationPacket === true, "Grounded evaluator must use E130 calculation packet.");
+assert(groundedDraftEvaluator.aggregate.usesSharedResponseContract === true, "Grounded evaluator must use P129 shared response contract.");
+const strongDraft = groundedDraftEvaluator.evaluations.find((item) => item.fixture.id === "strong_calculation_grounded_draft");
+const genericDraft = groundedDraftEvaluator.evaluations.find((item) => item.fixture.id === "generic_inspirational_draft");
+const overclaimDraft = groundedDraftEvaluator.evaluations.find((item) => item.fixture.id === "advanced_overclaim_draft");
+assert(strongDraft?.passed === true, "Strong calculation-grounded draft must pass.");
+assert(strongDraft.evidenceGroupHits.length >= 4, "Strong draft must hit at least four evidence groups.");
+assert(strongDraft.practicalQuestionQuality.passed === true, "Strong draft must include a useful practical next question.");
+assert(genericDraft?.passed === false, "Generic inspirational draft must fail.");
+assert(genericDraft.genericLanguageFlags.length >= 1, "Generic draft must expose generic-language flags.");
+assert(genericDraft.repairInstructions.length >= 1, "Generic draft must include repair instructions.");
+assert(overclaimDraft?.passed === false, "Advanced overclaim draft must fail.");
+assert(overclaimDraft.overclaimFlags.length >= 1, "Overclaim draft must expose overclaim flags.");
+assert(overclaimDraft.repairInstructions.length >= 1, "Overclaim draft must include repair instructions.");
+assert(page.includes("groundedDraftEvaluator"), "/reports must render grounded draft evaluator.");
+assert(mockReviewPage.includes("groundedDraftEvaluator"), "/report-mock-review must render grounded draft evaluator.");
+assert(mockReviewPage.includes('data-ai-review-grounded-draft-stage="P131-A"'), "/report-mock-review must expose P131 hook.");
 
 for (const forbidden of [
   "fetch(",

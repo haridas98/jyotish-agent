@@ -9,7 +9,11 @@ import {
   runMockAiDryRun,
 } from "@/astrology";
 import { debugRoutesEnabled } from "@/app/debug-route-guard";
-import { buildAiReviewCalculationPromptPacket, buildAiReviewSharedResponseContractSurfaceSummary } from "@/lib/ai-review-quality";
+import {
+  buildAiReviewCalculationPromptPacket,
+  buildAiReviewGroundedDraftEvaluator,
+  buildAiReviewSharedResponseContractSurfaceSummary,
+} from "@/lib/ai-review-quality";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +59,7 @@ export default function ReportMockReviewPage() {
   const workspace = buildAiHumanReviewWorkspace({ eligibility, request, dryRun });
   const sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("report-mock-review");
   const calculationPromptPacket = buildAiReviewCalculationPromptPacket(sharedResponseContract);
+  const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
 
   return (
     <main style={pageStyle}>
@@ -150,6 +155,34 @@ export default function ReportMockReviewPage() {
             ))}
           </div>
           <span hidden>{calculationPromptPacket.statusLabels.join("; ")}</span>
+        </section>
+
+        <section
+          aria-label="Grounded draft evaluator"
+          data-ai-review-grounded-draft-stage="P131-A"
+          style={{ border: "1px solid #d5e3e0", borderRadius: 8, marginTop: 20, padding: 16 }}
+        >
+          <h2 style={{ marginTop: 0 }}>Grounded draft evaluator</h2>
+          <p style={{ color: "#53656b", marginTop: 0 }}>Local deterministic draft gate, not final AI output.</p>
+          <div style={gridStyle}>
+            <Metric label="Fixtures" value={String(groundedDraftEvaluator.fixtures.length)} />
+            <Metric label="Strong fixture" value={groundedDraftEvaluator.aggregate.strongPasses ? "pass" : "fail"} />
+            <Metric label="Failing repairs" value={groundedDraftEvaluator.aggregate.repairsPresent ? "present" : "missing"} />
+          </div>
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {groundedDraftEvaluator.evaluations.map((evaluation) => (
+              <article key={evaluation.fixture.id} style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
+                <strong>{evaluation.fixture.id}</strong>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Expected result: {evaluation.fixture.expectedResult}</p>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Actual result: {evaluation.passed ? "pass" : "fail"}</p>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Evidence groups hit: {evaluation.evidenceGroupHits.length}</p>
+                <p style={{ color: "#53656b", margin: 0 }}>
+                  Repair summary: {evaluation.repairInstructions.join(" ") || "none"}
+                </p>
+              </article>
+            ))}
+          </div>
+          <span hidden>{groundedDraftEvaluator.statusLabels.join("; ")}</span>
         </section>
 
         <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>

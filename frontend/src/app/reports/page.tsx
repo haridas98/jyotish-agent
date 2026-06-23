@@ -429,6 +429,24 @@ export default function ReportBuilderPage() {
             <span>prompt packet not final output</span>
           </div>
         </div>
+        <div className="ai-review-grounded-drafts" data-ai-review-grounded-draft-stage="P131-A">
+          <div className="ai-review-grounded-drafts-head">
+            <strong>Grounded draft evaluator</strong>
+            <span>Local deterministic draft gate, not final AI output.</span>
+          </div>
+          <div className="ai-review-grounded-draft-grid" role="list">
+            {aiReviewQualityLab.groundedDraftEvaluator.evaluations.map((evaluation) => (
+              <section key={evaluation.fixture.id} role="listitem">
+                <strong>{evaluation.fixture.id}</strong>
+                <span>Fixture type: {evaluation.fixture.fixtureType}</span>
+                <span>Expected result: {evaluation.fixture.expectedResult}</span>
+                <span>Actual result: {evaluation.passed ? "pass" : "fail"}</span>
+                <span>Evidence groups hit: {evaluation.evidenceGroupHits.length}</span>
+                <span>Repair summary: {evaluation.repairInstructions.join(" ") || "none"}</span>
+              </section>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 
