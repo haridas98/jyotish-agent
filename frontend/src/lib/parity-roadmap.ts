@@ -100,6 +100,30 @@ export type ParityEvidenceRequirementClarity = {
   noCredentialsOrFilesCopy: "No credentials or files are needed now unless you want to supply those artifacts.";
 };
 
+export type ParityEvidenceTemplateChecklistRow = {
+  sourceFamily: "JHora" | "Parashara Light";
+  sourceFamilyLabel: "evidence_template_source_family=JHora" | "evidence_template_source_family=Parashara Light";
+  artifactKind: "screenshots / receipt manifest" | "manual values / receipt manifest";
+  artifactKindLabel: "evidence_template_artifact_kind=jhora_screenshots_or_receipt_manifest" | "evidence_template_artifact_kind=parashara_light_manual_values_or_receipt_manifest";
+  status: "pending human-provided evidence";
+  statusLabel: "evidence_template_status=pending_human_provided_evidence";
+};
+
+export type ParityEvidenceTemplateChecklist = {
+  stage: "P113-A";
+  title: "Evidence template";
+  subtitle: "What to provide later";
+  status: "blocked_pending_human_provided_evidence_templates";
+  statusLabel: "parity_evidence_template_status=blocked_pending_human_provided_evidence_templates";
+  rows: ParityEvidenceTemplateChecklistRow[];
+  noCollectionUploadOrExternalDeliveryExecutedLabel: "no_collection_upload_or_external_delivery_executed=true";
+  noExternalActionExecutedLabel: "no_external_action_executed=true";
+  paritySuccessClaimedLabel: "parity_success_claimed=false";
+  releaseReadyLabel: "release_ready=false";
+  releaseGateStatusLabel: "release_gate_status=blocked";
+  noActionCopy: "No collection, upload, or external delivery is executed by the app in this stage.";
+};
+
 export type ReleaseGateActionSummary = {
   totals: {
     collectReports: number;
@@ -2137,6 +2161,42 @@ export function buildParityEvidenceRequirementClarity(): ParityEvidenceRequireme
     jhoraEvidenceCopy: "JHora: human-provided screenshots or receipt manifests",
     parasharaLightEvidenceCopy: "Parashara Light: human-provided manual values or receipt manifests",
     noCredentialsOrFilesCopy: "No credentials or files are needed now unless you want to supply those artifacts.",
+  };
+}
+
+export function buildParityEvidenceTemplateChecklist(): ParityEvidenceTemplateChecklist {
+  const rows: ParityEvidenceTemplateChecklistRow[] = [
+    {
+      sourceFamily: "JHora",
+      sourceFamilyLabel: "evidence_template_source_family=JHora",
+      artifactKind: "screenshots / receipt manifest",
+      artifactKindLabel: "evidence_template_artifact_kind=jhora_screenshots_or_receipt_manifest",
+      status: "pending human-provided evidence",
+      statusLabel: "evidence_template_status=pending_human_provided_evidence",
+    },
+    {
+      sourceFamily: "Parashara Light",
+      sourceFamilyLabel: "evidence_template_source_family=Parashara Light",
+      artifactKind: "manual values / receipt manifest",
+      artifactKindLabel: "evidence_template_artifact_kind=parashara_light_manual_values_or_receipt_manifest",
+      status: "pending human-provided evidence",
+      statusLabel: "evidence_template_status=pending_human_provided_evidence",
+    },
+  ];
+
+  return {
+    stage: "P113-A",
+    title: "Evidence template",
+    subtitle: "What to provide later",
+    status: "blocked_pending_human_provided_evidence_templates",
+    statusLabel: "parity_evidence_template_status=blocked_pending_human_provided_evidence_templates",
+    rows,
+    noCollectionUploadOrExternalDeliveryExecutedLabel: "no_collection_upload_or_external_delivery_executed=true",
+    noExternalActionExecutedLabel: "no_external_action_executed=true",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    releaseReadyLabel: "release_ready=false",
+    releaseGateStatusLabel: "release_gate_status=blocked",
+    noActionCopy: "No collection, upload, or external delivery is executed by the app in this stage.",
   };
 }
 

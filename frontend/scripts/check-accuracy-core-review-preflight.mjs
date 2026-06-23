@@ -2393,6 +2393,30 @@ for (const marker of [
   assert(roadmap.includes(marker) || helperSlice.includes(marker) || accuracyRoute.includes(marker), `P111 evidence requirement marker missing: ${marker}`);
 }
 
+for (const marker of [
+  "buildParityEvidenceTemplateChecklist",
+  "P113-A",
+  "parity_evidence_template_status=blocked_pending_human_provided_evidence_templates",
+  "evidence_template_source_family=JHora",
+  "evidence_template_source_family=Parashara Light",
+  "evidence_template_artifact_kind=jhora_screenshots_or_receipt_manifest",
+  "evidence_template_artifact_kind=parashara_light_manual_values_or_receipt_manifest",
+  "evidence_template_status=pending_human_provided_evidence",
+  "no_collection_upload_or_external_delivery_executed=true",
+  "no_external_action_executed=true",
+  "parity_success_claimed=false",
+  "release_ready=false",
+  "release_gate_status=blocked",
+  "Evidence template",
+  "What to provide later",
+  "screenshots / receipt manifest",
+  "manual values / receipt manifest",
+  "pending human-provided evidence",
+  "No collection, upload, or external delivery is executed by the app in this stage.",
+]) {
+  assert(roadmap.includes(marker) || helperSlice.includes(marker) || accuracyRoute.includes(marker), `P113 evidence template marker missing: ${marker}`);
+}
+
 for (const forbidden of [
   "source_report",
   "field_results",

@@ -1,8 +1,9 @@
 import Home from "../page";
-import { buildParityEvidenceRequirementClarity } from "@/lib/parity-roadmap";
+import { buildParityEvidenceRequirementClarity, buildParityEvidenceTemplateChecklist } from "@/lib/parity-roadmap";
 
 export default function AccuracyPage() {
   const parityEvidenceRequirement = buildParityEvidenceRequirementClarity();
+  const parityEvidenceTemplate = buildParityEvidenceTemplateChecklist();
 
   return (
     <>
@@ -49,6 +50,35 @@ export default function AccuracyPage() {
           buildParityEvidenceRequirementClarity; {parityEvidenceRequirement.stage}; {parityEvidenceRequirement.status}; {parityEvidenceRequirement.statusLabel}; {parityEvidenceRequirement.jhoraEvidenceRequiredLabel}; {parityEvidenceRequirement.parasharaLightEvidenceRequiredLabel}; {parityEvidenceRequirement.noCredentialsOrFilesRequiredNowLabel}; {parityEvidenceRequirement.paritySuccessClaimedLabel}; {parityEvidenceRequirement.releaseReadyLabel}; {parityEvidenceRequirement.releaseGateStatusLabel}
         </span>
       </div>
+      <section className="notice" data-parity-evidence-template="blocked" aria-label={parityEvidenceTemplate.title}>
+        <strong>Evidence template</strong>
+        <p>What to provide later</p>
+        <table>
+          <thead>
+            <tr>
+              <th>source family</th>
+              <th>artifact kind</th>
+              <th>status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>JHora</td>
+              <td>screenshots / receipt manifest</td>
+              <td>pending human-provided evidence</td>
+            </tr>
+            <tr>
+              <td>Parashara Light</td>
+              <td>manual values / receipt manifest</td>
+              <td>pending human-provided evidence</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>No collection, upload, or external delivery is executed by the app in this stage.</p>
+        <span hidden>
+          buildParityEvidenceTemplateChecklist; {parityEvidenceTemplate.stage}; {parityEvidenceTemplate.status}; {parityEvidenceTemplate.statusLabel}; {parityEvidenceTemplate.noCollectionUploadOrExternalDeliveryExecutedLabel}; {parityEvidenceTemplate.noExternalActionExecutedLabel}; {parityEvidenceTemplate.paritySuccessClaimedLabel}; {parityEvidenceTemplate.releaseReadyLabel}; {parityEvidenceTemplate.releaseGateStatusLabel}; {parityEvidenceTemplate.rows.map((row) => `${row.sourceFamilyLabel}; ${row.artifactKindLabel}; ${row.statusLabel}`).join("; ")}
+        </span>
+      </section>
       <Home initialAnalysisTab="accuracy" />
     </>
   );
