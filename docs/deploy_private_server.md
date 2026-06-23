@@ -66,6 +66,29 @@ when `JYOTISH_PUBLIC_HEALTH_URL` / `JYOTISH_PUBLIC_FRONTEND_URL` or matching par
 the current archive commit; a stale backend/proxy now fails deploy. Pass `-BackendOnly` for backend-only changes. Set
 `JYOTISH_DEPLOY_PASSWORD` locally or use Pageant/SSH keys; do not commit secrets.
 
+Local calculator launch smoke before a deploy checkpoint:
+
+```powershell
+# Terminal 1
+cd C:\Projects\jyotish-agent
+$env:DJANGO_DEBUG = "true"
+$env:PRIVATE_APP_REQUIRE_AUTH = "false"
+backend\.venv\Scripts\python.exe backend\manage.py runserver 127.0.0.1:18110 --noreload
+
+# Terminal 2
+cd C:\Projects\jyotish-agent\frontend
+$env:NEXT_PUBLIC_API_BASE_URL = "http://127.0.0.1:18110"
+npm.cmd run dev -- --hostname 127.0.0.1 --port 3131
+
+# Terminal 3
+cd C:\Projects\jyotish-agent\frontend
+$env:JYOTISH_API_BASE_URL = "http://127.0.0.1:18110"
+$env:JYOTISH_FRONTEND_BASE_URL = "http://127.0.0.1:3131"
+npm.cmd run smoke:calculator-launch
+```
+
+The smoke registers a temporary user, creates a Sterlitamak chart, runs saved-profile calculation, checks D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24/D30/D60 workbench payloads, and verifies `/charts/new` plus `/charts/<id>` respond.
+
 Manual equivalent:
 
 ```powershell

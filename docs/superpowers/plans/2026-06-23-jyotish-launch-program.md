@@ -12,7 +12,13 @@
 
 ## Current State
 
-- Branch: `initial-scaffold`.
+- Active technical worktree: `C:\w\jt-a`.
+- Active branch: `codex/technical-launch-b`.
+- Latest technical checkpoints:
+  - `5e96d8d` saved chart auto-calculate flow and workbench recalculate.
+  - `99b1228` calculator-only production AI-worker gate.
+  - `7c4bb33` technical graha details and internal JSON snapshot.
+  - `47a7187` repeatable calculator launch smoke.
 - Current dirty state includes unrelated/in-progress files:
   - `frontend/scripts/check-ai-review-benchmark-parity.mjs`
   - `frontend/src/lib/ai-review-benchmark-parity.ts`
@@ -32,6 +38,9 @@
   - `POST /api/charts/profiles/<id>/calculate`
   - `GET /api/charts/<id>/workbench`
   - `GET /api/calculations/witness-summary`
+- New launch smoke command:
+  - `cd frontend; npm.cmd run smoke:calculator-launch`
+  - Requires running backend/frontend and env `JYOTISH_API_BASE_URL`, optionally `JYOTISH_FRONTEND_BASE_URL`.
 
 ## Non-Negotiable Decisions
 
@@ -109,6 +118,14 @@
 - [ ] Run frontend checks:
   `cd frontend; npm.cmd run typecheck; npm.cmd run test:d1-workbench; npm.cmd run test:chart-detail-smoke; npm.cmd run production-check`
 - [ ] Deploy only after explicit deploy checkpoint.
+
+**Current Track A status:**
+
+- [x] A1 saved chart calculate flow implemented and verified locally.
+- [x] A2 technical payload panel implemented and verified locally.
+- [x] A3 calculator-only AI worker gate implemented.
+- [x] Calculator launch smoke added and verified locally against real backend/frontend.
+- [ ] Production deploy checkpoint remains pending; do not deploy on every small batch.
 
 ---
 
