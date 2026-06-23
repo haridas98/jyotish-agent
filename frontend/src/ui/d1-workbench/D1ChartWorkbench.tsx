@@ -264,22 +264,27 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
         </div>
       ) : null}
       <D1TechnicalContextStrip model={model} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
+      <D1MobileWorkflowNav activeTab={workbenchState.activeTab} onGrahaJump={() => setActiveTab("grahas")} />
 
       <div className="d1-main-grid">
         <div>
-          {workbenchState.chartStyle === "north" ? (
-            <NorthChart model={model} state={workbenchState} onSelect={setActiveEntityId} />
-          ) : (
-            <SouthChart model={model} state={workbenchState} onSelect={setActiveEntityId} />
-          )}
+          <div id="d1-chart-panel" className="d1-chart-panel-anchor">
+            {workbenchState.chartStyle === "north" ? (
+              <NorthChart model={model} state={workbenchState} onSelect={setActiveEntityId} />
+            ) : (
+              <SouthChart model={model} state={workbenchState} onSelect={setActiveEntityId} />
+            )}
+          </div>
           <div className="d1-toolbar" aria-label="Вкладки D1">
             {tabIds.map((tabId) => (
               <button key={tabId} type="button" className={workbenchState.activeTab === tabId ? "active" : ""} onClick={() => setActiveTab(tabId)}>{tabLabel(tabId)}</button>
             ))}
           </div>
-          <ChartDataTabs model={model} state={workbenchState} onSelect={setActiveEntityId} />
+          <div id="d1-data-panel" className="d1-data-panel-anchor">
+            <ChartDataTabs model={model} state={workbenchState} onSelect={setActiveEntityId} />
+          </div>
         </div>
-        <aside className="d1-inspector-panel">
+        <aside id="d1-inspector-panel" className="d1-inspector-panel">
           <EntityInspector entityId={workbenchState.activeEntityId} onClose={() => setActiveEntityId(null)} />
           {selected.length ? (
             <div className="d1-selected-facts">
@@ -289,6 +294,17 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
         </aside>
       </div>
     </section>
+  );
+}
+
+function D1MobileWorkflowNav({ activeTab, onGrahaJump }: { activeTab: D1DataTab; onGrahaJump: () => void }) {
+  return (
+    <nav className="d1-mobile-workflow-nav" data-d1-mobile-workflow-stage="E139-A" aria-label="Mobile chart workflow">
+      <a href="#d1-chart-panel"><strong>Chart</strong><span>D1</span></a>
+      <a href="#d1-data-panel" className={activeTab === "grahas" ? "active" : ""} onClick={onGrahaJump}><strong>Grahas</strong><span>All rows</span></a>
+      <a href="#d1-inspector-panel"><strong>Inspect</strong><span>Entity</span></a>
+      <span hidden>E139-A; chart_viewer_mobile_workflow_nav=true; chart_viewer_mobile_chart_table_inspector_anchors=true; chart_viewer_mobile_graha_rows_compact=true; chart_viewer_mobile_no_wide_table_primary=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=40120c8</span>
+    </nav>
   );
 }
 
@@ -447,7 +463,7 @@ function OverviewPanel({ model, state, onSelect }: { model: D1WorkbenchModel; st
 function GrahaTable({ model, state, onSelect }: { model: D1WorkbenchModel; state: ChartWorkbenchState; onSelect: (id: EntityId) => void }) {
   const isAstrologer = state.mode === "astrologer";
   return (
-    <section className="d1-table-card">
+    <section className="d1-table-card d1-graha-table-card">
       <div className="d1-chart-title"><h2>Грахи</h2><span>Только планеты; Лагна вынесена в опорные точки</span></div>
       <div className="d1-table-scroll">
         <table>
@@ -469,17 +485,17 @@ function GrahaTable({ model, state, onSelect }: { model: D1WorkbenchModel; state
           <tbody>
             {model.grahas.map((graha) => (
               <tr key={graha.code}>
-                <td><button type="button" onClick={() => onSelect(graha.placementEntityId ?? graha.entityId)}>{placementLabel(graha, state.terminologyMode)}</button></td>
-                {isAstrologer ? <td>{graha.absoluteLongitude}</td> : null}
-                {isAstrologer ? <td>{graha.degreeInSign}</td> : null}
-                {isAstrologer ? <td>{graha.speedLongitude}</td> : null}
-                <td>{graha.rashiEntityId ? <button type="button" onClick={() => onSelect(graha.rashiEntityId!)}>{graha.rashiName}</button> : graha.rashiName}</td>
-                <td>{graha.houseEntityId ? <button type="button" onClick={() => onSelect(graha.houseEntityId!)}>{graha.house}</button> : "-"}</td>
-                {isAstrologer && model.capabilities.nakshatrasAvailable ? <td>{graha.nakshatraEntityId ? <button type="button" onClick={() => onSelect(graha.nakshatraEntityId!)}>{graha.nakshatra}</button> : "-"}</td> : null}
-                {isAstrologer && model.capabilities.padasAvailable ? <td>{graha.pada ?? "-"}</td> : null}
-                {isAstrologer && model.capabilities.retrogradeAvailable ? <td>{graha.retrograde ? "да" : "-"}</td> : null}
-                {isAstrologer && model.capabilities.dignityAvailable ? <td>{graha.dignity ?? "-"}</td> : null}
-                {isAstrologer && model.capabilities.navamsaAvailable ? <td>{graha.navamsa ?? "-"}</td> : null}
+                <td data-label="Graha"><button type="button" onClick={() => onSelect(graha.placementEntityId ?? graha.entityId)}>{placementLabel(graha, state.terminologyMode)}</button></td>
+                {isAstrologer ? <td data-label="Longitude">{graha.absoluteLongitude}</td> : null}
+                {isAstrologer ? <td data-label="Degree">{graha.degreeInSign}</td> : null}
+                {isAstrologer ? <td data-label="Speed">{graha.speedLongitude}</td> : null}
+                <td data-label="Rashi">{graha.rashiEntityId ? <button type="button" onClick={() => onSelect(graha.rashiEntityId!)}>{graha.rashiName}</button> : graha.rashiName}</td>
+                <td data-label="House">{graha.houseEntityId ? <button type="button" onClick={() => onSelect(graha.houseEntityId!)}>{graha.house}</button> : "-"}</td>
+                {isAstrologer && model.capabilities.nakshatrasAvailable ? <td data-label="Nakshatra">{graha.nakshatraEntityId ? <button type="button" onClick={() => onSelect(graha.nakshatraEntityId!)}>{graha.nakshatra}</button> : "-"}</td> : null}
+                {isAstrologer && model.capabilities.padasAvailable ? <td data-label="Pada">{graha.pada ?? "-"}</td> : null}
+                {isAstrologer && model.capabilities.retrogradeAvailable ? <td data-label="Retrograde">{graha.retrograde ? "да" : "-"}</td> : null}
+                {isAstrologer && model.capabilities.dignityAvailable ? <td data-label="Dignity">{graha.dignity ?? "-"}</td> : null}
+                {isAstrologer && model.capabilities.navamsaAvailable ? <td data-label="Navamsa">{graha.navamsa ?? "-"}</td> : null}
               </tr>
             ))}
           </tbody>

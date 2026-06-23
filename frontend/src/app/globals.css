@@ -1981,6 +1981,21 @@ body .chart-profile-form textarea {
   display: none !important;
 }
 
+.d1-chart-panel-anchor,
+.d1-data-panel-anchor,
+#d1-inspector-panel {
+  min-width: 0;
+  scroll-margin-top: 76px;
+}
+
+.d1-mobile-workflow-nav {
+  display: none;
+}
+
+.d1-mobile-workflow-nav span[hidden] {
+  display: none !important;
+}
+
 .main-chart-style-picker {
   display: flex;
   flex-wrap: wrap;
@@ -2052,6 +2067,113 @@ body .chart-profile-form textarea {
     overflow-x: auto;
     flex-wrap: nowrap;
     justify-content: flex-start;
+  }
+
+  .d1-mobile-workflow-nav {
+    position: sticky;
+    bottom: 8px;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 8px 0 10px;
+    padding: 6px;
+    border: 1px solid #c9dedc;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 22px rgba(15, 63, 72, 0.14);
+  }
+
+  .d1-mobile-workflow-nav a {
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    min-width: 0;
+    min-height: 42px;
+    padding: 5px 4px;
+    border: 1px solid #d5e3e6;
+    border-radius: 7px;
+    background: #fff;
+    color: #0c5962;
+    text-decoration: none;
+  }
+
+  .d1-mobile-workflow-nav a.active {
+    border-color: #0c7b83;
+    background: #e8f7f5;
+  }
+
+  .d1-mobile-workflow-nav strong,
+  .d1-mobile-workflow-nav span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: center;
+    line-height: 1.1;
+  }
+
+  .d1-mobile-workflow-nav strong {
+    font-size: 12px;
+  }
+
+  .d1-mobile-workflow-nav span {
+    color: #60727c;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .d1-graha-table-card .d1-table-scroll {
+    overflow-x: visible;
+  }
+
+  .d1-graha-table-card table,
+  .d1-graha-table-card thead,
+  .d1-graha-table-card tbody,
+  .d1-graha-table-card tr,
+  .d1-graha-table-card td {
+    display: block;
+    width: 100%;
+  }
+
+  .d1-graha-table-card thead {
+    display: none;
+  }
+
+  .d1-graha-table-card tbody {
+    display: grid;
+    gap: 7px;
+  }
+
+  .d1-graha-table-card tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 8px;
+    padding: 8px;
+    border: 1px solid rgba(15, 63, 72, 0.14);
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .d1-graha-table-card td {
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    color: #12313c;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .d1-graha-table-card td:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .d1-graha-table-card td::before {
+    content: attr(data-label);
+    display: block;
+    color: #6b7d87;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.1;
+    text-transform: uppercase;
   }
 
   .d1-table-card th,

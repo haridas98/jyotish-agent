@@ -79,6 +79,12 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("chart_viewer_accuracy_gate_visible=true"), "D1 technical context strip must expose accuracy gate status");
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
+  assert(component.includes("D1MobileWorkflowNav"), "D1 workbench must expose a mobile chart/table/inspector workflow nav");
+  assert(component.includes('data-d1-mobile-workflow-stage="E139-A"'), "D1 mobile workflow nav must expose the E139 marker");
+  assert(component.includes('href="#d1-chart-panel"') && component.includes('href="#d1-data-panel"') && component.includes('href="#d1-inspector-panel"'), "D1 mobile workflow nav must link chart, grahas, and inspector anchors");
+  assert(component.includes('id="d1-chart-panel"') && component.includes('id="d1-data-panel"') && component.includes('id="d1-inspector-panel"'), "D1 workbench must expose stable chart, data, and inspector anchors");
+  assert(component.includes("d1-graha-table-card"), "D1 graha table must expose a mobile compact-row class");
+  assert(component.includes('data-label="Graha"') && component.includes('data-label="Rashi"') && component.includes('data-label="House"'), "D1 graha table must expose mobile row labels");
   assert(component.includes("graha.speedLongitude"), "D1 graha table must render speed longitude when available");
   assert(component.includes("graha.absoluteLongitude"), "D1 graha table must render absolute longitude when available");
   for (const marker of [

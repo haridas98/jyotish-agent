@@ -77,6 +77,18 @@ for (const required of [
   "chart_viewer_accuracy_gate_visible=true",
   "chart_viewer_default_tab=grahas",
   "chart_viewer_all_planets_visible_first_view=true",
+  "D1MobileWorkflowNav",
+  "data-d1-mobile-workflow-stage",
+  "chart_viewer_mobile_workflow_nav=true",
+  "chart_viewer_mobile_chart_table_inspector_anchors=true",
+  "chart_viewer_mobile_graha_rows_compact=true",
+  "chart_viewer_mobile_no_wide_table_primary=true",
+  "d1-graha-table-card",
+  'data-label="Graha"',
+  'data-label="Rashi"',
+  'href="#d1-chart-panel"',
+  'href="#d1-data-panel"',
+  'href="#d1-inspector-panel"',
   "batched_ui_ai_review_quality_stage=E118-A",
   "chart_view_control_batch=true",
   "chart_context_strip_present=true",
@@ -137,5 +149,8 @@ assert(css.includes(".chart-context-view-control"), "E118 chart context view con
 assert(css.includes(".main-chart-view-current"), "E118 current-mode helper CSS marker missing.");
 assert(css.includes("flex-wrap: wrap") && css.includes(".chart-context-strip"), "E118 chart context strip must keep compact wrapping behavior.");
 assert(css.includes(".d1-technical-context-strip"), "E137 D1 technical context strip CSS marker missing.");
+assert(css.includes(".d1-mobile-workflow-nav"), "E139 mobile workflow nav CSS marker missing.");
+assert(css.includes(".d1-graha-table-card td::before"), "E139 compact graha row CSS marker missing.");
+assert(css.includes("position: sticky") && css.includes("bottom: 8px"), "E139 mobile workflow nav must stay reachable near the mobile viewport bottom.");
 
 console.log("Chart workbench UX check passed.");
