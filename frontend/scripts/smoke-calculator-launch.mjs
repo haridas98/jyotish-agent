@@ -80,11 +80,16 @@ if (frontendBaseUrl) {
   await assertPageOk(`${frontendBaseUrl}/charts/new`, "new chart page");
   const chartDetailHtml = await assertPageOk(`${frontendBaseUrl}/charts/${profile.id}`, "chart detail page");
   await assertPageOk(`${frontendBaseUrl}/charts/${profile.id}/edit`, "chart edit page");
-  assertPageContains(chartDetailHtml, ["chart-detail-autocalculate"], "chart detail page");
+  assertPageContains(chartDetailHtml, [
+    "chart-detail-autocalculate",
+  ], "chart detail page");
   const demoDetailHtml = await assertPageOk(`${frontendBaseUrl}/charts/demo-d1`, "demo chart detail page");
   assertPageContains(demoDetailHtml, [
     'data-d1-technical-payload-index-stage="E145-A"',
     "chart_viewer_payload_index_opens_technical_tab=true",
+    'data-d1-calculation-passport-stage="E149-A"',
+    "chart_viewer_calculation_passport_visible=true",
+    "calculation_passport_input_settings_visible=true",
   ], "demo chart detail page");
   const launchStatusHtml = await assertPageOk(`${frontendBaseUrl}/launch-status`, "launch status page");
   assertPageContains(launchStatusHtml, [

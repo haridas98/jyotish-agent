@@ -109,6 +109,14 @@ for (const required of [
   "chart_viewer_technical_payload_index_visible=true",
   "chart_viewer_payload_section_counts_visible=true",
   "chart_viewer_payload_index_opens_technical_tab=true",
+  "D1CalculationPassport",
+  "d1-calculation-passport",
+  "data-d1-calculation-passport-stage",
+  "chart_viewer_calculation_passport_visible=true",
+  "calculation_passport_input_settings_visible=true",
+  "calculation_passport_panchanga_visible=true",
+  "calculation_passport_varga_scope_counts_visible=true",
+  "calculation_passport_dasha_classical_counts_visible=true",
   "Technical desk",
   "D-scopes",
   "saved charts expose D1-D60",
@@ -196,6 +204,7 @@ assert(css.includes(".d1-scope-matrix-grid"), "E143 scope coverage matrix grid C
 assert(css.includes(".d1-scope-matrix-card"), "E143 scope coverage matrix card CSS marker missing.");
 assert(css.includes(".d1-active-scope-review"), "E144 active scope review CSS marker missing.");
 assert(css.includes(".d1-technical-payload-index"), "E145 technical payload index CSS marker missing.");
+assert(css.includes(".d1-calculation-passport"), "E149 calculation passport CSS marker missing.");
 assert(css.includes(".d1-first-viewport-grid"), "E141 first viewport grid CSS marker missing.");
 assert(css.includes(".d1-data-stack"), "E141 data stack CSS marker missing.");
 assert(css.includes(".d1-mobile-workflow-nav"), "E139 mobile workflow nav CSS marker missing.");

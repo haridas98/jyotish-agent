@@ -111,6 +111,27 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes('onOpenTechnical={() => setActiveTab("technical")}'), "D1 technical payload index must switch the workbench to the technical tab");
   assert(component.includes("onOpenTechnical"), "D1 technical payload index must receive an open technical tab callback");
   assert(component.includes('href="#d1-technical-tab"'), "D1 technical payload index must link to the technical tab anchor");
+  assert(component.includes("D1CalculationPassport"), "D1 workbench must render a technical calculation passport");
+  assert(component.includes('data-d1-calculation-passport-stage="E149-A"'), "D1 calculation passport must expose the E149 marker");
+  assert(component.includes("chart_viewer_calculation_passport_visible=true"), "D1 calculation passport must expose visibility status");
+  assert(component.includes("calculation_passport_input_settings_visible=true"), "D1 calculation passport must expose input settings status");
+  assert(component.includes("calculation_passport_panchanga_visible=true"), "D1 calculation passport must expose panchanga status");
+  assert(component.includes("calculation_passport_varga_scope_counts_visible=true"), "D1 calculation passport must expose varga scope count status");
+  assert(component.includes("calculation_passport_dasha_classical_counts_visible=true"), "D1 calculation passport must expose dasha/classical count status");
+  assert(component.includes("calculationPassportItems"), "D1 calculation passport must use one passport item registry");
+  assert(component.includes("model.schemaVersion"), "D1 calculation passport must expose model schema version");
+  assert(component.includes("model.technical.solarDay"), "D1 calculation passport must include solar-day payload facts");
+  assert(component.includes("model.technical.houseCusps.length"), "D1 calculation passport must include house cusp count");
+  assert(component.includes("data-calculation-passport-item={item.id}"), "D1 calculation passport must render stable item markers from registry ids");
+  for (const marker of [
+    'id: "birth-input"',
+    'id: "settings"',
+    'id: "panchanga"',
+    'id: "d-scope-coverage"',
+    'id: "dashas-and-classical"',
+  ]) {
+    assert(component.includes(marker), `D1 calculation passport missing registry id: ${marker}`);
+  }
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
   assert(component.includes("production_deploy_commit_checked_by_health=true"), "D1 workbench launch markers must rely on production health deploy_commit checks, not stale hardcoded commits");

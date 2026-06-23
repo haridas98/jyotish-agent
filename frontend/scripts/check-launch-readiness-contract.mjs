@@ -85,6 +85,8 @@ for (const marker of [
   "checkedFrontendPages",
   "data-d1-technical-payload-index-stage",
   "chart_viewer_payload_index_opens_technical_tab=true",
+  "data-d1-calculation-passport-stage",
+  "chart_viewer_calculation_passport_visible=true",
   "data-launch-status-stage",
   "classical shadbala payload missing",
   "classical ashtakavarga payload missing",

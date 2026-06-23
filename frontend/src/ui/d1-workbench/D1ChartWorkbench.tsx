@@ -270,6 +270,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
       <D1ScopeCoverageMatrix model={model} mode={workbenchState.mode} onScopeChange={onScopeChange} />
       <D1ActiveScopeReviewStrip model={model} mode={workbenchState.mode} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
       <D1TechnicalPayloadIndex model={model} onOpenTechnical={() => setActiveTab("technical")} />
+      <D1CalculationPassport model={model} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
       <D1MobileWorkflowNav activeTab={workbenchState.activeTab} onGrahaJump={() => setActiveTab("grahas")} />
 
       <div className="d1-main-grid">
@@ -434,6 +435,79 @@ function D1TechnicalPayloadIndex({ model, onOpenTechnical }: { model: D1Workbenc
         ))}
       </div>
       <span hidden>E145-A E146-A; chart_viewer_technical_payload_index_visible=true; chart_viewer_payload_section_counts_visible=true; chart_viewer_payload_index_opens_technical_tab=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
+    </section>
+  );
+}
+
+function D1CalculationPassport({
+  model,
+  activeScopeMeta,
+  activeAccuracyGate,
+}: {
+  model: D1WorkbenchModel;
+  activeScopeMeta: D1WorkbenchModel["vargaScopes"][number] | undefined;
+  activeAccuracyGate: D1WorkbenchModel["accuracyGates"][string] | undefined;
+}) {
+  const availableVargas = model.technical.vargas.filter((row) => row.status === "available").length;
+  const activeScopeTechnicalRow = model.technical.vargas.find((row) => row.code === model.scopeId);
+  const setting = (key: string) => technicalSummaryValue(model.technical.settings, key);
+  const panchanga = (key: string) => technicalSummaryValue(model.technical.panchanga, key);
+  const solarDay = (key: string) => technicalSummaryValue(model.technical.solarDay, key);
+  const calculationPassportItems = [
+    {
+      id: "birth-input",
+      label: "Birth input",
+      value: `${model.profile.birthDate} ${model.profile.birthTime}`,
+      detail: `${model.profile.place} / ${model.profile.timezone} / ${model.profile.birthTimeAccuracy}`,
+    },
+    {
+      id: "calculation",
+      label: "Calculation",
+      value: `${model.calculation.status} / ${model.calculation.version}`,
+      detail: model.calculation.updatedAt ? `updated ${model.calculation.updatedAt} / ${model.schemaVersion} / ${model.scopeId}` : `${model.schemaVersion} / ${model.scopeId}`,
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      value: `${setting("ayanamsa")} / ${setting("ephemeris")}`,
+      detail: `${setting("house_system")} / ${setting("node_type")} / ${setting("varga_scheme")}`,
+    },
+    {
+      id: "panchanga",
+      label: "Panchanga",
+      value: `${panchanga("tithi")} / ${panchanga("nakshatra")}`,
+      detail: `${panchanga("vara")} / ${panchanga("yoga")} / ${panchanga("karana")} / solar ${solarDay("status")}`,
+    },
+    {
+      id: "d-scope-coverage",
+      label: "D-scope coverage",
+      value: `${availableVargas}/${model.technical.vargas.length} available`,
+      detail: `${model.scopeId}: ${activeScopeTechnicalRow?.status ?? "missing"} / ${activeScopeTechnicalRow?.placementCount ?? 0} placements / ${activeScopeMeta?.methodId ?? "saved calculation"}`,
+    },
+    {
+      id: "dashas-and-classical",
+      label: "Dashas and classical",
+      value: `${model.technical.dashas.length} dashas / ${model.technical.classical.length} classical rows`,
+      detail: `${model.technical.houseCusps.length} house cusps / gate ${activeAccuracyGate?.status ?? "standard"} / ${model.warnings.length} warnings`,
+    },
+  ];
+
+  return (
+    <section className="d1-calculation-passport" data-d1-calculation-passport-stage="E149-A" aria-label="Technical calculation passport">
+      <div className="d1-calculation-passport-title">
+        <strong>Calculation passport</strong>
+        <span>facts used by the chart viewer before any interpretation</span>
+      </div>
+      <div className="d1-calculation-passport-grid">
+        {calculationPassportItems.map((item) => (
+          <span key={item.id} data-calculation-passport-item={item.id}>
+            <strong>{item.label}</strong>
+            <b>{item.value}</b>
+            <small>{item.detail}</small>
+          </span>
+        ))}
+      </div>
+      <span hidden>E149-A; chart_viewer_calculation_passport_visible=true; calculation_passport_input_settings_visible=true; calculation_passport_panchanga_visible=true; calculation_passport_varga_scope_counts_visible=true; calculation_passport_dasha_classical_counts_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </section>
   );
 }
@@ -804,6 +878,10 @@ function TechnicalSummaryRows({ rows }: { rows: D1TechnicalSummaryRow[] }) {
       </table>
     </div>
   );
+}
+
+function technicalSummaryValue(rows: D1TechnicalSummaryRow[], key: string) {
+  return rows.find((row) => row.key === key)?.value ?? "-";
 }
 
 function EmptyTechnicalRow({ colSpan }: { colSpan: number }) {
