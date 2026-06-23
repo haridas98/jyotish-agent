@@ -605,6 +605,72 @@ body .chart-profile-form textarea {
   display: none !important;
 }
 
+.ai-review-quality-lab {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-quality-lab-head,
+.ai-review-quality-lab-status,
+.ai-review-quality-lab ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.ai-review-quality-lab-head {
+  justify-content: space-between;
+}
+
+.ai-review-quality-lab-head > div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ai-review-quality-lab strong {
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.ai-review-quality-lab span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ai-review-quality-lab-status span,
+.ai-review-quality-lab li {
+  color: #102832;
+  background: #f5fbfa;
+  border: 1px solid #c9dedc;
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.ai-review-quality-lab ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-review-quality-lab span[hidden] {
+  display: none !important;
+}
+
 @media (max-width: 720px) {
   .ai-review-quality-rubric {
     grid-template-columns: 1fr;

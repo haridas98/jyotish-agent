@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ProductShell } from "@/app/product-shell";
+import { buildAiReviewQualityLabSummary } from "@/lib/ai-review-quality";
 import {
   fetchCurrentUser,
   listChartProfiles,
@@ -28,6 +29,7 @@ import {
 import { EntityInspector, ReportRecipeRenderer } from "@/ui";
 
 const reportTypes = listReportTypes();
+const aiReviewQualityLab = buildAiReviewQualityLabSummary();
 
 function profileMeta(profile: ChartProfile | null): string {
   if (!profile) return "Карта не выбрана";
@@ -167,6 +169,25 @@ export default function ReportBuilderPage() {
           <li>Caveats and confidence</li>
         </ul>
         <span hidden>E118-A; batched_ui_ai_review_quality_stage=E118-A; ai_review_quality_rubric_present=true; ai_review_generation_changed=false; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=508df50</span>
+      </section>
+
+      <section className="ai-review-quality-lab" data-ai-review-quality-stage="P119-A" aria-label="AI review quality lab">
+        <div className="ai-review-quality-lab-head">
+          <div>
+            <strong>AI review quality gate</strong>
+            <span>Local quality gate/harness for draft review text; not a generated final review.</span>
+          </div>
+          <div className="ai-review-quality-lab-status">
+            <span>Strong fixture: {aiReviewQualityLab.strongFixturePasses ? "passes" : "blocked"}</span>
+            <span>Weak generic fixture: {aiReviewQualityLab.weakFixtureFails ? "fails" : "needs guard"}</span>
+          </div>
+        </div>
+        <ul>
+          {aiReviewQualityLab.checklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 
       <section className="workspace-bridge-summary" aria-label="Сводка конструктора отчета">
