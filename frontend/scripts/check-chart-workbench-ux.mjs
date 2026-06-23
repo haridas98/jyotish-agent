@@ -57,9 +57,25 @@ for (const required of [
   "E110-A",
   "E112-A",
   "E116-A",
+  "E118-A",
   "main-chart-style-affordance",
   "data-main-chart-style-stage",
   "data-main-chart-style-toggle",
+  "Chart view",
+  "House-fixed view for BPHS/bhava reading",
+  "Sign-fixed view for Jaimini/sign reading",
+  "D1 Rasi chart",
+  "Layout only; calculations unchanged",
+  "chart-context-strip",
+  "chart-context-view-control",
+  "main-chart-view-current",
+  "batched_ui_ai_review_quality_stage=E118-A",
+  "chart_view_control_batch=true",
+  "chart_context_strip_present=true",
+  "chart_layout_only_calculations_unchanged=true",
+  "backend_calculation_changed=false",
+  "production_deploy_skipped_per_user_batching_policy=true",
+  "last_verified_deploy_commit=508df50",
   "North: houses fixed",
   "South: signs fixed",
   "chart_style_guidance_stage=E116-A",
@@ -107,5 +123,9 @@ assert(component.includes('mode === "novice" && model.expertOnlyScopes.includes(
 assert(css.includes("@media") && css.includes(".d1-workbench[data-density=\"compact\"]"), "Chart workbench CSS must include compact and responsive rules.");
 assert(css.includes(".main-chart-style-guidance"), "E116 main chart style guidance CSS marker missing.");
 assert(css.includes("flex-wrap: wrap") && css.includes(".main-chart-style-guidance"), "E116 guidance must keep compact wrapping behavior.");
+assert(css.includes(".chart-context-strip"), "E118 chart context strip CSS marker missing.");
+assert(css.includes(".chart-context-view-control"), "E118 chart context view control CSS marker missing.");
+assert(css.includes(".main-chart-view-current"), "E118 current-mode helper CSS marker missing.");
+assert(css.includes("flex-wrap: wrap") && css.includes(".chart-context-strip"), "E118 chart context strip must keep compact wrapping behavior.");
 
 console.log("Chart workbench UX check passed.");

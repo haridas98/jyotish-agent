@@ -64,6 +64,24 @@ for (const marker of [
   assert(page.includes(marker), `/reports missing workspace marker: ${marker}`);
 }
 
+for (const marker of [
+  "E118-A",
+  "batched_ui_ai_review_quality_stage=E118-A",
+  "ai_review_quality_rubric_present=true",
+  "ai_review_generation_changed=false",
+  "backend_calculation_changed=false",
+  "production_deploy_skipped_per_user_batching_policy=true",
+  "last_verified_deploy_commit=508df50",
+  "Interpretation depth",
+  "Specific chart evidence",
+  "Practical synthesis",
+  "Caveats and confidence",
+  "quality rubric",
+  "not a generated final review",
+]) {
+  assert(page.includes(marker), `/reports missing E118 quality marker: ${marker}`);
+}
+
 for (const forbidden of [
   "fetch(\"/api/ai",
   "fetch('/api/ai",

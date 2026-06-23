@@ -7162,6 +7162,10 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
   const [activeVargaSchemeKey, setActiveVargaSchemeKey] = useState<VargaSchemeKey>("shodasha");
   const [chartReference, setChartReference] = useState<ChartReference>("lagna");
   const [chartStyle, setChartStyle] = useState<"north" | "south">("north");
+  const chartViewSummary =
+    chartStyle === "north"
+      ? "House-fixed view for BPHS/bhava reading"
+      : "Sign-fixed view for Jaimini/sign reading";
   const [termLanguage, setTermLanguage] = useState<TermLanguage>("ru");
   const [houseHintsEnabled, setHouseHintsEnabled] = useState(true);
   const [selectedReaderExplanation, setSelectedReaderExplanation] = useState<ReaderExplanationDetail | null>(null);
@@ -9402,12 +9406,13 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
             </div>
             <div className="main-chart-style-affordance" data-main-chart-style-stage="E112-A" aria-label="Chart style behavior">
               <label className="main-chart-style-picker">
-                Chart style
+                Chart view
                 <select data-main-chart-style-toggle="E112-A" value={chartStyle} onChange={(event) => handleChartStyleChange(event.target.value as "north" | "south")}>
                   <option value="north">North</option>
                   <option value="south">South</option>
                 </select>
               </label>
+              <span className="main-chart-view-current">{chartViewSummary}</span>
               <span><strong>North: houses fixed</strong></span>
               <span><strong>South: signs fixed</strong></span>
               <div className="main-chart-style-guidance" data-chart-style-guidance-stage="E116-A">
@@ -9417,6 +9422,7 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
               </div>
               <span hidden>E112-A main chart style affordance; north_chart_style=houses_fixed; south_chart_style=signs_fixed; parity_success_claimed=false; release_ready=false; release_gate_status=blocked</span>
               <span hidden>E116-A; chart_style_guidance_stage=E116-A; north_indian_style=house_fixed_bphs_bhava_reading; south_indian_style=sign_fixed_jaimini_sign_reading; chart_style_selection_changes_layout_only=true; chart_calculation_changed=false</span>
+              <span hidden>E118-A; batched_ui_ai_review_quality_stage=E118-A; chart_view_control_batch=true; chart_layout_only_calculations_unchanged=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=508df50</span>
             </div>
             <div className="private-gate-actions">
               <button type="button" className="primary-button" onClick={() => setAuthOpen(true)}>
@@ -9677,6 +9683,8 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
                     </select>
                   </label>
                   <div className="main-chart-style-affordance" data-main-chart-style-stage="E112-A" aria-label="Chart style behavior">
+                    <span><strong>Chart view</strong></span>
+                    <span className="main-chart-view-current">{chartViewSummary}</span>
                     <span><strong>North: houses fixed</strong></span>
                     <span><strong>South: signs fixed</strong></span>
                     <div className="main-chart-style-guidance" data-chart-style-guidance-stage="E116-A">
@@ -9686,6 +9694,7 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
                     </div>
                     <span hidden>E112-A main chart style affordance; north_chart_style=houses_fixed; south_chart_style=signs_fixed; parity_success_claimed=false; release_ready=false; release_gate_status=blocked</span>
                     <span hidden>E116-A; chart_style_guidance_stage=E116-A; north_indian_style=house_fixed_bphs_bhava_reading; south_indian_style=sign_fixed_jaimini_sign_reading; chart_style_selection_changes_layout_only=true; chart_calculation_changed=false</span>
+                    <span hidden>E118-A; batched_ui_ai_review_quality_stage=E118-A; chart_view_control_batch=true; chart_layout_only_calculations_unchanged=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=508df50</span>
                   </div>
                   <label>
                     Язык терминов
@@ -9914,6 +9923,19 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
               </div>
               <div className="chart-layout">
                 <div className="chart-visual-stack">
+                  <div className="chart-context-strip" data-chart-context-strip="E118-A">
+                    <strong>D1 Rasi chart</strong>
+                    <label className="chart-context-view-control">
+                      <span>Chart view</span>
+                      <select data-main-chart-style-toggle="E112-A" value={chartStyle} onChange={(event) => handleChartStyleChange(event.target.value as "north" | "south")}>
+                        <option value="north">North</option>
+                        <option value="south">South</option>
+                      </select>
+                    </label>
+                    <span>{chartViewSummary}</span>
+                    <span>Layout only; calculations unchanged</span>
+                    <span hidden>E118-A; batched_ui_ai_review_quality_stage=E118-A; chart_context_strip_present=true; chart_layout_only_calculations_unchanged=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=508df50</span>
+                  </div>
                   <ChartPreview chart={chart} varga={selectedVarga} chartStyle={chartStyle} chartReference={chartReference} termLanguage={termLanguage} houseHintsEnabled={houseHintsEnabled} />
                   {isCurrentChartLoading ? (
                     <div className="chart-loading-status" aria-live="polite">

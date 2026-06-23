@@ -155,6 +155,20 @@ export default function ReportBuilderPage() {
 
       <p className="interaction-status-line">{status}</p>
 
+      <section className="ai-review-quality-rubric" data-ai-review-quality-rubric="E118-A" aria-label="AI review quality rubric">
+        <div>
+          <strong>AI review quality rubric</strong>
+          <span>Local checklist for future review drafts; not a generated final review.</span>
+        </div>
+        <ul>
+          <li>Interpretation depth</li>
+          <li>Specific chart evidence</li>
+          <li>Practical synthesis</li>
+          <li>Caveats and confidence</li>
+        </ul>
+        <span hidden>E118-A; batched_ui_ai_review_quality_stage=E118-A; ai_review_quality_rubric_present=true; ai_review_generation_changed=false; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=508df50</span>
+      </section>
+
       <section className="workspace-bridge-summary" aria-label="Сводка конструктора отчета">
         <div>
           <span>Карт</span>
