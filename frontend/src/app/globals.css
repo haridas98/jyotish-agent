@@ -1580,9 +1580,36 @@ body .chart-profile-form textarea {
 .d1-main-grid,
 .d1-shell-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+  gap: 10px;
   align-items: start;
+}
+
+.d1-first-viewport-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.88fr) minmax(360px, 1.12fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-width: 0;
+}
+
+.d1-first-viewport-grid > .d1-chart-panel-anchor {
+  grid-row: 1 / span 2;
+  min-width: 0;
+}
+
+.d1-first-viewport-grid > .d1-toolbar {
+  min-width: 0;
+  padding: 8px;
+}
+
+.d1-data-stack {
+  min-width: 0;
+}
+
+.d1-first-viewport-grid > span[hidden] {
+  display: none !important;
 }
 
 .d1-chart-card,
@@ -1590,6 +1617,13 @@ body .chart-profile-form textarea {
 .d1-inspector-panel,
 .d1-warning-list {
   padding: 14px;
+}
+
+.d1-inspector-panel {
+  position: sticky;
+  top: 76px;
+  max-height: calc(100vh - 96px);
+  overflow: auto;
 }
 
 .d1-chart-title {
@@ -2058,6 +2092,20 @@ body .chart-profile-form textarea {
 
   .d1-header {
     display: grid;
+  }
+
+  .d1-first-viewport-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .d1-first-viewport-grid > .d1-chart-panel-anchor {
+    grid-row: auto;
+  }
+
+  .d1-inspector-panel {
+    position: static;
+    max-height: none;
   }
 
   .d1-north-chart,

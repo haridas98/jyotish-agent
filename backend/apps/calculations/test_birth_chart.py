@@ -154,6 +154,56 @@ def test_build_birth_chart_accepts_explicit_calculation_settings():
     assert result["settings"]["shadbala_profile"] == "bphs_classical"
 
 
+def test_build_birth_chart_panchanga_includes_moon_nakshatra_and_pada():
+    from apps.calculations.chart import build_birth_chart
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=SettingsSensitiveProvider(),
+    )
+
+    moon = next(row for row in result["grahas"] if row["body"] == "Chandra")
+    assert result["panchanga"]["nakshatra"] == {
+        "name": moon["nakshatra"],
+        "index": moon["nakshatra_index"],
+        "pada": moon["pada"],
+    }
+
+
+def test_build_birth_chart_exposes_retrograde_from_negative_speed_and_basic_dignity():
+    from apps.calculations.chart import build_birth_chart
+
+    class ProviderWithRetrogradeShani:
+        def planet_positions(self, moment, bodies, settings):
+            return {
+                "Shani": BodyPosition(
+                    body="Shani",
+                    longitude=270.0,
+                    latitude=0.0,
+                    distance_au=9.0,
+                    speed_longitude=-0.05,
+                    placement=zodiac_placement(270.0),
+                )
+            }
+
+    result = build_birth_chart(
+        {
+            "birth_date": "2000-01-01",
+            "birth_time": "15:30",
+            "place_name": "Vrindavan",
+        },
+        provider=ProviderWithRetrogradeShani(),
+    )
+
+    shani = next(row for row in result["grahas"] if row["body"] == "Shani")
+    assert shani["retrograde"] is True
+    assert shani["dignity"] == "own"
+
+
 def test_build_birth_chart_includes_provider_ayanamsa_degrees_when_available():
     from apps.calculations.chart import build_birth_chart
 

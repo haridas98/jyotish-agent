@@ -45,6 +45,8 @@ if (exists("src/astrology/d1-workbench.ts")) {
   assert(model.includes("chartObjectCount"), "D1 model must expose total chart object count");
   assert(model.includes("technical:"), "D1 model must expose technical calculation payload");
   assert(model.includes("buildTechnicalPayload"), "D1 model must normalize panchanga, dashas, vargas, house cusps and classical payload");
+  assert(model.includes('scope.code === "D1"'), "D1 technical varga summary must treat the base D1 chart as available");
+  assert(model.includes("chart.grahas.length + (chart.ascendant ? 1 : 0)"), "D1 technical varga summary must count D1 grahas plus Lagna");
   assert(model.includes("speedLongitude"), "D1 graha rows must expose speed_longitude for technical review");
   assert(model.includes("absoluteLongitude"), "D1 graha rows must expose absolute longitude for technical review");
   assert(model.includes("grahaEntityId"), "D1 graha entity ids missing");
@@ -86,6 +88,9 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("last_verified_deploy_commit=815c1f03"), "D1 workbench current launch markers must reference the latest verified production checkpoint");
   assert(component.includes("D1MobileWorkflowNav"), "D1 workbench must expose a mobile chart/table/inspector workflow nav");
   assert(component.includes('data-d1-mobile-workflow-stage="E139-A"'), "D1 mobile workflow nav must expose the E139 marker");
+  assert(component.includes("d1-first-viewport-grid"), "D1 workbench must group chart and graha table in the first viewport grid");
+  assert(component.includes('data-d1-first-viewport-stage="E141-A"'), "D1 first viewport grid must expose the E141 marker");
+  assert(component.includes("chart_viewer_chart_and_graha_table_same_viewport=true"), "D1 first viewport marker must require chart and graha table in one viewport");
   assert(component.includes('href="#d1-chart-panel"') && component.includes('href="#d1-data-panel"') && component.includes('href="#d1-inspector-panel"'), "D1 mobile workflow nav must link chart, grahas, and inspector anchors");
   assert(component.includes('id="d1-chart-panel"') && component.includes('id="d1-data-panel"') && component.includes('id="d1-inspector-panel"'), "D1 workbench must expose stable chart, data, and inspector anchors");
   assert(component.includes("d1-graha-table-card"), "D1 graha table must expose a mobile compact-row class");

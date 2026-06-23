@@ -390,6 +390,15 @@ function buildTechnicalPayload(chart: BirthChart | null, vargaScopes: D1VargaSco
       durationYears: period.duration_years,
     })),
     vargas: vargaScopes.map((scope) => {
+      if (scope.code === "D1") {
+        return {
+          code: scope.code,
+          name: scope.name,
+          method: scope.methodId,
+          status: "available",
+          placementCount: chart.grahas.length + (chart.ascendant ? 1 : 0),
+        };
+      }
       const varga = chart.vargas?.[scope.code] ?? null;
       return {
         code: scope.code,

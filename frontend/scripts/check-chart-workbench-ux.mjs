@@ -81,8 +81,14 @@ for (const required of [
   "chart_viewer_visible_technical_scope_summary=true",
   "chart_viewer_d_scope_coverage_summary=true",
   "chart_viewer_first_check_before_analysis_review=true",
+  "d1-first-viewport-grid",
+  "d1-data-stack",
+  "data-d1-first-viewport-stage",
+  "chart_viewer_chart_and_graha_table_same_viewport=true",
+  "chart_viewer_inspector_same_viewport=true",
   "Technical desk",
   "D-scopes",
+  "saved charts expose D1-D60",
   "First check",
   "chart_viewer_default_tab=grahas",
   "chart_viewer_all_planets_visible_first_view=true",
@@ -161,6 +167,8 @@ assert(css.includes("flex-wrap: wrap") && css.includes(".chart-context-strip"), 
 assert(css.includes(".d1-technical-context-strip"), "E137 D1 technical context strip CSS marker missing.");
 assert(css.includes(".d1-launch-visibility-strip"), "E140 launch visibility strip CSS marker missing.");
 assert(css.includes(".d1-launch-visibility-strip span[hidden]"), "E140 launch visibility hidden marker CSS missing.");
+assert(css.includes(".d1-first-viewport-grid"), "E141 first viewport grid CSS marker missing.");
+assert(css.includes(".d1-data-stack"), "E141 data stack CSS marker missing.");
 assert(css.includes(".d1-mobile-workflow-nav"), "E139 mobile workflow nav CSS marker missing.");
 assert(css.includes(".d1-graha-table-card td::before"), "E139 compact graha row CSS marker missing.");
 assert(css.includes("position: sticky") && css.includes("bottom: 8px"), "E139 mobile workflow nav must stay reachable near the mobile viewport bottom.");

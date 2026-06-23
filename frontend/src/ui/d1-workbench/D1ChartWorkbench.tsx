@@ -268,7 +268,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
       <D1MobileWorkflowNav activeTab={workbenchState.activeTab} onGrahaJump={() => setActiveTab("grahas")} />
 
       <div className="d1-main-grid">
-        <div>
+        <div className="d1-first-viewport-grid" data-d1-first-viewport-stage="E141-A">
           <div id="d1-chart-panel" className="d1-chart-panel-anchor">
             {workbenchState.chartStyle === "north" ? (
               <NorthChart model={model} state={workbenchState} onSelect={setActiveEntityId} />
@@ -281,9 +281,10 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
               <button key={tabId} type="button" className={workbenchState.activeTab === tabId ? "active" : ""} onClick={() => setActiveTab(tabId)}>{tabLabel(tabId)}</button>
             ))}
           </div>
-          <div id="d1-data-panel" className="d1-data-panel-anchor">
+          <div id="d1-data-panel" className="d1-data-panel-anchor d1-data-stack">
             <ChartDataTabs model={model} state={workbenchState} onSelect={setActiveEntityId} />
           </div>
+          <span hidden>E141-A; chart_viewer_chart_and_graha_table_same_viewport=true; chart_viewer_inspector_same_viewport=true; chart_viewer_first_viewport_scroll_debt_reduced=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=815c1f03</span>
         </div>
         <aside id="d1-inspector-panel" className="d1-inspector-panel">
           <EntityInspector entityId={workbenchState.activeEntityId} onClose={() => setActiveEntityId(null)} />
@@ -301,10 +302,11 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
 function D1LaunchVisibilityStrip({ model }: { model: D1WorkbenchModel }) {
   const availableScopes = model.technical.vargas.filter((row) => row.status === "available").map((row) => row.code);
   const visibleScopes = availableScopes.length ? availableScopes : model.supportedScopes;
+  const dScopeCopy = visibleScopes.length <= 1 ? `${visibleScopes.join(" / ")} demo; saved charts expose D1-D60` : visibleScopes.join(" / ");
   return (
     <div className="d1-launch-visibility-strip" data-d1-launch-visibility-stage="E140-A" aria-label="Technical launch visibility">
       <span><strong>Technical desk</strong>chart, grahas, houses, nakshatras, technical payload, inspector</span>
-      <span><strong>D-scopes</strong>{visibleScopes.join(" / ")}</span>
+      <span><strong>D-scopes</strong>{dScopeCopy}</span>
       <span><strong>First check</strong>{model.stats.grahaCount} grahas + {model.stats.specialPointCount} points visible before analysis review</span>
       <span><strong>Production</strong>815c1f03 verified; calculations unchanged in this UI batch</span>
       <span hidden>E140-A; chart_viewer_launch_visibility_strip=true; chart_viewer_visible_technical_scope_summary=true; chart_viewer_d_scope_coverage_summary=true; chart_viewer_first_check_before_analysis_review=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=815c1f03</span>

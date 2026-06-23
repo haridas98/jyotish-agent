@@ -10,8 +10,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from apps.places.catalog import PlaceCandidate, PlaceNotFound, resolve_place
 from apps.places.geocoding import geocode_places
 
-from .classical import classical_calculations
-from .constants import GRAHAS
+from .classical import DEBILITATION_DEGREES, EXALTATION_SIGNS, OWN_SIGNS, classical_calculations
+from .constants import GRAHAS, RASHIS
 from .ephemeris import BodyPosition, CalculationSettings, EphemerisProvider, SwissEphemerisProvider
 from .panchanga import panchanga_from_longitudes
 from .dasha_systems import extra_dasha_payload
@@ -114,6 +114,7 @@ def build_birth_chart(
             local_moment,
         )
     if "Chandra" in positions:
+        payload["panchanga"]["nakshatra"] = _nakshatra_payload(positions["Chandra"])
         payload["dashas"]["vimshottari"] = vimshottari_payload(
             positions["Chandra"].longitude,
             local_moment,
@@ -352,6 +353,28 @@ def _varga_payload(
 def _varga_accuracy_payload(birth_time_accuracy: str) -> dict[str, dict[str, str]]:
     return {"D60": varga_accuracy_contract("D60", birth_time_accuracy)}
 
+
+def _nakshatra_payload(position: BodyPosition) -> dict[str, Any]:
+    return {
+        "name": position.placement.nakshatra,
+        "index": position.placement.nakshatra_index,
+        "pada": position.placement.pada,
+    }
+
+
+def _basic_dignity(position: BodyPosition) -> str:
+    body = position.body
+    rashi = position.placement.rashi
+    if rashi in OWN_SIGNS.get(body, set()):
+        return "own"
+    if rashi == EXALTATION_SIGNS.get(body):
+        return "exaltation"
+    debilitation = DEBILITATION_DEGREES.get(body)
+    if debilitation is not None and rashi == RASHIS[int(debilitation // 30) % len(RASHIS)]:
+        return "debilitation"
+    return "unknown"
+
+
 def _position_payload(position: BodyPosition) -> dict[str, Any]:
     return {
         "body": position.body,
@@ -360,6 +383,8 @@ def _position_payload(position: BodyPosition) -> dict[str, Any]:
         "declination": position.declination,
         "distance_au": position.distance_au,
         "speed_longitude": position.speed_longitude,
+        "retrograde": bool(position.speed_longitude is not None and position.speed_longitude < 0),
+        "dignity": _basic_dignity(position),
         **({"mean_longitude": position.mean_longitude} if position.mean_longitude is not None else {}),
         **(
             {"seeghrocha_longitude": position.seeghrocha_longitude}
