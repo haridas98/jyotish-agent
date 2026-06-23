@@ -130,6 +130,11 @@ if (exists("src/app/settings/page.tsx")) {
   assert(!settingsPage.includes("[\"D1\", \"D9\", \"D10\", \"D60\"] as const"), "Settings must not keep the old hardcoded D1/D9/D10/D60 list");
 }
 
+if (exists("src/lib/api.ts")) {
+  const api = read("src/lib/api.ts");
+  assert(api.includes('export type ChartWorkbenchScope = "d1" | "d2" | "d3" | "d4" | "d7" | "d9" | "d10" | "d12" | "d16" | "d20" | "d24" | "d27" | "d30" | "d40" | "d45" | "d60"'), "API ChartWorkbenchScope must match the D1-D60 workbench scope registry");
+}
+
 if (failures.length) {
   console.error("D1 workbench check failed:");
   for (const failure of failures) console.error(`- ${failure}`);

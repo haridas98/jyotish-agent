@@ -258,6 +258,7 @@
 - [x] Add an `E140-A` launch visibility strip so `/charts/:id` and `/charts/demo-d1` visibly summarize D-scope coverage, technical sections, first-check data, and production checkpoint before analysis review.
 - [x] Add an `E141-A` first-viewport grid so desktop `/charts/:id` shows the chart, graha table, and inspector together instead of pushing the table below the fold.
 - [x] Add `D27`, `D40`, and `D45` to the saved-chart workbench scope registry and launch smoke so the visible technical workflow covers the full implemented D1-D60 shodasha set.
+- [x] Add `E142-A` workbench scope-contract coverage so backend `/workbench` and dev-check endpoints plus frontend `ChartWorkbenchScope` all accept D27/D40/D45.
 - First viewport: birth meta, D1 chart, graha table, selected object inspector.
 - D chart rail grouped by use: main, family/relationship, profession, expert, all.
 - Mobile: chart first, compact graha rows, bottom nav; no giant horizontal table as primary path.

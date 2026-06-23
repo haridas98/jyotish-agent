@@ -19,6 +19,50 @@ def user():
     return get_user_model().objects.create_user(username="haridas", password="strong-pass-108")
 
 
+def _add_secondary_shodasha_fixture_vargas(calculation: ChartCalculation) -> None:
+    calculation.result["vargas"].update(
+        {
+            "D27": {
+                "code": "D27",
+                "name": "Bhamsha",
+                "method": "Parashara",
+                "methodId": "varga.parashara_shodasha.v1",
+                "methodVersion": "1",
+                "calculationPreset": "parashara",
+                "placements": [
+                    {"body": "Lagna", "rashi": "Karka", "rashi_index": 3},
+                    {"body": "Surya", "rashi": "Mesha", "rashi_index": 0},
+                ],
+            },
+            "D40": {
+                "code": "D40",
+                "name": "Khavedamsha",
+                "method": "Parashara",
+                "methodId": "varga.parashara_shodasha.v1",
+                "methodVersion": "1",
+                "calculationPreset": "parashara",
+                "placements": [
+                    {"body": "Lagna", "rashi": "Tula", "rashi_index": 6},
+                    {"body": "Surya", "rashi": "Dhanu", "rashi_index": 8},
+                ],
+            },
+            "D45": {
+                "code": "D45",
+                "name": "Akshavedamsha",
+                "method": "Parashara",
+                "methodId": "varga.parashara_shodasha.v1",
+                "methodVersion": "1",
+                "calculationPreset": "parashara",
+                "placements": [
+                    {"body": "Lagna", "rashi": "Makara", "rashi_index": 9},
+                    {"body": "Surya", "rashi": "Meena", "rashi_index": 11},
+                ],
+            },
+        }
+    )
+    calculation.save(update_fields=["result"])
+
+
 @pytest.mark.django_db
 def test_birth_profile_create_resolves_place_for_authenticated_user(user):
     client = APIClient()
@@ -963,6 +1007,7 @@ def test_chart_workbench_returns_latest_complete_d1(user):
             "panchanga": {},
         },
     )
+    _add_secondary_shodasha_fixture_vargas(calculation)
 
     response = client.get(f"/api/charts/{profile.id}/workbench?scope=d1")
 
@@ -1003,7 +1048,7 @@ def test_chart_workbench_returns_latest_complete_d1(user):
     assert d30_response.data["result"]["vargas"]["D30"]["methodId"] == "varga.d30.parashara_unequal.v1"
     assert d30_response.data["method"] == {"methodId": "varga.d30.parashara_unequal.v1", "methodVersion": "1", "calculationPreset": "parashara"}
 
-    for scope in ("d2", "d4", "d16", "d20", "d24"):
+    for scope in ("d2", "d4", "d16", "d20", "d24", "d27", "d40", "d45"):
         scope_response = client.get(f"/api/charts/{profile.id}/workbench?scope={scope}")
         assert scope_response.status_code == 200
         assert scope_response.data["scope"] == scope
@@ -1054,7 +1099,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
         format="json",
     )
     profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
-    ChartCalculation.objects.create(
+    calculation = ChartCalculation.objects.create(
         profile=profile,
         calculation_version=CALCULATION_VERSION,
         input_snapshot=_profile_input(profile),
@@ -1069,6 +1114,47 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
             "panchanga": {},
         },
     )
+    calculation.result["vargas"].update(
+        {
+            "D27": {
+                "code": "D27",
+                "name": "Bhamsha",
+                "method": "Parashara",
+                "methodId": "varga.parashara_shodasha.v1",
+                "methodVersion": "1",
+                "calculationPreset": "parashara",
+                "placements": [
+                    {"body": "Lagna", "rashi": "Karka", "rashi_index": 3},
+                    {"body": "Surya", "rashi": "Mesha", "rashi_index": 0},
+                ],
+            },
+            "D40": {
+                "code": "D40",
+                "name": "Khavedamsha",
+                "method": "Parashara",
+                "methodId": "varga.parashara_shodasha.v1",
+                "methodVersion": "1",
+                "calculationPreset": "parashara",
+                "placements": [
+                    {"body": "Lagna", "rashi": "Tula", "rashi_index": 6},
+                    {"body": "Surya", "rashi": "Dhanu", "rashi_index": 8},
+                ],
+            },
+            "D45": {
+                "code": "D45",
+                "name": "Akshavedamsha",
+                "method": "Parashara",
+                "methodId": "varga.parashara_shodasha.v1",
+                "methodVersion": "1",
+                "calculationPreset": "parashara",
+                "placements": [
+                    {"body": "Lagna", "rashi": "Makara", "rashi_index": 9},
+                    {"body": "Surya", "rashi": "Meena", "rashi_index": 11},
+                ],
+            },
+        }
+    )
+    calculation.save(update_fields=["result"])
     public_client = APIClient()
 
     response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}")
@@ -1134,7 +1220,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert d7_response.data["specialPointCount"] == 1
     assert d7_response.data["supportedScopes"] == expected_supported_scopes
 
-    for scope, scope_id in (("d2", "D2"), ("d4", "D4"), ("d16", "D16"), ("d20", "D20"), ("d24", "D24"), ("d30", "D30")):
+    for scope, scope_id in (("d2", "D2"), ("d4", "D4"), ("d16", "D16"), ("d20", "D20"), ("d24", "D24"), ("d27", "D27"), ("d30", "D30"), ("d40", "D40"), ("d45", "D45")):
         scope_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope={scope}")
         assert scope_response.status_code == 200
         assert scope_response.data["scopeId"] == scope_id
