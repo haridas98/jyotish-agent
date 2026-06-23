@@ -83,9 +83,17 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes('data-d1-launch-visibility-stage="E140-A"'), "D1 launch visibility strip must expose the E140 marker");
   assert(component.includes("chart_viewer_visible_technical_scope_summary=true"), "D1 launch strip must expose visible technical scope summary status");
   assert(component.includes("chart_viewer_first_check_before_analysis_review=true"), "D1 launch strip must expose first-check-before-analysis status");
+  assert(component.includes("D1ScopeCoverageMatrix"), "D1 workbench must render a visible D1-D60 scope coverage matrix");
+  assert(component.includes('data-d1-scope-matrix-stage="E143-A"'), "D1 scope matrix must expose the E143 marker");
+  assert(component.includes("chart_viewer_all_d_scopes_matrix_visible=true"), "D1 scope matrix must expose all-scope visibility status");
+  assert(component.includes("chart_viewer_scope_matrix_quick_switch=true"), "D1 scope matrix must expose quick-switch status");
+  assert(component.includes("chart_viewer_scope_matrix_availability_visible=true"), "D1 scope matrix must expose availability status");
+  assert(component.includes("model.technical.vargas"), "D1 scope matrix must use technical varga availability from the API payload");
+  assert(component.includes("scopeAvailabilityByCode"), "D1 scope matrix must map varga availability by scope code");
+  assert(component.includes("onScopeChange?.(scope.code)"), "D1 scope matrix must switch through the same saved-chart workbench scope flow");
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
-  assert(component.includes("last_verified_deploy_commit=cc86830c"), "D1 workbench current launch markers must reference the latest verified production checkpoint");
+  assert(component.includes("last_verified_deploy_commit=5572bb60"), "D1 workbench current launch markers must reference the latest verified production checkpoint");
   assert(component.includes("D1MobileWorkflowNav"), "D1 workbench must expose a mobile chart/table/inspector workflow nav");
   assert(component.includes('data-d1-mobile-workflow-stage="E139-A"'), "D1 mobile workflow nav must expose the E139 marker");
   assert(component.includes("d1-first-viewport-grid"), "D1 workbench must group chart and graha table in the first viewport grid");
