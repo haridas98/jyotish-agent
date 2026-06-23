@@ -78,6 +78,28 @@ export type AiReviewComposedMockReview = {
   statusLabels: string[];
 };
 
+export type AiReviewPromptPayloadSection = {
+  heading:
+    | "System quality rules"
+    | "Chart evidence packet"
+    | "Required review structure"
+    | "Anti-generic guardrails"
+    | "Quality gate before final answer";
+  body: string;
+};
+
+export type AiReviewPromptPayload = {
+  stage: "E122-A";
+  localOnly: true;
+  llmNetworkCallExecuted: false;
+  evidenceItems: string[];
+  requiredEvidenceCitationCount: number;
+  sections: AiReviewPromptPayloadSection[];
+  antiGenericGuardrails: string[];
+  qualityGateBeforeFinalAnswer: AiReviewQualityDimension[];
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -284,11 +306,70 @@ export function composeEvidenceDrivenMockReview(evidencePacket = buildAiReviewEv
   };
 }
 
+export function buildAiReviewPromptPayload(
+  evidencePacket = buildAiReviewEvidencePacket(),
+  composed = composeEvidenceDrivenMockReview(evidencePacket),
+): AiReviewPromptPayload {
+  const requiredStructure = composed.sections.map((section) => section.heading).join(" -> ");
+  const antiGenericGuardrails = [
+    "Block or revise generic text that lacks chart evidence and synthesis.",
+    "Require chart-specific evidence before any practical guidance.",
+    "Revise shallow advice when it misses synthesis across placements/factors.",
+  ];
+
+  return {
+    stage: "E122-A",
+    localOnly: true,
+    llmNetworkCallExecuted: false,
+    evidenceItems: [...evidencePacket.chartEvidenceItems],
+    requiredEvidenceCitationCount: 3,
+    sections: [
+      {
+        heading: "System quality rules",
+        body: "Use the local evidence packet only; do not treat this dry run as a generated final review.",
+      },
+      {
+        heading: "Chart evidence packet",
+        body: evidencePacket.chartEvidenceItems.join("; "),
+      },
+      {
+        heading: "Required review structure",
+        body: `${requiredStructure}. Require at least 3 evidence citations before the review can pass.`,
+      },
+      {
+        heading: "Anti-generic guardrails",
+        body: antiGenericGuardrails.join(" "),
+      },
+      {
+        heading: "Quality gate before final answer",
+        body: AI_REVIEW_QUALITY_DIMENSIONS.join(","),
+      },
+    ],
+    antiGenericGuardrails,
+    qualityGateBeforeFinalAnswer: [...AI_REVIEW_QUALITY_DIMENSIONS],
+    statusLabels: [
+      "E122-A",
+      "ai_review_prompt_contract_stage=E122-A",
+      "ai_review_prompt_payload_present=true",
+      "ai_review_prompt_uses_evidence_packet=true",
+      "ai_review_prompt_requires_three_evidence_citations=true",
+      "ai_review_prompt_sections_present=true",
+      "ai_review_anti_generic_guardrails_present=true",
+      "ai_review_quality_gate_before_final_answer=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
   const preview = buildAiReviewMockPreview();
   const composed = composeEvidenceDrivenMockReview(preview.evidencePacket);
+  const promptPayload = buildAiReviewPromptPayload(preview.evidencePacket, composed);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -306,6 +387,7 @@ export function buildAiReviewQualityLabSummary() {
       "last_verified_deploy_commit=508df50",
       ...preview.statusLabels,
       ...composed.statusLabels,
+      ...promptPayload.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -323,5 +405,6 @@ export function buildAiReviewQualityLabSummary() {
     weak,
     preview,
     composed,
+    promptPayload,
   };
 }

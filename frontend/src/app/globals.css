@@ -748,6 +748,53 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.ai-review-prompt-preview {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d7e5e8;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.ai-review-prompt-preview-head,
+.ai-review-prompt-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.ai-review-prompt-sections {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  min-width: 0;
+}
+
+.ai-review-prompt-sections section {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-prompt-preview strong {
+  color: var(--green);
+}
+
+.ai-review-prompt-preview span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
@@ -762,6 +809,10 @@ body .chart-profile-form textarea {
   }
 
   .ai-review-composer-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-prompt-sections {
     grid-template-columns: 1fr;
   }
 }

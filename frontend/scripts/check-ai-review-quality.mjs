@@ -41,9 +41,11 @@ for (const marker of [
   "P119-A",
   "E120-A",
   "P121-A",
+  "E122-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
+  "ai_review_prompt_contract_stage=E122-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -60,6 +62,12 @@ for (const marker of [
   "ai_review_composed_strong_passes_gate=true",
   "ai_review_generic_output_blocked_by_gate=true",
   "ai_review_generic_block_reason_visible=true",
+  "ai_review_prompt_payload_present=true",
+  "ai_review_prompt_uses_evidence_packet=true",
+  "ai_review_prompt_requires_three_evidence_citations=true",
+  "ai_review_prompt_sections_present=true",
+  "ai_review_anti_generic_guardrails_present=true",
+  "ai_review_quality_gate_before_final_answer=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -92,6 +100,15 @@ for (const label of [
   "Strong composed review passes quality gate",
   "Generic output blocked by quality gate",
   "generic text lacks chart evidence and synthesis",
+  "Prompt contract dry run",
+  "System quality rules",
+  "Chart evidence packet",
+  "Required review structure",
+  "Anti-generic guardrails",
+  "Quality gate before final answer",
+  "local-only and no LLM call was executed",
+  "Require at least 3 evidence citations",
+  "Block or revise generic text that lacks chart evidence and synthesis",
   "lacks chart-specific evidence",
   "lacks practical synthesis",
   "not a generated final review",
@@ -107,12 +124,14 @@ assert(typeof helper.evaluateAiReviewDraft === "function", "evaluateAiReviewDraf
 assert(typeof helper.buildAiReviewEvidencePacket === "function", "buildAiReviewEvidencePacket must be exported.");
 assert(typeof helper.buildAiReviewMockPreview === "function", "buildAiReviewMockPreview must be exported.");
 assert(typeof helper.composeEvidenceDrivenMockReview === "function", "composeEvidenceDrivenMockReview must be exported.");
+assert(typeof helper.buildAiReviewPromptPayload === "function", "buildAiReviewPromptPayload must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
 const packet = helper.buildAiReviewEvidencePacket();
 const preview = helper.buildAiReviewMockPreview();
 const composed = helper.composeEvidenceDrivenMockReview(packet);
+const promptPayload = helper.buildAiReviewPromptPayload(packet, composed);
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -138,6 +157,15 @@ assert(composed.strong.matchedEvidenceCount >= 3, "Strong composed review must c
 assert(composed.weak.status === "blocked_by_quality_gate", "Weak generic output must be blocked.");
 assert(composed.weak.usableReviewVisible === false, "Weak generic output must not be displayed as usable review.");
 assert(composed.weak.blockReason.includes("generic text lacks chart evidence and synthesis"), "Weak block reason must be concrete.");
+assert(promptPayload.stage === "E122-A", "Prompt payload stage must be E122-A.");
+assert(promptPayload.statusLabels.includes("ai_review_prompt_contract_stage=E122-A"), "Prompt payload status labels missing E122 stage.");
+assert(promptPayload.sections.map((section) => section.heading).join("|") === "System quality rules|Chart evidence packet|Required review structure|Anti-generic guardrails|Quality gate before final answer", "Prompt payload sections changed.");
+assert(promptPayload.evidenceItems.length >= 4, "Prompt payload must include at least four chart evidence items.");
+assert(promptPayload.requiredEvidenceCitationCount >= 3, "Prompt payload must require at least three evidence citations.");
+assert(promptPayload.localOnly === true, "Prompt payload must be local-only.");
+assert(promptPayload.llmNetworkCallExecuted === false, "Prompt payload must not execute an LLM/network call.");
+assert(promptPayload.antiGenericGuardrails.some((item) => item.includes("Block or revise generic text")), "Prompt payload must block/revise generic text.");
+assert(promptPayload.qualityGateBeforeFinalAnswer.join(",") === "interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence", "Prompt payload quality gate dimensions changed.");
 
 for (const forbidden of [
   "fetch(",

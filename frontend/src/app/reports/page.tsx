@@ -232,6 +232,25 @@ export default function ReportBuilderPage() {
             <span>Failed dimensions: {aiReviewQualityLab.composed.weak.failedDimensionFeedback.join(" ")}</span>
           </div>
         </div>
+        <div className="ai-review-prompt-preview" data-ai-review-prompt-contract-stage="E122-A">
+          <div className="ai-review-prompt-preview-head">
+            <strong>Prompt contract dry run</strong>
+            <span>Prompt contract is local-only and no LLM call was executed.</span>
+            <span>Require at least 3 evidence citations from {aiReviewQualityLab.promptPayload.evidenceItems.length} packet items.</span>
+          </div>
+          <div className="ai-review-prompt-sections">
+            {aiReviewQualityLab.promptPayload.sections.map((section) => (
+              <section key={section.heading}>
+                <strong>{section.heading}</strong>
+                <span>{section.body}</span>
+              </section>
+            ))}
+          </div>
+          <div className="ai-review-prompt-status">
+            <span>Block or revise generic text that lacks chart evidence and synthesis.</span>
+            <span>Quality gate dimensions: {aiReviewQualityLab.promptPayload.qualityGateBeforeFinalAnswer.join(",")}</span>
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 
