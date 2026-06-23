@@ -103,13 +103,18 @@ for (const required of [
   "chart_viewer_active_scope_method_visible=true",
   "chart_viewer_active_scope_gate_visible=true",
   "chart_viewer_active_scope_placement_count_visible=true",
+  "D1TechnicalPayloadIndex",
+  "d1-technical-payload-index",
+  "data-d1-technical-payload-index-stage",
+  "chart_viewer_technical_payload_index_visible=true",
+  "chart_viewer_payload_section_counts_visible=true",
   "Technical desk",
   "D-scopes",
   "saved charts expose D1-D60",
   "First check",
   "chart_viewer_default_tab=grahas",
   "chart_viewer_all_planets_visible_first_view=true",
-  "last_verified_deploy_commit=7587205e",
+  "last_verified_deploy_commit=8e5d269f",
   "D1MobileWorkflowNav",
   "data-d1-mobile-workflow-stage",
   "chart_viewer_mobile_workflow_nav=true",
@@ -189,6 +194,7 @@ assert(css.includes(".d1-scope-matrix-section"), "E143 grouped scope coverage se
 assert(css.includes(".d1-scope-matrix-grid"), "E143 scope coverage matrix grid CSS marker missing.");
 assert(css.includes(".d1-scope-matrix-card"), "E143 scope coverage matrix card CSS marker missing.");
 assert(css.includes(".d1-active-scope-review"), "E144 active scope review CSS marker missing.");
+assert(css.includes(".d1-technical-payload-index"), "E145 technical payload index CSS marker missing.");
 assert(css.includes(".d1-first-viewport-grid"), "E141 first viewport grid CSS marker missing.");
 assert(css.includes(".d1-data-stack"), "E141 data stack CSS marker missing.");
 assert(css.includes(".d1-mobile-workflow-nav"), "E139 mobile workflow nav CSS marker missing.");
