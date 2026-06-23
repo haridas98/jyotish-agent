@@ -174,6 +174,7 @@ if (!navConfig.includes('href: "/dashas"') || !navConfig.includes('label: "Да�
 }
 const productionCompose = readFileSync("../docker-compose.prod.yml", "utf8");
 const productionEnvExample = readFileSync("../deploy/prod.env.example", "utf8");
+const productionLiveSmoke = readFileSync("scripts/smoke-production-live.mjs", "utf8");
 if (!/codex-worker:[\s\S]*profiles:\s*\[[^\]]*"ai"[^\]]*\]/.test(productionCompose)) {
   console.error("Production codex-worker must be opt-in via the ai Docker profile for calculator-only launch.");
   failed = true;
@@ -185,6 +186,17 @@ if (!/backend:[\s\S]*CODEX_GENERATION_QUEUE_ENABLED:\s*"\$\{CODEX_GENERATION_QUE
 if (!/CODEX_GENERATION_QUEUE_ENABLED=false/.test(productionEnvExample)) {
   console.error("Production env example must document calculator-only CODEX_GENERATION_QUEUE_ENABLED=false.");
   failed = true;
+}
+for (const marker of [
+  "/charts/demo-d1",
+  "/api/auth/csrf",
+  "/api/calculations/ephemeris/status",
+  "writeOperations: false",
+]) {
+  if (!productionLiveSmoke.includes(marker)) {
+    console.error(`Production live smoke is missing launch marker: ${marker}`);
+    failed = true;
+  }
 }
 for (const check of navigationServerHtmlChecks) {
   if (!existsSync(check.file)) {

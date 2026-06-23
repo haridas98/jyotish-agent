@@ -89,6 +89,18 @@ npm.cmd run smoke:calculator-launch
 
 The smoke registers a temporary user, creates a Sterlitamak chart, runs saved-profile calculation, checks D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24/D30/D60 workbench payloads, and verifies `/charts/new` plus `/charts/<id>` respond.
 
+Read-only production smoke after a deploy checkpoint:
+
+```powershell
+cd C:\Projects\jyotish-agent\frontend
+$env:JYOTISH_PUBLIC_HEALTH_URL = "http://31.76.79.2:18100/api/health"
+$env:JYOTISH_PUBLIC_FRONTEND_URL = "http://31.76.79.2:13130/"
+$env:JYOTISH_PUBLIC_EXPECTED_DEPLOY_COMMIT = "<commit>"
+npm.cmd run smoke:production-live
+```
+
+`smoke:production-live` verifies health `deploy_commit`, `/`, `/charts`, `/charts/new`, `/charts/demo-d1`, `/reports`, `/dashas`, CSRF, and the private calculation API gate. It is read-only and must not create production users, charts, or calculations.
+
 Manual equivalent:
 
 ```powershell

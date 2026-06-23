@@ -16,6 +16,7 @@ const deployDocs = read("../docs/deploy_private_server.md");
 const aiReviewDocs = read("../docs/ai_review_quality_reset.md");
 const productionCheck = read("scripts/production-check.mjs");
 const calculatorSmoke = read("scripts/smoke-calculator-launch.mjs");
+const productionLiveSmoke = read("scripts/smoke-production-live.mjs");
 const aiReviewQuality = read("src/lib/ai-review-quality.ts");
 const aiReviewQualityCheck = read("scripts/check-ai-review-quality.mjs");
 const reportsPage = read("src/app/reports/page.tsx");
@@ -24,6 +25,7 @@ const mockReviewPage = read("src/app/report-mock-review/page.tsx");
 for (const marker of [
   "test:launch-readiness",
   "smoke:calculator-launch",
+  "smoke:production-live",
   "test:ai-review-quality",
   "production-check",
   "build:prod",
@@ -36,6 +38,8 @@ for (const marker of [
   "Calculator-only launch is the default",
   "Local calculator launch smoke before a deploy checkpoint",
   "deploy_commit",
+  "smoke:production-live",
+  "JYOTISH_PUBLIC_EXPECTED_DEPLOY_COMMIT",
 ]) {
   assert(deployDocs.includes(marker), `Deploy docs missing launch marker: ${marker}`);
 }
@@ -44,8 +48,18 @@ for (const marker of [
   "codex-worker must be opt-in",
   "CODEX_GENERATION_QUEUE_ENABLED to false",
   "Production browser bundle check passed",
+  "Production live smoke is missing launch marker",
 ]) {
   assert(productionCheck.includes(marker), `production-check missing safety marker: ${marker}`);
+}
+
+for (const marker of [
+  "/charts/demo-d1",
+  "/api/auth/csrf",
+  "/api/calculations/ephemeris/status",
+  "writeOperations: false",
+]) {
+  assert(productionLiveSmoke.includes(marker), `production live smoke missing marker: ${marker}`);
 }
 
 for (const marker of [
