@@ -56,11 +56,20 @@ for (const required of [
   "E108-A",
   "E110-A",
   "E112-A",
+  "E116-A",
   "main-chart-style-affordance",
   "data-main-chart-style-stage",
   "data-main-chart-style-toggle",
   "North: houses fixed",
   "South: signs fixed",
+  "chart_style_guidance_stage=E116-A",
+  "north_indian_style=house_fixed_bphs_bhava_reading",
+  "south_indian_style=sign_fixed_jaimini_sign_reading",
+  "chart_style_selection_changes_layout_only=true",
+  "chart_calculation_changed=false",
+  "North Indian: house-fixed / BPHS bhava reading",
+  "South Indian: sign-fixed / Jaimini sign reading",
+  "Selection changes layout only, not calculation results.",
   "d1-orientation-legend",
   "data-chart-orientation-stage",
   "data-chart-orientation-mode",
@@ -96,5 +105,7 @@ for (const forbidden of [
 assert(component.match(/<EntityInspector/g)?.length === 1, "Chart workbench must render exactly one EntityInspector.");
 assert(component.includes('mode === "novice" && model.expertOnlyScopes.includes(model.scopeId)'), "Novice mode must leave expert-only scope.");
 assert(css.includes("@media") && css.includes(".d1-workbench[data-density=\"compact\"]"), "Chart workbench CSS must include compact and responsive rules.");
+assert(css.includes(".main-chart-style-guidance"), "E116 main chart style guidance CSS marker missing.");
+assert(css.includes("flex-wrap: wrap") && css.includes(".main-chart-style-guidance"), "E116 guidance must keep compact wrapping behavior.");
 
 console.log("Chart workbench UX check passed.");

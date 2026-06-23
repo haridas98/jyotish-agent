@@ -9410,7 +9410,13 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
               </label>
               <span><strong>North: houses fixed</strong></span>
               <span><strong>South: signs fixed</strong></span>
+              <div className="main-chart-style-guidance" data-chart-style-guidance-stage="E116-A">
+                <span>North Indian: house-fixed / BPHS bhava reading</span>
+                <span>South Indian: sign-fixed / Jaimini sign reading</span>
+                <span>Selection changes layout only, not calculation results.</span>
+              </div>
               <span hidden>E112-A main chart style affordance; north_chart_style=houses_fixed; south_chart_style=signs_fixed; parity_success_claimed=false; release_ready=false; release_gate_status=blocked</span>
+              <span hidden>E116-A; chart_style_guidance_stage=E116-A; north_indian_style=house_fixed_bphs_bhava_reading; south_indian_style=sign_fixed_jaimini_sign_reading; chart_style_selection_changes_layout_only=true; chart_calculation_changed=false</span>
             </div>
             <div className="private-gate-actions">
               <button type="button" className="primary-button" onClick={() => setAuthOpen(true)}>
@@ -9673,7 +9679,13 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
                   <div className="main-chart-style-affordance" data-main-chart-style-stage="E112-A" aria-label="Chart style behavior">
                     <span><strong>North: houses fixed</strong></span>
                     <span><strong>South: signs fixed</strong></span>
+                    <div className="main-chart-style-guidance" data-chart-style-guidance-stage="E116-A">
+                      <span>North Indian: house-fixed / BPHS bhava reading</span>
+                      <span>South Indian: sign-fixed / Jaimini sign reading</span>
+                      <span>Selection changes layout only, not calculation results.</span>
+                    </div>
                     <span hidden>E112-A main chart style affordance; north_chart_style=houses_fixed; south_chart_style=signs_fixed; parity_success_claimed=false; release_ready=false; release_gate_status=blocked</span>
+                    <span hidden>E116-A; chart_style_guidance_stage=E116-A; north_indian_style=house_fixed_bphs_bhava_reading; south_indian_style=sign_fixed_jaimini_sign_reading; chart_style_selection_changes_layout_only=true; chart_calculation_changed=false</span>
                   </div>
                   <label>
                     Язык терминов
