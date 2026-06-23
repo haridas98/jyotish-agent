@@ -12,6 +12,7 @@ function assert(condition, message) {
 
 const packageJson = read("../package.json");
 const chartsPage = read("../src/app/charts/page.tsx");
+const newChartPage = read("../src/app/charts/new/page.tsx");
 const detailPage = read("../src/app/charts/[id]/page.tsx");
 const fixture = read("../src/astrology/d1-workbench-smoke-fixture.ts");
 const component = read("../src/ui/d1-workbench/D1ChartWorkbench.tsx");
@@ -45,18 +46,33 @@ for (const marker of [
 
 for (const marker of [
   "isSmokeDemoChart",
+  "calculateSavedProfile",
+  "refreshWorkbench",
+  "handleRecalculate",
+  "chart-detail-autocalculate",
   "buildD1WorkbenchSmokeModel()",
   "D1_WORKBENCH_SMOKE_USER_STATUS",
   "D1_WORKBENCH_POLISH_STAGE",
   "readOnlyFixture",
   "D1_WORKBENCH_SMOKE_ROUTE",
+  "onRecalculate",
 ]) {
   assert(detailPage.includes(marker), `Missing chart detail smoke route marker: ${marker}`);
 }
 
 for (const marker of [
+  "calculateSavedProfile",
+  "handleSavedChartProfile",
+  "chart-create-autocalculate",
+]) {
+  assert(newChartPage.includes(marker), `Missing chart create autocalculate marker: ${marker}`);
+}
+
+for (const marker of [
   "data-chart-detail-smoke-fixture",
   "data-chart-detail-polish-stage",
+  "data-chart-recalculate",
+  "chart-detail-recalculate-action",
   "data-chart-demo-kind",
   "d1-readonly-fixture-badge",
   "\u041f\u0440\u0438\u043c\u0435\u0440 D1",

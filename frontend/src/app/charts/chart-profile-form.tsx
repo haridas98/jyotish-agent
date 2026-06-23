@@ -6,7 +6,7 @@ import { createChartProfile, updateChartProfile, type ChartProfile } from "@/lib
 type ChartProfileFormProps = {
   mode: "create" | "edit";
   profile?: ChartProfile;
-  onSaved: (profile: ChartProfile) => void;
+  onSaved: (profile: ChartProfile) => void | Promise<void>;
 };
 
 type ChartProfileDraft = {
@@ -107,7 +107,7 @@ export function ChartProfileForm({ mode, profile, onSaved }: ChartProfileFormPro
     try {
       const saved = mode === "create" ? await createChartProfile(payload) : await updateChartProfile(profile!.id, payload);
       setStatus("Сохранено.");
-      onSaved(saved);
+      await onSaved(saved);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось сохранить карту.");
     } finally {

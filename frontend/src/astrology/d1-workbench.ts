@@ -7,7 +7,7 @@ export type ChartWorkbenchScopeId = (typeof CHART_WORKBENCH_SCOPE_IDS)[number];
 export type D1ChartStyle = "north" | "south";
 export type D1ReaderMode = "novice" | "astrologer";
 export type D1TerminologyMode = "ru" | "en" | "sa" | "short";
-export type D1DataTab = "overview" | "grahas" | "houses" | "nakshatras";
+export type D1DataTab = "overview" | "grahas" | "houses" | "nakshatras" | "technical";
 
 export type D1WorkbenchModel = {
   schemaVersion: "d1-workbench.v1";
@@ -48,6 +48,7 @@ export type D1WorkbenchModel = {
   expertOnlyScopes: ChartWorkbenchScopeId[];
   vargaScopes: D1VargaScopeMetadata[];
   accuracyGates: Record<string, VargaAccuracyGate>;
+  technical: D1TechnicalPayload;
 };
 
 export type D1WorkbenchCapabilities = {
@@ -109,6 +110,43 @@ export type D1Warning = {
 export type D1VargaScopeMetadata = Omit<VargaScopeMetadata, "code"> & {
   code: ChartWorkbenchScopeId;
   category: VargaScopeCategory;
+};
+
+export type D1TechnicalPayload = {
+  settings: D1TechnicalSummaryRow[];
+  panchanga: D1TechnicalSummaryRow[];
+  dashas: D1DashaSummaryRow[];
+  vargas: D1VargaTechnicalRow[];
+  houseCusps: D1HouseCuspRow[];
+  classical: D1TechnicalSummaryRow[];
+  solarDay: D1TechnicalSummaryRow[];
+};
+
+export type D1TechnicalSummaryRow = {
+  key: string;
+  label: string;
+  value: string;
+};
+
+export type D1DashaSummaryRow = {
+  lord: string;
+  startsAt: string;
+  endsAt: string;
+  durationYears: number;
+};
+
+export type D1VargaTechnicalRow = {
+  code: ChartWorkbenchScopeId;
+  name: string;
+  method: string;
+  status: "available" | "missing";
+  placementCount: number;
+};
+
+export type D1HouseCuspRow = {
+  house: number;
+  longitude: string;
+  rashi: string;
 };
 
 type WorkbenchApiMeta = {
@@ -266,6 +304,7 @@ export function buildD1WorkbenchModel(
     expertOnlyScopes,
     vargaScopes,
     accuracyGates: apiMeta?.accuracyGates ?? {},
+    technical: buildTechnicalPayload(chart, vargaScopes),
   };
 }
 
@@ -295,6 +334,117 @@ function normalizeVargaScopes(raw: VargaScopeMetadata[] | undefined, supportedSc
     expertOnly: expert.has(code),
     timeAccuracyRequired: code === "D60" ? "exact" : "",
   }));
+}
+
+function buildTechnicalPayload(chart: BirthChart | null, vargaScopes: D1VargaScopeMetadata[]): D1TechnicalPayload {
+  if (!chart) {
+    return {
+      settings: [],
+      panchanga: [],
+      dashas: [],
+      vargas: vargaScopes.map((scope) => ({
+        code: scope.code,
+        name: scope.name,
+        method: scope.methodId,
+        status: "missing",
+        placementCount: 0,
+      })),
+      houseCusps: [],
+      classical: [],
+      solarDay: [],
+    };
+  }
+
+  const settings = chart.settings;
+  const panchanga = chart.panchanga;
+  const solarDay = chart.solar_day;
+
+  return {
+    settings: compactRows([
+      technicalRow("calculation_version", "Calculation version", chart.calculation_version),
+      technicalRow("zodiac", "Zodiac", settings?.zodiac),
+      technicalRow("ayanamsa", "Ayanamsa", settings?.ayanamsa),
+      technicalRow("calculation_model", "Calculation model", settings?.calculation_model),
+      technicalRow("node_type", "Node type", settings?.node_type),
+      technicalRow("ephemeris", "Ephemeris", settings?.ephemeris),
+      technicalRow("house_system", "House system", settings?.house_system),
+      technicalRow("bhava_system", "Bhava system", settings?.bhava_system),
+      technicalRow("varga_scheme", "Varga scheme", settings?.varga_scheme),
+      technicalRow("sunrise_source", "Sunrise source", settings?.sunrise_source),
+      technicalRow("timezone_source", "Timezone source", settings?.timezone_source),
+      technicalRow("shadbala_profile", "Shadbala profile", settings?.shadbala_profile),
+    ]),
+    panchanga: compactRows([
+      technicalRow("tithi", "Tithi", panchanga?.tithi ? `${panchanga.tithi.number}. ${panchanga.tithi.name} (${panchanga.tithi.paksha})` : undefined),
+      technicalRow("vara", "Vara", panchanga?.vara?.name),
+      technicalRow("nakshatra", "Nakshatra", panchanga?.nakshatra ? `${panchanga.nakshatra.name}${panchanga.nakshatra.pada ? ` pada ${panchanga.nakshatra.pada}` : ""}` : undefined),
+      technicalRow("yoga", "Yoga", panchanga?.yoga ? `${panchanga.yoga.number}. ${panchanga.yoga.name}` : undefined),
+      technicalRow("karana", "Karana", panchanga?.karana?.name),
+    ]),
+    dashas: (chart.dashas?.vimshottari?.mahadashas ?? []).slice(0, 9).map((period) => ({
+      lord: period.lord,
+      startsAt: period.starts_at,
+      endsAt: period.ends_at,
+      durationYears: period.duration_years,
+    })),
+    vargas: vargaScopes.map((scope) => {
+      const varga = chart.vargas?.[scope.code] ?? null;
+      return {
+        code: scope.code,
+        name: varga?.name ?? scope.name,
+        method: varga?.methodId ?? varga?.method ?? scope.methodId,
+        status: varga ? "available" : "missing",
+        placementCount: varga?.placements?.length ?? 0,
+      };
+    }),
+    houseCusps: (chart.house_cusps ?? []).map((cusp) => ({
+      house: cusp.house,
+      longitude: formatLongitude(cusp.longitude),
+      rashi: cusp.rashi,
+    })),
+    classical: buildClassicalRows(chart),
+    solarDay: compactRows([
+      technicalRow("date", "Solar date", solarDay?.date),
+      technicalRow("sunrise", "Sunrise", solarDay?.sunrise),
+      technicalRow("sunset", "Sunset", solarDay?.sunset),
+      technicalRow("next_sunrise", "Next sunrise", solarDay?.next_sunrise),
+      technicalRow("daylight_minutes", "Daylight minutes", solarDay?.daylight_minutes),
+      technicalRow("night_minutes", "Night minutes", solarDay?.night_minutes),
+      technicalRow("method", "Solar method", solarDay?.method),
+      technicalRow("status", "Solar status", solarDay?.status),
+    ]),
+  };
+}
+
+function buildClassicalRows(chart: BirthChart): D1TechnicalSummaryRow[] {
+  const classical = chart.classical;
+  if (!classical) return [];
+  return compactRows([
+    technicalRow("avasthas", "Avasthas", statusWithCount(classical.avasthas?.status, classical.avasthas?.baladi?.length)),
+    technicalRow("vimshopaka_bala", "Vimshopaka bala", statusWithCount(classical.vimshopaka_bala?.status, classical.vimshopaka_bala?.items?.length)),
+    technicalRow("ashtakavarga", "Ashtakavarga", statusWithCount(classical.ashtakavarga?.status, classical.ashtakavarga?.sarva?.scores?.length)),
+    technicalRow("shadbala", "Shadbala", statusWithCount(classical.shadbala?.status, classical.shadbala?.items?.length)),
+    technicalRow("yogas", "Yogas", statusWithCount(classical.yogas?.status, classical.yogas?.summary?.detected_count ?? classical.yogas?.items?.length)),
+    technicalRow("argala", "Argala", statusWithCount(classical.argala?.status, classical.argala?.primary?.length)),
+    technicalRow("special_points", "Special points", statusWithCount(classical.special_points?.status, classical.special_points?.vedic_points?.items?.length)),
+    technicalRow("transits", "Transits", classical.transits?.status),
+    technicalRow("compatibility", "Compatibility", classical.compatibility?.status),
+    technicalRow("muhurta", "Muhurta", classical.muhurta?.status),
+  ]);
+}
+
+function technicalRow(key: string, label: string, value: unknown): D1TechnicalSummaryRow | null {
+  if (value === undefined || value === null || value === "") return null;
+  return { key, label, value: String(value) };
+}
+
+function compactRows(rows: Array<D1TechnicalSummaryRow | null>): D1TechnicalSummaryRow[] {
+  return rows.filter((row): row is D1TechnicalSummaryRow => row !== null);
+}
+
+function statusWithCount(status: string | undefined, count: number | undefined): string | undefined {
+  if (!status && count === undefined) return undefined;
+  return count === undefined ? status : `${status ?? "available"} (${count})`;
 }
 
 function buildScopeSource(chart: BirthChart | null, scopeId: ChartWorkbenchScopeId): ScopeSource {
@@ -462,4 +612,8 @@ function formatDegreeInSign(longitude: number): string {
   const degree = Math.floor(within);
   const minute = Math.round((within - degree) * 60);
   return `${degree.toString().padStart(2, "0")}°${minute.toString().padStart(2, "0")}'`;
+}
+
+function formatLongitude(longitude: number): string {
+  return `${longitude.toFixed(6)}°`;
 }

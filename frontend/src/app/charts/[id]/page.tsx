@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { ProductShell } from "@/app/product-shell";
 import { buildD1WorkbenchModel, type ChartWorkbenchScopeId } from "@/astrology/d1-workbench";
 import { buildD1WorkbenchSmokeModel, D1_WORKBENCH_POLISH_STAGE, D1_WORKBENCH_SMOKE_CHART_ID, D1_WORKBENCH_SMOKE_ROUTE, D1_WORKBENCH_SMOKE_USER_STATUS } from "@/astrology/d1-workbench-smoke-fixture";
 import {
+  calculateSavedProfile,
   fetchChartProfile,
   fetchD1ChartWorkbench,
   fetchJyotishSettings,
@@ -26,6 +27,21 @@ function chartIdFromParams(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+type LoadedWorkbenchRows = {
+  profileRow: ChartProfile;
+  settingsRow: JyotishUserSettings | null;
+  workbenchRow: D1WorkbenchApiResponse;
+};
+
+async function fetchWorkbenchRows(profileId: number, scope: ChartWorkbenchScope): Promise<LoadedWorkbenchRows> {
+  const [profileRow, settingsRow, workbenchRow] = await Promise.all([
+    fetchChartProfile(profileId),
+    fetchJyotishSettings(),
+    fetchD1ChartWorkbench(profileId, scope),
+  ]);
+  return { profileRow, settingsRow, workbenchRow };
+}
+
 export default function ChartDetailPage() {
   const params = useParams<{ id: string }>();
   const chartId = chartIdFromParams(params.id);
@@ -36,6 +52,35 @@ export default function ChartDetailPage() {
   const [workbench, setWorkbench] = useState<D1WorkbenchApiResponse | null>(null);
   const [scope, setScope] = useState<ChartWorkbenchScope>("d1");
   const [status, setStatus] = useState("Открываю карту D1...");
+  const [calculating, setCalculating] = useState(false);
+
+  const applyWorkbenchRows = useCallback((rows: LoadedWorkbenchRows) => {
+    setProfile(rows.profileRow);
+    setSettings(rows.settingsRow);
+    setWorkbench(rows.workbenchRow);
+    setStatus(rows.workbenchRow.calculation ? "" : "Расчёт ещё не сохранён.");
+  }, []);
+
+  const refreshWorkbench = useCallback(async () => {
+    if (!profileId) return null;
+    const rows = await fetchWorkbenchRows(profileId, scope);
+    applyWorkbenchRows(rows);
+    return rows.workbenchRow;
+  }, [applyWorkbenchRows, profileId, scope]);
+
+  const handleRecalculate = useCallback(async () => {
+    if (!profileId || calculating) return;
+    setCalculating(true);
+    setStatus("Пересчитываю карту...");
+    try {
+      await calculateSavedProfile(profileId);
+      await refreshWorkbench();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось пересчитать карту.");
+    } finally {
+      setCalculating(false);
+    }
+  }, [calculating, profileId, refreshWorkbench]);
 
   useEffect(() => {
     let mounted = true;
@@ -52,26 +97,29 @@ export default function ChartDetailPage() {
         return;
       }
       try {
-        const [profileRow, settingsRow, workbenchRow] = await Promise.all([
-          fetchChartProfile(profileId),
-          fetchJyotishSettings(),
-          fetchD1ChartWorkbench(profileId, scope),
-        ]);
+        const rows = await fetchWorkbenchRows(profileId, scope);
         if (!mounted) return;
-        setProfile(profileRow);
-        setSettings(settingsRow);
-        setWorkbench(workbenchRow);
-        setStatus(workbenchRow.calculation ? "" : "Расчёт ещё не сохранён.");
+        applyWorkbenchRows(rows);
+        if (!rows.workbenchRow.calculation) {
+          setCalculating(true);
+          setStatus("Считаю карту...");
+          await calculateSavedProfile(profileId);
+          const refreshedRows = await fetchWorkbenchRows(profileId, scope);
+          if (!mounted) return;
+          applyWorkbenchRows(refreshedRows);
+        }
       } catch (error) {
         if (!mounted) return;
         setStatus(error instanceof Error ? error.message : "Не удалось открыть карту D1.");
+      } finally {
+        if (mounted) setCalculating(false);
       }
     }
     void load();
     return () => {
       mounted = false;
     };
-  }, [isSmokeDemoChart, profileId, scope]);
+  }, [applyWorkbenchRows, isSmokeDemoChart, profileId, scope]);
 
   const model = useMemo(() => {
     if (isSmokeDemoChart) return buildD1WorkbenchSmokeModel();
@@ -91,9 +139,10 @@ export default function ChartDetailPage() {
         <span>Стиль карты</span>
         <span>Режим</span>
         <span>Объяснение</span>
+        <span hidden>chart-detail-autocalculate</span>
       </div>
       {model ? (
-        <D1ChartWorkbench model={model} readOnlyFixture={isSmokeDemoChart} status={renderedStatus} onScopeChange={(nextScope) => setScope(nextScope.toLowerCase() as ChartWorkbenchScope)} />
+        <D1ChartWorkbench model={model} readOnlyFixture={isSmokeDemoChart} status={renderedStatus} recalculating={calculating} onRecalculate={isSmokeDemoChart ? undefined : handleRecalculate} onScopeChange={(nextScope) => setScope(nextScope.toLowerCase() as ChartWorkbenchScope)} />
       ) : (
         <D1ChartWorkbenchShell status={renderedStatus} />
       )}

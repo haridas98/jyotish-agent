@@ -6,6 +6,7 @@ import {
   type ChartWorkbenchScopeId,
   type D1ChartStyle,
   type D1DataTab,
+  type D1TechnicalSummaryRow,
   type D1GrahaRow,
   type D1HouseCell,
   type D1ReaderMode,
@@ -17,9 +18,10 @@ import { EntityInspector } from "@/ui/components/EntityInspector";
 
 type D1ChartWorkbenchProps = {
   model: D1WorkbenchModel;
-  onRecalculate?: () => void;
+  onRecalculate?: () => void | Promise<void>;
   onScopeChange?: (scopeId: ChartWorkbenchScopeId) => void;
   readOnlyFixture?: boolean;
+  recalculating?: boolean;
   status?: string;
 };
 
@@ -114,7 +116,7 @@ export function D1ChartWorkbenchShell({ status = "Открываю карту D1
   );
 }
 
-export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnlyFixture = false, status }: D1ChartWorkbenchProps) {
+export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnlyFixture = false, recalculating = false, status }: D1ChartWorkbenchProps) {
   const [workbenchState, setWorkbenchState] = useState<ChartWorkbenchState>({
     scopeId: model.scopeId,
     mode: model.defaults.readerMode,
@@ -183,7 +185,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
           <a href={`/charts/${model.profile.id}/edit`}>Редактировать</a>
           <a href="/compatibility">Сравнить</a>
           <a href="/settings">Настройки</a>
-          {onRecalculate ? <button type="button" onClick={onRecalculate}>Обновить расчёт</button> : null}
+          {onRecalculate ? <button type="button" data-chart-recalculate="chart-detail-recalculate-action" disabled={recalculating} onClick={() => void onRecalculate()}>{recalculating ? "Считаю..." : "Обновить расчёт"}</button> : null}
         </div> : null}
       </div>
 
@@ -389,6 +391,7 @@ function ChartDataTabs({ model, state, onSelect }: { model: D1WorkbenchModel; st
   if (state.activeTab === "grahas") return <GrahaTable model={model} state={state} onSelect={onSelect} />;
   if (state.activeTab === "houses") return <HouseTable model={model} onSelect={onSelect} />;
   if (state.activeTab === "nakshatras" && model.capabilities.nakshatrasAvailable) return <NakshatraTable model={model} state={state} onSelect={onSelect} />;
+  if (state.activeTab === "technical") return <TechnicalPayloadPanel model={model} />;
   return <OverviewPanel model={model} state={state} onSelect={onSelect} />;
 }
 
@@ -504,6 +507,104 @@ function NakshatraTable({ model, state, onSelect }: { model: D1WorkbenchModel; s
   );
 }
 
+function TechnicalPayloadPanel({ model }: { model: D1WorkbenchModel }) {
+  return (
+    <div className="d1-technical-grid">
+      <section className="d1-table-card" data-technical-section="settings">
+        <div className="d1-chart-title"><h2>Settings</h2><span>Core calculation configuration</span></div>
+        <TechnicalSummaryRows rows={model.technical.settings} />
+      </section>
+      <section className="d1-table-card" data-technical-section="panchanga">
+        <div className="d1-chart-title"><h2>Panchanga</h2><span>Tithi, vara, nakshatra, yoga, karana</span></div>
+        <TechnicalSummaryRows rows={model.technical.panchanga} />
+      </section>
+      <section className="d1-table-card" data-technical-section="solar-day">
+        <div className="d1-chart-title"><h2>Solar day</h2><span>Sunrise, sunset and day/night bounds</span></div>
+        <TechnicalSummaryRows rows={model.technical.solarDay} />
+      </section>
+      <section className="d1-table-card" data-technical-section="dashas">
+        <div className="d1-chart-title"><h2>Dashas</h2><span>Vimshottari mahadashas from saved calculation</span></div>
+        <div className="d1-table-scroll">
+          <table>
+            <thead><tr><th>Lord</th><th>Start</th><th>End</th><th>Years</th></tr></thead>
+            <tbody>
+              {model.technical.dashas.length ? model.technical.dashas.map((row) => (
+                <tr key={`${row.lord}-${row.startsAt}`}>
+                  <td>{row.lord}</td>
+                  <td>{row.startsAt}</td>
+                  <td>{row.endsAt}</td>
+                  <td>{row.durationYears}</td>
+                </tr>
+              )) : <EmptyTechnicalRow colSpan={4} />}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="d1-table-card" data-technical-section="vargas">
+        <div className="d1-chart-title"><h2>Vargas</h2><span>All supported D-charts and placement coverage</span></div>
+        <div className="d1-table-scroll">
+          <table>
+            <thead><tr><th>Code</th><th>Name</th><th>Method</th><th>Status</th><th>Placements</th></tr></thead>
+            <tbody>
+              {model.technical.vargas.length ? model.technical.vargas.map((row) => (
+                <tr key={row.code}>
+                  <td>{row.code}</td>
+                  <td>{row.name}</td>
+                  <td>{row.method}</td>
+                  <td>{row.status}</td>
+                  <td>{row.placementCount}</td>
+                </tr>
+              )) : <EmptyTechnicalRow colSpan={5} />}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="d1-table-card" data-technical-section="house-cusps">
+        <div className="d1-chart-title"><h2>House cusps</h2><span>Bhava cusp longitudes</span></div>
+        <div className="d1-table-scroll">
+          <table>
+            <thead><tr><th>House</th><th>Longitude</th><th>Rashi</th></tr></thead>
+            <tbody>
+              {model.technical.houseCusps.length ? model.technical.houseCusps.map((row) => (
+                <tr key={row.house}>
+                  <td>{row.house}</td>
+                  <td>{row.longitude}</td>
+                  <td>{row.rashi}</td>
+                </tr>
+              )) : <EmptyTechnicalRow colSpan={3} />}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section className="d1-table-card" data-technical-section="classical">
+        <div className="d1-chart-title"><h2>Classical</h2><span>Avasthas, bala, yogas and auxiliary modules</span></div>
+        <TechnicalSummaryRows rows={model.technical.classical} />
+      </section>
+    </div>
+  );
+}
+
+function TechnicalSummaryRows({ rows }: { rows: D1TechnicalSummaryRow[] }) {
+  return (
+    <div className="d1-table-scroll">
+      <table>
+        <tbody>
+          {rows.length ? rows.map((row) => (
+            <tr key={row.key}>
+              <th>{row.label}</th>
+              <td>{row.value}</td>
+            </tr>
+          )) : <EmptyTechnicalRow colSpan={2} />}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function EmptyTechnicalRow({ colSpan }: { colSpan: number }) {
+  return <tr><td colSpan={colSpan}>No saved data</td></tr>;
+}
+
 function grahasForHouse(model: D1WorkbenchModel, house: number) {
   return model.grahas.filter((graha) => graha.house === house);
 }
@@ -572,6 +673,7 @@ function scopeCategoryLabel(category: string) {
 function availableTabs(model: D1WorkbenchModel): D1DataTab[] {
   const tabs: D1DataTab[] = ["overview", "grahas", "houses"];
   if (model.capabilities.nakshatrasAvailable) tabs.push("nakshatras");
+  tabs.push("technical");
   return tabs;
 }
 
@@ -579,6 +681,7 @@ function tabLabel(tab: D1DataTab) {
   if (tab === "overview") return "Обзор";
   if (tab === "grahas") return "Грахи";
   if (tab === "houses") return "Дома";
+  if (tab === "technical") return "Technical";
   return "Накшатры";
 }
 

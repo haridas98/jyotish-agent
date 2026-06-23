@@ -43,6 +43,8 @@ if (exists("src/astrology/d1-workbench.ts")) {
   assert(model.includes("point.LAGNA"), "D1 model must use point.LAGNA for Lagna");
   assert(!model.includes('Ascendant: { code: "AS", entityId: "house.1"'), "Lagna must not be modeled as house.1 graha row");
   assert(model.includes("chartObjectCount"), "D1 model must expose total chart object count");
+  assert(model.includes("technical:"), "D1 model must expose technical calculation payload");
+  assert(model.includes("buildTechnicalPayload"), "D1 model must normalize panchanga, dashas, vargas, house cusps and classical payload");
   assert(model.includes("grahaEntityId"), "D1 graha entity ids missing");
   assert(model.includes("houseEntityId"), "D1 house entity ids missing");
   assert(model.includes("rashiEntityId"), "D1 rashi entity ids missing");
@@ -67,6 +69,17 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("terminologyMode"), "D1 workbench must keep terminology mode in shared state");
   assert(component.includes("activeTab"), "D1 workbench must keep active data tab in shared state");
   assert(component.includes("chartStyle === \"north\"") && component.includes("chartStyle === \"south\""), "D1 workbench must support north/south style toggle");
+  assert(component.includes("TechnicalPayloadPanel"), "D1 workbench must render a technical payload panel");
+  for (const marker of [
+    'data-technical-section="settings"',
+    'data-technical-section="panchanga"',
+    'data-technical-section="dashas"',
+    'data-technical-section="vargas"',
+    'data-technical-section="house-cusps"',
+    'data-technical-section="classical"',
+  ]) {
+    assert(component.includes(marker), `D1 technical panel missing marker: ${marker}`);
+  }
   assert(component.includes("SOUTH_SIGN_GRID"), "South Indian chart must use a named sign-fixed grid map");
   assert(component.includes("SOUTH_SIGN_ORDER"), "South Indian chart must render signs in deterministic sign order");
   assert(component.includes("SOUTH_SIGN_LABELS"), "South Indian chart must expose fixed rashi/sign labels");
