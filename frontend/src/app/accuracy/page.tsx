@@ -50,33 +50,35 @@ export default function AccuracyPage() {
           buildParityEvidenceRequirementClarity; {parityEvidenceRequirement.stage}; {parityEvidenceRequirement.status}; {parityEvidenceRequirement.statusLabel}; {parityEvidenceRequirement.jhoraEvidenceRequiredLabel}; {parityEvidenceRequirement.parasharaLightEvidenceRequiredLabel}; {parityEvidenceRequirement.noCredentialsOrFilesRequiredNowLabel}; {parityEvidenceRequirement.paritySuccessClaimedLabel}; {parityEvidenceRequirement.releaseReadyLabel}; {parityEvidenceRequirement.releaseGateStatusLabel}
         </span>
       </div>
-      <section className="notice" data-parity-evidence-template="blocked" aria-label={parityEvidenceTemplate.title}>
-        <strong>Evidence template</strong>
-        <p>What to provide later</p>
-        <table>
-          <thead>
-            <tr>
-              <th>source family</th>
-              <th>artifact kind</th>
-              <th>status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>JHora</td>
-              <td>screenshots / receipt manifest</td>
-              <td>pending human-provided evidence</td>
-            </tr>
-            <tr>
-              <td>Parashara Light</td>
-              <td>manual values / receipt manifest</td>
-              <td>pending human-provided evidence</td>
-            </tr>
-          </tbody>
-        </table>
+      <section className="notice parity-evidence-template" data-parity-evidence-template="blocked" data-parity-evidence-template-stage="E114-A" aria-label={parityEvidenceTemplate.title}>
+        <div className="parity-evidence-template-head">
+          <div>
+            <strong>Evidence template</strong>
+            <p>What to provide later</p>
+          </div>
+          <span className="parity-evidence-status-chip">blocked: pending human evidence</span>
+        </div>
+        <div className="parity-evidence-template-grid" aria-label="Evidence template rows">
+          <div className="parity-evidence-template-row">
+            <span>source family</span>
+            <strong>JHora</strong>
+            <span>artifact kind</span>
+            <strong>screenshots / receipt manifest</strong>
+            <span>status</span>
+            <strong>pending human-provided evidence</strong>
+          </div>
+          <div className="parity-evidence-template-row">
+            <span>source family</span>
+            <strong>Parashara Light</strong>
+            <span>artifact kind</span>
+            <strong>manual values / receipt manifest</strong>
+            <span>status</span>
+            <strong>pending human-provided evidence</strong>
+          </div>
+        </div>
         <p>No collection, upload, or external delivery is executed by the app in this stage.</p>
         <span hidden>
-          buildParityEvidenceTemplateChecklist; {parityEvidenceTemplate.stage}; {parityEvidenceTemplate.status}; {parityEvidenceTemplate.statusLabel}; {parityEvidenceTemplate.noCollectionUploadOrExternalDeliveryExecutedLabel}; {parityEvidenceTemplate.noExternalActionExecutedLabel}; {parityEvidenceTemplate.paritySuccessClaimedLabel}; {parityEvidenceTemplate.releaseReadyLabel}; {parityEvidenceTemplate.releaseGateStatusLabel}; {parityEvidenceTemplate.rows.map((row) => `${row.sourceFamilyLabel}; ${row.artifactKindLabel}; ${row.statusLabel}`).join("; ")}
+          E114-A; parity-evidence-template-mobile-safe=true; no_horizontal_overflow_expected=true; buildParityEvidenceTemplateChecklist; {parityEvidenceTemplate.stage}; {parityEvidenceTemplate.status}; {parityEvidenceTemplate.statusLabel}; {parityEvidenceTemplate.noCollectionUploadOrExternalDeliveryExecutedLabel}; {parityEvidenceTemplate.noExternalActionExecutedLabel}; {parityEvidenceTemplate.paritySuccessClaimedLabel}; {parityEvidenceTemplate.releaseReadyLabel}; {parityEvidenceTemplate.releaseGateStatusLabel}; {parityEvidenceTemplate.rows.map((row) => `${row.sourceFamilyLabel}; ${row.artifactKindLabel}; ${row.statusLabel}`).join("; ")}
         </span>
       </section>
       <Home initialAnalysisTab="accuracy" />

@@ -2417,6 +2417,25 @@ for (const marker of [
   assert(roadmap.includes(marker) || helperSlice.includes(marker) || accuracyRoute.includes(marker), `P113 evidence template marker missing: ${marker}`);
 }
 
+for (const marker of [
+  "E114-A",
+  "data-parity-evidence-template-stage=\"E114-A\"",
+  "blocked: pending human evidence",
+  "parity-evidence-template",
+  "parity-evidence-template-grid",
+  "parity-evidence-template-mobile-safe=true",
+  "no_horizontal_overflow_expected=true",
+  "no_external_action_executed=true",
+  "parity_success_claimed=false",
+  "release_ready=false",
+  "release_gate_status=blocked",
+]) {
+  assert(roadmap.includes(marker) || helperSlice.includes(marker) || accuracyRoute.includes(marker), `E114 evidence template UI marker missing: ${marker}`);
+}
+
+assert(!accuracyRoute.includes("type=\"file\""), "E114 evidence template must not add file inputs.");
+assert(!accuracyRoute.includes("<form"), "E114 evidence template must not add submit forms.");
+
 for (const forbidden of [
   "source_report",
   "field_results",

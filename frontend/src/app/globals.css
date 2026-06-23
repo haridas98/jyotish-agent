@@ -989,6 +989,71 @@ body .chart-profile-form textarea {
   font-weight: 700;
 }
 
+.parity-evidence-template {
+  display: grid;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.parity-evidence-template-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.parity-evidence-template-head p,
+.parity-evidence-template p {
+  margin: 0;
+}
+
+.parity-evidence-status-chip {
+  border: 1px solid #d9b36d;
+  border-radius: 999px;
+  background: #fff7e8;
+  color: #8a520f;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.parity-evidence-template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.parity-evidence-template-row {
+  display: grid;
+  grid-template-columns: minmax(82px, 0.42fr) minmax(0, 1fr);
+  gap: 5px 8px;
+  min-width: 0;
+  border: 1px solid #e1d2a9;
+  border-radius: 8px;
+  background: #fffdfa;
+  padding: 8px;
+}
+
+.parity-evidence-template-row span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.parity-evidence-template-row strong {
+  min-width: 0;
+  color: var(--green);
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 .main-chart-style-affordance {
   grid-column: 1 / -1;
   display: flex;
@@ -1068,6 +1133,14 @@ body .chart-profile-form textarea {
 
   .d1-south-chart .d1-chart-cell {
     padding: 5px;
+  }
+
+  .parity-evidence-template-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .parity-evidence-template-row {
+    grid-template-columns: 1fr;
   }
 
   .d1-toolbar {

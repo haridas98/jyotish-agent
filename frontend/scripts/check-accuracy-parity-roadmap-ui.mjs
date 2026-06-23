@@ -18,6 +18,7 @@ function sliceBetween(source, start, end) {
 const roadmap = readFileSync(new URL("../src/lib/parity-roadmap.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
 const accuracyPage = readFileSync(new URL("../src/app/accuracy/page.tsx", import.meta.url), "utf8");
+const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8");
 const panel = sliceBetween(page, "function AccuracyReportPanel", "export default function Home");
 const roadmapSlice = sliceBetween(panel, "Parity roadmap", "JHora");
 const subtitleMatch = roadmapSlice.match(/<p>\s*JH\/PL launch ledger\s*<\/p>/);
@@ -100,6 +101,27 @@ for (const copy of [
 ]) {
   assert(accuracyPage.includes(copy), `Accuracy route evidence template copy missing: ${copy}`);
 }
+
+for (const marker of [
+  "E114-A",
+  "data-parity-evidence-template-stage=\"E114-A\"",
+  "blocked: pending human evidence",
+  "parity-evidence-template",
+  "parity-evidence-template-grid",
+  "parity-evidence-template-mobile-safe=true",
+  "no_horizontal_overflow_expected=true",
+  "no_external_action_executed=true",
+  "parity_success_claimed=false",
+  "release_ready=false",
+  "release_gate_status=blocked",
+]) {
+  assert(accuracyPage.includes(marker) || roadmap.includes(marker), `E114 evidence template UI marker missing: ${marker}`);
+}
+
+assert(css.includes(".parity-evidence-template-grid"), "E114 evidence template grid CSS marker missing.");
+assert(css.includes("@media (max-width: 640px)") && css.includes(".parity-evidence-template-grid"), "E114 evidence template must include mobile responsive CSS.");
+assert(!accuracyPage.includes("<input") || !accuracyPage.includes("type=\"file\""), "E114 evidence template must not add file inputs.");
+assert(!accuracyPage.includes("<form"), "E114 evidence template must not add submit forms.");
 
 for (const marker of [
   "Parity roadmap",
