@@ -10,6 +10,7 @@ import {
 } from "@/astrology";
 import { debugRoutesEnabled } from "@/app/debug-route-guard";
 import {
+  buildAiReviewAudioConsultationBenchmark,
   buildAiReviewCalculationPromptPacket,
   buildAiReviewGenerationBoundary,
   buildAiReviewGroundedDraftEvaluator,
@@ -64,6 +65,7 @@ export default function ReportMockReviewPage() {
   const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
   const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
   const generationBoundary = buildAiReviewGenerationBoundary(calculationPromptPacket, groundedDraftEvaluator, groundedComposer);
+  const audioConsultationBenchmark = buildAiReviewAudioConsultationBenchmark();
 
   return (
     <main style={pageStyle}>
@@ -253,6 +255,34 @@ export default function ReportMockReviewPage() {
             ))}
           </div>
           <span hidden>{generationBoundary.statusLabels.join("; ")}</span>
+        </section>
+
+        <section
+          aria-label="Audio consultation benchmark"
+          data-ai-review-audio-consultation-stage="E134-A"
+          style={{ border: "1px solid #d5e3e0", borderRadius: 8, marginTop: 20, padding: 16 }}
+        >
+          <h2 style={{ marginTop: 0 }}>Audio consultation benchmark</h2>
+          <p style={{ color: "#53656b", marginTop: 0 }}>
+            Local ASR witness for review structure; raw transcripts and source audio are not committed.
+          </p>
+          <div style={gridStyle}>
+            <Metric label="Cases" value={String(audioConsultationBenchmark.cases.length)} />
+            <Metric label="Witness only" value={audioConsultationBenchmark.aggregate.witnessOnly ? "yes" : "no"} />
+            <Metric label="Raw transcript committed" value={audioConsultationBenchmark.aggregate.rawTranscriptCommitted ? "yes" : "no"} />
+            <Metric label="Source audio committed" value={audioConsultationBenchmark.aggregate.sourceAudioCommitted ? "yes" : "no"} />
+          </div>
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {audioConsultationBenchmark.cases.map((benchmarkCase) => (
+              <article key={benchmarkCase.id} style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
+                <strong>{benchmarkCase.label}</strong>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Calculation patterns: {benchmarkCase.calculationPatterns.length}</p>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Review rules: {benchmarkCase.reviewStructureRules.join(" ")}</p>
+                <p style={{ color: "#53656b", margin: 0 }}>Blocked uses: {benchmarkCase.blockedUses.join(" ")}</p>
+              </article>
+            ))}
+          </div>
+          <span hidden>{audioConsultationBenchmark.statusLabels.join("; ")}</span>
         </section>
 
         <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>

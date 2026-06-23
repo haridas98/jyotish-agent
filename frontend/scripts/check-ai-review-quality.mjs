@@ -73,6 +73,7 @@ for (const marker of [
   "P131-A",
   "E132-A",
   "P133-A",
+  "E134-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -90,6 +91,7 @@ for (const marker of [
   "ai_review_grounded_draft_evaluator_stage=P131-A",
   "ai_review_grounded_composer_stage=E132-A",
   "ai_review_generation_boundary_stage=P133-A",
+  "ai_review_audio_consultation_benchmark_stage=E134-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -256,6 +258,17 @@ for (const marker of [
   "ai_review_generation_boundary_uses_response_contract=true",
   "ai_review_generation_boundary_visible=true",
   "ai_review_generation_boundary_not_final_output=true",
+  "ai_review_audio_consultation_benchmark_present=true",
+  "ai_review_audio_consultation_cases=2",
+  "ai_review_audio_consultation_house_walkthrough_present=true",
+  "ai_review_audio_consultation_yoga_weighting_present=true",
+  "ai_review_audio_consultation_review_structure_chain_present=true",
+  "ai_review_audio_consultation_raw_transcript_committed=false",
+  "ai_review_audio_consultation_source_audio_committed=false",
+  "ai_review_audio_consultation_witness_only=true",
+  "ai_review_audio_consultation_style_copied=false",
+  "ai_review_audio_consultation_not_jh_pl_parity=true",
+  "ai_review_audio_consultation_not_final_output=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -395,6 +408,13 @@ for (const label of [
   "Evaluator status",
   "Drift repair summary",
   "Generation boundary",
+  "Audio consultation benchmark",
+  "Local ASR witness for review structure",
+  "House walkthrough consultation witness",
+  "Yoga weighting consultation witness",
+  "raw transcripts and source audio are not committed",
+  "Source kind",
+  "Blocked uses",
   "Gate outcome",
   "Display eligibility",
   "Failed gates",
@@ -429,6 +449,7 @@ assert(typeof helper.buildAiReviewSharedResponseContractSurfaceSummary === "func
 assert(typeof helper.buildAiReviewCalculationPromptPacket === "function", "buildAiReviewCalculationPromptPacket must be exported.");
 assert(typeof helper.buildAiReviewGroundedDraftEvaluator === "function", "buildAiReviewGroundedDraftEvaluator must be exported.");
 assert(typeof helper.buildAiReviewGroundedComposer === "function", "buildAiReviewGroundedComposer must be exported.");
+assert(typeof helper.buildAiReviewAudioConsultationBenchmark === "function", "buildAiReviewAudioConsultationBenchmark must be exported.");
 assert(typeof helper.buildAiReviewGenerationBoundary === "function", "buildAiReviewGenerationBoundary must be exported.");
 assert(typeof helper.buildAiReviewQualityLabSummary === "function", "buildAiReviewQualityLabSummary must be exported.");
 
@@ -450,6 +471,7 @@ const calculationPromptPacket = helper.buildAiReviewCalculationPromptPacket();
 const groundedDraftEvaluator = helper.buildAiReviewGroundedDraftEvaluator();
 const groundedComposer = helper.buildAiReviewGroundedComposer();
 const generationBoundary = helper.buildAiReviewGenerationBoundary();
+const audioConsultationBenchmark = helper.buildAiReviewAudioConsultationBenchmark();
 const qualityLab = helper.buildAiReviewQualityLabSummary();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
@@ -730,8 +752,27 @@ assert(page.includes("generationBoundary"), "/reports must render generation bou
 assert(mockReviewPage.includes("generationBoundary"), "/report-mock-review must render generation boundary.");
 assert(page.includes('data-ai-review-generation-boundary-stage="P133-A"'), "/reports must expose P133 hook.");
 assert(mockReviewPage.includes('data-ai-review-generation-boundary-stage="P133-A"'), "/report-mock-review must expose P133 hook.");
+assert(audioConsultationBenchmark.stage === "E134-A", "Audio consultation benchmark stage must be E134-A.");
+assert(audioConsultationBenchmark.statusLabels.includes("ai_review_audio_consultation_benchmark_stage=E134-A"), "Audio benchmark labels missing E134 stage.");
+assert(audioConsultationBenchmark.cases.length === 2, "Audio benchmark must include two sanitized consultation cases.");
+assert(audioConsultationBenchmark.aggregate.houseWalkthroughPresent === true, "Audio benchmark must include house walkthrough witness.");
+assert(audioConsultationBenchmark.aggregate.yogaWeightingPresent === true, "Audio benchmark must include yoga weighting witness.");
+assert(audioConsultationBenchmark.aggregate.reviewStructureChainPresent === true, "Audio benchmark must require review structure chain.");
+assert(audioConsultationBenchmark.aggregate.rawTranscriptCommitted === false, "Audio benchmark must not commit raw transcripts.");
+assert(audioConsultationBenchmark.aggregate.sourceAudioCommitted === false, "Audio benchmark must not commit source audio.");
+assert(audioConsultationBenchmark.aggregate.witnessOnly === true, "Audio benchmark must be witness-only.");
+assert(
+  audioConsultationBenchmark.cases.every((item) => item.calculationPatterns.length >= 3 && item.reviewStructureRules.length >= 3),
+  "Each audio benchmark case must include calculation patterns and review rules.",
+);
+assert(page.includes("audioConsultationBenchmark"), "/reports must render audio consultation benchmark.");
+assert(mockReviewPage.includes("audioConsultationBenchmark"), "/report-mock-review must render audio consultation benchmark.");
+assert(page.includes('data-ai-review-audio-consultation-stage="E134-A"'), "/reports must expose E134 hook.");
+assert(mockReviewPage.includes('data-ai-review-audio-consultation-stage="E134-A"'), "/report-mock-review must expose E134 hook.");
 assert(qualityLab.benchmarkParityReport?.stage === "R2", "Quality summary must expose R2 benchmark parity report.");
 assert(qualityLab.statusLabels.includes("ai_review_benchmark_parity_stage=R2"), "Quality summary status labels must include R2 parity stage.");
+assert(qualityLab.audioConsultationBenchmark?.stage === "E134-A", "Quality summary must expose E134 audio consultation benchmark.");
+assert(qualityLab.statusLabels.includes("ai_review_audio_consultation_benchmark_stage=E134-A"), "Quality summary status labels must include E134 audio benchmark stage.");
 assert(qualityLab.benchmarkParityReport.aggregate.d1RowsChecked >= 18, "Quality summary parity report must check at least 18 D1 rows.");
 assert(qualityLab.benchmarkParityReport.aggregate.unsupportedAdvancedClaimsGated === true, "Quality summary parity report must gate unsupported advanced claims.");
 

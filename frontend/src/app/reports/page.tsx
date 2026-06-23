@@ -482,6 +482,23 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-audio-consultation-benchmark" data-ai-review-audio-consultation-stage="E134-A">
+          <div className="ai-review-audio-consultation-head">
+            <strong>Audio consultation benchmark</strong>
+            <span>Local ASR witness for review structure; raw transcripts and source audio are not committed.</span>
+          </div>
+          <div className="ai-review-audio-consultation-grid" role="list">
+            {aiReviewQualityLab.audioConsultationBenchmark.cases.map((benchmarkCase) => (
+              <section key={benchmarkCase.id} role="listitem">
+                <strong>{benchmarkCase.label}</strong>
+                <span>Source kind: {benchmarkCase.sourceKind}</span>
+                <span>Calculation patterns: {benchmarkCase.calculationPatterns.length}</span>
+                <span>Review rules: {benchmarkCase.reviewStructureRules.join(" ")}</span>
+                <span>Blocked uses: {benchmarkCase.blockedUses.join(" ")}</span>
+              </section>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

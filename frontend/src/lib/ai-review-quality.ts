@@ -511,6 +511,32 @@ export type AiReviewGenerationBoundary = {
   statusLabels: string[];
 };
 
+export type AiReviewAudioConsultationBenchmarkCase = {
+  id: "audio_haridas_house_walkthrough" | "audio_govardhan_yoga_weighting";
+  label: string;
+  sourceKind: "local_asr_consultation_witness";
+  calculationPatterns: string[];
+  reviewStructureRules: string[];
+  followUpQuestionPatterns: string[];
+  blockedUses: string[];
+};
+
+export type AiReviewAudioConsultationBenchmark = {
+  stage: "E134-A";
+  cases: AiReviewAudioConsultationBenchmarkCase[];
+  aggregate: {
+    caseCount: number;
+    houseWalkthroughPresent: boolean;
+    yogaWeightingPresent: boolean;
+    reviewStructureChainPresent: boolean;
+    rawTranscriptCommitted: false;
+    sourceAudioCommitted: false;
+    witnessOnly: true;
+    localOnlyNotFinalOutput: true;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -2016,6 +2042,93 @@ export function buildAiReviewGenerationBoundary(
   };
 }
 
+export function buildAiReviewAudioConsultationBenchmark(): AiReviewAudioConsultationBenchmark {
+  const cases: AiReviewAudioConsultationBenchmarkCase[] = [
+    {
+      id: "audio_haridas_house_walkthrough",
+      label: "House walkthrough consultation witness",
+      sourceKind: "local_asr_consultation_witness",
+      calculationPatterns: [
+        "Start from birth data, lagna, house meaning, house lord, lord placement, aspect, dignity, then conclusion.",
+        "Treat each life domain as a house-specific calculation chain, not as generic personality prose.",
+        "Use classical-source mentions as a witness for why a rule matters, while keeping raw transcript text out of the app.",
+      ],
+      reviewStructureRules: [
+        "Explain the technical factor before the interpretation.",
+        "Keep mixed outcomes visible when a house has both support and pressure.",
+        "Separate objective chart factor, practical effect, and confidence caveat.",
+      ],
+      followUpQuestionPatterns: [
+        "Ask which life domain should be expanded after the broad walkthrough.",
+        "Ask for context when a result depends on period activation or user priority.",
+      ],
+      blockedUses: [
+        "Do not copy the speaker style.",
+        "Do not commit raw ASR text or source audio.",
+        "Do not treat the witness as JH/PL parity evidence.",
+      ],
+    },
+    {
+      id: "audio_govardhan_yoga_weighting",
+      label: "Yoga weighting consultation witness",
+      sourceKind: "local_asr_consultation_witness",
+      calculationPatterns: [
+        "Read yogas as repeated signals whose strength depends on planet condition, relationship, and supporting factors.",
+        "Reject one-factor promises; weigh whether planets are friendly, hostile, strong, weak, repeated, or contradicted.",
+        "Gate wealth, longevity, health, marriage, and other advanced claims behind explicit computed anchors.",
+      ],
+      reviewStructureRules: [
+        "Never present a chart as all good or all bad.",
+        "State what improves, what weakens, and what remains uncertain.",
+        "Turn strong claims into measured practical guidance unless timing and divisional support are present.",
+      ],
+      followUpQuestionPatterns: [
+        "Ask which yoga/domain should be checked with divisional and timing layers.",
+        "Ask a practical next question tied to the computed factor, not a vague coaching prompt.",
+      ],
+      blockedUses: [
+        "Do not use audio benchmark as final generated review text.",
+        "Do not infer unsupported advanced tables from a narrative witness.",
+        "Do not claim competitor parity from this benchmark.",
+      ],
+    },
+  ];
+
+  return {
+    stage: "E134-A",
+    cases,
+    aggregate: {
+      caseCount: cases.length,
+      houseWalkthroughPresent: cases.some((item) => item.id === "audio_haridas_house_walkthrough"),
+      yogaWeightingPresent: cases.some((item) => item.id === "audio_govardhan_yoga_weighting"),
+      reviewStructureChainPresent: cases.every((item) => item.reviewStructureRules.length >= 3),
+      rawTranscriptCommitted: false,
+      sourceAudioCommitted: false,
+      witnessOnly: true,
+      localOnlyNotFinalOutput: true,
+    },
+    statusLabels: [
+      "E134-A",
+      "ai_review_audio_consultation_benchmark_stage=E134-A",
+      "ai_review_audio_consultation_benchmark_present=true",
+      "ai_review_audio_consultation_cases=2",
+      "ai_review_audio_consultation_house_walkthrough_present=true",
+      "ai_review_audio_consultation_yoga_weighting_present=true",
+      "ai_review_audio_consultation_review_structure_chain_present=true",
+      "ai_review_audio_consultation_raw_transcript_committed=false",
+      "ai_review_audio_consultation_source_audio_committed=false",
+      "ai_review_audio_consultation_witness_only=true",
+      "ai_review_audio_consultation_style_copied=false",
+      "ai_review_audio_consultation_not_jh_pl_parity=true",
+      "ai_review_audio_consultation_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -2033,6 +2146,7 @@ export function buildAiReviewQualityLabSummary() {
   const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
   const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
   const generationBoundary = buildAiReviewGenerationBoundary(calculationPromptPacket, groundedDraftEvaluator, groundedComposer);
+  const audioConsultationBenchmark = buildAiReviewAudioConsultationBenchmark();
   const benchmarkParityReport = buildAiReviewBenchmarkParityReport();
 
   return {
@@ -2063,6 +2177,7 @@ export function buildAiReviewQualityLabSummary() {
       ...groundedDraftEvaluator.statusLabels,
       ...groundedComposer.statusLabels,
       ...generationBoundary.statusLabels,
+      ...audioConsultationBenchmark.statusLabels,
       ...benchmarkParityReport.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
@@ -2093,6 +2208,7 @@ export function buildAiReviewQualityLabSummary() {
     groundedDraftEvaluator,
     groundedComposer,
     generationBoundary,
+    audioConsultationBenchmark,
     benchmarkParityReport,
   };
 }
