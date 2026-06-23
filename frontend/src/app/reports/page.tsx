@@ -352,6 +352,30 @@ export default function ReportBuilderPage() {
               ))}
           </div>
         </div>
+        <div className="ai-review-narrative-rubric" data-ai-review-narrative-rubric-stage="P127-A">
+          <div className="ai-review-narrative-rubric-head">
+            <strong>Narrative quality rubric</strong>
+            <span>Local deterministic review-quality harness, not final generated AI output.</span>
+          </div>
+          <div className="ai-review-narrative-dimensions">
+            {aiReviewQualityLab.narrativeRubric.dimensions.map((dimension) => (
+              <span key={dimension}>{dimension}</span>
+            ))}
+          </div>
+          <div className="ai-review-narrative-grid" role="list">
+            {aiReviewQualityLab.narrativeRubric.samples.map((sample) => (
+              <section key={sample.id} role="listitem">
+                <strong>{sample.id}</strong>
+                <span>Sample name: {sample.label}</span>
+                <span>Status: {sample.status}</span>
+                <span>Passed dimensions: {sample.passedDimensions.join(", ") || "none"}</span>
+                <span>Failed dimensions: {sample.failedDimensions.join(", ") || "none"}</span>
+                <span>Anchor count: {sample.anchorCount}</span>
+                <span>Key failure reason: {sample.keyFailureReason}</span>
+              </section>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

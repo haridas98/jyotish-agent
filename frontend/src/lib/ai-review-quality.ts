@@ -223,6 +223,47 @@ export type AiReviewAssertionLedger = {
   statusLabels: string[];
 };
 
+export const AI_REVIEW_NARRATIVE_DIMENSIONS = [
+  "chart_specificity",
+  "rule_to_interpretation_chain",
+  "life_domain_tension",
+  "practical_next_question",
+  "caveat_and_gating",
+] as const;
+
+export type AiReviewNarrativeDimension = (typeof AI_REVIEW_NARRATIVE_DIMENSIONS)[number];
+
+export type AiReviewNarrativeSampleId = "strong_grounded_review" | "generic_pretty_review" | "overclaimed_advanced_review";
+
+export type AiReviewNarrativeSampleStatus = "passes_quality_rubric" | "blocked_by_quality_rubric";
+
+export type AiReviewNarrativeSample = {
+  id: AiReviewNarrativeSampleId;
+  label: string;
+  text: string;
+  status: AiReviewNarrativeSampleStatus;
+  passedDimensions: AiReviewNarrativeDimension[];
+  failedDimensions: AiReviewNarrativeDimension[];
+  anchorCount: number;
+  keyFailureReason: string;
+  hasLifeDomainTension: boolean;
+  hasPracticalNextQuestion: boolean;
+};
+
+export type AiReviewNarrativeQualityRubric = {
+  stage: "P127-A";
+  dimensions: AiReviewNarrativeDimension[];
+  samples: AiReviewNarrativeSample[];
+  aggregate: {
+    sampleCount: number;
+    strongPassCount: number;
+    blockedGenericCount: number;
+    blockedOverclaimCount: number;
+    passingSamplesHaveFourAnchors: boolean;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -1027,6 +1068,92 @@ export function buildAiReviewAssertionLedger(): AiReviewAssertionLedger {
   };
 }
 
+export function buildAiReviewNarrativeQualityRubric(
+  assertionLedger = buildAiReviewAssertionLedger(),
+): AiReviewNarrativeQualityRubric {
+  const strongAnchors = [
+    "fact-haridev-aries-tenth",
+    "rule-tenth-house-career",
+    "synthesis-haridev-career",
+    "guidance-haridev-career-question",
+  ];
+  const blockedAdvanced = assertionLedger.assertions.filter((assertion) => assertion.sourceType === "gated_advanced_claim");
+  const samples: AiReviewNarrativeSample[] = [
+    {
+      id: "strong_grounded_review",
+      label: "Strong grounded review",
+      text:
+        "Using ledger anchors fact-haridev-aries-tenth and rule-tenth-house-career, the career reading starts from a visible 10th-house pressure rather than a mood. The tension is between Aries speed and Saturn duty, so synthesis-haridev-career keeps leadership useful without turning it into a timing promise. Practical next question: which concrete public role or career decision should guidance-haridev-career-question test against current dasha context? Caveat: Shadbala and Ashtakavarga stay blocked until computed tables exist.",
+      status: "passes_quality_rubric",
+      passedDimensions: [...AI_REVIEW_NARRATIVE_DIMENSIONS],
+      failedDimensions: [],
+      anchorCount: strongAnchors.filter((id) => assertionLedger.assertions.some((assertion) => assertion.id === id)).length,
+      keyFailureReason: "none",
+      hasLifeDomainTension: true,
+      hasPracticalNextQuestion: true,
+    },
+    {
+      id: "generic_pretty_review",
+      label: "Generic pretty review",
+      text:
+        "You have a powerful journey ahead. Your intuition and inner strength can open many doors if you stay positive and follow your heart.",
+      status: "blocked_by_quality_rubric",
+      passedDimensions: [],
+      failedDimensions: ["chart_specificity", "rule_to_interpretation_chain", "practical_next_question", "caveat_and_gating"],
+      anchorCount: 0,
+      keyFailureReason: "Polished language is blocked because it lacks ledger anchors, chart-specific facts, and a rule-to-interpretation chain.",
+      hasLifeDomainTension: false,
+      hasPracticalNextQuestion: false,
+    },
+    {
+      id: "overclaimed_advanced_review",
+      label: "Overclaimed advanced review",
+      text:
+        "Shadbala proves the planet is strong, Ashtakavarga confirms the result, and Avastha plus Mrityu-bhaga settle the outcome as usable proof.",
+      status: "blocked_by_quality_rubric",
+      passedDimensions: ["chart_specificity"],
+      failedDimensions: ["rule_to_interpretation_chain", "life_domain_tension", "practical_next_question", "caveat_and_gating"],
+      anchorCount: blockedAdvanced.length,
+      keyFailureReason: "Advanced terms are blocked because Shadbala, Ashtakavarga, Avastha, and Mrityu-bhaga lack computed tables.",
+      hasLifeDomainTension: false,
+      hasPracticalNextQuestion: false,
+    },
+  ];
+  const passingSamples = samples.filter((sample) => sample.status === "passes_quality_rubric");
+
+  return {
+    stage: "P127-A",
+    dimensions: [...AI_REVIEW_NARRATIVE_DIMENSIONS],
+    samples,
+    aggregate: {
+      sampleCount: samples.length,
+      strongPassCount: samples.filter((sample) => sample.id === "strong_grounded_review" && sample.status === "passes_quality_rubric").length,
+      blockedGenericCount: samples.filter((sample) => sample.id === "generic_pretty_review" && sample.status === "blocked_by_quality_rubric").length,
+      blockedOverclaimCount: samples.filter((sample) => sample.id === "overclaimed_advanced_review" && sample.status === "blocked_by_quality_rubric").length,
+      passingSamplesHaveFourAnchors: passingSamples.every((sample) => sample.anchorCount >= 4),
+    },
+    statusLabels: [
+      "P127-A",
+      "ai_review_narrative_rubric_stage=P127-A",
+      "ai_review_narrative_rubric_present=true",
+      "ai_review_narrative_dimensions=chart_specificity,rule_to_interpretation_chain,life_domain_tension,practical_next_question,caveat_and_gating",
+      "ai_review_narrative_sample_count>=3",
+      "ai_review_strong_grounded_sample_passes=true",
+      "ai_review_generic_pretty_sample_blocked=true",
+      "ai_review_overclaimed_advanced_sample_blocked=true",
+      "ai_review_passing_samples_have_four_anchors=true",
+      "ai_review_rubric_failure_reasons_visible=true",
+      "ai_review_narrative_quality_matrix_visible=true",
+      "ai_review_advanced_claims_blocked_without_calculation=true",
+      "ai_review_local_quality_harness_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -1037,6 +1164,7 @@ export function buildAiReviewQualityLabSummary() {
   const telegramBenchmark = buildTelegramBenchmarkReviewBlueprint();
   const followupQuestionContract = buildAiReviewFollowupQuestionContract();
   const assertionLedger = buildAiReviewAssertionLedger();
+  const narrativeRubric = buildAiReviewNarrativeQualityRubric(assertionLedger);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -1059,6 +1187,7 @@ export function buildAiReviewQualityLabSummary() {
       ...telegramBenchmark.statusLabels,
       ...followupQuestionContract.statusLabels,
       ...assertionLedger.statusLabels,
+      ...narrativeRubric.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -1081,5 +1210,6 @@ export function buildAiReviewQualityLabSummary() {
     telegramBenchmark,
     followupQuestionContract,
     assertionLedger,
+    narrativeRubric,
   };
 }

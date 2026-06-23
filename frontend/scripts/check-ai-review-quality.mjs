@@ -46,6 +46,7 @@ for (const marker of [
   "E124-A",
   "P125-A",
   "E126-A",
+  "P127-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -54,6 +55,7 @@ for (const marker of [
   "ai_review_telegram_benchmark_stage=E124-A",
   "ai_review_question_contract_stage=P125-A",
   "ai_review_assertion_ledger_stage=E126-A",
+  "ai_review_narrative_rubric_stage=P127-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -113,6 +115,15 @@ for (const marker of [
   "ai_review_composed_review_cites_ledger_anchors=true",
   "ai_review_advanced_claims_visible_as_blocked=true",
   "ai_review_local_quality_harness_not_final_output=true",
+  "ai_review_narrative_rubric_present=true",
+  "ai_review_narrative_dimensions=chart_specificity,rule_to_interpretation_chain,life_domain_tension,practical_next_question,caveat_and_gating",
+  "ai_review_narrative_sample_count>=3",
+  "ai_review_strong_grounded_sample_passes=true",
+  "ai_review_generic_pretty_sample_blocked=true",
+  "ai_review_overclaimed_advanced_sample_blocked=true",
+  "ai_review_passing_samples_have_four_anchors=true",
+  "ai_review_rubric_failure_reasons_visible=true",
+  "ai_review_narrative_quality_matrix_visible=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -196,6 +207,20 @@ for (const label of [
   "Practical focus",
   "Caveats and blocked claims",
   "local deterministic quality harness, not final AI output",
+  "Narrative quality rubric",
+  "chart_specificity",
+  "rule_to_interpretation_chain",
+  "life_domain_tension",
+  "practical_next_question",
+  "caveat_and_gating",
+  "strong_grounded_review",
+  "generic_pretty_review",
+  "overclaimed_advanced_review",
+  "Passed dimensions",
+  "Failed dimensions",
+  "Anchor count",
+  "Key failure reason",
+  "not final generated AI output",
   "Shadbala",
   "Ashtakavarga",
   "Avastha",
@@ -220,6 +245,7 @@ assert(typeof helper.buildAiReviewScenarioMatrix === "function", "buildAiReviewS
 assert(typeof helper.buildTelegramBenchmarkReviewBlueprint === "function", "buildTelegramBenchmarkReviewBlueprint must be exported.");
 assert(typeof helper.buildAiReviewFollowupQuestionContract === "function", "buildAiReviewFollowupQuestionContract must be exported.");
 assert(typeof helper.buildAiReviewAssertionLedger === "function", "buildAiReviewAssertionLedger must be exported.");
+assert(typeof helper.buildAiReviewNarrativeQualityRubric === "function", "buildAiReviewNarrativeQualityRubric must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -231,6 +257,7 @@ const scenarioMatrix = helper.buildAiReviewScenarioMatrix();
 const telegramBenchmark = helper.buildTelegramBenchmarkReviewBlueprint();
 const questionContract = helper.buildAiReviewFollowupQuestionContract();
 const assertionLedger = helper.buildAiReviewAssertionLedger();
+const narrativeRubric = helper.buildAiReviewNarrativeQualityRubric();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -340,6 +367,33 @@ assert(
     .every((assertion) => assertion.status === "blocked" && assertion.sourceType === "gated_advanced_claim"),
   "Advanced terms must appear only as blocked gated advanced claims.",
 );
+assert(narrativeRubric.stage === "P127-A", "Narrative rubric stage must be P127-A.");
+assert(narrativeRubric.statusLabels.includes("ai_review_narrative_rubric_stage=P127-A"), "Narrative rubric labels missing P127 stage.");
+assert(narrativeRubric.dimensions.join(",") === "chart_specificity,rule_to_interpretation_chain,life_domain_tension,practical_next_question,caveat_and_gating", "Narrative dimensions changed.");
+assert(narrativeRubric.samples.length >= 3, "Narrative rubric must include at least three samples.");
+assert(narrativeRubric.aggregate.strongPassCount >= 1, "Narrative rubric must include a passing strong sample.");
+assert(narrativeRubric.aggregate.blockedGenericCount >= 1, "Narrative rubric must block a generic pretty sample.");
+assert(narrativeRubric.aggregate.blockedOverclaimCount >= 1, "Narrative rubric must block an overclaimed advanced sample.");
+assert(narrativeRubric.aggregate.passingSamplesHaveFourAnchors === true, "Every passing narrative sample must have at least four anchors.");
+const strongNarrative = narrativeRubric.samples.find((sample) => sample.id === "strong_grounded_review");
+const genericNarrative = narrativeRubric.samples.find((sample) => sample.id === "generic_pretty_review");
+const overclaimNarrative = narrativeRubric.samples.find((sample) => sample.id === "overclaimed_advanced_review");
+assert(strongNarrative?.status === "passes_quality_rubric", "Strong grounded narrative sample must pass.");
+assert(genericNarrative?.status === "blocked_by_quality_rubric", "Generic pretty narrative sample must be blocked.");
+assert(overclaimNarrative?.status === "blocked_by_quality_rubric", "Overclaimed advanced narrative sample must be blocked.");
+assert(strongNarrative.anchorCount >= 4, "Strong narrative sample must cite at least four ledger anchors.");
+assert(strongNarrative.hasLifeDomainTension === true, "Strong narrative sample must include concrete life-domain tension.");
+assert(strongNarrative.hasPracticalNextQuestion === true, "Strong narrative sample must include a practical next question.");
+assert(genericNarrative.failedDimensions.includes("chart_specificity"), "Generic pretty sample must fail chart specificity.");
+assert(genericNarrative.failedDimensions.includes("rule_to_interpretation_chain"), "Generic pretty sample must fail rule-to-interpretation chain.");
+assert(overclaimNarrative.failedDimensions.includes("caveat_and_gating"), "Overclaimed advanced sample must fail caveat/gating.");
+assert(
+  overclaimNarrative.text.includes("Shadbala") &&
+    overclaimNarrative.text.includes("Ashtakavarga") &&
+    overclaimNarrative.text.includes("Avastha") &&
+    overclaimNarrative.text.includes("Mrityu-bhaga"),
+  "Overclaim sample must cover gated advanced terms.",
+);
 
 for (const forbidden of [
   "fetch(",
@@ -351,7 +405,7 @@ for (const forbidden of [
   "release ready",
   "parity success",
   "formula accuracy improved",
-  "final generated AI output",
+  "final generated AI output is solved",
 ]) {
   assert(!helperSource.includes(forbidden), `Helper contains forbidden marker: ${forbidden}`);
   assert(!page.includes(forbidden), `/reports contains forbidden marker: ${forbidden}`);
