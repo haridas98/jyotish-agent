@@ -16,7 +16,7 @@ import {
   buildAiReviewGenerationBoundary,
   buildAiReviewGroundedDraftEvaluator,
   buildAiReviewGroundedComposer,
-  buildAiReviewLiveComposerContract,
+  buildAiReviewLiveComposerFromReportEvidencePack,
   buildAiReviewSharedResponseContractSurfaceSummary,
 } from "@/lib/ai-review-quality";
 
@@ -73,25 +73,7 @@ export default function ReportMockReviewPage() {
     groundedComposer,
     generationBoundary,
   );
-  const liveComposerContract = buildAiReviewLiveComposerContract(
-    {
-      settings: { ayanamsa: "lahiri", house_system: "whole_sign", varga_scheme: "parashara" },
-      ascendant: { body: "Lagna", rashi: "Cancer", rashi_index: 4, nakshatra: "Pushya", pada: 2 },
-      grahas: [
-        { body: "Moon", rashi: "Aquarius", rashi_index: 11, nakshatra: "Purva Bhadrapada", pada: 3 },
-        { body: "Jupiter", rashi: "Cancer", rashi_index: 4, nakshatra: "Punarvasu", pada: 4, dignity: "exalted" },
-        { body: "Saturn", rashi: "Capricorn", rashi_index: 10, nakshatra: "Uttara Ashadha", pada: 3, retrograde: true, dignity: "own" },
-      ],
-      panchanga: { tithi: { name: "Ekadashi" }, vara: { name: "Wednesday" }, yoga: { name: "Siddha" }, karana: { name: "Bava" } },
-      dashas: { vimshottari: { mahadashas: [{ lord: "Moon" }] } },
-      vargas: { D9: { placements: [{ body: "Lagna", rashi: "Virgo" }] } },
-      classical: { shadbala: { status: "calculated" }, yogas: { status: "calculated" }, ashtakavarga: { status: "calculated" } },
-    },
-    [
-      { id: "approved-source-house-chain", title: "Approved house-chain evidence", status: "approved" },
-      { id: "approved-source-yoga-weighting", title: "Approved yoga-weighting evidence", status: "approved" },
-    ],
-  );
+  const liveComposerContract = buildAiReviewLiveComposerFromReportEvidencePack(evidence);
 
   return (
     <main style={pageStyle}>

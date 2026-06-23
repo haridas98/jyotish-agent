@@ -272,6 +272,8 @@ for (const marker of [
   "ai_review_audio_consultation_not_jh_pl_parity=true",
   "ai_review_audio_consultation_not_final_output=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
+  "ai_review_live_composer_from_report_evidence_pack=true",
+  "ai_review_live_composer_blocks_unapproved_report_evidence=true",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
   "production_deploy_skipped_per_user_batching_policy=true",
@@ -457,6 +459,7 @@ assert(typeof helper.buildAiReviewGroundedComposer === "function", "buildAiRevie
 assert(typeof helper.buildAiReviewAudioConsultationBenchmark === "function", "buildAiReviewAudioConsultationBenchmark must be exported.");
 assert(typeof helper.buildAiReviewConsultationMethodContract === "function", "buildAiReviewConsultationMethodContract must be exported.");
 assert(typeof helper.buildAiReviewLiveComposerContract === "function", "buildAiReviewLiveComposerContract must be exported.");
+assert(typeof helper.buildAiReviewLiveComposerFromReportEvidencePack === "function", "Report evidence-pack live composer adapter must be exported.");
 assert(typeof helper.buildAiReviewGenerationBoundary === "function", "buildAiReviewGenerationBoundary must be exported.");
 assert(typeof helper.buildAiReviewQualityLabSummary === "function", "buildAiReviewQualityLabSummary must be exported.");
 
@@ -512,6 +515,95 @@ const blockedLiveComposerContract = helper.buildAiReviewLiveComposerContract(
   },
   [],
 );
+const realReportEvidencePack = {
+  schemaVersion: 1,
+  reportRecipeId: "personal_overview",
+  reportRecipeVersion: 1,
+  reportTypeId: "personal_overview",
+  mode: "novice",
+  profileIds: ["saved-chart-107"],
+  items: [
+    {
+      id: "calculation.basic.settings",
+      kind: "calculation",
+      label: "Calculation settings",
+      calculationId: "calc.settings",
+      value: { ayanamsa: "lahiri", house_system: "whole_sign", varga_scheme: "parashara" },
+      available: true,
+      provenance: { origin: "chart_calculation", sourceRefs: [{ sourceId: "bphs", ruleId: "bphs.lagna.general", status: "verified" }] },
+    },
+    {
+      id: "calculation.varga.d1",
+      kind: "calculation",
+      label: "D1",
+      calculationId: "calc.varga.D1",
+      value: {
+        code: "D1",
+        placements: [
+          { body: "Lagna", rashi: "Cancer", rashi_index: 4, nakshatra: "Pushya", pada: 2 },
+          { body: "Sun", rashi: "Cancer", rashi_index: 4, nakshatra: "Ashlesha", pada: 1 },
+          { body: "Moon", rashi: "Aquarius", rashi_index: 11, nakshatra: "Purva Bhadrapada", pada: 3 },
+          { body: "Jupiter", rashi: "Cancer", rashi_index: 4, nakshatra: "Punarvasu", pada: 4, dignity: "exalted" },
+          { body: "Saturn", rashi: "Capricorn", rashi_index: 10, nakshatra: "Uttara Ashadha", pada: 3, retrograde: true, dignity: "own" },
+        ],
+      },
+      available: true,
+      provenance: { origin: "chart_calculation", sourceRefs: [{ sourceId: "bphs", ruleId: "bphs.rashi.d1", status: "verified" }] },
+    },
+    {
+      id: "calculation.panchanga",
+      kind: "calculation",
+      label: "Panchanga",
+      calculationId: "calc.panchanga",
+      value: { tithi: { name: "Ekadashi" }, vara: { name: "Wednesday" }, yoga: { name: "Siddha" }, karana: { name: "Bava" } },
+      available: true,
+      provenance: { origin: "chart_calculation", sourceRefs: [{ sourceId: "tradition", ruleId: "panchanga.tithi", status: "verified" }] },
+    },
+    {
+      id: "calculation.vimshottari",
+      kind: "calculation",
+      label: "Vimshottari",
+      calculationId: "calc.vimshottari",
+      value: { mahadashas: [{ lord: "Moon", starts_at: "2026-01-01", ends_at: "2036-01-01" }] },
+      available: true,
+      provenance: { origin: "chart_calculation", sourceRefs: [{ sourceId: "tradition", ruleId: "vimshottari.sequence", status: "verified" }] },
+    },
+    {
+      id: "calculation.varga.d9",
+      kind: "calculation",
+      label: "D9",
+      calculationId: "calc.varga.D9",
+      value: { code: "D9", placements: [{ body: "Lagna", rashi: "Virgo" }, { body: "Moon", rashi: "Gemini" }] },
+      available: true,
+      provenance: { origin: "chart_calculation", sourceRefs: [{ sourceId: "jyotish.classical", ruleId: "jyotish.classical.varga.D9", status: "verified" }] },
+    },
+    {
+      id: "calculation.classical",
+      kind: "calculation",
+      label: "Classical checks",
+      calculationId: "calc.classical",
+      value: { shadbala: { status: "calculated" }, yogas: { status: "calculated" }, ashtakavarga: { status: "calculated" } },
+      available: true,
+      provenance: { origin: "chart_calculation", sourceRefs: [{ sourceId: "jyotish.classical", ruleId: "jyotish.classical.yogas", status: "verified" }] },
+    },
+  ],
+  warnings: [],
+  unavailableItemIds: [],
+  sourceRefs: [
+    { sourceId: "bphs", ruleId: "bphs.lagna.general", status: "verified" },
+    { sourceId: "bphs", ruleId: "bphs.rashi.d1", status: "verified" },
+    { sourceId: "tradition", ruleId: "vimshottari.sequence", status: "verified" },
+    { sourceId: "jyotish.classical", ruleId: "jyotish.classical.yogas", status: "verified" },
+  ],
+  inputSummary: { hasPrimaryChart: true, hasRelationshipContext: false, resolvedSectionCount: 2, resolvedFactorCount: 6 },
+};
+const unapprovedReportEvidencePack = JSON.parse(JSON.stringify(realReportEvidencePack));
+for (const ref of unapprovedReportEvidencePack.sourceRefs) ref.status = "needs_review";
+for (const item of unapprovedReportEvidencePack.items) {
+  for (const ref of item.provenance.sourceRefs) ref.status = "needs_review";
+}
+const liveComposerFromEvidencePack = helper.buildAiReviewLiveComposerFromReportEvidencePack(realReportEvidencePack);
+const blockedLiveComposerFromEvidencePack = helper.buildAiReviewLiveComposerFromReportEvidencePack(unapprovedReportEvidencePack);
 const qualityLab = helper.buildAiReviewQualityLabSummary();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
@@ -833,7 +925,20 @@ assert(liveComposerContract.gate.caveatPresent === true, "Live composer must req
 assert(liveComposerContract.aggregate.fixtureDataUsed === false, "Live composer must not depend on fixture data.");
 assert(liveComposerContract.aggregate.finalOutputClaimed === false, "Live composer must not claim final AI output.");
 assert(blockedLiveComposerContract.gate.displayEligible === false, "Live composer without source evidence must be blocked.");
+assert(blockedLiveComposerContract.gate.failedGateNames.includes("calculation_anchors_missing"), "Live composer blocked result must name missing calculation anchors.");
 assert(blockedLiveComposerContract.gate.failedGateNames.includes("source_evidence_missing"), "Live composer blocked result must name missing source evidence.");
+assert(blockedLiveComposerContract.gate.failedGateNames.includes("practical_question_missing"), "Live composer blocked result must name missing practical question.");
+assert(blockedLiveComposerContract.gate.failedGateNames.includes("caveat_missing"), "Live composer blocked result must name missing caveat.");
+assert(liveComposerFromEvidencePack.stage === "E136-A", "Report evidence-pack live composer stage must be E136-A.");
+assert(liveComposerFromEvidencePack.chartFacts.length >= 8, "Report evidence-pack adapter must extract chart facts from report evidence values.");
+assert(liveComposerFromEvidencePack.chartFacts.some((fact) => fact.sourcePath.includes("reportEvidencePack.items")), "Report evidence-pack facts must keep source paths.");
+assert(liveComposerFromEvidencePack.evidenceLinks.length >= 3, "Report evidence-pack adapter must convert verified source refs into approved evidence links.");
+assert(liveComposerFromEvidencePack.evidenceLinks.every((link) => link.status === "approved"), "Report evidence-pack adapter must expose only approved evidence links.");
+assert(liveComposerFromEvidencePack.gate.displayEligible === true, "Report evidence-pack live composer must be display eligible when chart facts and approved sources are present.");
+assert(liveComposerFromEvidencePack.statusLabels.includes("ai_review_live_composer_from_report_evidence_pack=true"), "Report evidence-pack adapter label missing.");
+assert(blockedLiveComposerFromEvidencePack.gate.displayEligible === false, "Report evidence-pack live composer must block unapproved source refs.");
+assert(blockedLiveComposerFromEvidencePack.gate.failedGateNames.includes("source_evidence_missing"), "Report evidence-pack blocked result must name missing approved evidence.");
+assert(blockedLiveComposerFromEvidencePack.statusLabels.includes("ai_review_live_composer_blocks_unapproved_report_evidence=true"), "Report evidence-pack blocked label missing.");
 assert(liveComposerContract.statusLabels.includes("ai_review_live_composer_stage=E136-A"), "Live composer labels missing E136 stage.");
 assert(page.includes("liveComposerContract"), "/reports must render live composer contract.");
 assert(mockReviewPage.includes("liveComposerContract"), "/report-mock-review must render live composer contract.");
