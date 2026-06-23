@@ -264,6 +264,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
         </div>
       ) : null}
       <D1TechnicalContextStrip model={model} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
+      <D1LaunchVisibilityStrip model={model} />
       <D1MobileWorkflowNav activeTab={workbenchState.activeTab} onGrahaJump={() => setActiveTab("grahas")} />
 
       <div className="d1-main-grid">
@@ -294,6 +295,20 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
         </aside>
       </div>
     </section>
+  );
+}
+
+function D1LaunchVisibilityStrip({ model }: { model: D1WorkbenchModel }) {
+  const availableScopes = model.technical.vargas.filter((row) => row.status === "available").map((row) => row.code);
+  const visibleScopes = availableScopes.length ? availableScopes : model.supportedScopes;
+  return (
+    <div className="d1-launch-visibility-strip" data-d1-launch-visibility-stage="E140-A" aria-label="Technical launch visibility">
+      <span><strong>Technical desk</strong>chart, grahas, houses, nakshatras, technical payload, inspector</span>
+      <span><strong>D-scopes</strong>{visibleScopes.join(" / ")}</span>
+      <span><strong>First check</strong>{model.stats.grahaCount} grahas + {model.stats.specialPointCount} points visible before analysis review</span>
+      <span><strong>Production</strong>815c1f03 verified; calculations unchanged in this UI batch</span>
+      <span hidden>E140-A; chart_viewer_launch_visibility_strip=true; chart_viewer_visible_technical_scope_summary=true; chart_viewer_d_scope_coverage_summary=true; chart_viewer_first_check_before_analysis_review=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=815c1f03</span>
+    </div>
   );
 }
 

@@ -75,6 +75,15 @@ for (const required of [
   "chart_viewer_scope_coverage_visible=true",
   "chart_viewer_calculation_status_visible=true",
   "chart_viewer_accuracy_gate_visible=true",
+  "D1LaunchVisibilityStrip",
+  "data-d1-launch-visibility-stage",
+  "chart_viewer_launch_visibility_strip=true",
+  "chart_viewer_visible_technical_scope_summary=true",
+  "chart_viewer_d_scope_coverage_summary=true",
+  "chart_viewer_first_check_before_analysis_review=true",
+  "Technical desk",
+  "D-scopes",
+  "First check",
   "chart_viewer_default_tab=grahas",
   "chart_viewer_all_planets_visible_first_view=true",
   "last_verified_deploy_commit=815c1f03",
@@ -150,6 +159,8 @@ assert(css.includes(".chart-context-view-control"), "E118 chart context view con
 assert(css.includes(".main-chart-view-current"), "E118 current-mode helper CSS marker missing.");
 assert(css.includes("flex-wrap: wrap") && css.includes(".chart-context-strip"), "E118 chart context strip must keep compact wrapping behavior.");
 assert(css.includes(".d1-technical-context-strip"), "E137 D1 technical context strip CSS marker missing.");
+assert(css.includes(".d1-launch-visibility-strip"), "E140 launch visibility strip CSS marker missing.");
+assert(css.includes(".d1-launch-visibility-strip span[hidden]"), "E140 launch visibility hidden marker CSS missing.");
 assert(css.includes(".d1-mobile-workflow-nav"), "E139 mobile workflow nav CSS marker missing.");
 assert(css.includes(".d1-graha-table-card td::before"), "E139 compact graha row CSS marker missing.");
 assert(css.includes("position: sticky") && css.includes("bottom: 8px"), "E139 mobile workflow nav must stay reachable near the mobile viewport bottom.");

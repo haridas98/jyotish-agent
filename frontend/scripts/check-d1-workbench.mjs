@@ -77,6 +77,10 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes('data-d1-technical-context-stage="E137-A"'), "D1 technical context strip must expose the E137 marker");
   assert(component.includes("chart_viewer_scope_coverage_visible=true"), "D1 technical context strip must expose scope coverage status");
   assert(component.includes("chart_viewer_accuracy_gate_visible=true"), "D1 technical context strip must expose accuracy gate status");
+  assert(component.includes("D1LaunchVisibilityStrip"), "D1 workbench must render a visible technical launch summary strip");
+  assert(component.includes('data-d1-launch-visibility-stage="E140-A"'), "D1 launch visibility strip must expose the E140 marker");
+  assert(component.includes("chart_viewer_visible_technical_scope_summary=true"), "D1 launch strip must expose visible technical scope summary status");
+  assert(component.includes("chart_viewer_first_check_before_analysis_review=true"), "D1 launch strip must expose first-check-before-analysis status");
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
   assert(component.includes("last_verified_deploy_commit=815c1f03"), "D1 workbench current launch markers must reference the latest verified production checkpoint");

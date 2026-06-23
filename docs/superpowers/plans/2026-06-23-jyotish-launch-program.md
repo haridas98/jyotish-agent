@@ -255,6 +255,7 @@
 - [x] Add an `E137-A` technical context strip above the chart so scope, coverage, calculation status, and accuracy gate are visible without opening the technical tab.
 - [x] Add an `E138-A` first-view default so the all-grahas table is visible immediately instead of hiding planets behind the overview tab.
 - [x] Add an `E139-A` mobile workflow nav and compact graha rows so chart/table/inspector remain reachable without a wide table as the primary path.
+- [x] Add an `E140-A` launch visibility strip so `/charts/:id` and `/charts/demo-d1` visibly summarize D-scope coverage, technical sections, first-check data, and production checkpoint before analysis review.
 - First viewport: birth meta, D1 chart, graha table, selected object inspector.
 - D chart rail grouped by use: main, family/relationship, profession, expert, all.
 - Mobile: chart first, compact graha rows, bottom nav; no giant horizontal table as primary path.

@@ -1957,6 +1957,38 @@ body .chart-profile-form textarea {
   flex: 0 0 auto;
 }
 
+.d1-launch-visibility-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: -4px 0 10px;
+}
+
+.d1-launch-visibility-strip span:not([hidden]) {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #fff;
+  color: #334b59;
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.d1-launch-visibility-strip strong {
+  color: #0c5962;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.d1-launch-visibility-strip span[hidden] {
+  display: none !important;
+}
+
 .chart-context-view-control {
   display: inline-flex;
   flex-wrap: wrap;
@@ -2033,6 +2065,10 @@ body .chart-profile-form textarea {
     width: 100%;
     max-width: calc(100vw - 32px);
   }
+
+  .d1-launch-visibility-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -2067,6 +2103,10 @@ body .chart-profile-form textarea {
     overflow-x: auto;
     flex-wrap: nowrap;
     justify-content: flex-start;
+  }
+
+  .d1-launch-visibility-strip {
+    grid-template-columns: 1fr;
   }
 
   .d1-mobile-workflow-nav {
