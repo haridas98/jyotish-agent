@@ -3,6 +3,7 @@ const frontendBaseUrl = stripTrailingSlash(process.env.JYOTISH_FRONTEND_BASE_URL
 const requestTimeoutMs = positiveInt(process.env.JYOTISH_SMOKE_TIMEOUT_MS, 30000);
 const requiredScopes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"];
 const jar = createCookieJar();
+let checkedFrontendPages = [];
 
 const username = `launch_smoke_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 const password = "strong-pass-108";
@@ -69,8 +70,21 @@ for (const scope of requiredScopes.filter((item) => item !== "D1")) {
 }
 
 if (frontendBaseUrl) {
+  checkedFrontendPages = [
+    "/charts/new",
+    `/charts/${profile.id}`,
+    `/charts/${profile.id}/edit`,
+    "/charts/demo-d1",
+  ];
   await assertPageOk(`${frontendBaseUrl}/charts/new`, "new chart page");
-  await assertPageOk(`${frontendBaseUrl}/charts/${profile.id}`, "chart detail page");
+  const chartDetailHtml = await assertPageOk(`${frontendBaseUrl}/charts/${profile.id}`, "chart detail page");
+  await assertPageOk(`${frontendBaseUrl}/charts/${profile.id}/edit`, "chart edit page");
+  assertPageContains(chartDetailHtml, ["chart-detail-autocalculate"], "chart detail page");
+  const demoDetailHtml = await assertPageOk(`${frontendBaseUrl}/charts/demo-d1`, "demo chart detail page");
+  assertPageContains(demoDetailHtml, [
+    'data-d1-technical-payload-index-stage="E145-A"',
+    "chart_viewer_payload_index_opens_technical_tab=true",
+  ], "demo chart detail page");
 }
 
 console.log(
@@ -81,6 +95,7 @@ console.log(
       user: username,
       calculationStatus: calculation.calculation.status,
       checkedScopes: requiredScopes,
+      checkedFrontendPages,
       frontendChecked: Boolean(frontendBaseUrl),
     },
     null,
@@ -163,6 +178,13 @@ async function assertPageOk(url, label) {
   });
   if (!response.ok) {
     throw new Error(`${label} failed: HTTP ${response.status}`);
+  }
+  return response.text();
+}
+
+function assertPageContains(html, markers, label) {
+  for (const marker of markers) {
+    assert(html.includes(marker), `${label} missing marker: ${marker}`);
   }
 }
 
