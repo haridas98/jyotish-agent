@@ -141,6 +141,25 @@ export type ParityNextBlockerCapSummary = {
   releaseCopy: "Release remains blocked.";
 };
 
+export type FinalReadinessLedger = {
+  stage: "P117-A";
+  title: "Final readiness ledger";
+  status: "blocked_pending_human_evidence_and_witness_review";
+  stageLabel: "final_readiness_ledger_stage=P117-A";
+  statusLabel: "final_readiness_ledger_status=blocked_pending_human_evidence_and_witness_review";
+  remainingInternalStageCountEstimateLabel: "remaining_internal_stage_count_estimate=2_to_4";
+  noNewParitySubstageStartedLabel: "no_new_parity_substage_started=true";
+  releaseReadyLabel: "release_ready=false";
+  paritySuccessClaimedLabel: "parity_success_claimed=false";
+  latestVerifiedDeployChecksGreenLabel: "latest_verified_deploy_checks_green=true";
+  latestVerifiedDeployCommitLabel: "latest_verified_deploy_commit=74808eb";
+  buckets: readonly [
+    "UI product polish: complete for main chart style guidance (E116-A).",
+    "Parity/release: blocked pending human evidence and witness review.",
+    "Final production checks: latest verified deploy checks green for deploy 74808eb.",
+  ];
+};
+
 export type ReleaseGateActionSummary = {
   totals: {
     collectReports: number;
@@ -2233,6 +2252,27 @@ export function buildParityNextBlockerCapSummary(): ParityNextBlockerCapSummary 
     capCopy: "Internal parity micro-chain is capped.",
     noSubstageCopy: "No additional internal parity substage starts before evidence/review is available.",
     releaseCopy: "Release remains blocked.",
+  };
+}
+
+export function buildFinalReadinessLedger(): FinalReadinessLedger {
+  return {
+    stage: "P117-A",
+    title: "Final readiness ledger",
+    status: "blocked_pending_human_evidence_and_witness_review",
+    stageLabel: "final_readiness_ledger_stage=P117-A",
+    statusLabel: "final_readiness_ledger_status=blocked_pending_human_evidence_and_witness_review",
+    remainingInternalStageCountEstimateLabel: "remaining_internal_stage_count_estimate=2_to_4",
+    noNewParitySubstageStartedLabel: "no_new_parity_substage_started=true",
+    releaseReadyLabel: "release_ready=false",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    latestVerifiedDeployChecksGreenLabel: "latest_verified_deploy_checks_green=true",
+    latestVerifiedDeployCommitLabel: "latest_verified_deploy_commit=74808eb",
+    buckets: [
+      "UI product polish: complete for main chart style guidance (E116-A).",
+      "Parity/release: blocked pending human evidence and witness review.",
+      "Final production checks: latest verified deploy checks green for deploy 74808eb.",
+    ],
   };
 }
 

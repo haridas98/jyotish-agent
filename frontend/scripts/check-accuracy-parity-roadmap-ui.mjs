@@ -148,6 +148,30 @@ for (const copy of [
 }
 
 for (const marker of [
+  "buildFinalReadinessLedger",
+  "P117-A",
+  "final_readiness_ledger_stage=P117-A",
+  "final_readiness_ledger_status=blocked_pending_human_evidence_and_witness_review",
+  "remaining_internal_stage_count_estimate=2_to_4",
+  "no_new_parity_substage_started=true",
+  "release_ready=false",
+  "parity_success_claimed=false",
+  "latest_verified_deploy_checks_green=true",
+  "latest_verified_deploy_commit=74808eb",
+]) {
+  assert(roadmap.includes(marker) || accuracyPage.includes(marker), `P117 final readiness ledger marker missing: ${marker}`);
+}
+
+for (const copy of [
+  "Final readiness ledger",
+  "UI product polish: complete for main chart style guidance (E116-A).",
+  "Parity/release: blocked pending human evidence and witness review.",
+  "Final production checks: latest verified deploy checks green for deploy 74808eb.",
+]) {
+  assert(accuracyPage.includes(copy), `Accuracy route P117 final readiness ledger copy missing: ${copy}`);
+}
+
+for (const marker of [
   "Parity roadmap",
   "JH/PL launch ledger",
   "parityRoadmapItems",

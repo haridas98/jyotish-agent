@@ -1,5 +1,6 @@
 import Home from "../page";
 import {
+  buildFinalReadinessLedger,
   buildParityEvidenceRequirementClarity,
   buildParityEvidenceTemplateChecklist,
   buildParityNextBlockerCapSummary,
@@ -9,6 +10,7 @@ export default function AccuracyPage() {
   const parityEvidenceRequirement = buildParityEvidenceRequirementClarity();
   const parityEvidenceTemplate = buildParityEvidenceTemplateChecklist();
   const parityNextBlockerCap = buildParityNextBlockerCapSummary();
+  const finalReadinessLedger = buildFinalReadinessLedger();
 
   return (
     <>
@@ -61,6 +63,18 @@ export default function AccuracyPage() {
           buildParityNextBlockerCapSummary; {parityNextBlockerCap.stage}; {parityNextBlockerCap.title}; {parityNextBlockerCap.status}; {parityNextBlockerCap.statusLabel}; {parityNextBlockerCap.internalParityMicroChainCappedLabel}; {parityNextBlockerCap.noAdditionalInternalParitySubstageStartedLabel}; {parityNextBlockerCap.paritySuccessClaimedLabel}; {parityNextBlockerCap.releaseReadyLabel}; {parityNextBlockerCap.releaseGateStatusLabel}; {parityNextBlockerCap.noExternalActionExecutedLabel}; {parityNextBlockerCap.nextBlockerCopy}; {parityNextBlockerCap.capCopy}; {parityNextBlockerCap.noSubstageCopy}; {parityNextBlockerCap.releaseCopy}
         </span>
       </div>
+      <section className="notice" data-final-readiness-ledger="P117-A" aria-label={finalReadinessLedger.title}>
+        <strong>Final readiness ledger</strong>
+        <ul>
+          <li>UI product polish: complete for main chart style guidance (E116-A).</li>
+          <li>Parity/release: blocked pending human evidence and witness review.</li>
+          <li>Final production checks: latest verified deploy checks green for deploy 74808eb.</li>
+        </ul>
+        <p>Stopline: remaining internal stage count estimate 2 to 4; no new parity substage started.</p>
+        <span hidden>
+          buildFinalReadinessLedger; {finalReadinessLedger.stage}; {finalReadinessLedger.title}; {finalReadinessLedger.stageLabel}; {finalReadinessLedger.status}; {finalReadinessLedger.statusLabel}; {finalReadinessLedger.remainingInternalStageCountEstimateLabel}; {finalReadinessLedger.noNewParitySubstageStartedLabel}; {finalReadinessLedger.releaseReadyLabel}; {finalReadinessLedger.paritySuccessClaimedLabel}; {finalReadinessLedger.latestVerifiedDeployChecksGreenLabel}; {finalReadinessLedger.latestVerifiedDeployCommitLabel}; {finalReadinessLedger.buckets.join("; ")}
+        </span>
+      </section>
       <section className="notice parity-evidence-template" data-parity-evidence-template="blocked" data-parity-evidence-template-stage="E114-A" aria-label={parityEvidenceTemplate.title}>
         <div className="parity-evidence-template-head">
           <div>
