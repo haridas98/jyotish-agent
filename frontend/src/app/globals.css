@@ -1011,6 +1011,22 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.main-chart-style-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.main-chart-style-picker select {
+  width: auto;
+  min-width: 96px;
+  min-height: 30px;
+}
+
 .main-chart-style-affordance span[hidden] {
   display: none !important;
 }

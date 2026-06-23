@@ -58,6 +58,7 @@ for (const required of [
   "E112-A",
   "main-chart-style-affordance",
   "data-main-chart-style-stage",
+  "data-main-chart-style-toggle",
   "North: houses fixed",
   "South: signs fixed",
   "d1-orientation-legend",
