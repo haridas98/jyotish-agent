@@ -12,6 +12,7 @@ import { debugRoutesEnabled } from "@/app/debug-route-guard";
 import {
   buildAiReviewCalculationPromptPacket,
   buildAiReviewGroundedDraftEvaluator,
+  buildAiReviewGroundedComposer,
   buildAiReviewSharedResponseContractSurfaceSummary,
 } from "@/lib/ai-review-quality";
 
@@ -60,6 +61,7 @@ export default function ReportMockReviewPage() {
   const sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("report-mock-review");
   const calculationPromptPacket = buildAiReviewCalculationPromptPacket(sharedResponseContract);
   const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
+  const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
 
   return (
     <main style={pageStyle}>
@@ -183,6 +185,36 @@ export default function ReportMockReviewPage() {
             ))}
           </div>
           <span hidden>{groundedDraftEvaluator.statusLabels.join("; ")}</span>
+        </section>
+
+        <section
+          aria-label="Grounded review composer"
+          data-ai-review-grounded-composer-stage="E132-A"
+          style={{ border: "1px solid #d5e3e0", borderRadius: 8, marginTop: 20, padding: 16 }}
+        >
+          <h2 style={{ marginTop: 0 }}>Grounded review composer</h2>
+          <p style={{ color: "#53656b", marginTop: 0 }}>Local deterministic composer, not final AI output.</p>
+          <div style={gridStyle}>
+            <Metric label="Sections" value={String(groundedComposer.sections.length)} />
+            <Metric label="Evaluator status" value={groundedComposer.evaluation.passed ? "pass" : "fail"} />
+            <Metric label="Evidence groups hit" value={String(groundedComposer.evaluation.evidenceGroupHits.length)} />
+            <Metric label="Drift fixture" value={groundedComposer.driftEvaluation.passed ? "pass" : "fail"} />
+          </div>
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {groundedComposer.sections.map((section) => (
+              <article key={section.name} style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
+                <strong>Composed section: {section.name}</strong>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Source evidence groups: {section.sourceEvidenceGroups.join(", ")}</p>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>
+                  Evaluator status: {groundedComposer.evaluation.passed ? "pass" : "fail"}
+                </p>
+                <p style={{ color: "#53656b", margin: 0 }}>
+                  Drift repair summary: {groundedComposer.driftEvaluation.repairInstructions.join(" ")}
+                </p>
+              </article>
+            ))}
+          </div>
+          <span hidden>{groundedComposer.statusLabels.join("; ")}</span>
         </section>
 
         <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>

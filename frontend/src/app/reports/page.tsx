@@ -447,6 +447,22 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-grounded-composer" data-ai-review-grounded-composer-stage="E132-A">
+          <div className="ai-review-grounded-composer-head">
+            <strong>Grounded review composer</strong>
+            <span>Local deterministic composer, not final AI output.</span>
+          </div>
+          <div className="ai-review-grounded-composer-grid" role="list">
+            {aiReviewQualityLab.groundedComposer.sections.map((section) => (
+              <section key={section.name} role="listitem">
+                <strong>Composed section: {section.name}</strong>
+                <span>Source evidence groups: {section.sourceEvidenceGroups.join(", ")}</span>
+                <span>Evaluator status: {aiReviewQualityLab.groundedComposer.evaluation.passed ? "pass" : "fail"}</span>
+                <span>Drift repair summary: {aiReviewQualityLab.groundedComposer.driftEvaluation.repairInstructions.join(" ")}</span>
+              </section>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

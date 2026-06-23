@@ -53,6 +53,7 @@ for (const marker of [
   "P129-A",
   "E130-A",
   "P131-A",
+  "E132-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -66,6 +67,7 @@ for (const marker of [
   "ai_review_response_contract_shared_stage=P129-A",
   "ai_review_calculation_packet_stage=E130-A",
   "ai_review_grounded_draft_evaluator_stage=P131-A",
+  "ai_review_grounded_composer_stage=E132-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -190,6 +192,19 @@ for (const marker of [
   "ai_review_grounded_draft_uses_shared_response_contract=true",
   "ai_review_grounded_draft_visible=true",
   "ai_review_grounded_draft_not_final_output=true",
+  "ai_review_grounded_composer_present=true",
+  "ai_review_grounded_composer_sections=5",
+  "ai_review_grounded_composer_sections_exact=true",
+  "ai_review_grounded_composer_uses_response_contract=true",
+  "ai_review_grounded_composer_uses_calculation_packet=true",
+  "ai_review_grounded_composer_uses_grounded_evaluator=true",
+  "ai_review_grounded_composer_draft_passes=true",
+  "ai_review_grounded_composer_groups_hit=5",
+  "ai_review_grounded_composer_groups_hit_minimum_met=true",
+  "ai_review_grounded_composer_practical_question_present=true",
+  "ai_review_grounded_composer_drift_fixture_fails=true",
+  "ai_review_grounded_composer_visible=true",
+  "ai_review_grounded_composer_not_final_output=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -323,6 +338,11 @@ for (const label of [
   "Actual result",
   "Evidence groups hit",
   "Repair summary",
+  "Grounded review composer",
+  "Composed section",
+  "Source evidence groups",
+  "Evaluator status",
+  "Drift repair summary",
   "Shadbala",
   "Ashtakavarga",
   "Avastha",
@@ -352,6 +372,7 @@ assert(typeof helper.buildAiReviewResponseContract === "function", "buildAiRevie
 assert(typeof helper.buildAiReviewSharedResponseContractSurfaceSummary === "function", "buildAiReviewSharedResponseContractSurfaceSummary must be exported.");
 assert(typeof helper.buildAiReviewCalculationPromptPacket === "function", "buildAiReviewCalculationPromptPacket must be exported.");
 assert(typeof helper.buildAiReviewGroundedDraftEvaluator === "function", "buildAiReviewGroundedDraftEvaluator must be exported.");
+assert(typeof helper.buildAiReviewGroundedComposer === "function", "buildAiReviewGroundedComposer must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -369,6 +390,7 @@ const reportsSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSu
 const mockSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSummary("report-mock-review");
 const calculationPromptPacket = helper.buildAiReviewCalculationPromptPacket();
 const groundedDraftEvaluator = helper.buildAiReviewGroundedDraftEvaluator();
+const groundedComposer = helper.buildAiReviewGroundedComposer();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -597,6 +619,27 @@ assert(overclaimDraft.repairInstructions.length >= 1, "Overclaim draft must incl
 assert(page.includes("groundedDraftEvaluator"), "/reports must render grounded draft evaluator.");
 assert(mockReviewPage.includes("groundedDraftEvaluator"), "/report-mock-review must render grounded draft evaluator.");
 assert(mockReviewPage.includes('data-ai-review-grounded-draft-stage="P131-A"'), "/report-mock-review must expose P131 hook.");
+assert(groundedComposer.stage === "E132-A", "Grounded composer stage must be E132-A.");
+assert(groundedComposer.statusLabels.includes("ai_review_grounded_composer_stage=E132-A"), "Grounded composer labels missing E132 stage.");
+assert(groundedComposer.sections.length === 5, "Grounded composer must compose exactly five sections.");
+assert(groundedComposer.sections.map((section) => section.name).join("|") === "Chart anchors|Rule chain|Interpretive tension|Practical next question|Caveats and gated claims", "Grounded composer section names changed.");
+assert(groundedComposer.aggregate.sectionsExact === true, "Grounded composer must mark sections exact.");
+assert(groundedComposer.aggregate.draftPasses === true, "Grounded composed draft must pass evaluator.");
+assert(groundedComposer.evaluation.passed === true, "Grounded composer evaluation must pass.");
+assert(groundedComposer.aggregate.groupsHit === 5, "Grounded composed draft must hit exactly five evidence groups.");
+assert(groundedComposer.evaluation.evidenceGroupHits.length >= 5, "Grounded composed draft must hit at least five evidence groups.");
+assert(groundedComposer.aggregate.groupsHitMinimumMet === true, "Grounded composer must mark evidence group minimum met.");
+assert(groundedComposer.aggregate.practicalQuestionPresent === true, "Grounded composed draft must include practical next question.");
+assert(groundedComposer.aggregate.driftFixtureFails === true, "Grounded composer drift fixture must fail.");
+assert(groundedComposer.driftEvaluation.passed === false, "Grounded composer drift evaluation must fail.");
+assert(groundedComposer.driftEvaluation.repairInstructions.length >= 1, "Grounded composer drift fixture must include repair instructions.");
+assert(groundedComposer.aggregate.usesResponseContract === true, "Grounded composer must use response contract.");
+assert(groundedComposer.aggregate.usesCalculationPacket === true, "Grounded composer must use calculation packet.");
+assert(groundedComposer.aggregate.usesGroundedEvaluator === true, "Grounded composer must use grounded evaluator.");
+assert(page.includes("groundedComposer"), "/reports must render grounded composer.");
+assert(mockReviewPage.includes("groundedComposer"), "/report-mock-review must render grounded composer.");
+assert(page.includes('data-ai-review-grounded-composer-stage="E132-A"'), "/reports must expose E132 hook.");
+assert(mockReviewPage.includes('data-ai-review-grounded-composer-stage="E132-A"'), "/report-mock-review must expose E132 hook.");
 
 for (const forbidden of [
   "fetch(",

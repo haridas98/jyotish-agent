@@ -1222,6 +1222,50 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.ai-review-grounded-composer {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d7e5e8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-grounded-composer-head {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-review-grounded-composer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-review-grounded-composer-grid section {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.ai-review-grounded-composer strong {
+  color: var(--green);
+}
+
+.ai-review-grounded-composer span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
@@ -1272,6 +1316,10 @@ body .chart-profile-form textarea {
   }
 
   .ai-review-grounded-draft-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-grounded-composer-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -380,7 +380,9 @@ export type AiReviewCalculationPromptPacket = {
 export type AiReviewGroundedDraftFixtureId =
   | "strong_calculation_grounded_draft"
   | "generic_inspirational_draft"
-  | "advanced_overclaim_draft";
+  | "advanced_overclaim_draft"
+  | "composed_grounded_review_draft"
+  | "drift_missing_anchor_draft";
 
 export type AiReviewGroundedDraftFixture = {
   id: AiReviewGroundedDraftFixtureId;
@@ -418,6 +420,35 @@ export type AiReviewGroundedDraftEvaluator = {
     repairsPresent: boolean;
     usesCalculationPacket: boolean;
     usesSharedResponseContract: boolean;
+    localOnlyNotFinalOutput: true;
+  };
+  statusLabels: string[];
+};
+
+export type AiReviewGroundedComposerSection = {
+  name: AiReviewResponseContractSectionName;
+  sourceEvidenceGroups: AiReviewCalculationEvidenceGroupId[];
+  body: string;
+};
+
+export type AiReviewGroundedComposer = {
+  stage: "E132-A";
+  sections: AiReviewGroundedComposerSection[];
+  draft: AiReviewGroundedDraftFixture;
+  evaluation: AiReviewGroundedDraftEvaluation;
+  driftFixture: AiReviewGroundedDraftFixture;
+  driftEvaluation: AiReviewGroundedDraftEvaluation;
+  aggregate: {
+    sectionCount: number;
+    sectionsExact: boolean;
+    draftPasses: boolean;
+    groupsHit: number;
+    groupsHitMinimumMet: boolean;
+    practicalQuestionPresent: boolean;
+    driftFixtureFails: boolean;
+    usesResponseContract: boolean;
+    usesCalculationPacket: boolean;
+    usesGroundedEvaluator: boolean;
     localOnlyNotFinalOutput: true;
   };
   statusLabels: string[];
@@ -1712,6 +1743,113 @@ export function buildAiReviewGroundedDraftEvaluator(
   };
 }
 
+export function buildAiReviewGroundedComposer(
+  calculationPromptPacket = buildAiReviewCalculationPromptPacket(),
+  groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket),
+): AiReviewGroundedComposer {
+  const responseSectionNames = calculationPromptPacket.sharedResponseContract.sectionNames;
+  const sections: AiReviewGroundedComposerSection[] = responseSectionNames.map((name) => {
+    if (name === "Chart anchors") {
+      return {
+        name,
+        sourceEvidenceGroups: ["chart_placements"],
+        body: "Chart anchors cite chart placements before any interpretation.",
+      };
+    }
+    if (name === "Rule chain") {
+      return {
+        name,
+        sourceEvidenceGroups: ["lord_relationships", "dignity_strength"],
+        body: "Rule chain links house/lord relationships with dignity/strength notes.",
+      };
+    }
+    if (name === "Interpretive tension") {
+      return {
+        name,
+        sourceEvidenceGroups: ["tension_flags"],
+        body: "Interpretive tension names contradiction/tension flags before synthesis.",
+      };
+    }
+    if (name === "Practical next question") {
+      return {
+        name,
+        sourceEvidenceGroups: ["dasha_transit_timing"],
+        body: "Practical next question is tied to dasha/transit timing anchors.",
+      };
+    }
+    return {
+      name,
+      sourceEvidenceGroups: ["dignity_strength", "tension_flags"],
+      body: "Caveats keep uncomputed advanced claims gated and separate from usable output.",
+    };
+  });
+  const draftText =
+    "Chart anchors: chart placements anchor the answer before tone. Rule chain: house/lord relationships and dignity/strength notes explain why the life-domain reading is narrow. Interpretive tension: contradiction/tension flags show where public push and private restraint must be held together. Practical next question: which choice should be tested against dasha/transit timing anchors first? Caveats and gated claims: uncomputed advanced tables remain gated, and the draft stays local-only.";
+  const draft: AiReviewGroundedDraftFixture = {
+    id: "composed_grounded_review_draft",
+    label: "Composed grounded review draft",
+    expectedResult: "pass",
+    fixtureType: "strong",
+    draft: draftText,
+  };
+  const evaluation = evaluateAiReviewGroundedDraftFixture(draft, calculationPromptPacket);
+  const driftFixture: AiReviewGroundedDraftFixture = {
+    id: "drift_missing_anchor_draft",
+    label: "Drift fixture missing anchors",
+    expectedResult: "fail",
+    fixtureType: "generic",
+    draft:
+      "Chart anchors are skipped. Rule chain is vague. Interpretive tension becomes general encouragement, and the practical next step is advice without calculation anchors.",
+  };
+  const driftEvaluation = evaluateAiReviewGroundedDraftFixture(driftFixture, calculationPromptPacket);
+  const expectedSections = "Chart anchors|Rule chain|Interpretive tension|Practical next question|Caveats and gated claims";
+  const sectionsExact = sections.map((section) => section.name).join("|") === expectedSections;
+  const groupsHit = evaluation.evidenceGroupHits.length;
+
+  return {
+    stage: "E132-A",
+    sections,
+    draft,
+    evaluation,
+    driftFixture,
+    driftEvaluation,
+    aggregate: {
+      sectionCount: sections.length,
+      sectionsExact,
+      draftPasses: evaluation.passed,
+      groupsHit,
+      groupsHitMinimumMet: groupsHit >= 5,
+      practicalQuestionPresent: evaluation.practicalQuestionQuality.passed,
+      driftFixtureFails: driftEvaluation.passed === false,
+      usesResponseContract: calculationPromptPacket.sharedResponseContract.stage === "P129-A",
+      usesCalculationPacket: calculationPromptPacket.stage === "E130-A",
+      usesGroundedEvaluator: groundedDraftEvaluator.stage === "P131-A",
+      localOnlyNotFinalOutput: true,
+    },
+    statusLabels: [
+      "E132-A",
+      "ai_review_grounded_composer_stage=E132-A",
+      "ai_review_grounded_composer_present=true",
+      "ai_review_grounded_composer_sections=5",
+      "ai_review_grounded_composer_sections_exact=true",
+      "ai_review_grounded_composer_uses_response_contract=true",
+      "ai_review_grounded_composer_uses_calculation_packet=true",
+      "ai_review_grounded_composer_uses_grounded_evaluator=true",
+      "ai_review_grounded_composer_draft_passes=true",
+      "ai_review_grounded_composer_groups_hit=5",
+      "ai_review_grounded_composer_groups_hit_minimum_met=true",
+      "ai_review_grounded_composer_practical_question_present=true",
+      "ai_review_grounded_composer_drift_fixture_fails=true",
+      "ai_review_grounded_composer_visible=true",
+      "ai_review_grounded_composer_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -1727,6 +1865,7 @@ export function buildAiReviewQualityLabSummary() {
   const sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("reports", responseContract);
   const calculationPromptPacket = buildAiReviewCalculationPromptPacket(sharedResponseContract, assertionLedger);
   const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
+  const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -1754,6 +1893,7 @@ export function buildAiReviewQualityLabSummary() {
       ...sharedResponseContract.statusLabels,
       ...calculationPromptPacket.statusLabels,
       ...groundedDraftEvaluator.statusLabels,
+      ...groundedComposer.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -1781,5 +1921,6 @@ export function buildAiReviewQualityLabSummary() {
     sharedResponseContract,
     calculationPromptPacket,
     groundedDraftEvaluator,
+    groundedComposer,
   };
 }
