@@ -73,6 +73,7 @@
     "test:accuracy-core-review-preflight": "node scripts/check-accuracy-core-review-preflight.mjs",
     "test:transit-workbench": "node scripts/check-transit-workbench.mjs",
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
+    "smoke:calculator-launch": "node scripts/smoke-calculator-launch.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",
     "smoke:ai-staging": "node scripts/smoke-ai-staging.mjs",
     "production-check": "node scripts/production-check.mjs",
