@@ -519,6 +519,27 @@ export default function ReportBuilderPage() {
             <span>Final output claimed: {aiReviewQualityLab.consultationMethodContract.aggregate.finalOutputClaimed ? "yes" : "no"}</span>
           </div>
         </div>
+        <div className="ai-review-live-composer-contract" data-ai-review-live-composer-stage="E136-A">
+          <div className="ai-review-live-composer-head">
+            <strong>Live composer contract</strong>
+            <span>Consumes real saved-chart facts and approved evidence links before display eligibility.</span>
+          </div>
+          <div className="ai-review-live-composer-grid" role="list">
+            {aiReviewQualityLab.liveComposerContract.reviewSections.map((section) => (
+              <section key={section.name} role="listitem">
+                <strong>{section.name}</strong>
+                <span>Required facts: {section.requiredFactKinds.join(", ")}</span>
+                <span>Required evidence: {section.requiredEvidenceStatus}</span>
+              </section>
+            ))}
+          </div>
+          <div className="ai-review-live-composer-gate">
+            <span>Chart facts: {aiReviewQualityLab.liveComposerContract.chartFacts.length}</span>
+            <span>Evidence links: {aiReviewQualityLab.liveComposerContract.evidenceLinks.length}</span>
+            <span>Display eligible: {aiReviewQualityLab.liveComposerContract.gate.displayEligible ? "yes" : "no"}</span>
+            <span>Failed gates: {aiReviewQualityLab.liveComposerContract.gate.failedGateNames.join(", ") || "none"}</span>
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

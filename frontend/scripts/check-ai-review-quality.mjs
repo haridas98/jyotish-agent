@@ -456,6 +456,7 @@ assert(typeof helper.buildAiReviewGroundedDraftEvaluator === "function", "buildA
 assert(typeof helper.buildAiReviewGroundedComposer === "function", "buildAiReviewGroundedComposer must be exported.");
 assert(typeof helper.buildAiReviewAudioConsultationBenchmark === "function", "buildAiReviewAudioConsultationBenchmark must be exported.");
 assert(typeof helper.buildAiReviewConsultationMethodContract === "function", "buildAiReviewConsultationMethodContract must be exported.");
+assert(typeof helper.buildAiReviewLiveComposerContract === "function", "buildAiReviewLiveComposerContract must be exported.");
 assert(typeof helper.buildAiReviewGenerationBoundary === "function", "buildAiReviewGenerationBoundary must be exported.");
 assert(typeof helper.buildAiReviewQualityLabSummary === "function", "buildAiReviewQualityLabSummary must be exported.");
 
@@ -479,6 +480,38 @@ const groundedComposer = helper.buildAiReviewGroundedComposer();
 const generationBoundary = helper.buildAiReviewGenerationBoundary();
 const audioConsultationBenchmark = helper.buildAiReviewAudioConsultationBenchmark();
 const consultationMethodContract = helper.buildAiReviewConsultationMethodContract();
+const liveComposerContract = helper.buildAiReviewLiveComposerContract(
+  {
+    settings: { ayanamsa: "lahiri", house_system: "whole_sign", varga_scheme: "parashara" },
+    ascendant: { body: "Lagna", rashi: "Cancer", rashi_index: 4, nakshatra: "Pushya", pada: 2 },
+    grahas: [
+      { body: "Sun", rashi: "Cancer", rashi_index: 4, nakshatra: "Ashlesha", pada: 1 },
+      { body: "Moon", rashi: "Aquarius", rashi_index: 11, nakshatra: "Purva Bhadrapada", pada: 3 },
+      { body: "Jupiter", rashi: "Cancer", rashi_index: 4, nakshatra: "Punarvasu", pada: 4, dignity: "exalted" },
+      { body: "Saturn", rashi: "Capricorn", rashi_index: 10, nakshatra: "Uttara Ashadha", pada: 3, retrograde: true, dignity: "own" },
+    ],
+    panchanga: { tithi: { name: "Ekadashi" }, vara: { name: "Wednesday" }, yoga: { name: "Siddha" }, karana: { name: "Bava" }, nakshatra: { name: "Purva Bhadrapada", pada: 3 } },
+    dashas: { vimshottari: { mahadashas: [{ lord: "Moon", starts_at: "2026-01-01", ends_at: "2036-01-01" }] } },
+    vargas: { D9: { placements: [{ body: "Lagna", rashi: "Virgo" }, { body: "Moon", rashi: "Gemini" }] } },
+    classical: {
+      shadbala: { status: "calculated", items: [{ body: "Jupiter" }] },
+      yogas: { status: "calculated", summary: { detected_count: 2 } },
+      ashtakavarga: { status: "calculated", sarva: { scores: [24, 31] } },
+    },
+  },
+  [
+    { id: "approved-bphs-house-1", title: "Approved house evidence", status: "approved" },
+    { id: "approved-bphs-yoga", title: "Approved yoga evidence", status: "approved" },
+  ],
+);
+const blockedLiveComposerContract = helper.buildAiReviewLiveComposerContract(
+  {
+    ascendant: { body: "Lagna", rashi: "Cancer", rashi_index: 4 },
+    grahas: [{ body: "Moon", rashi: "Aquarius", rashi_index: 11 }],
+    panchanga: {},
+  },
+  [],
+);
 const qualityLab = helper.buildAiReviewQualityLabSummary();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
@@ -789,12 +822,31 @@ assert(page.includes("consultationMethodContract"), "/reports must render consul
 assert(mockReviewPage.includes("consultationMethodContract"), "/report-mock-review must render consultation method contract.");
 assert(page.includes('data-ai-review-consultation-method-stage="P135-A"'), "/reports must expose P135 hook.");
 assert(mockReviewPage.includes('data-ai-review-consultation-method-stage="P135-A"'), "/report-mock-review must expose P135 hook.");
+assert(liveComposerContract.stage === "E136-A", "Live composer contract stage must be E136-A.");
+assert(liveComposerContract.chartFacts.length >= 8, "Live composer must extract chart facts from a real chart payload.");
+assert(liveComposerContract.evidenceLinks.length >= 2, "Live composer must consume approved literature/source evidence links.");
+assert(liveComposerContract.gate.displayEligible === true, "Live composer with chart facts and source evidence must be display eligible.");
+assert(liveComposerContract.gate.requiredAnchorsPresent === true, "Live composer must require calculation anchors.");
+assert(liveComposerContract.gate.sourceEvidencePresent === true, "Live composer must require source evidence.");
+assert(liveComposerContract.gate.practicalQuestionPresent === true, "Live composer must require practical next question.");
+assert(liveComposerContract.gate.caveatPresent === true, "Live composer must require caveat.");
+assert(liveComposerContract.aggregate.fixtureDataUsed === false, "Live composer must not depend on fixture data.");
+assert(liveComposerContract.aggregate.finalOutputClaimed === false, "Live composer must not claim final AI output.");
+assert(blockedLiveComposerContract.gate.displayEligible === false, "Live composer without source evidence must be blocked.");
+assert(blockedLiveComposerContract.gate.failedGateNames.includes("source_evidence_missing"), "Live composer blocked result must name missing source evidence.");
+assert(liveComposerContract.statusLabels.includes("ai_review_live_composer_stage=E136-A"), "Live composer labels missing E136 stage.");
+assert(page.includes("liveComposerContract"), "/reports must render live composer contract.");
+assert(mockReviewPage.includes("liveComposerContract"), "/report-mock-review must render live composer contract.");
+assert(page.includes('data-ai-review-live-composer-stage="E136-A"'), "/reports must expose E136 hook.");
+assert(mockReviewPage.includes('data-ai-review-live-composer-stage="E136-A"'), "/report-mock-review must expose E136 hook.");
 assert(qualityLab.benchmarkParityReport?.stage === "R2", "Quality summary must expose R2 benchmark parity report.");
 assert(qualityLab.statusLabels.includes("ai_review_benchmark_parity_stage=R2"), "Quality summary status labels must include R2 parity stage.");
 assert(qualityLab.audioConsultationBenchmark?.stage === "E134-A", "Quality summary must expose E134 audio consultation benchmark.");
 assert(qualityLab.statusLabels.includes("ai_review_audio_consultation_benchmark_stage=E134-A"), "Quality summary status labels must include E134 audio benchmark stage.");
 assert(qualityLab.consultationMethodContract?.stage === "P135-A", "Quality summary must expose P135 consultation method contract.");
 assert(qualityLab.statusLabels.includes("ai_review_consultation_method_stage=P135-A"), "Quality summary status labels must include P135 consultation method stage.");
+assert(qualityLab.liveComposerContract?.stage === "E136-A", "Quality summary must expose E136 live composer contract.");
+assert(qualityLab.statusLabels.includes("ai_review_live_composer_stage=E136-A"), "Quality summary status labels must include E136 live composer stage.");
 assert(qualityLab.benchmarkParityReport.aggregate.d1RowsChecked >= 18, "Quality summary parity report must check at least 18 D1 rows.");
 assert(qualityLab.benchmarkParityReport.aggregate.unsupportedAdvancedClaimsGated === true, "Quality summary parity report must gate unsupported advanced claims.");
 

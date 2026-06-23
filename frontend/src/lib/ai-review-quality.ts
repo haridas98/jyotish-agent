@@ -563,6 +563,79 @@ export type AiReviewConsultationMethodContract = {
   statusLabels: string[];
 };
 
+export type AiReviewLiveComposerEvidenceLink = {
+  id: string;
+  title: string;
+  status: "approved" | "research_only" | "blocked";
+  sourceTraceId?: string;
+};
+
+export type AiReviewLiveComposerPlacementInput = {
+  body?: string;
+  rashi?: string;
+  rashi_index?: number;
+  nakshatra?: string | null;
+  pada?: number | null;
+  dignity?: string | null;
+  retrograde?: boolean;
+};
+
+export type AiReviewLiveComposerChartInput = {
+  settings?: Record<string, string | number | boolean | null | undefined>;
+  ascendant?: AiReviewLiveComposerPlacementInput | null;
+  grahas?: AiReviewLiveComposerPlacementInput[];
+  panchanga?: {
+    tithi?: { name?: string; number?: number; paksha?: string } | null;
+    vara?: { name?: string } | null;
+    yoga?: { name?: string; number?: number } | null;
+    karana?: { name?: string } | null;
+    nakshatra?: { name?: string; pada?: number } | null;
+  };
+  dashas?: {
+    vimshottari?: {
+      mahadashas?: Array<{ lord?: string }>;
+    };
+  };
+  vargas?: Record<string, { placements?: AiReviewLiveComposerPlacementInput[] } | null | undefined>;
+  classical?: Record<string, { status?: string } | null | undefined>;
+};
+
+export type AiReviewLiveComposerChartFact = {
+  id: string;
+  kind: "setting" | "lagna" | "graha" | "panchanga" | "dasha" | "varga" | "classical";
+  label: string;
+  sourcePath: string;
+};
+
+export type AiReviewLiveComposerContract = {
+  stage: "E136-A";
+  chartFacts: AiReviewLiveComposerChartFact[];
+  evidenceLinks: AiReviewLiveComposerEvidenceLink[];
+  reviewSections: {
+    name: AiReviewConsultationMethodStepName;
+    requiredFactKinds: AiReviewLiveComposerChartFact["kind"][];
+    requiredEvidenceStatus: "approved";
+  }[];
+  gate: {
+    displayEligible: boolean;
+    requiredAnchorsPresent: boolean;
+    sourceEvidencePresent: boolean;
+    practicalQuestionPresent: boolean;
+    caveatPresent: boolean;
+    failedGateNames: string[];
+  };
+  aggregate: {
+    realChartFactsAccepted: boolean;
+    sourceEvidenceLinksAccepted: boolean;
+    fixtureDataUsed: false;
+    rawTranscriptCommitted: false;
+    sourceAudioCommitted: false;
+    finalOutputClaimed: false;
+    localOnlyNotFinalOutput: true;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -2228,6 +2301,170 @@ export function buildAiReviewConsultationMethodContract(
   };
 }
 
+export function buildAiReviewLiveComposerContract(
+  chart: AiReviewLiveComposerChartInput | null = null,
+  evidenceLinks: AiReviewLiveComposerEvidenceLink[] = [],
+): AiReviewLiveComposerContract {
+  const chartFacts = extractLiveComposerChartFacts(chart);
+  const approvedEvidenceLinks = evidenceLinks.filter((item) => item.status === "approved");
+  const reviewSections: AiReviewLiveComposerContract["reviewSections"] = [
+    { name: "ChartFacts", requiredFactKinds: ["setting", "lagna", "graha"], requiredEvidenceStatus: "approved" },
+    { name: "Evidence", requiredFactKinds: ["graha", "panchanga"], requiredEvidenceStatus: "approved" },
+    { name: "ReviewSections", requiredFactKinds: ["dasha", "varga", "classical"], requiredEvidenceStatus: "approved" },
+    { name: "QualityGate", requiredFactKinds: ["lagna", "graha", "classical"], requiredEvidenceStatus: "approved" },
+  ];
+  const factKinds = new Set(chartFacts.map((fact) => fact.kind));
+  const requiredAnchorsPresent =
+    chartFacts.length >= 5 &&
+    factKinds.has("lagna") &&
+    factKinds.has("graha") &&
+    (factKinds.has("dasha") || factKinds.has("panchanga"));
+  const sourceEvidencePresent = approvedEvidenceLinks.length > 0;
+  const practicalQuestionPresent = requiredAnchorsPresent && sourceEvidencePresent;
+  const caveatPresent = factKinds.has("classical") || factKinds.has("varga");
+  const failedGateNames = [
+    requiredAnchorsPresent ? "" : "calculation_anchors_missing",
+    sourceEvidencePresent ? "" : "source_evidence_missing",
+    practicalQuestionPresent ? "" : "practical_question_missing",
+    caveatPresent ? "" : "caveat_missing",
+  ].filter(Boolean);
+  const displayEligible = failedGateNames.length === 0;
+
+  return {
+    stage: "E136-A",
+    chartFacts,
+    evidenceLinks: approvedEvidenceLinks,
+    reviewSections,
+    gate: {
+      displayEligible,
+      requiredAnchorsPresent,
+      sourceEvidencePresent,
+      practicalQuestionPresent,
+      caveatPresent,
+      failedGateNames,
+    },
+    aggregate: {
+      realChartFactsAccepted: chartFacts.length > 0,
+      sourceEvidenceLinksAccepted: approvedEvidenceLinks.length > 0,
+      fixtureDataUsed: false,
+      rawTranscriptCommitted: false,
+      sourceAudioCommitted: false,
+      finalOutputClaimed: false,
+      localOnlyNotFinalOutput: true,
+    },
+    statusLabels: [
+      "E136-A",
+      "ai_review_live_composer_stage=E136-A",
+      "ai_review_live_composer_consumes_chart_facts=true",
+      `ai_review_live_composer_chart_facts=${chartFacts.length}`,
+      `ai_review_live_composer_approved_evidence_links=${approvedEvidenceLinks.length}`,
+      `ai_review_live_composer_display_eligible=${displayEligible}`,
+      `ai_review_live_composer_failed_gates=${failedGateNames.length}`,
+      "ai_review_live_composer_fixture_data_used=false",
+      "ai_review_live_composer_final_output_claimed=false",
+      "ai_review_live_composer_raw_transcript_committed=false",
+      "ai_review_live_composer_source_audio_committed=false",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=40120c8",
+    ],
+  };
+}
+
+function extractLiveComposerChartFacts(chart: AiReviewLiveComposerChartInput | null): AiReviewLiveComposerChartFact[] {
+  if (!chart) return [];
+  const facts: AiReviewLiveComposerChartFact[] = [];
+  const settings = chart.settings ?? {};
+  for (const key of ["ayanamsa", "house_system", "varga_scheme"] as const) {
+    const value = settings[key];
+    if (value) facts.push({ id: `setting.${key}`, kind: "setting", label: `${key}: ${value}`, sourcePath: `settings.${key}` });
+  }
+  if (chart.ascendant) {
+    facts.push({
+      id: "lagna.rashi",
+      kind: "lagna",
+      label: placementLabel(chart.ascendant.body || "Lagna", chart.ascendant.rashi, chart.ascendant.nakshatra, chart.ascendant.pada),
+      sourcePath: "ascendant",
+    });
+  }
+  for (const graha of (chart.grahas ?? []).slice(0, 9)) {
+    facts.push({
+      id: `graha.${String(graha.body || "unknown").toLowerCase()}`,
+      kind: "graha",
+      label: placementLabel(graha.body, graha.rashi, graha.nakshatra, graha.pada, graha.dignity, graha.retrograde),
+      sourcePath: `grahas.${graha.body}`,
+    });
+  }
+  const panchanga = chart.panchanga;
+  for (const [key, value] of [
+    ["tithi", panchanga?.tithi?.name],
+    ["vara", panchanga?.vara?.name],
+    ["yoga", panchanga?.yoga?.name],
+    ["karana", panchanga?.karana?.name],
+    ["nakshatra", panchanga?.nakshatra?.name],
+  ] as const) {
+    if (value) facts.push({ id: `panchanga.${key}`, kind: "panchanga", label: `${key}: ${value}`, sourcePath: `panchanga.${key}` });
+  }
+  const currentDasha = chart.dashas?.vimshottari?.mahadashas?.[0];
+  if (currentDasha?.lord) {
+    facts.push({ id: "dasha.vimshottari.current", kind: "dasha", label: `Vimshottari: ${currentDasha.lord}`, sourcePath: "dashas.vimshottari.mahadashas.0" });
+  }
+  for (const code of Object.keys(chart.vargas ?? {}).sort().slice(0, 6)) {
+    const placements = chart.vargas?.[code]?.placements?.length ?? 0;
+    facts.push({ id: `varga.${code}`, kind: "varga", label: `${code}: ${placements} placements`, sourcePath: `vargas.${code}` });
+  }
+  const classical = chart.classical;
+  for (const [key, status] of [
+    ["shadbala", classical?.shadbala?.status],
+    ["ashtakavarga", classical?.ashtakavarga?.status],
+    ["yogas", classical?.yogas?.status],
+  ] as const) {
+    if (status) facts.push({ id: `classical.${key}`, kind: "classical", label: `${key}: ${status}`, sourcePath: `classical.${key}` });
+  }
+  return facts;
+}
+
+function placementLabel(
+  body: string | undefined,
+  rashi: string | undefined,
+  nakshatra?: string | null,
+  pada?: number | null,
+  dignity?: string | null,
+  retrograde?: boolean,
+) {
+  return [
+    body || "Unknown",
+    rashi ? `in ${rashi}` : "",
+    nakshatra ? `nakshatra ${nakshatra}` : "",
+    pada ? `pada ${pada}` : "",
+    dignity ? `dignity ${dignity}` : "",
+    retrograde ? "retrograde" : "",
+  ].filter(Boolean).join(", ");
+}
+
+function buildAiReviewLiveComposerSummaryFixture() {
+  return buildAiReviewLiveComposerContract(
+    {
+      settings: { ayanamsa: "lahiri", house_system: "whole_sign", varga_scheme: "parashara" },
+      ascendant: { body: "Lagna", rashi: "Cancer", rashi_index: 4, nakshatra: "Pushya", pada: 2 },
+      grahas: [
+        { body: "Moon", rashi: "Aquarius", rashi_index: 11, nakshatra: "Purva Bhadrapada", pada: 3 },
+        { body: "Jupiter", rashi: "Cancer", rashi_index: 4, nakshatra: "Punarvasu", pada: 4, dignity: "exalted" },
+        { body: "Saturn", rashi: "Capricorn", rashi_index: 10, nakshatra: "Uttara Ashadha", pada: 3, retrograde: true, dignity: "own" },
+      ],
+      panchanga: { tithi: { name: "Ekadashi" }, vara: { name: "Wednesday" }, yoga: { name: "Siddha" }, karana: { name: "Bava" } },
+      dashas: { vimshottari: { mahadashas: [{ lord: "Moon" }] } },
+      vargas: { D9: { placements: [{ body: "Lagna", rashi: "Virgo" }] } },
+      classical: { shadbala: { status: "calculated" }, yogas: { status: "calculated" }, ashtakavarga: { status: "calculated" } },
+    },
+    [
+      { id: "approved-source-house-chain", title: "Approved house-chain evidence", status: "approved" },
+      { id: "approved-source-yoga-weighting", title: "Approved yoga-weighting evidence", status: "approved" },
+    ],
+  );
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -2251,6 +2488,7 @@ export function buildAiReviewQualityLabSummary() {
     groundedComposer,
     generationBoundary,
   );
+  const liveComposerContract = buildAiReviewLiveComposerSummaryFixture();
   const benchmarkParityReport = buildAiReviewBenchmarkParityReport();
 
   return {
@@ -2283,6 +2521,7 @@ export function buildAiReviewQualityLabSummary() {
       ...generationBoundary.statusLabels,
       ...audioConsultationBenchmark.statusLabels,
       ...consultationMethodContract.statusLabels,
+      ...liveComposerContract.statusLabels,
       ...benchmarkParityReport.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
@@ -2315,6 +2554,7 @@ export function buildAiReviewQualityLabSummary() {
     generationBoundary,
     audioConsultationBenchmark,
     consultationMethodContract,
+    liveComposerContract,
     benchmarkParityReport,
   };
 }

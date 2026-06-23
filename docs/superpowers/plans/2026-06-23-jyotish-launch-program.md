@@ -216,6 +216,7 @@
   - what makes the review feel expert.
 - [x] Add a deterministic consultation-method contract around `ChartFacts -> Evidence -> ReviewSections -> QualityGate` (`P135-A`) using the sanitized `E134-A` witness.
 - [x] Offline quality gate fixtures fail unsupported claims, generic text, copied style, and missing calculation anchors before display.
+- [x] Add a deterministic live-composer contract (`E136-A`) that accepts saved-chart `ChartFacts` plus approved source/evidence links and blocks display when source evidence, anchors, caveats, or practical next questions are missing.
 - [ ] Build the live AI composer path that consumes real saved-chart `ChartFacts` and literature evidence instead of fixture data.
 - [ ] Add live composer gate tests proving generated reviews cannot display without calculation anchors, source/evidence links, caveats, and practical next questions.
 

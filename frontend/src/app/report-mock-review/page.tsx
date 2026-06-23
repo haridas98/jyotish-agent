@@ -16,6 +16,7 @@ import {
   buildAiReviewGenerationBoundary,
   buildAiReviewGroundedDraftEvaluator,
   buildAiReviewGroundedComposer,
+  buildAiReviewLiveComposerContract,
   buildAiReviewSharedResponseContractSurfaceSummary,
 } from "@/lib/ai-review-quality";
 
@@ -71,6 +72,25 @@ export default function ReportMockReviewPage() {
     audioConsultationBenchmark,
     groundedComposer,
     generationBoundary,
+  );
+  const liveComposerContract = buildAiReviewLiveComposerContract(
+    {
+      settings: { ayanamsa: "lahiri", house_system: "whole_sign", varga_scheme: "parashara" },
+      ascendant: { body: "Lagna", rashi: "Cancer", rashi_index: 4, nakshatra: "Pushya", pada: 2 },
+      grahas: [
+        { body: "Moon", rashi: "Aquarius", rashi_index: 11, nakshatra: "Purva Bhadrapada", pada: 3 },
+        { body: "Jupiter", rashi: "Cancer", rashi_index: 4, nakshatra: "Punarvasu", pada: 4, dignity: "exalted" },
+        { body: "Saturn", rashi: "Capricorn", rashi_index: 10, nakshatra: "Uttara Ashadha", pada: 3, retrograde: true, dignity: "own" },
+      ],
+      panchanga: { tithi: { name: "Ekadashi" }, vara: { name: "Wednesday" }, yoga: { name: "Siddha" }, karana: { name: "Bava" } },
+      dashas: { vimshottari: { mahadashas: [{ lord: "Moon" }] } },
+      vargas: { D9: { placements: [{ body: "Lagna", rashi: "Virgo" }] } },
+      classical: { shadbala: { status: "calculated" }, yogas: { status: "calculated" }, ashtakavarga: { status: "calculated" } },
+    },
+    [
+      { id: "approved-source-house-chain", title: "Approved house-chain evidence", status: "approved" },
+      { id: "approved-source-yoga-weighting", title: "Approved yoga-weighting evidence", status: "approved" },
+    ],
   );
 
   return (
@@ -316,6 +336,33 @@ export default function ReportMockReviewPage() {
             ))}
           </div>
           <span hidden>{consultationMethodContract.statusLabels.join("; ")}</span>
+        </section>
+
+        <section
+          aria-label="Live composer contract"
+          data-ai-review-live-composer-stage="E136-A"
+          style={{ border: "1px solid #d5e3e0", borderRadius: 8, marginTop: 20, padding: 16 }}
+        >
+          <h2 style={{ marginTop: 0 }}>Live composer contract</h2>
+          <p style={{ color: "#53656b", marginTop: 0 }}>
+            Consumes saved-chart facts and approved evidence links before display eligibility.
+          </p>
+          <div style={gridStyle}>
+            <Metric label="Chart facts" value={String(liveComposerContract.chartFacts.length)} />
+            <Metric label="Evidence links" value={String(liveComposerContract.evidenceLinks.length)} />
+            <Metric label="Display eligible" value={liveComposerContract.gate.displayEligible ? "yes" : "no"} />
+            <Metric label="Fixture data used" value={liveComposerContract.aggregate.fixtureDataUsed ? "yes" : "no"} />
+          </div>
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {liveComposerContract.reviewSections.map((section) => (
+              <article key={section.name} style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
+                <strong>{section.name}</strong>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Required facts: {section.requiredFactKinds.join(", ")}</p>
+                <p style={{ color: "#53656b", margin: 0 }}>Required evidence: {section.requiredEvidenceStatus}</p>
+              </article>
+            ))}
+          </div>
+          <span hidden>{liveComposerContract.statusLabels.join("; ")}</span>
         </section>
 
         <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>
