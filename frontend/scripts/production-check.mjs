@@ -172,6 +172,20 @@ if (!navConfig.includes('href: "/dashas"') || !navConfig.includes('label: "Да�
   console.error("Shared navigation config must include /dashas.");
   failed = true;
 }
+const productionCompose = readFileSync("../docker-compose.prod.yml", "utf8");
+const productionEnvExample = readFileSync("../deploy/prod.env.example", "utf8");
+if (!/codex-worker:[\s\S]*profiles:\s*\[[^\]]*"ai"[^\]]*\]/.test(productionCompose)) {
+  console.error("Production codex-worker must be opt-in via the ai Docker profile for calculator-only launch.");
+  failed = true;
+}
+if (!/backend:[\s\S]*CODEX_GENERATION_QUEUE_ENABLED:\s*"\$\{CODEX_GENERATION_QUEUE_ENABLED:-false\}"/.test(productionCompose)) {
+  console.error("Production backend must default CODEX_GENERATION_QUEUE_ENABLED to false.");
+  failed = true;
+}
+if (!/CODEX_GENERATION_QUEUE_ENABLED=false/.test(productionEnvExample)) {
+  console.error("Production env example must document calculator-only CODEX_GENERATION_QUEUE_ENABLED=false.");
+  failed = true;
+}
 for (const check of navigationServerHtmlChecks) {
   if (!existsSync(check.file)) {
     console.error(`Navigation HTML check target is missing for ${check.route}: ${check.file}`);

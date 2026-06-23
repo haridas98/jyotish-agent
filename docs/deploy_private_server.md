@@ -12,7 +12,7 @@
 
 ## Server files
 
-- `docker-compose.prod.yml` - Postgres, Redis, Django gunicorn, Next production.
+- `docker-compose.prod.yml` - Postgres, Redis, Django gunicorn, Next production. The AI `codex-worker` is opt-in via the `ai` Docker profile.
 - `deploy/prod.env.example` - шаблон production `.env`.
 - `deploy/nginx-jyotish-agent.conf` - reverse proxy на `127.0.0.1:18100` и `127.0.0.1:13130`.
 
@@ -29,6 +29,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
 ```
 
+Calculator-only launch is the default. To enable queued AI reports later, set `CODEX_GENERATION_QUEUE_ENABLED=true` in `.env` and start Docker with `--profile ai`.
+
 Then install nginx config, replace `jyotish.example.com`, enable site, and issue TLS if a domain is used.
 
 ## Current production host flow
@@ -39,7 +41,7 @@ Current host `31.76.79.2` is an archive-based systemd deploy, not a git checkout
 - Frontend: `jyotish-agent-frontend.service`, Next on `0.0.0.0:13130`.
 - Backend: `jyotish-agent-backend.service`, gunicorn on `0.0.0.0:18100`.
 - Current systemd host uses local PostgreSQL (`DATABASE_URL=postgres://...@127.0.0.1:5432/jyotish_agent`). SQLite is only an emergency rollback source and must not be used with `DJANGO_DEBUG=false` unless `ALLOW_PRODUCTION_SQLITE=true` is set deliberately.
-- Gunicorn stays at `--workers 1` on the small server; heavy Codex analysis must run through `CODEX_GENERATION_QUEUE_ENABLED=true` and `jyotish-agent-codex-worker.service`.
+- Gunicorn stays at `--workers 1` on the small server. Calculator-only launch should keep `CODEX_GENERATION_QUEUE_ENABLED=false`; heavy Codex analysis later must run through `CODEX_GENERATION_QUEUE_ENABLED=true` and `jyotish-agent-codex-worker.service`.
 - Runtime files to preserve: `.env`, `.tmp/`, `.private_corpus/`, `ephe/`, `backend/.venv/`, `frontend/node_modules/`.
 - PostgreSQL backups: `/srv/jyotish-agent/backups/postgres/latest.dump`; script: `deploy/backup-postgres.sh`.
 - Deploy marker: `/srv/jyotish-agent/app/.deploy-commit`.
@@ -148,7 +150,7 @@ dropdb jyotish_agent_restore_check
 - `VL_DATABASE_URL` must point to the Prabhupada/VL database if source search must work on the server.
 - Swiss/JPL ephemeris files must be placed in `./ephe` if JPL mode is needed.
 - `CODEX_ANALYSIS_PROVIDER=codex_cli` is the active private-build AI path. Qwen, DeepSeek and Nemotron helper services are not part of the runtime anymore.
-- `CODEX_GENERATION_QUEUE_ENABLED=true` should stay enabled so web requests enqueue AI work instead of running Codex CLI inline.
+- For calculator-only launch, keep `CODEX_GENERATION_QUEUE_ENABLED=false`. When AI reports are explicitly enabled later, set it to `true` so web requests enqueue AI work instead of running Codex CLI inline.
 - The backend host/container must be able to run `codex exec` under the same user as gunicorn if AI reports are enabled.
 
 ## Codex CLI analysis

@@ -36,7 +36,7 @@ services:
       PRIVATE_APP_REQUIRE_AUTH: "true"
       DATABASE_URL: postgres://${POSTGRES_USER:-jyotish}:${POSTGRES_PASSWORD:-change-this-postgres-password}@postgres:5432/${POSTGRES_DB:-jyotish_agent}
       REDIS_URL: redis://redis:6379/0
-      CODEX_GENERATION_QUEUE_ENABLED: "true"
+      CODEX_GENERATION_QUEUE_ENABLED: "${CODEX_GENERATION_QUEUE_ENABLED:-false}"
       CODEX_MAX_RUNNING_GENERATIONS_PER_USER: "1"
       JHORA_ACCURACY_REPORT_PATH: /app/.tmp/jhora/sterlitamak-1998/accuracy-report.json
       SWISSEPH_EPHE_PATH: /app/ephe
@@ -57,6 +57,7 @@ services:
     restart: unless-stopped
 
   codex-worker:
+    profiles: ["ai"]
     build:
       context: ./backend
     container_name: jyotish-agent-prod-codex-worker
