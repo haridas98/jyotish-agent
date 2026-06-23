@@ -31,12 +31,12 @@ if (exists("src/astrology/d1-workbench.ts")) {
   const model = read("src/astrology/d1-workbench.ts");
   assert(model.includes('schemaVersion: "d1-workbench.v1"'), "D1 model must expose schemaVersion");
   assert(model.includes("buildD1WorkbenchModel"), "D1 adapter missing");
-  assert(model.includes('CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]'), "Workbench model must expose one supported scope registry");
+  assert(model.includes('CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"]'), "Workbench model must expose one supported scope registry");
   assert(model.includes("buildScopeSource"), "Workbench model must normalize D1, D3, D7, D9, D10 and D12 through one scope source");
   assert(model.includes("vargas?.[scopeId]"), "Varga scopes must come from indexed saved varga payload");
   assert(model.includes("VARGA_SCOPE_TITLES"), "Varga scope labels must come from one title registry");
   assert(model.includes('CHART_WORKBENCH_EXPERT_SCOPE_IDS = ["D30", "D60"]'), "D30 must be marked as astrologer-only scope");
-  for (const code of ["D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]) {
+  for (const code of ["D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"]) {
     assert(model.includes(`${code}:`), `${code} must be registered in the workbench title map`);
   }
   assert(model.includes("specialPoints"), "D1 model must separate special points from grahas");
@@ -61,7 +61,7 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   const inspectorRenderCount = (component.match(/<EntityInspector/g) ?? []).length;
   assert(inspectorRenderCount === 1, "D1 workbench must render exactly one EntityInspector");
   assert(component.includes("specialPointsForHouse"), "D1 workbench must render special points separately from grahas");
-  assert(component.includes("onScopeChange"), "D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24 workbench must switch scope through the same component");
+  assert(component.includes("onScopeChange"), "D1-D60 workbench scopes must switch through the same component");
   assert(component.includes("model.supportedScopes"), "Workbench must render scopes from API-supported registry data");
   assert(component.includes("model.vargaScopes"), "Workbench must group scopes from API varga scope metadata");
   assert(component.includes("availableScopeGroupsForMode"), "Workbench must filter grouped expert-only scopes by reader mode");
@@ -85,7 +85,7 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("chart_viewer_first_check_before_analysis_review=true"), "D1 launch strip must expose first-check-before-analysis status");
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
-  assert(component.includes("last_verified_deploy_commit=815c1f03"), "D1 workbench current launch markers must reference the latest verified production checkpoint");
+  assert(component.includes("last_verified_deploy_commit=cc86830c"), "D1 workbench current launch markers must reference the latest verified production checkpoint");
   assert(component.includes("D1MobileWorkflowNav"), "D1 workbench must expose a mobile chart/table/inspector workflow nav");
   assert(component.includes('data-d1-mobile-workflow-stage="E139-A"'), "D1 mobile workflow nav must expose the E139 marker");
   assert(component.includes("d1-first-viewport-grid"), "D1 workbench must group chart and graha table in the first viewport grid");

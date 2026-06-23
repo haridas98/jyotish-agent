@@ -1,7 +1,7 @@
 const apiBaseUrl = stripTrailingSlash(process.env.JYOTISH_API_BASE_URL || process.argv[2] || "http://127.0.0.1:8000");
 const frontendBaseUrl = stripTrailingSlash(process.env.JYOTISH_FRONTEND_BASE_URL || process.argv[3] || "");
 const requestTimeoutMs = positiveInt(process.env.JYOTISH_SMOKE_TIMEOUT_MS, 30000);
-const requiredScopes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"];
+const requiredScopes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"];
 const jar = createCookieJar();
 
 const username = `launch_smoke_${Date.now()}_${Math.floor(Math.random() * 1000)}`;

@@ -1088,8 +1088,9 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert response.data["supportedModes"] == ["novice", "astrologer"]
     assert response.data["entityInspectorCount"] == 1
     assert response.data["clickTargets"] == {"houses": 12, "rashis": 12, "grahas": 1, "specialPoints": 1}
+    expected_supported_scopes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"]
     assert response.data["forbiddenScopesPresent"] == {"D60": False, "AI": False, "rawEvidence": False}
-    assert response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
+    assert response.data["supportedScopes"] == expected_supported_scopes
     assert response.data["expertOnlyScopes"] == ["D30", "D60"]
     assert response.data["methodId"] == "varga.parashara_shodasha.v1"
     assert response.data["methodVersion"] == "1"
@@ -1122,7 +1123,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert d3_response.data["rashiCount"] == 12
     assert d3_response.data["grahaCount"] == 1
     assert d3_response.data["specialPointCount"] == 1
-    assert d3_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
+    assert d3_response.data["supportedScopes"] == expected_supported_scopes
 
     d7_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope=d7")
     assert d7_response.status_code == 200
@@ -1131,7 +1132,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
     assert d7_response.data["rashiCount"] == 12
     assert d7_response.data["grahaCount"] == 1
     assert d7_response.data["specialPointCount"] == 1
-    assert d7_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
+    assert d7_response.data["supportedScopes"] == expected_supported_scopes
 
     for scope, scope_id in (("d2", "D2"), ("d4", "D4"), ("d16", "D16"), ("d20", "D20"), ("d24", "D24"), ("d30", "D30")):
         scope_response = public_client.get(f"/api/dev/d1-workbench-check?token=dev-token&chart_id={profile.id}&scope={scope}")
@@ -1141,7 +1142,7 @@ def test_dev_d1_workbench_check_returns_summary_with_token(user):
         assert scope_response.data["rashiCount"] == 12
         assert scope_response.data["grahaCount"] == 1
         assert scope_response.data["specialPointCount"] == 1
-        assert scope_response.data["supportedScopes"] == ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"]
+        assert scope_response.data["supportedScopes"] == expected_supported_scopes
         assert scope_response.data["warnings"] == []
         if scope_id == "D30":
             assert scope_response.data["methodId"] == "varga.d30.parashara_unequal.v1"

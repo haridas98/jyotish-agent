@@ -45,6 +45,7 @@ VARGA_METHOD_REGISTRY = {
         "D27",
         "Bhamsha",
         27,
+        True,
         source_anchor="D27 source review pending",
         parity_witness="JHora fixture audit",
     ),
@@ -59,8 +60,8 @@ VARGA_METHOD_REGISTRY = {
         expert_only=True,
         category="expert",
     ),
-    "D40": VargaMethod("D40", "Khavedamsha", 40),
-    "D45": VargaMethod("D45", "Akshavedamsha", 45),
+    "D40": VargaMethod("D40", "Khavedamsha", 40, True),
+    "D45": VargaMethod("D45", "Akshavedamsha", 45, True),
     "D60": VargaMethod(
         "D60",
         "Shashtyamsha",

@@ -87,7 +87,7 @@ $env:JYOTISH_FRONTEND_BASE_URL = "http://127.0.0.1:3131"
 npm.cmd run smoke:calculator-launch
 ```
 
-The smoke registers a temporary user, creates a Sterlitamak chart, runs saved-profile calculation, checks D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24/D30/D60 workbench payloads, and verifies `/charts/new` plus `/charts/<id>` respond.
+The smoke registers a temporary user, creates a Sterlitamak chart, runs saved-profile calculation, checks D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24/D27/D30/D40/D45/D60 workbench payloads, and verifies `/charts/new` plus `/charts/<id>` respond.
 
 Read-only production smoke after a deploy checkpoint:
 

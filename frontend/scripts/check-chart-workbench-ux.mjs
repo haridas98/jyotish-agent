@@ -92,7 +92,7 @@ for (const required of [
   "First check",
   "chart_viewer_default_tab=grahas",
   "chart_viewer_all_planets_visible_first_view=true",
-  "last_verified_deploy_commit=815c1f03",
+  "last_verified_deploy_commit=cc86830c",
   "D1MobileWorkflowNav",
   "data-d1-mobile-workflow-stage",
   "chart_viewer_mobile_workflow_nav=true",

@@ -1,7 +1,7 @@
 import type { EntityId } from "@/astrology";
 import type { BirthChart, ChartCalculationRecord, ChartProfile, GrahaPosition, HousePlacement, JyotishUserSettings, VargaAccuracyGate, VargaPlacement, VargaScopeCategory, VargaScopeMetadata } from "@/lib/api";
 
-export const CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D30", "D60"] as const;
+export const CHART_WORKBENCH_SCOPE_IDS = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"] as const;
 export const CHART_WORKBENCH_EXPERT_SCOPE_IDS = ["D30", "D60"] as const;
 export type ChartWorkbenchScopeId = (typeof CHART_WORKBENCH_SCOPE_IDS)[number];
 export type D1ChartStyle = "north" | "south";
@@ -203,7 +203,10 @@ const VARGA_SCOPE_TITLES: Record<Exclude<ChartWorkbenchScopeId, "D1">, string> =
   D16: "D16 Shodashamsha",
   D20: "D20 Vimshamsha",
   D24: "D24 Siddhamsha",
+  D27: "D27 Bhamsha",
   D30: "D30 Trimsamsha",
+  D40: "D40 Khavedamsha",
+  D45: "D45 Akshavedamsha",
   D60: "D60 Shashtyamsha",
 };
 

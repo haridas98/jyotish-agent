@@ -69,7 +69,10 @@ def test_varga_method_registry_marks_workbench_ready_scopes():
         "D16",
         "D20",
         "D24",
+        "D27",
         "D30",
+        "D40",
+        "D45",
         "D60",
     )
     assert VARGA_METHOD_REGISTRY["D30"].workbench_ready
