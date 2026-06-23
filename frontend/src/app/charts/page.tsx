@@ -7,6 +7,7 @@ import { deleteChartProfile, fetchCurrentUser, listChartProfiles, type ChartProf
 
 const quickActions = [
   { label: "Создать карту", href: "/charts/new", kind: "primary" },
+  { label: "Launch status", href: "/launch-status" },
   { label: "Люди", href: "/people" },
   { label: "Обзор", href: "/reports" },
   { label: "Взаимодействия", href: "/interactions" },

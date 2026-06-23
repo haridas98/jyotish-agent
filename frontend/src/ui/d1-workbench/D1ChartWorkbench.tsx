@@ -16,6 +16,8 @@ import {
 } from "@/astrology/d1-workbench";
 import { EntityInspector } from "@/ui/components/EntityInspector";
 
+const PRODUCTION_HEALTH_DEPLOY_MARKER = "production_deploy_commit_checked_by_health=true";
+
 type D1ChartWorkbenchProps = {
   model: D1WorkbenchModel;
   onRecalculate?: () => void | Promise<void>;
@@ -287,7 +289,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
           <div id="d1-data-panel" className="d1-data-panel-anchor d1-data-stack">
             <ChartDataTabs model={model} state={workbenchState} onSelect={setActiveEntityId} />
           </div>
-          <span hidden>E141-A; chart_viewer_chart_and_graha_table_same_viewport=true; chart_viewer_inspector_same_viewport=true; chart_viewer_first_viewport_scroll_debt_reduced=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
+          <span hidden>E141-A; chart_viewer_chart_and_graha_table_same_viewport=true; chart_viewer_inspector_same_viewport=true; chart_viewer_first_viewport_scroll_debt_reduced=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
         </div>
         <aside id="d1-inspector-panel" className="d1-inspector-panel">
           <EntityInspector entityId={workbenchState.activeEntityId} onClose={() => setActiveEntityId(null)} />
@@ -311,8 +313,8 @@ function D1LaunchVisibilityStrip({ model }: { model: D1WorkbenchModel }) {
       <span><strong>Technical desk</strong>chart, grahas, houses, nakshatras, technical payload, inspector</span>
       <span><strong>D-scopes</strong>{dScopeCopy}</span>
       <span><strong>First check</strong>{model.stats.grahaCount} grahas + {model.stats.specialPointCount} points visible before analysis review</span>
-      <span><strong>Production</strong>8e5d269f verified; calculations unchanged in this UI batch</span>
-      <span hidden>E140-A; chart_viewer_launch_visibility_strip=true; chart_viewer_visible_technical_scope_summary=true; chart_viewer_d_scope_coverage_summary=true; chart_viewer_first_check_before_analysis_review=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
+      <span><strong>Production</strong>health deploy_commit checked by read-only smoke</span>
+      <span hidden>E140-A; chart_viewer_launch_visibility_strip=true; chart_viewer_visible_technical_scope_summary=true; chart_viewer_d_scope_coverage_summary=true; chart_viewer_first_check_before_analysis_review=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </div>
   );
 }
@@ -375,7 +377,7 @@ function D1ScopeCoverageMatrix({
           </div>
         ))}
       </div>
-      <span hidden>E143-A; chart_viewer_all_d_scopes_matrix_visible=true; chart_viewer_scope_matrix_quick_switch=true; chart_viewer_scope_matrix_availability_visible=true; chart_viewer_scope_matrix_grouped_by_use=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
+      <span hidden>E143-A; chart_viewer_all_d_scopes_matrix_visible=true; chart_viewer_scope_matrix_quick_switch=true; chart_viewer_scope_matrix_availability_visible=true; chart_viewer_scope_matrix_grouped_by_use=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </section>
   );
 }
@@ -401,7 +403,7 @@ function D1ActiveScopeReviewStrip({
       <span><strong>Gate</strong>{activeAccuracyGate?.status ?? "standard"}{activeAccuracyGate?.reason ? ` / ${activeAccuracyGate.reason}` : ""}</span>
       <span><strong>Mode</strong>{activeScopeExpertOnly ? `expert-only / ${mode}` : `standard / ${mode}`}</span>
       <span><strong>Calculation</strong>{model.calculation.status} / {model.calculation.version}</span>
-      <span hidden>E144-A; chart_viewer_active_scope_method_visible=true; chart_viewer_active_scope_gate_visible=true; chart_viewer_active_scope_placement_count_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
+      <span hidden>E144-A; chart_viewer_active_scope_method_visible=true; chart_viewer_active_scope_gate_visible=true; chart_viewer_active_scope_placement_count_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </section>
   );
 }
@@ -431,7 +433,7 @@ function D1TechnicalPayloadIndex({ model, onOpenTechnical }: { model: D1Workbenc
           </span>
         ))}
       </div>
-      <span hidden>E145-A E146-A; chart_viewer_technical_payload_index_visible=true; chart_viewer_payload_section_counts_visible=true; chart_viewer_payload_index_opens_technical_tab=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
+      <span hidden>E145-A E146-A; chart_viewer_technical_payload_index_visible=true; chart_viewer_payload_section_counts_visible=true; chart_viewer_payload_index_opens_technical_tab=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </section>
   );
 }
@@ -442,7 +444,7 @@ function D1MobileWorkflowNav({ activeTab, onGrahaJump }: { activeTab: D1DataTab;
       <a href="#d1-chart-panel"><strong>Chart</strong><span>D1</span></a>
       <a href="#d1-data-panel" className={activeTab === "grahas" ? "active" : ""} onClick={onGrahaJump}><strong>Grahas</strong><span>All rows</span></a>
       <a href="#d1-inspector-panel"><strong>Inspect</strong><span>Entity</span></a>
-      <span hidden>E139-A; chart_viewer_mobile_workflow_nav=true; chart_viewer_mobile_chart_table_inspector_anchors=true; chart_viewer_mobile_graha_rows_compact=true; chart_viewer_mobile_no_wide_table_primary=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
+      <span hidden>E139-A; chart_viewer_mobile_workflow_nav=true; chart_viewer_mobile_chart_table_inspector_anchors=true; chart_viewer_mobile_graha_rows_compact=true; chart_viewer_mobile_no_wide_table_primary=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </nav>
   );
 }
@@ -464,8 +466,8 @@ function D1TechnicalContextStrip({
       <span><strong>Coverage</strong>{availableVargas}/{model.technical.vargas.length} vargas / {model.technical.dashas.length} dashas</span>
       <span><strong>Calculation</strong>{model.calculation.status} / {model.calculation.version}</span>
       <span><strong>Gate</strong>{activeAccuracyGate?.status ?? "standard"}</span>
-      <span hidden>E137-A; d1_technical_context_strip_present=true; chart_viewer_scope_coverage_visible=true; chart_viewer_calculation_status_visible=true; chart_viewer_accuracy_gate_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
-      <span hidden>E138-A; chart_viewer_default_tab=grahas; chart_viewer_all_planets_visible_first_view=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
+      <span hidden>E137-A; d1_technical_context_strip_present=true; chart_viewer_scope_coverage_visible=true; chart_viewer_calculation_status_visible=true; chart_viewer_accuracy_gate_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
+      <span hidden>E138-A; chart_viewer_default_tab=grahas; chart_viewer_all_planets_visible_first_view=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </div>
   );
 }

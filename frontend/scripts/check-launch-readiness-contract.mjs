@@ -21,6 +21,8 @@ const aiReviewQuality = read("src/lib/ai-review-quality.ts");
 const aiReviewQualityCheck = read("scripts/check-ai-review-quality.mjs");
 const reportsPage = read("src/app/reports/page.tsx");
 const mockReviewPage = read("src/app/report-mock-review/page.tsx");
+const chartsPage = read("src/app/charts/page.tsx");
+const launchStatusPage = read("src/app/launch-status/page.tsx");
 
 for (const marker of [
   "test:launch-readiness",
@@ -77,16 +79,40 @@ for (const marker of [
   "validateTechnicalPayload",
   "/charts/${profile.id}/edit",
   "/charts/demo-d1",
+  "/launch-status",
   "chart-detail-autocalculate",
   "assertPageContains",
   "checkedFrontendPages",
   "data-d1-technical-payload-index-stage",
   "chart_viewer_payload_index_opens_technical_tab=true",
+  "data-launch-status-stage",
   "classical shadbala payload missing",
   "classical ashtakavarga payload missing",
   "classical yogas payload missing",
 ]) {
   assert(calculatorSmoke.includes(marker), `calculator launch smoke missing marker: ${marker}`);
+}
+
+for (const marker of [
+  "/launch-status",
+  "Launch status",
+]) {
+  assert(chartsPage.includes(marker), `/charts missing launch status entry marker: ${marker}`);
+}
+
+for (const marker of [
+  'data-launch-status-stage="E148-A"',
+  "launch_ready_technical_chart_service=true",
+  "d_scope_visibility=D1-D60",
+  "ai_review_quality_contract_gated=true",
+  "jh_pl_witness_only=true",
+  "ocr_literature_track_separate=true",
+  "production_deploy_checkpoint_visible=true",
+  "production_deploy_commit_checked_by_health=true",
+  "smoke:calculator-launch",
+  "smoke:production-live",
+]) {
+  assert(launchStatusPage.includes(marker), `/launch-status missing launch status marker: ${marker}`);
 }
 
 for (const marker of [

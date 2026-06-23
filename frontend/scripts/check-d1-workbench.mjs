@@ -113,7 +113,8 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes('href="#d1-technical-tab"'), "D1 technical payload index must link to the technical tab anchor");
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
-  assert(component.includes("last_verified_deploy_commit=8e5d269f"), "D1 workbench current launch markers must reference the latest verified production checkpoint");
+  assert(component.includes("production_deploy_commit_checked_by_health=true"), "D1 workbench launch markers must rely on production health deploy_commit checks, not stale hardcoded commits");
+  assert(!component.includes("last_verified_deploy_commit=8e5d269f"), "D1 workbench launch markers must not keep the stale 8e5d269f checkpoint");
   assert(component.includes("D1MobileWorkflowNav"), "D1 workbench must expose a mobile chart/table/inspector workflow nav");
   assert(component.includes('data-d1-mobile-workflow-stage="E139-A"'), "D1 mobile workflow nav must expose the E139 marker");
   assert(component.includes("d1-first-viewport-grid"), "D1 workbench must group chart and graha table in the first viewport grid");

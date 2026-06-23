@@ -75,6 +75,7 @@ if (frontendBaseUrl) {
     `/charts/${profile.id}`,
     `/charts/${profile.id}/edit`,
     "/charts/demo-d1",
+    "/launch-status",
   ];
   await assertPageOk(`${frontendBaseUrl}/charts/new`, "new chart page");
   const chartDetailHtml = await assertPageOk(`${frontendBaseUrl}/charts/${profile.id}`, "chart detail page");
@@ -85,6 +86,12 @@ if (frontendBaseUrl) {
     'data-d1-technical-payload-index-stage="E145-A"',
     "chart_viewer_payload_index_opens_technical_tab=true",
   ], "demo chart detail page");
+  const launchStatusHtml = await assertPageOk(`${frontendBaseUrl}/launch-status`, "launch status page");
+  assertPageContains(launchStatusHtml, [
+    'data-launch-status-stage="E148-A"',
+    "launch_ready_technical_chart_service=true",
+    "production_deploy_checkpoint_visible=true",
+  ], "launch status page");
 }
 
 console.log(
