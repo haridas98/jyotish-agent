@@ -9,7 +9,7 @@ import {
   runMockAiDryRun,
 } from "@/astrology";
 import { debugRoutesEnabled } from "@/app/debug-route-guard";
-import { buildAiReviewSharedResponseContractSurfaceSummary } from "@/lib/ai-review-quality";
+import { buildAiReviewCalculationPromptPacket, buildAiReviewSharedResponseContractSurfaceSummary } from "@/lib/ai-review-quality";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +54,7 @@ export default function ReportMockReviewPage() {
   const dryRun = runMockAiDryRun(request);
   const workspace = buildAiHumanReviewWorkspace({ eligibility, request, dryRun });
   const sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("report-mock-review");
+  const calculationPromptPacket = buildAiReviewCalculationPromptPacket(sharedResponseContract);
 
   return (
     <main style={pageStyle}>
@@ -120,6 +121,35 @@ export default function ReportMockReviewPage() {
             Failing draft coverage: generic without anchors; advanced overclaim without computed tables; advice without practical next question.
           </p>
           <span hidden>{sharedResponseContract.statusLabels.join("; ")}</span>
+        </section>
+
+        <section
+          aria-label="Calculation evidence packet"
+          data-ai-review-calculation-packet-stage="E130-A"
+          style={{ border: "1px solid #d5e3e0", borderRadius: 8, marginTop: 20, padding: 16 }}
+        >
+          <h2 style={{ marginTop: 0 }}>Calculation evidence packet</h2>
+          <p style={{ color: "#53656b", marginTop: 0 }}>
+            Sanitized benchmark cases guide calculation focus; raw export text is not committed.
+          </p>
+          <div style={gridStyle}>
+            <Metric label="Evidence groups" value={String(calculationPromptPacket.evidenceGroups.length)} />
+            <Metric label="Sanitized benchmark cases" value={String(calculationPromptPacket.sanitizedBenchmarkCases.length)} />
+            <Metric label="Prompt packet" value="not final output" />
+          </div>
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {calculationPromptPacket.evidenceGroups.map((group) => (
+              <article key={group.id} style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
+                <strong>Evidence group: {group.evidenceGroup}</strong>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Why it matters: {group.whyItMatters}</p>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Required anchor type: {group.requiredAnchorType}</p>
+                <p style={{ color: "#53656b", margin: 0 }}>
+                  Benchmark-covered status: {group.benchmarkCovered ? "covered" : "missing"}
+                </p>
+              </article>
+            ))}
+          </div>
+          <span hidden>{calculationPromptPacket.statusLabels.join("; ")}</span>
         </section>
 
         <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>

@@ -408,6 +408,27 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-calculation-packet" data-ai-review-calculation-packet-stage="E130-A">
+          <div className="ai-review-calculation-packet-head">
+            <strong>Calculation evidence packet</strong>
+            <span>Sanitized benchmark cases guide calculation focus; raw export text is not committed.</span>
+          </div>
+          <div className="ai-review-calculation-grid" role="list">
+            {aiReviewQualityLab.calculationPromptPacket.evidenceGroups.map((group) => (
+              <section key={group.id} role="listitem">
+                <strong>Evidence group: {group.evidenceGroup}</strong>
+                <span>Why it matters: {group.whyItMatters}</span>
+                <span>Required anchor type: {group.requiredAnchorType}</span>
+                <span>Benchmark-covered status: {group.benchmarkCovered ? "covered" : "missing"}</span>
+              </section>
+            ))}
+          </div>
+          <div className="ai-review-sanitized-benchmarks">
+            <span>sanitized benchmark cases: {aiReviewQualityLab.calculationPromptPacket.sanitizedBenchmarkCases.length}</span>
+            <span>calculation evidence groups: {aiReviewQualityLab.calculationPromptPacket.evidenceGroups.length}</span>
+            <span>prompt packet not final output</span>
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

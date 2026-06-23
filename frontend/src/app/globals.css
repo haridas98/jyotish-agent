@@ -1120,6 +1120,64 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.ai-review-calculation-packet {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d7e5e8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-calculation-packet-head {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-review-calculation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-review-calculation-grid section {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.ai-review-sanitized-benchmarks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ai-review-sanitized-benchmarks span {
+  padding: 4px 7px;
+  border: 1px solid #d5e3e6;
+  border-radius: 999px;
+  background: #f8fbfc;
+}
+
+.ai-review-calculation-packet strong {
+  color: var(--green);
+}
+
+.ai-review-calculation-packet span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
@@ -1162,6 +1220,10 @@ body .chart-profile-form textarea {
   }
 
   .ai-review-response-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-calculation-grid {
     grid-template-columns: 1fr;
   }
 }

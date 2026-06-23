@@ -51,6 +51,7 @@ for (const marker of [
   "P127-A",
   "E128-A",
   "P129-A",
+  "E130-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -62,6 +63,7 @@ for (const marker of [
   "ai_review_narrative_rubric_stage=P127-A",
   "ai_review_response_contract_stage=E128-A",
   "ai_review_response_contract_shared_stage=P129-A",
+  "ai_review_calculation_packet_stage=E130-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -154,6 +156,26 @@ for (const marker of [
   "ai_review_response_contract_shared_overclaim_repair=true",
   "ai_review_response_contract_shared_missing_question_repair=true",
   "ai_review_response_contract_product_gate_not_final_output=true",
+  "ai_review_calculation_evidence_packet_present=true",
+  "ai_review_calculation_evidence_groups=6",
+  "ai_review_calculation_evidence_groups_minimum_met=true",
+  "ai_review_calculation_group_chart_placements=true",
+  "ai_review_calculation_group_lord_relationships=true",
+  "ai_review_calculation_group_dignity_strength=true",
+  "ai_review_calculation_group_yoga_candidates=true",
+  "ai_review_calculation_group_dasha_transit_timing=true",
+  "ai_review_calculation_group_tension_flags=true",
+  "ai_review_sanitized_benchmark_cases_present=true",
+  "ai_review_sanitized_benchmark_cases=3",
+  "ai_review_sanitized_benchmark_cases_minimum_met=true",
+  "ai_review_benchmark_cases_have_focus_accent_question=true",
+  "ai_review_benchmark_raw_export_text_committed=false",
+  "ai_review_prompt_packet_uses_shared_response_contract=true",
+  "ai_review_prompt_packet_uses_assertion_ledger=true",
+  "ai_review_prompt_packet_uses_calculation_evidence=true",
+  "ai_review_prompt_packet_uses_sanitized_benchmarks=true",
+  "ai_review_prompt_packet_visible=true",
+  "ai_review_prompt_packet_not_final_output=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -267,6 +289,18 @@ for (const label of [
   "Shared response contract",
   "pre-generation quality gate, not final AI text",
   "Repair coverage status",
+  "Calculation evidence packet",
+  "chart placements",
+  "house/lord relationships",
+  "dignity/strength notes",
+  "yoga or combination candidates",
+  "dasha/transit timing anchors",
+  "contradiction/tension flags",
+  "Evidence group",
+  "Why it matters",
+  "Required anchor type",
+  "Benchmark-covered status",
+  "sanitized benchmark cases",
   "Shadbala",
   "Ashtakavarga",
   "Avastha",
@@ -294,6 +328,7 @@ assert(typeof helper.buildAiReviewAssertionLedger === "function", "buildAiReview
 assert(typeof helper.buildAiReviewNarrativeQualityRubric === "function", "buildAiReviewNarrativeQualityRubric must be exported.");
 assert(typeof helper.buildAiReviewResponseContract === "function", "buildAiReviewResponseContract must be exported.");
 assert(typeof helper.buildAiReviewSharedResponseContractSurfaceSummary === "function", "buildAiReviewSharedResponseContractSurfaceSummary must be exported.");
+assert(typeof helper.buildAiReviewCalculationPromptPacket === "function", "buildAiReviewCalculationPromptPacket must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -309,6 +344,7 @@ const narrativeRubric = helper.buildAiReviewNarrativeQualityRubric();
 const responseContract = helper.buildAiReviewResponseContract();
 const reportsSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSummary("reports");
 const mockSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSummary("report-mock-review");
+const calculationPromptPacket = helper.buildAiReviewCalculationPromptPacket();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -483,6 +519,34 @@ assert(page.includes("sharedResponseContract"), "/reports must use shared respon
 assert(mockReviewPage.includes("buildAiReviewSharedResponseContractSurfaceSummary"), "/report-mock-review must use shared response-contract helper.");
 assert(mockReviewPage.includes('data-ai-review-response-contract-shared-stage="P129-A"'), "/report-mock-review must expose P129 hook.");
 assert(mockReviewPage.includes("Shared response contract"), "/report-mock-review must show shared response contract copy.");
+assert(calculationPromptPacket.stage === "E130-A", "Calculation prompt packet stage must be E130-A.");
+assert(calculationPromptPacket.statusLabels.includes("ai_review_calculation_packet_stage=E130-A"), "Calculation prompt packet labels missing E130 stage.");
+assert(calculationPromptPacket.evidenceGroups.length >= 6, "Calculation evidence packet must include at least six evidence groups.");
+assert(calculationPromptPacket.aggregate.evidenceGroupCount >= 6, "Calculation evidence group aggregate must be at least six.");
+assert(calculationPromptPacket.aggregate.benchmarkCaseCount >= 3, "Sanitized benchmark case aggregate must be at least three.");
+assert(calculationPromptPacket.aggregate.everyBenchmarkHasFocusAccentQuestion === true, "Each sanitized benchmark must include focus, accent, and question pattern.");
+assert(calculationPromptPacket.aggregate.rawExportTextCommitted === false, "Raw export text must not be committed.");
+assert(calculationPromptPacket.aggregate.usesSharedResponseContract === true, "Prompt packet must use shared response contract.");
+assert(calculationPromptPacket.aggregate.usesAssertionLedger === true, "Prompt packet must use assertion ledger.");
+assert(calculationPromptPacket.aggregate.usesCalculationEvidence === true, "Prompt packet must use calculation evidence.");
+assert(calculationPromptPacket.aggregate.usesSanitizedBenchmarks === true, "Prompt packet must use sanitized benchmarks.");
+for (const groupId of ["chart_placements", "lord_relationships", "dignity_strength", "yoga_candidates", "dasha_transit_timing", "tension_flags"]) {
+  assert(calculationPromptPacket.evidenceGroups.some((group) => group.id === groupId), `Missing calculation evidence group: ${groupId}`);
+}
+assert(calculationPromptPacket.sanitizedBenchmarkCases.length >= 3, "At least three sanitized benchmark cases required.");
+assert(
+  calculationPromptPacket.sanitizedBenchmarkCases.every(
+    (item) => item.calculationFocus && item.interpretiveAccent && item.questionPattern && item.qualityRisk,
+  ),
+  "Every sanitized benchmark case must include calculation focus, accent, question pattern, and risk.",
+);
+const serializedBenchmarkCases = JSON.stringify(calculationPromptPacket.sanitizedBenchmarkCases);
+for (const leaked of ["Haridev", "Seva", "ChatExport", "message default clearfix", "from_name", "2026-06-23", "+", "@"]) {
+  assert(!serializedBenchmarkCases.includes(leaked), `Sanitized benchmark case leaked raw/private export token: ${leaked}`);
+}
+assert(page.includes("calculationPromptPacket"), "/reports must render calculation prompt packet.");
+assert(mockReviewPage.includes("calculationPromptPacket"), "/report-mock-review must render calculation prompt packet.");
+assert(mockReviewPage.includes('data-ai-review-calculation-packet-stage="E130-A"'), "/report-mock-review must expose E130 hook.");
 
 for (const forbidden of [
   "fetch(",

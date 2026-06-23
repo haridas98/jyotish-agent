@@ -331,6 +331,52 @@ export type AiReviewSharedResponseContractSurfaceSummary = {
   statusLabels: string[];
 };
 
+export type AiReviewCalculationEvidenceGroupId =
+  | "chart_placements"
+  | "lord_relationships"
+  | "dignity_strength"
+  | "yoga_candidates"
+  | "dasha_transit_timing"
+  | "tension_flags";
+
+export type AiReviewCalculationEvidenceGroup = {
+  id: AiReviewCalculationEvidenceGroupId;
+  evidenceGroup: string;
+  whyItMatters: string;
+  requiredAnchorType: string;
+  benchmarkCovered: boolean;
+};
+
+export type AiReviewSanitizedBenchmarkCase = {
+  id: string;
+  calculationFocus: string;
+  interpretiveAccent: string;
+  questionPattern: string;
+  qualityRisk: string;
+};
+
+export type AiReviewCalculationPromptPacket = {
+  stage: "E130-A";
+  sharedResponseContract: AiReviewSharedResponseContractSurfaceSummary;
+  assertionLedger: AiReviewAssertionLedger;
+  evidenceGroups: AiReviewCalculationEvidenceGroup[];
+  sanitizedBenchmarkCases: AiReviewSanitizedBenchmarkCase[];
+  aggregate: {
+    evidenceGroupCount: number;
+    evidenceGroupsMinimumMet: boolean;
+    benchmarkCaseCount: number;
+    benchmarkCasesMinimumMet: boolean;
+    everyBenchmarkHasFocusAccentQuestion: boolean;
+    rawExportTextCommitted: false;
+    usesSharedResponseContract: boolean;
+    usesAssertionLedger: boolean;
+    usesCalculationEvidence: boolean;
+    usesSanitizedBenchmarks: boolean;
+    localOnlyNotFinalOutput: true;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -1375,6 +1421,130 @@ export function buildAiReviewSharedResponseContractSurfaceSummary(
   };
 }
 
+export function buildAiReviewCalculationPromptPacket(
+  sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("reports"),
+  assertionLedger = buildAiReviewAssertionLedger(),
+): AiReviewCalculationPromptPacket {
+  const evidenceGroups: AiReviewCalculationEvidenceGroup[] = [
+    {
+      id: "chart_placements",
+      evidenceGroup: "chart placements",
+      whyItMatters: "Forces the review to cite actual graha, sign, house, and lagna facts before interpretation.",
+      requiredAnchorType: "computed placement anchor",
+      benchmarkCovered: true,
+    },
+    {
+      id: "lord_relationships",
+      evidenceGroup: "house/lord relationships",
+      whyItMatters: "Connects house ownership and placement before life-domain conclusions.",
+      requiredAnchorType: "house lord relationship anchor",
+      benchmarkCovered: true,
+    },
+    {
+      id: "dignity_strength",
+      evidenceGroup: "dignity/strength notes",
+      whyItMatters: "Separates simple sign dignity from gated advanced strength tables.",
+      requiredAnchorType: "computed dignity or strength-note anchor",
+      benchmarkCovered: true,
+    },
+    {
+      id: "yoga_candidates",
+      evidenceGroup: "yoga or combination candidates",
+      whyItMatters: "Makes combination claims explicit candidates instead of loose praise.",
+      requiredAnchorType: "computed combination candidate anchor",
+      benchmarkCovered: true,
+    },
+    {
+      id: "dasha_transit_timing",
+      evidenceGroup: "dasha/transit timing anchors",
+      whyItMatters: "Blocks timing claims unless a period or transit anchor is present.",
+      requiredAnchorType: "computed timing anchor",
+      benchmarkCovered: true,
+    },
+    {
+      id: "tension_flags",
+      evidenceGroup: "contradiction/tension flags",
+      whyItMatters: "Preserves useful contrast, such as initiative versus restraint, instead of generic positivity.",
+      requiredAnchorType: "derived tension flag anchor",
+      benchmarkCovered: true,
+    },
+  ];
+  const sanitizedBenchmarkCases: AiReviewSanitizedBenchmarkCase[] = [
+    {
+      id: "benchmark_case_01",
+      calculationFocus: "10th-house fire-sign career concentration with timing request",
+      interpretiveAccent: "public-role pressure, initiative, duty, and delayed authority",
+      questionPattern: "Ask which career decision should be tested against current dasha or divisional support.",
+      qualityRisk: "Overconfident career prediction without timing anchor.",
+    },
+    {
+      id: "benchmark_case_02",
+      calculationFocus: "relationship-layer contrast between natal promise and divisional confirmation",
+      interpretiveAccent: "distinguish attraction, commitment layer, and maturity caveat",
+      questionPattern: "Ask which relationship layer needs D9 or compatibility evidence before synthesis.",
+      qualityRisk: "Romantic certainty without divisional corroboration.",
+    },
+    {
+      id: "benchmark_case_03",
+      calculationFocus: "speech/resources axis with digital-asset or family-value question",
+      interpretiveAccent: "separate material appetite, speech risk, and practical boundary-setting",
+      questionPattern: "Ask which resource decision or communication pattern should be examined first.",
+      qualityRisk: "Generic finance advice without chart-fact anchor.",
+    },
+  ];
+
+  return {
+    stage: "E130-A",
+    sharedResponseContract,
+    assertionLedger,
+    evidenceGroups,
+    sanitizedBenchmarkCases,
+    aggregate: {
+      evidenceGroupCount: evidenceGroups.length,
+      evidenceGroupsMinimumMet: evidenceGroups.length >= 6,
+      benchmarkCaseCount: sanitizedBenchmarkCases.length,
+      benchmarkCasesMinimumMet: sanitizedBenchmarkCases.length >= 3,
+      everyBenchmarkHasFocusAccentQuestion: sanitizedBenchmarkCases.every(
+        (item) => item.calculationFocus.length > 0 && item.interpretiveAccent.length > 0 && item.questionPattern.length > 0,
+      ),
+      rawExportTextCommitted: false,
+      usesSharedResponseContract: sharedResponseContract.stage === "P129-A",
+      usesAssertionLedger: assertionLedger.stage === "E126-A",
+      usesCalculationEvidence: evidenceGroups.length >= 6,
+      usesSanitizedBenchmarks: sanitizedBenchmarkCases.length >= 3,
+      localOnlyNotFinalOutput: true,
+    },
+    statusLabels: [
+      "E130-A",
+      "ai_review_calculation_packet_stage=E130-A",
+      "ai_review_calculation_evidence_packet_present=true",
+      "ai_review_calculation_evidence_groups=6",
+      "ai_review_calculation_evidence_groups_minimum_met=true",
+      "ai_review_calculation_group_chart_placements=true",
+      "ai_review_calculation_group_lord_relationships=true",
+      "ai_review_calculation_group_dignity_strength=true",
+      "ai_review_calculation_group_yoga_candidates=true",
+      "ai_review_calculation_group_dasha_transit_timing=true",
+      "ai_review_calculation_group_tension_flags=true",
+      "ai_review_sanitized_benchmark_cases_present=true",
+      "ai_review_sanitized_benchmark_cases=3",
+      "ai_review_sanitized_benchmark_cases_minimum_met=true",
+      "ai_review_benchmark_cases_have_focus_accent_question=true",
+      "ai_review_benchmark_raw_export_text_committed=false",
+      "ai_review_prompt_packet_uses_shared_response_contract=true",
+      "ai_review_prompt_packet_uses_assertion_ledger=true",
+      "ai_review_prompt_packet_uses_calculation_evidence=true",
+      "ai_review_prompt_packet_uses_sanitized_benchmarks=true",
+      "ai_review_prompt_packet_visible=true",
+      "ai_review_prompt_packet_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -1388,6 +1558,7 @@ export function buildAiReviewQualityLabSummary() {
   const narrativeRubric = buildAiReviewNarrativeQualityRubric(assertionLedger);
   const responseContract = buildAiReviewResponseContract(assertionLedger, narrativeRubric);
   const sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("reports", responseContract);
+  const calculationPromptPacket = buildAiReviewCalculationPromptPacket(sharedResponseContract, assertionLedger);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -1413,6 +1584,7 @@ export function buildAiReviewQualityLabSummary() {
       ...narrativeRubric.statusLabels,
       ...responseContract.statusLabels,
       ...sharedResponseContract.statusLabels,
+      ...calculationPromptPacket.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -1438,5 +1610,6 @@ export function buildAiReviewQualityLabSummary() {
     narrativeRubric,
     responseContract,
     sharedResponseContract,
+    calculationPromptPacket,
   };
 }
