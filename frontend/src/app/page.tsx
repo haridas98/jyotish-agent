@@ -9400,6 +9400,11 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
             <div>
               <h2>Закрытый доступ</h2>
             </div>
+            <div className="main-chart-style-affordance" data-main-chart-style-stage="E112-A" aria-label="Chart style behavior">
+              <span><strong>North: houses fixed</strong></span>
+              <span><strong>South: signs fixed</strong></span>
+              <span hidden>E112-A main chart style affordance; north_chart_style=houses_fixed; south_chart_style=signs_fixed; parity_success_claimed=false; release_ready=false; release_gate_status=blocked</span>
+            </div>
             <div className="private-gate-actions">
               <button type="button" className="primary-button" onClick={() => setAuthOpen(true)}>
                 Войти или зарегистрироваться
