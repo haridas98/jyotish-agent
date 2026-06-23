@@ -1946,6 +1946,17 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.d1-technical-context-strip span:not([hidden]) {
+  align-items: center;
+  display: inline-flex;
+  flex: 1 1 190px;
+  gap: 6px;
+}
+
+.d1-technical-context-strip strong {
+  flex: 0 0 auto;
+}
+
 .chart-context-view-control {
   display: inline-flex;
   flex-wrap: wrap;

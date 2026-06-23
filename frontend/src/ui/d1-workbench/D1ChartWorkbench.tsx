@@ -263,6 +263,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
           {model.warnings.map((warning) => <span key={warning.code}>{warning.message}</span>)}
         </div>
       ) : null}
+      <D1TechnicalContextStrip model={model} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
 
       <div className="d1-main-grid">
         <div>
@@ -288,6 +289,28 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
         </aside>
       </div>
     </section>
+  );
+}
+
+function D1TechnicalContextStrip({
+  model,
+  activeScopeMeta,
+  activeAccuracyGate,
+}: {
+  model: D1WorkbenchModel;
+  activeScopeMeta: D1WorkbenchModel["vargaScopes"][number] | undefined;
+  activeAccuracyGate: D1WorkbenchModel["accuracyGates"][string] | undefined;
+}) {
+  const availableVargas = model.technical.vargas.filter((row) => row.status === "available").length;
+  return (
+    <div className="chart-context-strip d1-technical-context-strip" data-d1-technical-context-stage="E137-A" aria-label="Technical chart context">
+      <span><strong>Scope</strong>{model.scopeId} / {activeScopeMeta?.category ?? "main"} / {activeScopeMeta?.methodId ?? "saved calculation"}</span>
+      <span><strong>Objects</strong>{model.stats.chartObjectCount} total / {model.stats.grahaCount} grahas / {model.stats.specialPointCount} points</span>
+      <span><strong>Coverage</strong>{availableVargas}/{model.technical.vargas.length} vargas / {model.technical.dashas.length} dashas</span>
+      <span><strong>Calculation</strong>{model.calculation.status} / {model.calculation.version}</span>
+      <span><strong>Gate</strong>{activeAccuracyGate?.status ?? "standard"}</span>
+      <span hidden>E137-A; d1_technical_context_strip_present=true; chart_viewer_scope_coverage_visible=true; chart_viewer_calculation_status_visible=true; chart_viewer_accuracy_gate_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=40120c8</span>
+    </div>
   );
 }
 

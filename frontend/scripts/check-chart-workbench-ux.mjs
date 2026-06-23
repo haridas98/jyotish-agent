@@ -69,6 +69,12 @@ for (const required of [
   "chart-context-strip",
   "chart-context-view-control",
   "main-chart-view-current",
+  "D1TechnicalContextStrip",
+  "data-d1-technical-context-stage",
+  "d1_technical_context_strip_present=true",
+  "chart_viewer_scope_coverage_visible=true",
+  "chart_viewer_calculation_status_visible=true",
+  "chart_viewer_accuracy_gate_visible=true",
   "batched_ui_ai_review_quality_stage=E118-A",
   "chart_view_control_batch=true",
   "chart_context_strip_present=true",
@@ -127,5 +133,6 @@ assert(css.includes(".chart-context-strip"), "E118 chart context strip CSS marke
 assert(css.includes(".chart-context-view-control"), "E118 chart context view control CSS marker missing.");
 assert(css.includes(".main-chart-view-current"), "E118 current-mode helper CSS marker missing.");
 assert(css.includes("flex-wrap: wrap") && css.includes(".chart-context-strip"), "E118 chart context strip must keep compact wrapping behavior.");
+assert(css.includes(".d1-technical-context-strip"), "E137 D1 technical context strip CSS marker missing.");
 
 console.log("Chart workbench UX check passed.");

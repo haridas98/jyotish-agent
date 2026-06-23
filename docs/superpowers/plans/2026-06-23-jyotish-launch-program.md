@@ -252,6 +252,7 @@
 
 **Minimal UI milestone:**
 - `/charts/:id` is canonical chart viewer.
+- [x] Add an `E137-A` technical context strip above the chart so scope, coverage, calculation status, and accuracy gate are visible without opening the technical tab.
 - First viewport: birth meta, D1 chart, graha table, selected object inspector.
 - D chart rail grouped by use: main, family/relationship, profession, expert, all.
 - Mobile: chart first, compact graha rows, bottom nav; no giant horizontal table as primary path.

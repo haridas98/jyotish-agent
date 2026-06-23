@@ -73,6 +73,10 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("chartStyle === \"north\"") && component.includes("chartStyle === \"south\""), "D1 workbench must support north/south style toggle");
   assert(component.includes("TechnicalPayloadPanel"), "D1 workbench must render a technical payload panel");
   assert(component.includes("InternalJsonSnapshot"), "D1 workbench must expose an internal JSON snapshot for reviewer debugging");
+  assert(component.includes("D1TechnicalContextStrip"), "D1 workbench must render a technical context strip before the chart grid");
+  assert(component.includes('data-d1-technical-context-stage="E137-A"'), "D1 technical context strip must expose the E137 marker");
+  assert(component.includes("chart_viewer_scope_coverage_visible=true"), "D1 technical context strip must expose scope coverage status");
+  assert(component.includes("chart_viewer_accuracy_gate_visible=true"), "D1 technical context strip must expose accuracy gate status");
   assert(component.includes("graha.speedLongitude"), "D1 graha table must render speed longitude when available");
   assert(component.includes("graha.absoluteLongitude"), "D1 graha table must render absolute longitude when available");
   for (const marker of [
