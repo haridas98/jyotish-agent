@@ -267,7 +267,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
       <D1LaunchVisibilityStrip model={model} />
       <D1ScopeCoverageMatrix model={model} mode={workbenchState.mode} onScopeChange={onScopeChange} />
       <D1ActiveScopeReviewStrip model={model} mode={workbenchState.mode} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
-      <D1TechnicalPayloadIndex model={model} />
+      <D1TechnicalPayloadIndex model={model} onOpenTechnical={() => setActiveTab("technical")} />
       <D1MobileWorkflowNav activeTab={workbenchState.activeTab} onGrahaJump={() => setActiveTab("grahas")} />
 
       <div className="d1-main-grid">
@@ -406,7 +406,7 @@ function D1ActiveScopeReviewStrip({
   );
 }
 
-function D1TechnicalPayloadIndex({ model }: { model: D1WorkbenchModel }) {
+function D1TechnicalPayloadIndex({ model, onOpenTechnical }: { model: D1WorkbenchModel; onOpenTechnical: () => void }) {
   const availableVargas = model.technical.vargas.filter((row) => row.status === "available").length;
   const technicalPayloadIndexItems = [
     { key: "settings", label: "Settings", count: model.technical.settings.length },
@@ -421,7 +421,7 @@ function D1TechnicalPayloadIndex({ model }: { model: D1WorkbenchModel }) {
     <section className="d1-technical-payload-index" data-d1-technical-payload-index-stage="E145-A" aria-label="Technical payload index">
       <div className="d1-technical-payload-index-title">
         <strong>Technical payload</strong>
-        <a href="#d1-technical-tab">open technical tab</a>
+        <a href="#d1-technical-tab" onClick={onOpenTechnical}>open technical tab</a>
       </div>
       <div className="d1-technical-payload-index-grid">
         {technicalPayloadIndexItems.map((item) => (
@@ -431,7 +431,7 @@ function D1TechnicalPayloadIndex({ model }: { model: D1WorkbenchModel }) {
           </span>
         ))}
       </div>
-      <span hidden>E145-A; chart_viewer_technical_payload_index_visible=true; chart_viewer_payload_section_counts_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
+      <span hidden>E145-A E146-A; chart_viewer_technical_payload_index_visible=true; chart_viewer_payload_section_counts_visible=true; chart_viewer_payload_index_opens_technical_tab=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=8e5d269f</span>
     </section>
   );
 }

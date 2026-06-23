@@ -106,7 +106,10 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes('data-d1-technical-payload-index-stage="E145-A"'), "D1 technical payload index must expose the E145 marker");
   assert(component.includes("chart_viewer_technical_payload_index_visible=true"), "D1 technical payload index must expose visibility status");
   assert(component.includes("chart_viewer_payload_section_counts_visible=true"), "D1 technical payload index must expose section count status");
+  assert(component.includes("chart_viewer_payload_index_opens_technical_tab=true"), "D1 technical payload index must expose open-technical-tab status");
   assert(component.includes("technicalPayloadIndexItems"), "D1 technical payload index must use one section item registry");
+  assert(component.includes('onOpenTechnical={() => setActiveTab("technical")}'), "D1 technical payload index must switch the workbench to the technical tab");
+  assert(component.includes("onOpenTechnical"), "D1 technical payload index must receive an open technical tab callback");
   assert(component.includes('href="#d1-technical-tab"'), "D1 technical payload index must link to the technical tab anchor");
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");

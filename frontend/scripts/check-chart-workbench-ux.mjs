@@ -108,6 +108,7 @@ for (const required of [
   "data-d1-technical-payload-index-stage",
   "chart_viewer_technical_payload_index_visible=true",
   "chart_viewer_payload_section_counts_visible=true",
+  "chart_viewer_payload_index_opens_technical_tab=true",
   "Technical desk",
   "D-scopes",
   "saved charts expose D1-D60",
