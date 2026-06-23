@@ -40,6 +40,7 @@
     "test:ai-review-telegram-benchmark": "node scripts/check-ai-review-telegram-benchmark.mjs",
     "test:ai-review-benchmark-parity": "node scripts/check-ai-review-benchmark-parity.mjs",
     "test:ai-review-quality": "node scripts/check-ai-review-quality.mjs",
+    "test:launch-readiness": "node scripts/check-launch-readiness-contract.mjs",
     "test:d1-workbench": "node scripts/check-d1-workbench.mjs",
     "test:chart-detail-smoke": "node scripts/check-chart-detail-smoke.mjs",
     "test:chart-workbench-ux": "node scripts/check-chart-workbench-ux.mjs",
