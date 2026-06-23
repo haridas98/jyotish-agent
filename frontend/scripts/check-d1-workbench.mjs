@@ -77,6 +77,8 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes('data-d1-technical-context-stage="E137-A"'), "D1 technical context strip must expose the E137 marker");
   assert(component.includes("chart_viewer_scope_coverage_visible=true"), "D1 technical context strip must expose scope coverage status");
   assert(component.includes("chart_viewer_accuracy_gate_visible=true"), "D1 technical context strip must expose accuracy gate status");
+  assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
+  assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
   assert(component.includes("graha.speedLongitude"), "D1 graha table must render speed longitude when available");
   assert(component.includes("graha.absoluteLongitude"), "D1 graha table must render absolute longitude when available");
   for (const marker of [

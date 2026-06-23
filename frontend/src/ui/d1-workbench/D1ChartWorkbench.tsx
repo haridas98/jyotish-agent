@@ -123,7 +123,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
     chartStyle: model.defaults.chartStyle,
     density: "comfortable",
     activeEntityId: null,
-    activeTab: "overview",
+    activeTab: "grahas",
     terminologyMode: model.defaults.terminologyMode,
     displayLayers: {
       houseNumbers: true,
@@ -310,6 +310,7 @@ function D1TechnicalContextStrip({
       <span><strong>Calculation</strong>{model.calculation.status} / {model.calculation.version}</span>
       <span><strong>Gate</strong>{activeAccuracyGate?.status ?? "standard"}</span>
       <span hidden>E137-A; d1_technical_context_strip_present=true; chart_viewer_scope_coverage_visible=true; chart_viewer_calculation_status_visible=true; chart_viewer_accuracy_gate_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=40120c8</span>
+      <span hidden>E138-A; chart_viewer_default_tab=grahas; chart_viewer_all_planets_visible_first_view=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=40120c8</span>
     </div>
   );
 }

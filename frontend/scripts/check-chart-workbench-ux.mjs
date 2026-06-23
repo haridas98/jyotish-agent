@@ -75,6 +75,8 @@ for (const required of [
   "chart_viewer_scope_coverage_visible=true",
   "chart_viewer_calculation_status_visible=true",
   "chart_viewer_accuracy_gate_visible=true",
+  "chart_viewer_default_tab=grahas",
+  "chart_viewer_all_planets_visible_first_view=true",
   "batched_ui_ai_review_quality_stage=E118-A",
   "chart_view_control_batch=true",
   "chart_context_strip_present=true",
@@ -125,6 +127,7 @@ for (const forbidden of [
 }
 
 assert(component.match(/<EntityInspector/g)?.length === 1, "Chart workbench must render exactly one EntityInspector.");
+assert(component.includes('activeTab: "grahas"'), "Chart workbench must default to the all-grahas table for the first viewport.");
 assert(component.includes('mode === "novice" && model.expertOnlyScopes.includes(model.scopeId)'), "Novice mode must leave expert-only scope.");
 assert(css.includes("@media") && css.includes(".d1-workbench[data-density=\"compact\"]"), "Chart workbench CSS must include compact and responsive rules.");
 assert(css.includes(".main-chart-style-guidance"), "E116 main chart style guidance CSS marker missing.");
