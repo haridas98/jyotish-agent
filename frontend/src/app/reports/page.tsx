@@ -212,6 +212,26 @@ export default function ReportBuilderPage() {
             <span>{aiReviewQualityLab.preview.evidencePacket.caveatConfidenceRequirement}</span>
           </div>
         </div>
+        <div className="ai-review-composer-preview" data-ai-review-composer-stage="P121-A">
+          <div className="ai-review-composer-preview-head">
+            <strong>Evidence-driven mock review</strong>
+            <span>Strong composed review passes quality gate</span>
+            <span>{aiReviewQualityLab.composed.weak.blockReason}</span>
+          </div>
+          <div className="ai-review-composer-sections">
+            {aiReviewQualityLab.composed.sections.map((section) => (
+              <section key={section.heading}>
+                <strong>{section.heading}</strong>
+                <span>{section.body}</span>
+              </section>
+            ))}
+          </div>
+          <div className="ai-review-composer-status">
+            <span>Matched evidence count: {aiReviewQualityLab.composed.strong.matchedEvidenceCount}</span>
+            <span>Generic output blocked by quality gate</span>
+            <span>Failed dimensions: {aiReviewQualityLab.composed.weak.failedDimensionFeedback.join(" ")}</span>
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

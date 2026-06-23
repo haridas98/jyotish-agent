@@ -701,6 +701,53 @@ body .chart-profile-form textarea {
   line-height: 1.25;
 }
 
+.ai-review-composer-preview {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #e0ebee;
+  border-radius: 8px;
+  background: #fbfdfd;
+}
+
+.ai-review-composer-preview-head,
+.ai-review-composer-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.ai-review-composer-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-review-composer-sections section {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-composer-preview strong {
+  color: var(--green);
+}
+
+.ai-review-composer-preview span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
@@ -711,6 +758,10 @@ body .chart-profile-form textarea {
   }
 
   .ai-review-quality-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-composer-sections {
     grid-template-columns: 1fr;
   }
 }

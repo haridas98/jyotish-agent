@@ -57,6 +57,27 @@ export type AiReviewMockPreview = {
   statusLabels: string[];
 };
 
+export type AiReviewComposedSection = {
+  heading: "Chart evidence cited" | "Interpretive synthesis" | "Practical guidance" | "Caveats and confidence";
+  body: string;
+};
+
+export type AiReviewComposedMockReview = {
+  stage: "P121-A";
+  sections: AiReviewComposedSection[];
+  strong: {
+    status: "passes_quality_gate";
+    matchedEvidenceCount: number;
+  };
+  weak: {
+    status: "blocked_by_quality_gate";
+    usableReviewVisible: false;
+    blockReason: string;
+    failedDimensionFeedback: string[];
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -205,10 +226,69 @@ export function buildAiReviewMockPreview(): AiReviewMockPreview {
   };
 }
 
+export function composeEvidenceDrivenMockReview(evidencePacket = buildAiReviewEvidencePacket()): AiReviewComposedMockReview {
+  const [lagna, moon, saturn, jupiter] = evidencePacket.chartEvidenceItems;
+  const composedDraft = [
+    `${lagna}, ${moon}, and ${saturn} are the primary evidence anchors, with ${jupiter} used as a moderating factor.`,
+    `Together these placements suggest porous motivation, emotional intelligence, private discipline, and counsel capacity while avoiding generic optimism.`,
+    `A practical next step is to protect daily rhythm before taking advisory roles, then test commitments against sleep, study, and service capacity.`,
+    `Caveat: confidence is moderate until birth-time evidence and divisional corroboration are reviewed.`,
+  ].join(" ");
+  const strong = evaluateAiReviewDraft(composedDraft, evidencePacket.chartEvidenceItems);
+  const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, evidencePacket.chartEvidenceItems);
+
+  return {
+    stage: "P121-A",
+    sections: [
+      {
+        heading: "Chart evidence cited",
+        body: `${lagna}; ${moon}; ${saturn}; ${jupiter}.`,
+      },
+      {
+        heading: "Interpretive synthesis",
+        body: evidencePacket.synthesisLinks.join(" "),
+      },
+      {
+        heading: "Practical guidance",
+        body: evidencePacket.practicalNextStepRequirement,
+      },
+      {
+        heading: "Caveats and confidence",
+        body: evidencePacket.caveatConfidenceRequirement,
+      },
+    ],
+    strong: {
+      status: "passes_quality_gate",
+      matchedEvidenceCount: strong.matchedEvidence.length,
+    },
+    weak: {
+      status: "blocked_by_quality_gate",
+      usableReviewVisible: false,
+      blockReason: "Generic output blocked by quality gate: generic text lacks chart evidence and synthesis.",
+      failedDimensionFeedback: weak.dimensions.filter((item) => !item.passed).map(feedbackForFailedDimension),
+    },
+    statusLabels: [
+      "P121-A",
+      "ai_review_composer_stage=P121-A",
+      "ai_review_evidence_driven_mock_review_present=true",
+      "ai_review_composed_sections_present=true",
+      "ai_review_composer_uses_evidence_packet=true",
+      "ai_review_composed_strong_passes_gate=true",
+      "ai_review_generic_output_blocked_by_gate=true",
+      "ai_review_generic_block_reason_visible=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
   const preview = buildAiReviewMockPreview();
+  const composed = composeEvidenceDrivenMockReview(preview.evidencePacket);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -225,6 +305,7 @@ export function buildAiReviewQualityLabSummary() {
       "production_deploy_skipped_per_user_batching_policy=true",
       "last_verified_deploy_commit=508df50",
       ...preview.statusLabels,
+      ...composed.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -241,5 +322,6 @@ export function buildAiReviewQualityLabSummary() {
     strong,
     weak,
     preview,
+    composed,
   };
 }
