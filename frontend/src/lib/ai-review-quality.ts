@@ -264,6 +264,51 @@ export type AiReviewNarrativeQualityRubric = {
   statusLabels: string[];
 };
 
+export type AiReviewResponseContractSectionName =
+  | "Chart anchors"
+  | "Rule chain"
+  | "Interpretive tension"
+  | "Practical next question"
+  | "Caveats and gated claims";
+
+export type AiReviewRepairGuidanceType =
+  | "generic_without_anchors"
+  | "advanced_overclaim_without_computed_tables"
+  | "advice_without_practical_next_question";
+
+export type AiReviewResponseContractSection = {
+  name: AiReviewResponseContractSectionName;
+  requiredSourceAnchorCount: number;
+  requiredRubricDimensions: AiReviewNarrativeDimension[];
+  blockedFailureExamples: string[];
+  repairInstruction: string;
+};
+
+export type AiReviewRepairGuidance = {
+  type: AiReviewRepairGuidanceType;
+  failurePattern: string;
+  repairInstruction: string;
+};
+
+export type AiReviewResponseContract = {
+  stage: "E128-A";
+  sections: AiReviewResponseContractSection[];
+  repairGuidance: AiReviewRepairGuidance[];
+  usesAssertionLedger: boolean;
+  usesNarrativeRubric: boolean;
+  aggregate: {
+    sectionCount: number;
+    sectionsExact: boolean;
+    everySectionRequiresAnchor: boolean;
+    everySectionHasRepair: boolean;
+    genericRepairPresent: boolean;
+    advancedOverclaimRepairPresent: boolean;
+    missingPracticalQuestionRepairPresent: boolean;
+    localOnlyNotFinalOutput: boolean;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -1154,6 +1199,112 @@ export function buildAiReviewNarrativeQualityRubric(
   };
 }
 
+export function buildAiReviewResponseContract(
+  assertionLedger = buildAiReviewAssertionLedger(),
+  narrativeRubric = buildAiReviewNarrativeQualityRubric(assertionLedger),
+): AiReviewResponseContract {
+  const sections: AiReviewResponseContractSection[] = [
+    {
+      name: "Chart anchors",
+      requiredSourceAnchorCount: 4,
+      requiredRubricDimensions: ["chart_specificity"],
+      blockedFailureExamples: ["generic without anchors", "beautiful prose without ledger ids"],
+      repairInstruction: "Replace broad claims with at least four assertion-ledger anchors before interpretation.",
+    },
+    {
+      name: "Rule chain",
+      requiredSourceAnchorCount: 2,
+      requiredRubricDimensions: ["rule_to_interpretation_chain", "chart_specificity"],
+      blockedFailureExamples: ["chart fact listed without jyotish rule", "rule named without concrete interpretation"],
+      repairInstruction: "Pair each selected chart fact with a jyotish rule and one specific interpretive consequence.",
+    },
+    {
+      name: "Interpretive tension",
+      requiredSourceAnchorCount: 2,
+      requiredRubricDimensions: ["life_domain_tension", "rule_to_interpretation_chain"],
+      blockedFailureExamples: ["one-note praise", "no contrast between opportunity and pressure"],
+      repairInstruction: "Add a concrete life-domain tension such as speed versus duty or career drive versus network pressure.",
+    },
+    {
+      name: "Practical next question",
+      requiredSourceAnchorCount: 1,
+      requiredRubricDimensions: ["practical_next_question"],
+      blockedFailureExamples: ["advice without practical next question", "generic self-improvement prompt"],
+      repairInstruction: "End with a chart-derived question tied to a ledger anchor and the user's next decision context.",
+    },
+    {
+      name: "Caveats and gated claims",
+      requiredSourceAnchorCount: 1,
+      requiredRubricDimensions: ["caveat_and_gating"],
+      blockedFailureExamples: ["advanced overclaim without computed tables", "Shadbala or Ashtakavarga used as proof"],
+      repairInstruction: "Move Shadbala, Ashtakavarga, Avastha, and Mrityu-bhaga statements into blocked caveats unless computed tables exist.",
+    },
+  ];
+  const repairGuidance: AiReviewRepairGuidance[] = [
+    {
+      type: "generic_without_anchors",
+      failurePattern: "generic without anchors",
+      repairInstruction: "Require chart anchors from the assertion ledger before any polished summary is accepted.",
+    },
+    {
+      type: "advanced_overclaim_without_computed_tables",
+      failurePattern: "advanced overclaim without computed tables",
+      repairInstruction: "Block Shadbala, Ashtakavarga, Avastha, and Mrityu-bhaga proof language until computed tables exist.",
+    },
+    {
+      type: "advice_without_practical_next_question",
+      failurePattern: "advice without practical next question",
+      repairInstruction: "Convert advice into one chart-derived next question with an explicit evidence anchor.",
+    },
+  ];
+  const expectedSectionNames: AiReviewResponseContractSectionName[] = [
+    "Chart anchors",
+    "Rule chain",
+    "Interpretive tension",
+    "Practical next question",
+    "Caveats and gated claims",
+  ];
+
+  return {
+    stage: "E128-A",
+    sections,
+    repairGuidance,
+    usesAssertionLedger: assertionLedger.stage === "E126-A" && assertionLedger.assertions.length >= 12,
+    usesNarrativeRubric: narrativeRubric.stage === "P127-A" && narrativeRubric.dimensions.length === AI_REVIEW_NARRATIVE_DIMENSIONS.length,
+    aggregate: {
+      sectionCount: sections.length,
+      sectionsExact: sections.map((section) => section.name).join("|") === expectedSectionNames.join("|"),
+      everySectionRequiresAnchor: sections.every((section) => section.requiredSourceAnchorCount >= 1),
+      everySectionHasRepair: sections.every((section) => section.repairInstruction.length > 0),
+      genericRepairPresent: repairGuidance.some((repair) => repair.type === "generic_without_anchors"),
+      advancedOverclaimRepairPresent: repairGuidance.some((repair) => repair.type === "advanced_overclaim_without_computed_tables"),
+      missingPracticalQuestionRepairPresent: repairGuidance.some((repair) => repair.type === "advice_without_practical_next_question"),
+      localOnlyNotFinalOutput: true,
+    },
+    statusLabels: [
+      "E128-A",
+      "ai_review_response_contract_stage=E128-A",
+      "ai_review_response_contract_present=true",
+      "ai_review_response_contract_sections=5",
+      "ai_review_response_contract_sections_exact=true",
+      "ai_review_response_contract_every_section_requires_anchor=true",
+      "ai_review_response_contract_every_section_has_repair=true",
+      "ai_review_repair_guidance_present=true",
+      "ai_review_repair_generic_without_anchors_present=true",
+      "ai_review_repair_advanced_overclaim_present=true",
+      "ai_review_repair_missing_practical_question_present=true",
+      "ai_review_response_contract_uses_assertion_ledger=true",
+      "ai_review_response_contract_uses_narrative_rubric=true",
+      "ai_review_response_contract_visible=true",
+      "ai_review_local_quality_harness_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -1165,6 +1316,7 @@ export function buildAiReviewQualityLabSummary() {
   const followupQuestionContract = buildAiReviewFollowupQuestionContract();
   const assertionLedger = buildAiReviewAssertionLedger();
   const narrativeRubric = buildAiReviewNarrativeQualityRubric(assertionLedger);
+  const responseContract = buildAiReviewResponseContract(assertionLedger, narrativeRubric);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -1188,6 +1340,7 @@ export function buildAiReviewQualityLabSummary() {
       ...followupQuestionContract.statusLabels,
       ...assertionLedger.statusLabels,
       ...narrativeRubric.statusLabels,
+      ...responseContract.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -1211,5 +1364,6 @@ export function buildAiReviewQualityLabSummary() {
     followupQuestionContract,
     assertionLedger,
     narrativeRubric,
+    responseContract,
   };
 }

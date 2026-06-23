@@ -376,6 +376,30 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-response-contract" data-ai-review-response-contract-stage="E128-A">
+          <div className="ai-review-response-contract-head">
+            <strong>AI review response contract</strong>
+            <span>Local quality harness, not final AI output.</span>
+          </div>
+          <div className="ai-review-response-grid" role="list">
+            {aiReviewQualityLab.responseContract.sections.map((section) => (
+              <section key={section.name} role="listitem">
+                <strong>{section.name}</strong>
+                <span>Required anchors: {section.requiredSourceAnchorCount}</span>
+                <span>Required rubric dimensions: {section.requiredRubricDimensions.join(", ")}</span>
+                <span>Repair instruction: {section.repairInstruction}</span>
+                <span>Failing draft coverage: {section.blockedFailureExamples.join("; ")}</span>
+              </section>
+            ))}
+          </div>
+          <div className="ai-review-repair-guidance" aria-label="Repair guidance">
+            {aiReviewQualityLab.responseContract.repairGuidance.map((repair) => (
+              <span key={repair.type}>
+                {repair.failurePattern}: {repair.repairInstruction}
+              </span>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

@@ -1062,6 +1062,64 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.ai-review-response-contract {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d7e5e8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-response-contract-head {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-review-response-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-review-response-grid section {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.ai-review-repair-guidance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ai-review-repair-guidance span {
+  padding: 4px 7px;
+  border: 1px solid #d5e3e6;
+  border-radius: 999px;
+  background: #f8fbfc;
+}
+
+.ai-review-response-contract strong {
+  color: var(--green);
+}
+
+.ai-review-response-contract span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
@@ -1100,6 +1158,10 @@ body .chart-profile-form textarea {
   }
 
   .ai-review-narrative-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-response-grid {
     grid-template-columns: 1fr;
   }
 }

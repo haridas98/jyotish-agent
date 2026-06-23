@@ -47,6 +47,7 @@ for (const marker of [
   "P125-A",
   "E126-A",
   "P127-A",
+  "E128-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -56,6 +57,7 @@ for (const marker of [
   "ai_review_question_contract_stage=P125-A",
   "ai_review_assertion_ledger_stage=E126-A",
   "ai_review_narrative_rubric_stage=P127-A",
+  "ai_review_response_contract_stage=E128-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -124,6 +126,18 @@ for (const marker of [
   "ai_review_passing_samples_have_four_anchors=true",
   "ai_review_rubric_failure_reasons_visible=true",
   "ai_review_narrative_quality_matrix_visible=true",
+  "ai_review_response_contract_present=true",
+  "ai_review_response_contract_sections=5",
+  "ai_review_response_contract_sections_exact=true",
+  "ai_review_response_contract_every_section_requires_anchor=true",
+  "ai_review_response_contract_every_section_has_repair=true",
+  "ai_review_repair_guidance_present=true",
+  "ai_review_repair_generic_without_anchors_present=true",
+  "ai_review_repair_advanced_overclaim_present=true",
+  "ai_review_repair_missing_practical_question_present=true",
+  "ai_review_response_contract_uses_assertion_ledger=true",
+  "ai_review_response_contract_uses_narrative_rubric=true",
+  "ai_review_response_contract_visible=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -221,6 +235,19 @@ for (const label of [
   "Anchor count",
   "Key failure reason",
   "not final generated AI output",
+  "AI review response contract",
+  "Chart anchors",
+  "Rule chain",
+  "Interpretive tension",
+  "Practical next question",
+  "Caveats and gated claims",
+  "Required anchors",
+  "Required rubric dimensions",
+  "Repair instruction",
+  "Failing draft coverage",
+  "generic without anchors",
+  "advanced overclaim without computed tables",
+  "advice without practical next question",
   "Shadbala",
   "Ashtakavarga",
   "Avastha",
@@ -246,6 +273,7 @@ assert(typeof helper.buildTelegramBenchmarkReviewBlueprint === "function", "buil
 assert(typeof helper.buildAiReviewFollowupQuestionContract === "function", "buildAiReviewFollowupQuestionContract must be exported.");
 assert(typeof helper.buildAiReviewAssertionLedger === "function", "buildAiReviewAssertionLedger must be exported.");
 assert(typeof helper.buildAiReviewNarrativeQualityRubric === "function", "buildAiReviewNarrativeQualityRubric must be exported.");
+assert(typeof helper.buildAiReviewResponseContract === "function", "buildAiReviewResponseContract must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -258,6 +286,7 @@ const telegramBenchmark = helper.buildTelegramBenchmarkReviewBlueprint();
 const questionContract = helper.buildAiReviewFollowupQuestionContract();
 const assertionLedger = helper.buildAiReviewAssertionLedger();
 const narrativeRubric = helper.buildAiReviewNarrativeQualityRubric();
+const responseContract = helper.buildAiReviewResponseContract();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -394,6 +423,26 @@ assert(
     overclaimNarrative.text.includes("Mrityu-bhaga"),
   "Overclaim sample must cover gated advanced terms.",
 );
+assert(responseContract.stage === "E128-A", "Response contract stage must be E128-A.");
+assert(responseContract.statusLabels.includes("ai_review_response_contract_stage=E128-A"), "Response contract labels missing E128 stage.");
+assert(responseContract.sections.length === 5, "Response contract must define exactly five sections.");
+assert(responseContract.sections.map((section) => section.name).join("|") === "Chart anchors|Rule chain|Interpretive tension|Practical next question|Caveats and gated claims", "Response contract section names changed.");
+assert(responseContract.sections.every((section) => section.requiredSourceAnchorCount >= 1), "Every response section must require at least one anchor.");
+assert(responseContract.sections.every((section) => section.repairInstruction.length > 0), "Every response section must include repair instruction.");
+assert(responseContract.sections.every((section) => section.requiredRubricDimensions.length >= 1), "Every response section must require rubric dimensions.");
+assert(responseContract.sections.every((section) => section.blockedFailureExamples.length >= 1), "Every response section must include blocked failure examples.");
+assert(responseContract.aggregate.sectionCount === 5, "Response contract aggregate section count must be five.");
+assert(responseContract.aggregate.sectionsExact === true, "Response contract must mark sections exact.");
+assert(responseContract.aggregate.everySectionRequiresAnchor === true, "Response contract must require anchors in every section.");
+assert(responseContract.aggregate.everySectionHasRepair === true, "Response contract must include repair guidance in every section.");
+assert(responseContract.aggregate.genericRepairPresent === true, "Generic-without-anchors repair guidance missing.");
+assert(responseContract.aggregate.advancedOverclaimRepairPresent === true, "Advanced-overclaim repair guidance missing.");
+assert(responseContract.aggregate.missingPracticalQuestionRepairPresent === true, "Missing-practical-question repair guidance missing.");
+assert(responseContract.usesAssertionLedger === true, "Response contract must use assertion ledger.");
+assert(responseContract.usesNarrativeRubric === true, "Response contract must use narrative rubric.");
+for (const repairType of ["generic_without_anchors", "advanced_overclaim_without_computed_tables", "advice_without_practical_next_question"]) {
+  assert(responseContract.repairGuidance.some((repair) => repair.type === repairType), `Missing repair guidance: ${repairType}`);
+}
 
 for (const forbidden of [
   "fetch(",
