@@ -1,9 +1,14 @@
 import Home from "../page";
-import { buildParityEvidenceRequirementClarity, buildParityEvidenceTemplateChecklist } from "@/lib/parity-roadmap";
+import {
+  buildParityEvidenceRequirementClarity,
+  buildParityEvidenceTemplateChecklist,
+  buildParityNextBlockerCapSummary,
+} from "@/lib/parity-roadmap";
 
 export default function AccuracyPage() {
   const parityEvidenceRequirement = buildParityEvidenceRequirementClarity();
   const parityEvidenceTemplate = buildParityEvidenceTemplateChecklist();
+  const parityNextBlockerCap = buildParityNextBlockerCapSummary();
 
   return (
     <>
@@ -48,6 +53,12 @@ export default function AccuracyPage() {
         JHora: human-provided screenshots or receipt manifests. Parashara Light: human-provided manual values or receipt manifests. No credentials or files are needed now unless you want to supply those artifacts.
         <span hidden>
           buildParityEvidenceRequirementClarity; {parityEvidenceRequirement.stage}; {parityEvidenceRequirement.status}; {parityEvidenceRequirement.statusLabel}; {parityEvidenceRequirement.jhoraEvidenceRequiredLabel}; {parityEvidenceRequirement.parasharaLightEvidenceRequiredLabel}; {parityEvidenceRequirement.noCredentialsOrFilesRequiredNowLabel}; {parityEvidenceRequirement.paritySuccessClaimedLabel}; {parityEvidenceRequirement.releaseReadyLabel}; {parityEvidenceRequirement.releaseGateStatusLabel}
+        </span>
+      </div>
+      <div className="notice" data-parity-next-blocker-cap="P115-A">
+        <strong>Next parity blocker</strong>: human-provided JHora/Parashara Light evidence and witness review. Internal parity micro-chain is capped. No additional internal parity substage starts before evidence/review is available. Release remains blocked.
+        <span hidden>
+          buildParityNextBlockerCapSummary; {parityNextBlockerCap.stage}; {parityNextBlockerCap.title}; {parityNextBlockerCap.status}; {parityNextBlockerCap.statusLabel}; {parityNextBlockerCap.internalParityMicroChainCappedLabel}; {parityNextBlockerCap.noAdditionalInternalParitySubstageStartedLabel}; {parityNextBlockerCap.paritySuccessClaimedLabel}; {parityNextBlockerCap.releaseReadyLabel}; {parityNextBlockerCap.releaseGateStatusLabel}; {parityNextBlockerCap.noExternalActionExecutedLabel}; {parityNextBlockerCap.nextBlockerCopy}; {parityNextBlockerCap.capCopy}; {parityNextBlockerCap.noSubstageCopy}; {parityNextBlockerCap.releaseCopy}
         </span>
       </div>
       <section className="notice parity-evidence-template" data-parity-evidence-template="blocked" data-parity-evidence-template-stage="E114-A" aria-label={parityEvidenceTemplate.title}>

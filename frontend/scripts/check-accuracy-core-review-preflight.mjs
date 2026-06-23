@@ -2436,6 +2436,25 @@ for (const marker of [
 assert(!accuracyRoute.includes("type=\"file\""), "E114 evidence template must not add file inputs.");
 assert(!accuracyRoute.includes("<form"), "E114 evidence template must not add submit forms.");
 
+for (const marker of [
+  "buildParityNextBlockerCapSummary",
+  "P115-A",
+  "parity_next_blocker_status=blocked_pending_human_evidence_and_witness_review",
+  "internal_parity_micro_chain_capped=true",
+  "no_additional_internal_parity_substage_started=true",
+  "parity_success_claimed=false",
+  "release_ready=false",
+  "release_gate_status=blocked",
+  "no_external_action_executed=true",
+  "Next parity blocker",
+  "human-provided JHora/Parashara Light evidence and witness review",
+  "Internal parity micro-chain is capped",
+  "No additional internal parity substage starts before evidence/review is available",
+  "Release remains blocked",
+]) {
+  assert(roadmap.includes(marker) || helperSlice.includes(marker) || accuracyRoute.includes(marker), `P115 next-blocker cap marker missing: ${marker}`);
+}
+
 for (const forbidden of [
   "source_report",
   "field_results",

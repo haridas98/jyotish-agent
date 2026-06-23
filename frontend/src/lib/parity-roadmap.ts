@@ -124,6 +124,23 @@ export type ParityEvidenceTemplateChecklist = {
   noActionCopy: "No collection, upload, or external delivery is executed by the app in this stage.";
 };
 
+export type ParityNextBlockerCapSummary = {
+  stage: "P115-A";
+  title: "Next parity blocker";
+  status: "blocked_pending_human_evidence_and_witness_review";
+  statusLabel: "parity_next_blocker_status=blocked_pending_human_evidence_and_witness_review";
+  internalParityMicroChainCappedLabel: "internal_parity_micro_chain_capped=true";
+  noAdditionalInternalParitySubstageStartedLabel: "no_additional_internal_parity_substage_started=true";
+  paritySuccessClaimedLabel: "parity_success_claimed=false";
+  releaseReadyLabel: "release_ready=false";
+  releaseGateStatusLabel: "release_gate_status=blocked";
+  noExternalActionExecutedLabel: "no_external_action_executed=true";
+  nextBlockerCopy: "human-provided JHora/Parashara Light evidence and witness review";
+  capCopy: "Internal parity micro-chain is capped.";
+  noSubstageCopy: "No additional internal parity substage starts before evidence/review is available.";
+  releaseCopy: "Release remains blocked.";
+};
+
 export type ReleaseGateActionSummary = {
   totals: {
     collectReports: number;
@@ -2197,6 +2214,25 @@ export function buildParityEvidenceTemplateChecklist(): ParityEvidenceTemplateCh
     releaseReadyLabel: "release_ready=false",
     releaseGateStatusLabel: "release_gate_status=blocked",
     noActionCopy: "No collection, upload, or external delivery is executed by the app in this stage.",
+  };
+}
+
+export function buildParityNextBlockerCapSummary(): ParityNextBlockerCapSummary {
+  return {
+    stage: "P115-A",
+    title: "Next parity blocker",
+    status: "blocked_pending_human_evidence_and_witness_review",
+    statusLabel: "parity_next_blocker_status=blocked_pending_human_evidence_and_witness_review",
+    internalParityMicroChainCappedLabel: "internal_parity_micro_chain_capped=true",
+    noAdditionalInternalParitySubstageStartedLabel: "no_additional_internal_parity_substage_started=true",
+    paritySuccessClaimedLabel: "parity_success_claimed=false",
+    releaseReadyLabel: "release_ready=false",
+    releaseGateStatusLabel: "release_gate_status=blocked",
+    noExternalActionExecutedLabel: "no_external_action_executed=true",
+    nextBlockerCopy: "human-provided JHora/Parashara Light evidence and witness review",
+    capCopy: "Internal parity micro-chain is capped.",
+    noSubstageCopy: "No additional internal parity substage starts before evidence/review is available.",
+    releaseCopy: "Release remains blocked.",
   };
 }
 
