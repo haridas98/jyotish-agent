@@ -187,6 +187,31 @@ export default function ReportBuilderPage() {
             <li key={item}>{item}</li>
           ))}
         </ul>
+        <div className="ai-review-quality-preview" data-ai-review-quality-preview-stage="E120-A">
+          <div>
+            <strong>Review evidence packet</strong>
+            <span>{aiReviewQualityLab.preview.evidencePacket.chartEvidenceItems.join(" · ")}</span>
+          </div>
+          <div>
+            <strong>Strong preview: passes quality gate</strong>
+            <span>Matched evidence count: {aiReviewQualityLab.preview.strong.matchedEvidenceCount}</span>
+          </div>
+          <div>
+            <strong>Weak preview: blocked by quality gate</strong>
+            <span>Failed dimensions</span>
+            <ul>
+              {aiReviewQualityLab.preview.weak.failedDimensionFeedback.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <strong>Preview requirements</strong>
+            <span>{aiReviewQualityLab.preview.evidencePacket.synthesisLinks.join(" ")}</span>
+            <span>{aiReviewQualityLab.preview.evidencePacket.practicalNextStepRequirement}</span>
+            <span>{aiReviewQualityLab.preview.evidencePacket.caveatConfidenceRequirement}</span>
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

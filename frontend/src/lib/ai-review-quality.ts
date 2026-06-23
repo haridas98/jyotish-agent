@@ -32,6 +32,31 @@ export type AiReviewQualityFixture = {
   fixtureEvidence: string[];
 };
 
+export type AiReviewEvidencePacket = {
+  chartEvidenceItems: string[];
+  synthesisLinks: string[];
+  practicalNextStepRequirement: string;
+  caveatConfidenceRequirement: string;
+};
+
+export type AiReviewMockPreview = {
+  stage: "E120-A";
+  evidencePacket: AiReviewEvidencePacket;
+  strong: {
+    status: "passes_quality_gate";
+    passed: true;
+    matchedEvidenceCount: number;
+    matchedEvidence: string[];
+  };
+  weak: {
+    status: "blocked_by_quality_gate";
+    passed: false;
+    failedDimensionFeedback: string[];
+    genericFillerMatches: string[];
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -123,9 +148,67 @@ export function evaluateAiReviewDraft(draft: string, fixtureEvidence: string[]):
   };
 }
 
+function feedbackForFailedDimension(result: AiReviewQualityDimensionResult): string {
+  if (result.id === "specific_chart_evidence") return "Weak preview lacks chart-specific evidence from the evidence packet.";
+  if (result.id === "practical_synthesis") return "Weak preview lacks practical synthesis across multiple placements/factors.";
+  if (result.id === "interpretation_depth") return "Weak preview lacks interpretation depth and causal linkage.";
+  return "Weak preview lacks caveats/confidence framing.";
+}
+
+export function buildAiReviewEvidencePacket(): AiReviewEvidencePacket {
+  return {
+    chartEvidenceItems: [...aiReviewQualityFixtures.strong.fixtureEvidence],
+    synthesisLinks: [
+      "Connect D1 Pisces Lagna with Moon in Cancer 5th house before advice.",
+      "Connect Saturn in Aquarius 12th house with Jupiter aspect to Lagna before confidence.",
+    ],
+    practicalNextStepRequirement: "Include practical next-step framing tied to the chart evidence.",
+    caveatConfidenceRequirement: "Include caveat/confidence language before trusting the draft.",
+  };
+}
+
+export function buildAiReviewMockPreview(): AiReviewMockPreview {
+  const evidencePacket = buildAiReviewEvidencePacket();
+  const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, evidencePacket.chartEvidenceItems);
+  const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, evidencePacket.chartEvidenceItems);
+  const failedDimensionFeedback = weak.dimensions.filter((item) => !item.passed).map(feedbackForFailedDimension);
+
+  return {
+    stage: "E120-A",
+    evidencePacket,
+    strong: {
+      status: "passes_quality_gate",
+      passed: true,
+      matchedEvidenceCount: strong.matchedEvidence.length,
+      matchedEvidence: strong.matchedEvidence,
+    },
+    weak: {
+      status: "blocked_by_quality_gate",
+      passed: false,
+      failedDimensionFeedback,
+      genericFillerMatches: weak.genericFillerGuard.matches,
+    },
+    statusLabels: [
+      "E120-A",
+      "ai_review_quality_preview_stage=E120-A",
+      "ai_review_evidence_packet_present=true",
+      "ai_review_quality_gate_applied_to_mock_preview=true",
+      "ai_review_strong_preview_pass_visible=true",
+      "ai_review_weak_preview_blocked_visible=true",
+      "ai_review_failed_dimension_feedback_present=true",
+      "ai_review_matched_evidence_count_visible=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
+  const preview = buildAiReviewMockPreview();
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -141,6 +224,7 @@ export function buildAiReviewQualityLabSummary() {
       "backend_calculation_changed=false",
       "production_deploy_skipped_per_user_batching_policy=true",
       "last_verified_deploy_commit=508df50",
+      ...preview.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -156,5 +240,6 @@ export function buildAiReviewQualityLabSummary() {
     weakFixtureFails: !weak.passed,
     strong,
     weak,
+    preview,
   };
 }

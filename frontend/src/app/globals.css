@@ -667,12 +667,50 @@ body .chart-profile-form textarea {
   list-style: none;
 }
 
+.ai-review-quality-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-review-quality-preview > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #e0ebee;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.ai-review-quality-preview span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ai-review-quality-preview ul {
+  display: grid;
+  gap: 5px;
+}
+
+.ai-review-quality-preview li {
+  border-radius: 7px;
+  line-height: 1.25;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
 
 @media (max-width: 720px) {
   .ai-review-quality-rubric {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-quality-preview {
     grid-template-columns: 1fr;
   }
 }
