@@ -2149,6 +2149,38 @@ body .chart-profile-form textarea {
   font-size: 11px;
 }
 
+.d1-active-scope-review {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: -2px 0 10px;
+}
+
+.d1-active-scope-review span:not([hidden]) {
+  display: inline-flex;
+  flex: 1 1 170px;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #fff;
+  color: #334b59;
+  font-size: 12px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.d1-active-scope-review strong {
+  flex: 0 0 auto;
+  color: #0c5962;
+  font-weight: 900;
+}
+
+.d1-active-scope-review span[hidden] {
+  display: none !important;
+}
+
 .chart-context-view-control {
   display: inline-flex;
   flex-wrap: wrap;

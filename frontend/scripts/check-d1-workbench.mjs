@@ -95,6 +95,13 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("d1-scope-matrix-section"), "D1 scope matrix must render grouped sections");
   assert(component.includes("data-scope-matrix-category"), "D1 scope matrix must expose stable grouped category markers");
   assert(component.includes("onScopeChange?.(scope.code)"), "D1 scope matrix must switch through the same saved-chart workbench scope flow");
+  assert(component.includes("D1ActiveScopeReviewStrip"), "D1 workbench must render an active scope review strip");
+  assert(component.includes('data-d1-active-scope-review-stage="E144-A"'), "D1 active scope review strip must expose the E144 marker");
+  assert(component.includes("chart_viewer_active_scope_method_visible=true"), "D1 active scope review must expose method status");
+  assert(component.includes("chart_viewer_active_scope_gate_visible=true"), "D1 active scope review must expose accuracy gate status");
+  assert(component.includes("chart_viewer_active_scope_placement_count_visible=true"), "D1 active scope review must expose placement count status");
+  assert(component.includes("activeScopeTechnicalRow"), "D1 active scope review must use technical varga row for the current scope");
+  assert(component.includes("activeScopeExpertOnly"), "D1 active scope review must show expert-only status for the current scope");
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
   assert(component.includes("last_verified_deploy_commit=7587205e"), "D1 workbench current launch markers must reference the latest verified production checkpoint");

@@ -266,6 +266,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
       <D1TechnicalContextStrip model={model} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
       <D1LaunchVisibilityStrip model={model} />
       <D1ScopeCoverageMatrix model={model} mode={workbenchState.mode} onScopeChange={onScopeChange} />
+      <D1ActiveScopeReviewStrip model={model} mode={workbenchState.mode} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
       <D1MobileWorkflowNav activeTab={workbenchState.activeTab} onGrahaJump={() => setActiveTab("grahas")} />
 
       <div className="d1-main-grid">
@@ -374,6 +375,32 @@ function D1ScopeCoverageMatrix({
         ))}
       </div>
       <span hidden>E143-A; chart_viewer_all_d_scopes_matrix_visible=true; chart_viewer_scope_matrix_quick_switch=true; chart_viewer_scope_matrix_availability_visible=true; chart_viewer_scope_matrix_grouped_by_use=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=7587205e</span>
+    </section>
+  );
+}
+
+function D1ActiveScopeReviewStrip({
+  model,
+  mode,
+  activeScopeMeta,
+  activeAccuracyGate,
+}: {
+  model: D1WorkbenchModel;
+  mode: D1ReaderMode;
+  activeScopeMeta: D1WorkbenchModel["vargaScopes"][number] | undefined;
+  activeAccuracyGate: D1WorkbenchModel["accuracyGates"][string] | undefined;
+}) {
+  const activeScopeTechnicalRow = model.technical.vargas.find((row) => row.code === model.scopeId);
+  const activeScopeExpertOnly = model.expertOnlyScopes.includes(model.scopeId);
+  return (
+    <section className="d1-active-scope-review" data-d1-active-scope-review-stage="E144-A" aria-label="Active D-scope technical review">
+      <span><strong>Active scope</strong>{model.scopeId} / {activeScopeMeta?.name ?? activeScopeTechnicalRow?.name ?? "saved scope"}</span>
+      <span><strong>Status</strong>{activeScopeTechnicalRow?.status ?? "missing"} / {activeScopeTechnicalRow?.placementCount ?? 0} placements</span>
+      <span><strong>Method</strong>{activeScopeTechnicalRow?.method ?? activeScopeMeta?.methodId ?? "saved calculation"}{activeScopeMeta?.methodVersion ? ` v${activeScopeMeta.methodVersion}` : ""}</span>
+      <span><strong>Gate</strong>{activeAccuracyGate?.status ?? "standard"}{activeAccuracyGate?.reason ? ` / ${activeAccuracyGate.reason}` : ""}</span>
+      <span><strong>Mode</strong>{activeScopeExpertOnly ? `expert-only / ${mode}` : `standard / ${mode}`}</span>
+      <span><strong>Calculation</strong>{model.calculation.status} / {model.calculation.version}</span>
+      <span hidden>E144-A; chart_viewer_active_scope_method_visible=true; chart_viewer_active_scope_gate_visible=true; chart_viewer_active_scope_placement_count_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=7587205e</span>
     </section>
   );
 }

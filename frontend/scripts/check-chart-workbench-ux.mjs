@@ -97,6 +97,12 @@ for (const required of [
   "chart_viewer_scope_matrix_quick_switch=true",
   "chart_viewer_scope_matrix_availability_visible=true",
   "chart_viewer_scope_matrix_grouped_by_use=true",
+  "D1ActiveScopeReviewStrip",
+  "d1-active-scope-review",
+  "data-d1-active-scope-review-stage",
+  "chart_viewer_active_scope_method_visible=true",
+  "chart_viewer_active_scope_gate_visible=true",
+  "chart_viewer_active_scope_placement_count_visible=true",
   "Technical desk",
   "D-scopes",
   "saved charts expose D1-D60",
@@ -182,6 +188,7 @@ assert(css.includes(".d1-scope-matrix"), "E143 scope coverage matrix CSS marker 
 assert(css.includes(".d1-scope-matrix-section"), "E143 grouped scope coverage section CSS marker missing.");
 assert(css.includes(".d1-scope-matrix-grid"), "E143 scope coverage matrix grid CSS marker missing.");
 assert(css.includes(".d1-scope-matrix-card"), "E143 scope coverage matrix card CSS marker missing.");
+assert(css.includes(".d1-active-scope-review"), "E144 active scope review CSS marker missing.");
 assert(css.includes(".d1-first-viewport-grid"), "E141 first viewport grid CSS marker missing.");
 assert(css.includes(".d1-data-stack"), "E141 data stack CSS marker missing.");
 assert(css.includes(".d1-mobile-workflow-nav"), "E139 mobile workflow nav CSS marker missing.");
