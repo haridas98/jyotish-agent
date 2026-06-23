@@ -54,6 +54,7 @@ for (const marker of [
   "E130-A",
   "P131-A",
   "E132-A",
+  "P133-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -68,6 +69,7 @@ for (const marker of [
   "ai_review_calculation_packet_stage=E130-A",
   "ai_review_grounded_draft_evaluator_stage=P131-A",
   "ai_review_grounded_composer_stage=E132-A",
+  "ai_review_generation_boundary_stage=P133-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -205,6 +207,25 @@ for (const marker of [
   "ai_review_grounded_composer_drift_fixture_fails=true",
   "ai_review_grounded_composer_visible=true",
   "ai_review_grounded_composer_not_final_output=true",
+  "ai_review_generation_boundary_present=true",
+  "ai_review_generation_boundary_request_present=true",
+  "ai_review_generation_boundary_response_gate_present=true",
+  "ai_review_generation_boundary_required_sections=5",
+  "ai_review_generation_boundary_required_groups=5",
+  "ai_review_generation_boundary_practical_question_required=true",
+  "ai_review_generation_boundary_forbidden_classes_present=true",
+  "ai_review_generation_boundary_fixture_count=3",
+  "ai_review_generation_boundary_grounded_fixture_accepted=true",
+  "ai_review_generation_boundary_generic_fixture_blocked=true",
+  "ai_review_generation_boundary_overclaim_fixture_blocked=true",
+  "ai_review_generation_boundary_blocked_not_display_eligible=true",
+  "ai_review_generation_boundary_repairs_present=true",
+  "ai_review_generation_boundary_uses_grounded_composer=true",
+  "ai_review_generation_boundary_uses_grounded_evaluator=true",
+  "ai_review_generation_boundary_uses_calculation_packet=true",
+  "ai_review_generation_boundary_uses_response_contract=true",
+  "ai_review_generation_boundary_visible=true",
+  "ai_review_generation_boundary_not_final_output=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -343,6 +364,11 @@ for (const label of [
   "Source evidence groups",
   "Evaluator status",
   "Drift repair summary",
+  "Generation boundary",
+  "Gate outcome",
+  "Display eligibility",
+  "Failed gates",
+  "Forbidden output classes",
   "Shadbala",
   "Ashtakavarga",
   "Avastha",
@@ -373,6 +399,7 @@ assert(typeof helper.buildAiReviewSharedResponseContractSurfaceSummary === "func
 assert(typeof helper.buildAiReviewCalculationPromptPacket === "function", "buildAiReviewCalculationPromptPacket must be exported.");
 assert(typeof helper.buildAiReviewGroundedDraftEvaluator === "function", "buildAiReviewGroundedDraftEvaluator must be exported.");
 assert(typeof helper.buildAiReviewGroundedComposer === "function", "buildAiReviewGroundedComposer must be exported.");
+assert(typeof helper.buildAiReviewGenerationBoundary === "function", "buildAiReviewGenerationBoundary must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -391,6 +418,7 @@ const mockSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSumma
 const calculationPromptPacket = helper.buildAiReviewCalculationPromptPacket();
 const groundedDraftEvaluator = helper.buildAiReviewGroundedDraftEvaluator();
 const groundedComposer = helper.buildAiReviewGroundedComposer();
+const generationBoundary = helper.buildAiReviewGenerationBoundary();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -640,6 +668,35 @@ assert(page.includes("groundedComposer"), "/reports must render grounded compose
 assert(mockReviewPage.includes("groundedComposer"), "/report-mock-review must render grounded composer.");
 assert(page.includes('data-ai-review-grounded-composer-stage="E132-A"'), "/reports must expose E132 hook.");
 assert(mockReviewPage.includes('data-ai-review-grounded-composer-stage="E132-A"'), "/report-mock-review must expose E132 hook.");
+assert(generationBoundary.stage === "P133-A", "Generation boundary stage must be P133-A.");
+assert(generationBoundary.statusLabels.includes("ai_review_generation_boundary_stage=P133-A"), "Generation boundary labels missing P133 stage.");
+assert(generationBoundary.request.requiredResponseSectionsCount === 5, "Generation boundary request must require five sections.");
+assert(generationBoundary.request.requiredEvidenceGroupsCount >= 5, "Generation boundary request must require at least five evidence groups.");
+assert(generationBoundary.request.practicalNextQuestionRequired === true, "Generation boundary request must require practical next question.");
+assert(generationBoundary.request.forbiddenOutputClasses.length >= 4, "Generation boundary must list forbidden output classes.");
+assert(generationBoundary.fixtures.length >= 3, "Generation boundary must include three fixtures.");
+const groundedResponse = generationBoundary.gateResults.find((item) => item.fixture.id === "offline_composed_grounded_response");
+const genericResponse = generationBoundary.gateResults.find((item) => item.fixture.id === "offline_generic_weak_response");
+const overclaimResponse = generationBoundary.gateResults.find((item) => item.fixture.id === "offline_overclaim_response");
+assert(groundedResponse?.outcome === "accepted", "Grounded offline response must be accepted.");
+assert(groundedResponse?.displayEligible === true, "Grounded offline response must be display eligible.");
+assert(genericResponse?.outcome === "blocked", "Generic offline response must be blocked.");
+assert(overclaimResponse?.outcome === "blocked", "Overclaim offline response must be blocked.");
+assert(genericResponse?.displayEligible === false && overclaimResponse?.displayEligible === false, "Blocked fixtures must not be display eligible.");
+assert(genericResponse.repairInstructions.length >= 1 && overclaimResponse.repairInstructions.length >= 1, "Blocked fixtures must include repair instructions.");
+assert(generationBoundary.aggregate.groundedFixtureAccepted === true, "Generation boundary aggregate must accept grounded fixture.");
+assert(generationBoundary.aggregate.genericFixtureBlocked === true, "Generation boundary aggregate must block generic fixture.");
+assert(generationBoundary.aggregate.overclaimFixtureBlocked === true, "Generation boundary aggregate must block overclaim fixture.");
+assert(generationBoundary.aggregate.blockedNotDisplayEligible === true, "Generation boundary aggregate must mark blocked fixtures not display eligible.");
+assert(generationBoundary.aggregate.repairsPresent === true, "Generation boundary aggregate must mark repairs present.");
+assert(generationBoundary.aggregate.usesGroundedComposer === true, "Generation boundary must use grounded composer.");
+assert(generationBoundary.aggregate.usesGroundedEvaluator === true, "Generation boundary must use grounded evaluator.");
+assert(generationBoundary.aggregate.usesCalculationPacket === true, "Generation boundary must use calculation packet.");
+assert(generationBoundary.aggregate.usesResponseContract === true, "Generation boundary must use response contract.");
+assert(page.includes("generationBoundary"), "/reports must render generation boundary.");
+assert(mockReviewPage.includes("generationBoundary"), "/report-mock-review must render generation boundary.");
+assert(page.includes('data-ai-review-generation-boundary-stage="P133-A"'), "/reports must expose P133 hook.");
+assert(mockReviewPage.includes('data-ai-review-generation-boundary-stage="P133-A"'), "/report-mock-review must expose P133 hook.");
 
 for (const forbidden of [
   "fetch(",

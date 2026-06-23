@@ -11,6 +11,7 @@ import {
 import { debugRoutesEnabled } from "@/app/debug-route-guard";
 import {
   buildAiReviewCalculationPromptPacket,
+  buildAiReviewGenerationBoundary,
   buildAiReviewGroundedDraftEvaluator,
   buildAiReviewGroundedComposer,
   buildAiReviewSharedResponseContractSurfaceSummary,
@@ -62,6 +63,7 @@ export default function ReportMockReviewPage() {
   const calculationPromptPacket = buildAiReviewCalculationPromptPacket(sharedResponseContract);
   const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
   const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
+  const generationBoundary = buildAiReviewGenerationBoundary(calculationPromptPacket, groundedDraftEvaluator, groundedComposer);
 
   return (
     <main style={pageStyle}>
@@ -215,6 +217,42 @@ export default function ReportMockReviewPage() {
             ))}
           </div>
           <span hidden>{groundedComposer.statusLabels.join("; ")}</span>
+        </section>
+
+        <section
+          aria-label="Generation boundary"
+          data-ai-review-generation-boundary-stage="P133-A"
+          style={{ border: "1px solid #d5e3e0", borderRadius: 8, marginTop: 20, padding: 16 }}
+        >
+          <h2 style={{ marginTop: 0 }}>Generation boundary</h2>
+          <p style={{ color: "#53656b", marginTop: 0 }}>
+            Offline response gate before any future AI review can be displayed.
+          </p>
+          <p style={{ color: "#53656b", marginTop: 0 }}>
+            Forbidden output classes: {generationBoundary.request.forbiddenOutputClasses.join(", ")}
+          </p>
+          <div style={gridStyle}>
+            <Metric label="Fixtures" value={String(generationBoundary.fixtures.length)} />
+            <Metric label="Required sections" value={String(generationBoundary.request.requiredResponseSectionsCount)} />
+            <Metric label="Required groups" value={String(generationBoundary.request.requiredEvidenceGroupsCount)} />
+            <Metric label="Response gate" value="offline only" />
+          </div>
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {generationBoundary.gateResults.map((result) => (
+              <article key={result.fixture.id} style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
+                <strong>{result.fixture.id}</strong>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Gate outcome: {result.outcome}</p>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>
+                  Display eligibility: {result.displayEligible ? "eligible" : "not eligible"}
+                </p>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Failed gates: {result.failedGateNames.join(", ") || "none"}</p>
+                <p style={{ color: "#53656b", margin: 0 }}>
+                  Repair instruction summary: {result.repairInstructions.join(" ") || "none"}
+                </p>
+              </article>
+            ))}
+          </div>
+          <span hidden>{generationBoundary.statusLabels.join("; ")}</span>
         </section>
 
         <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>

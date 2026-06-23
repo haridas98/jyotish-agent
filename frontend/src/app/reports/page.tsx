@@ -463,6 +463,25 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-generation-boundary" data-ai-review-generation-boundary-stage="P133-A">
+          <div className="ai-review-generation-boundary-head">
+            <strong>Generation boundary</strong>
+            <span>Offline response gate before any future AI review can be displayed.</span>
+            <span>Forbidden output classes: {aiReviewQualityLab.generationBoundary.request.forbiddenOutputClasses.join(", ")}</span>
+          </div>
+          <div className="ai-review-generation-boundary-grid" role="list">
+            {aiReviewQualityLab.generationBoundary.gateResults.map((result) => (
+              <section key={result.fixture.id} role="listitem">
+                <strong>{result.fixture.id}</strong>
+                <span>Fixture type: {result.fixture.fixtureType}</span>
+                <span>Gate outcome: {result.outcome}</span>
+                <span>Display eligibility: {result.displayEligible ? "eligible" : "not eligible"}</span>
+                <span>Failed gates: {result.failedGateNames.join(", ") || "none"}</span>
+                <span>Repair instruction summary: {result.repairInstructions.join(" ") || "none"}</span>
+              </section>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

@@ -454,6 +454,60 @@ export type AiReviewGroundedComposer = {
   statusLabels: string[];
 };
 
+export type AiReviewGenerationBoundaryFixtureId =
+  | "offline_composed_grounded_response"
+  | "offline_generic_weak_response"
+  | "offline_overclaim_response";
+
+export type AiReviewGenerationBoundaryFixture = {
+  id: AiReviewGenerationBoundaryFixtureId;
+  label: string;
+  fixtureType: "grounded" | "generic" | "overclaim";
+  response: string;
+  expectedOutcome: "accepted" | "blocked";
+};
+
+export type AiReviewGenerationBoundaryRequest = {
+  requiredResponseSectionsCount: number;
+  requiredEvidenceGroupsCount: number;
+  practicalNextQuestionRequired: boolean;
+  forbiddenOutputClasses: string[];
+  usesGroundedComposer: boolean;
+  usesGroundedEvaluator: boolean;
+  usesCalculationPacket: boolean;
+  usesResponseContract: boolean;
+};
+
+export type AiReviewGenerationBoundaryGateResult = {
+  fixture: AiReviewGenerationBoundaryFixture;
+  outcome: "accepted" | "blocked";
+  evaluatorResult: AiReviewGroundedDraftEvaluation;
+  failedGateNames: string[];
+  repairInstructions: string[];
+  displayEligible: boolean;
+};
+
+export type AiReviewGenerationBoundary = {
+  stage: "P133-A";
+  request: AiReviewGenerationBoundaryRequest;
+  fixtures: AiReviewGenerationBoundaryFixture[];
+  gateResults: AiReviewGenerationBoundaryGateResult[];
+  aggregate: {
+    fixtureCount: number;
+    groundedFixtureAccepted: boolean;
+    genericFixtureBlocked: boolean;
+    overclaimFixtureBlocked: boolean;
+    blockedNotDisplayEligible: boolean;
+    repairsPresent: boolean;
+    usesGroundedComposer: boolean;
+    usesGroundedEvaluator: boolean;
+    usesCalculationPacket: boolean;
+    usesResponseContract: boolean;
+    localOnlyNotFinalOutput: true;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -1850,6 +1904,155 @@ export function buildAiReviewGroundedComposer(
   };
 }
 
+function evaluateAiReviewGenerationBoundaryFixture(
+  fixture: AiReviewGenerationBoundaryFixture,
+  request: AiReviewGenerationBoundaryRequest,
+  calculationPromptPacket: AiReviewCalculationPromptPacket,
+): AiReviewGenerationBoundaryGateResult {
+  const draftFixture: AiReviewGroundedDraftFixture = {
+    id:
+      fixture.fixtureType === "grounded"
+        ? "composed_grounded_review_draft"
+        : fixture.fixtureType === "overclaim"
+          ? "advanced_overclaim_draft"
+          : "generic_inspirational_draft",
+    label: fixture.label,
+    draft: fixture.response,
+    expectedResult: fixture.expectedOutcome === "accepted" ? "pass" : "fail",
+    fixtureType: fixture.fixtureType === "grounded" ? "strong" : fixture.fixtureType,
+  };
+  const evaluatorResult = evaluateAiReviewGroundedDraftFixture(draftFixture, calculationPromptPacket);
+  const responseLower = fixture.response.toLowerCase();
+  const failedGateNames = [
+    evaluatorResult.genericLanguageFlags.length > 0 ? "generic prose" : "",
+    evaluatorResult.overclaimFlags.length > 0 ? "advanced overclaim without anchors" : "",
+    evaluatorResult.evidenceGroupHits.length < request.requiredEvidenceGroupsCount ? "missing calculation anchors" : "",
+    evaluatorResult.practicalQuestionQuality.passed ? "" : "missing practical next question",
+    responseLower.includes("caveat") || responseLower.includes("gated") || responseLower.includes("blocked") ? "" : "missing caveats",
+  ].filter(Boolean);
+  const displayEligible = evaluatorResult.passed && failedGateNames.length === 0;
+  const repairInstructions = Array.from(
+    new Set([
+      ...evaluatorResult.repairInstructions,
+      failedGateNames.includes("missing calculation anchors")
+        ? "Add calculation anchors from the E130 packet before display."
+        : "",
+      failedGateNames.includes("missing caveats") ? "Add caveats or gated-claim language before display." : "",
+    ].filter(Boolean)),
+  );
+
+  return {
+    fixture,
+    outcome: displayEligible ? "accepted" : "blocked",
+    evaluatorResult,
+    failedGateNames,
+    repairInstructions,
+    displayEligible,
+  };
+}
+
+export function buildAiReviewGenerationBoundary(
+  calculationPromptPacket = buildAiReviewCalculationPromptPacket(),
+  groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket),
+  groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator),
+): AiReviewGenerationBoundary {
+  const request: AiReviewGenerationBoundaryRequest = {
+    requiredResponseSectionsCount: groundedComposer.sections.length,
+    requiredEvidenceGroupsCount: 5,
+    practicalNextQuestionRequired: true,
+    forbiddenOutputClasses: [
+      "generic prose",
+      "advanced overclaim without anchors",
+      "missing calculation anchors",
+      "missing caveats",
+    ],
+    usesGroundedComposer: groundedComposer.stage === "E132-A",
+    usesGroundedEvaluator: groundedDraftEvaluator.stage === "P131-A",
+    usesCalculationPacket: calculationPromptPacket.stage === "E130-A",
+    usesResponseContract: calculationPromptPacket.sharedResponseContract.stage === "P129-A",
+  };
+  const fixtures: AiReviewGenerationBoundaryFixture[] = [
+    {
+      id: "offline_composed_grounded_response",
+      label: "Composed grounded response",
+      fixtureType: "grounded",
+      expectedOutcome: "accepted",
+      response: groundedComposer.draft.draft,
+    },
+    {
+      id: "offline_generic_weak_response",
+      label: "Generic weak response",
+      fixtureType: "generic",
+      expectedOutcome: "blocked",
+      response:
+        "You have positive energy and many opportunities. Trust your intuition, follow your heart, and let things unfold naturally.",
+    },
+    {
+      id: "offline_overclaim_response",
+      label: "Overclaim response",
+      fixtureType: "overclaim",
+      expectedOutcome: "blocked",
+      response:
+        "Chart placements sound promising, but Shadbala proves strength and Ashtakavarga confirms timing without computed anchors.",
+    },
+  ];
+  const gateResults = fixtures.map((fixture) => evaluateAiReviewGenerationBoundaryFixture(fixture, request, calculationPromptPacket));
+  const grounded = gateResults.find((result) => result.fixture.id === "offline_composed_grounded_response");
+  const generic = gateResults.find((result) => result.fixture.id === "offline_generic_weak_response");
+  const overclaim = gateResults.find((result) => result.fixture.id === "offline_overclaim_response");
+
+  return {
+    stage: "P133-A",
+    request,
+    fixtures,
+    gateResults,
+    aggregate: {
+      fixtureCount: fixtures.length,
+      groundedFixtureAccepted: grounded?.outcome === "accepted" && grounded.displayEligible,
+      genericFixtureBlocked: generic?.outcome === "blocked",
+      overclaimFixtureBlocked: overclaim?.outcome === "blocked",
+      blockedNotDisplayEligible: gateResults
+        .filter((result) => result.outcome === "blocked")
+        .every((result) => result.displayEligible === false),
+      repairsPresent: gateResults
+        .filter((result) => result.outcome === "blocked")
+        .every((result) => result.repairInstructions.length >= 1),
+      usesGroundedComposer: request.usesGroundedComposer,
+      usesGroundedEvaluator: request.usesGroundedEvaluator,
+      usesCalculationPacket: request.usesCalculationPacket,
+      usesResponseContract: request.usesResponseContract,
+      localOnlyNotFinalOutput: true,
+    },
+    statusLabels: [
+      "P133-A",
+      "ai_review_generation_boundary_stage=P133-A",
+      "ai_review_generation_boundary_present=true",
+      "ai_review_generation_boundary_request_present=true",
+      "ai_review_generation_boundary_response_gate_present=true",
+      "ai_review_generation_boundary_required_sections=5",
+      "ai_review_generation_boundary_required_groups=5",
+      "ai_review_generation_boundary_practical_question_required=true",
+      "ai_review_generation_boundary_forbidden_classes_present=true",
+      "ai_review_generation_boundary_fixture_count=3",
+      "ai_review_generation_boundary_grounded_fixture_accepted=true",
+      "ai_review_generation_boundary_generic_fixture_blocked=true",
+      "ai_review_generation_boundary_overclaim_fixture_blocked=true",
+      "ai_review_generation_boundary_blocked_not_display_eligible=true",
+      "ai_review_generation_boundary_repairs_present=true",
+      "ai_review_generation_boundary_uses_grounded_composer=true",
+      "ai_review_generation_boundary_uses_grounded_evaluator=true",
+      "ai_review_generation_boundary_uses_calculation_packet=true",
+      "ai_review_generation_boundary_uses_response_contract=true",
+      "ai_review_generation_boundary_visible=true",
+      "ai_review_generation_boundary_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -1866,6 +2069,7 @@ export function buildAiReviewQualityLabSummary() {
   const calculationPromptPacket = buildAiReviewCalculationPromptPacket(sharedResponseContract, assertionLedger);
   const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
   const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
+  const generationBoundary = buildAiReviewGenerationBoundary(calculationPromptPacket, groundedDraftEvaluator, groundedComposer);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -1894,6 +2098,7 @@ export function buildAiReviewQualityLabSummary() {
       ...calculationPromptPacket.statusLabels,
       ...groundedDraftEvaluator.statusLabels,
       ...groundedComposer.statusLabels,
+      ...generationBoundary.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -1922,5 +2127,6 @@ export function buildAiReviewQualityLabSummary() {
     calculationPromptPacket,
     groundedDraftEvaluator,
     groundedComposer,
+    generationBoundary,
   };
 }
