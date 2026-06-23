@@ -28,10 +28,12 @@ function loadTsModule(path) {
 
 const helperPath = "src/lib/ai-review-quality.ts";
 const pagePath = "src/app/reports/page.tsx";
+const mockReviewPagePath = "src/app/report-mock-review/page.tsx";
 const packageJson = read("package.json");
 const helperSource = read(helperPath);
 const page = read(pagePath);
-const combinedSource = `${helperSource}\n${page}`;
+const mockReviewPage = read(mockReviewPagePath);
+const combinedSource = `${helperSource}\n${page}\n${mockReviewPage}`;
 const combinedSourceLower = combinedSource.toLowerCase();
 const helper = loadTsModule(helperPath);
 
@@ -48,6 +50,7 @@ for (const marker of [
   "E126-A",
   "P127-A",
   "E128-A",
+  "P129-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -58,6 +61,7 @@ for (const marker of [
   "ai_review_assertion_ledger_stage=E126-A",
   "ai_review_narrative_rubric_stage=P127-A",
   "ai_review_response_contract_stage=E128-A",
+  "ai_review_response_contract_shared_stage=P129-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -138,6 +142,18 @@ for (const marker of [
   "ai_review_response_contract_uses_assertion_ledger=true",
   "ai_review_response_contract_uses_narrative_rubric=true",
   "ai_review_response_contract_visible=true",
+  "ai_review_response_contract_shared_source=true",
+  "ai_review_response_contract_shared_across_surfaces=true",
+  "ai_review_response_contract_reports_surface=true",
+  "ai_review_response_contract_mock_review_surface=true",
+  "ai_review_response_contract_mock_review_visible=true",
+  "ai_review_response_contract_shared_sections=5",
+  "ai_review_response_contract_shared_sections_exact=true",
+  "ai_review_response_contract_shared_repair_guidance=true",
+  "ai_review_response_contract_shared_generic_repair=true",
+  "ai_review_response_contract_shared_overclaim_repair=true",
+  "ai_review_response_contract_shared_missing_question_repair=true",
+  "ai_review_response_contract_product_gate_not_final_output=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -248,6 +264,9 @@ for (const label of [
   "generic without anchors",
   "advanced overclaim without computed tables",
   "advice without practical next question",
+  "Shared response contract",
+  "pre-generation quality gate, not final AI text",
+  "Repair coverage status",
   "Shadbala",
   "Ashtakavarga",
   "Avastha",
@@ -274,6 +293,7 @@ assert(typeof helper.buildAiReviewFollowupQuestionContract === "function", "buil
 assert(typeof helper.buildAiReviewAssertionLedger === "function", "buildAiReviewAssertionLedger must be exported.");
 assert(typeof helper.buildAiReviewNarrativeQualityRubric === "function", "buildAiReviewNarrativeQualityRubric must be exported.");
 assert(typeof helper.buildAiReviewResponseContract === "function", "buildAiReviewResponseContract must be exported.");
+assert(typeof helper.buildAiReviewSharedResponseContractSurfaceSummary === "function", "buildAiReviewSharedResponseContractSurfaceSummary must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -287,6 +307,8 @@ const questionContract = helper.buildAiReviewFollowupQuestionContract();
 const assertionLedger = helper.buildAiReviewAssertionLedger();
 const narrativeRubric = helper.buildAiReviewNarrativeQualityRubric();
 const responseContract = helper.buildAiReviewResponseContract();
+const reportsSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSummary("reports");
+const mockSharedSummary = helper.buildAiReviewSharedResponseContractSurfaceSummary("report-mock-review");
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -443,6 +465,24 @@ assert(responseContract.usesNarrativeRubric === true, "Response contract must us
 for (const repairType of ["generic_without_anchors", "advanced_overclaim_without_computed_tables", "advice_without_practical_next_question"]) {
   assert(responseContract.repairGuidance.some((repair) => repair.type === repairType), `Missing repair guidance: ${repairType}`);
 }
+assert(reportsSharedSummary.stage === "P129-A", "Reports shared contract summary stage must be P129-A.");
+assert(mockSharedSummary.stage === "P129-A", "Mock-review shared contract summary stage must be P129-A.");
+assert(reportsSharedSummary.statusLabels.includes("ai_review_response_contract_shared_stage=P129-A"), "Shared contract labels missing P129 stage.");
+assert(mockSharedSummary.statusLabels.includes("ai_review_response_contract_mock_review_surface=true"), "Mock-review shared labels missing surface flag.");
+assert(reportsSharedSummary.surface === "reports", "Reports shared summary surface mismatch.");
+assert(mockSharedSummary.surface === "report-mock-review", "Mock-review shared summary surface mismatch.");
+assert(reportsSharedSummary.sectionCount === 5 && mockSharedSummary.sectionCount === 5, "Shared contract must expose five sections on both surfaces.");
+assert(reportsSharedSummary.sectionNames.join("|") === mockSharedSummary.sectionNames.join("|"), "Shared section names drifted between surfaces.");
+assert(reportsSharedSummary.sectionNames.join("|") === "Chart anchors|Rule chain|Interpretive tension|Practical next question|Caveats and gated claims", "Shared section names changed.");
+assert(reportsSharedSummary.repairCoverage.generic === true && mockSharedSummary.repairCoverage.generic === true, "Shared generic repair coverage missing.");
+assert(reportsSharedSummary.repairCoverage.overclaim === true && mockSharedSummary.repairCoverage.overclaim === true, "Shared overclaim repair coverage missing.");
+assert(reportsSharedSummary.repairCoverage.missingQuestion === true && mockSharedSummary.repairCoverage.missingQuestion === true, "Shared missing-question repair coverage missing.");
+assert(reportsSharedSummary.aggregate.sharedSource === true && mockSharedSummary.aggregate.sharedSource === true, "Shared summary must use shared source.");
+assert(reportsSharedSummary.aggregate.productGateNotFinalOutput === true, "Shared summary must be product gate, not final output.");
+assert(page.includes("sharedResponseContract"), "/reports must use shared response-contract summary.");
+assert(mockReviewPage.includes("buildAiReviewSharedResponseContractSurfaceSummary"), "/report-mock-review must use shared response-contract helper.");
+assert(mockReviewPage.includes('data-ai-review-response-contract-shared-stage="P129-A"'), "/report-mock-review must expose P129 hook.");
+assert(mockReviewPage.includes("Shared response contract"), "/report-mock-review must show shared response contract copy.");
 
 for (const forbidden of [
   "fetch(",

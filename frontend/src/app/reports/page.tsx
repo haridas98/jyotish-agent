@@ -376,13 +376,17 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
-        <div className="ai-review-response-contract" data-ai-review-response-contract-stage="E128-A">
+        <div
+          className="ai-review-response-contract"
+          data-ai-review-response-contract-stage="E128-A"
+          data-ai-review-response-contract-shared-stage="P129-A"
+        >
           <div className="ai-review-response-contract-head">
             <strong>AI review response contract</strong>
-            <span>Local quality harness, not final AI output.</span>
+            <span>Shared response contract: pre-generation quality gate, not final AI text.</span>
           </div>
           <div className="ai-review-response-grid" role="list">
-            {aiReviewQualityLab.responseContract.sections.map((section) => (
+            {aiReviewQualityLab.sharedResponseContract.contract.sections.map((section) => (
               <section key={section.name} role="listitem">
                 <strong>{section.name}</strong>
                 <span>Required anchors: {section.requiredSourceAnchorCount}</span>
@@ -393,7 +397,11 @@ export default function ReportBuilderPage() {
             ))}
           </div>
           <div className="ai-review-repair-guidance" aria-label="Repair guidance">
-            {aiReviewQualityLab.responseContract.repairGuidance.map((repair) => (
+            <span>
+              Repair coverage status:{" "}
+              {aiReviewQualityLab.sharedResponseContract.aggregate.repairGuidanceCoversFailures ? "covered" : "blocked"}
+            </span>
+            {aiReviewQualityLab.sharedResponseContract.contract.repairGuidance.map((repair) => (
               <span key={repair.type}>
                 {repair.failurePattern}: {repair.repairInstruction}
               </span>

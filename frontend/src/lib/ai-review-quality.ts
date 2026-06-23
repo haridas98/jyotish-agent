@@ -309,6 +309,28 @@ export type AiReviewResponseContract = {
   statusLabels: string[];
 };
 
+export type AiReviewResponseContractSurface = "reports" | "report-mock-review";
+
+export type AiReviewSharedResponseContractSurfaceSummary = {
+  stage: "P129-A";
+  surface: AiReviewResponseContractSurface;
+  contract: AiReviewResponseContract;
+  sectionNames: AiReviewResponseContractSectionName[];
+  sectionCount: number;
+  repairCoverage: {
+    generic: boolean;
+    overclaim: boolean;
+    missingQuestion: boolean;
+  };
+  aggregate: {
+    sharedSource: boolean;
+    sectionsExact: boolean;
+    repairGuidanceCoversFailures: boolean;
+    productGateNotFinalOutput: boolean;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -1305,6 +1327,54 @@ export function buildAiReviewResponseContract(
   };
 }
 
+export function buildAiReviewSharedResponseContractSurfaceSummary(
+  surface: AiReviewResponseContractSurface,
+  contract = buildAiReviewResponseContract(),
+): AiReviewSharedResponseContractSurfaceSummary {
+  const sectionNames = contract.sections.map((section) => section.name);
+  const repairCoverage = {
+    generic: contract.repairGuidance.some((repair) => repair.type === "generic_without_anchors"),
+    overclaim: contract.repairGuidance.some((repair) => repair.type === "advanced_overclaim_without_computed_tables"),
+    missingQuestion: contract.repairGuidance.some((repair) => repair.type === "advice_without_practical_next_question"),
+  };
+
+  return {
+    stage: "P129-A",
+    surface,
+    contract,
+    sectionNames,
+    sectionCount: contract.sections.length,
+    repairCoverage,
+    aggregate: {
+      sharedSource: true,
+      sectionsExact: contract.aggregate.sectionsExact && contract.sections.length === 5,
+      repairGuidanceCoversFailures: repairCoverage.generic && repairCoverage.overclaim && repairCoverage.missingQuestion,
+      productGateNotFinalOutput: true,
+    },
+    statusLabels: [
+      "P129-A",
+      "ai_review_response_contract_shared_stage=P129-A",
+      "ai_review_response_contract_shared_source=true",
+      "ai_review_response_contract_shared_across_surfaces=true",
+      surface === "reports"
+        ? "ai_review_response_contract_reports_surface=true"
+        : "ai_review_response_contract_mock_review_surface=true",
+      surface === "report-mock-review" ? "ai_review_response_contract_mock_review_visible=true" : "ai_review_response_contract_reports_visible=true",
+      "ai_review_response_contract_shared_sections=5",
+      "ai_review_response_contract_shared_sections_exact=true",
+      "ai_review_response_contract_shared_repair_guidance=true",
+      "ai_review_response_contract_shared_generic_repair=true",
+      "ai_review_response_contract_shared_overclaim_repair=true",
+      "ai_review_response_contract_shared_missing_question_repair=true",
+      "ai_review_response_contract_product_gate_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -1317,6 +1387,7 @@ export function buildAiReviewQualityLabSummary() {
   const assertionLedger = buildAiReviewAssertionLedger();
   const narrativeRubric = buildAiReviewNarrativeQualityRubric(assertionLedger);
   const responseContract = buildAiReviewResponseContract(assertionLedger, narrativeRubric);
+  const sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("reports", responseContract);
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -1341,6 +1412,7 @@ export function buildAiReviewQualityLabSummary() {
       ...assertionLedger.statusLabels,
       ...narrativeRubric.statusLabels,
       ...responseContract.statusLabels,
+      ...sharedResponseContract.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -1365,5 +1437,6 @@ export function buildAiReviewQualityLabSummary() {
     assertionLedger,
     narrativeRubric,
     responseContract,
+    sharedResponseContract,
   };
 }

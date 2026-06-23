@@ -9,6 +9,9 @@ import {
   runMockAiDryRun,
 } from "@/astrology";
 import { debugRoutesEnabled } from "@/app/debug-route-guard";
+import { buildAiReviewSharedResponseContractSurfaceSummary } from "@/lib/ai-review-quality";
+
+export const dynamic = "force-dynamic";
 
 const pageStyle = {
   background: "#eef5f4",
@@ -50,6 +53,7 @@ export default function ReportMockReviewPage() {
   const request = buildAiReportRequest(eligibility);
   const dryRun = runMockAiDryRun(request);
   const workspace = buildAiHumanReviewWorkspace({ eligibility, request, dryRun });
+  const sharedResponseContract = buildAiReviewSharedResponseContractSurfaceSummary("report-mock-review");
 
   return (
     <main style={pageStyle}>
@@ -89,6 +93,33 @@ export default function ReportMockReviewPage() {
             <Metric label="Real provider call" value={workspace.safetyFlags.realProviderCalled ? "yes" : "no"} />
             <Metric label="Stored content" value={workspace.safetyFlags.rawContentStored ? "yes" : "no"} />
           </div>
+        </section>
+
+        <section
+          aria-label="Shared response contract"
+          data-ai-review-response-contract-shared-stage="P129-A"
+          style={{ border: "1px solid #d5e3e0", borderRadius: 8, marginTop: 20, padding: 16 }}
+        >
+          <h2 style={{ marginTop: 0 }}>Shared response contract</h2>
+          <p style={{ color: "#53656b", marginTop: 0 }}>Pre-generation quality gate, not final AI text.</p>
+          <div style={gridStyle}>
+            <Metric label="Sections" value={String(sharedResponseContract.sectionCount)} />
+            <Metric label="Shared source" value={sharedResponseContract.aggregate.sharedSource ? "yes" : "no"} />
+            <Metric label="Repair coverage status" value={sharedResponseContract.aggregate.repairGuidanceCoversFailures ? "covered" : "blocked"} />
+          </div>
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {sharedResponseContract.contract.sections.map((section) => (
+              <article key={section.name} style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
+                <strong>{section.name}</strong>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Required anchors: {section.requiredSourceAnchorCount}</p>
+                <p style={{ color: "#53656b", margin: 0 }}>Repair coverage status: {section.repairInstruction}</p>
+              </article>
+            ))}
+          </div>
+          <p style={{ color: "#53656b", marginBottom: 0 }}>
+            Failing draft coverage: generic without anchors; advanced overclaim without computed tables; advice without practical next question.
+          </p>
+          <span hidden>{sharedResponseContract.statusLabels.join("; ")}</span>
         </section>
 
         <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>
