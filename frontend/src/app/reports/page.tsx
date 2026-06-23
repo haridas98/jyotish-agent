@@ -274,6 +274,30 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-telegram-benchmark" data-ai-review-telegram-benchmark-stage="E124-A">
+          <div className="ai-review-telegram-benchmark-head">
+            <strong>Telegram benchmark accents</strong>
+            <span>Source style is intentionally not copied; only chart facts, accents, caveats, and grounded questions are kept.</span>
+            <span>Advanced claims gated unless calculated table exists.</span>
+          </div>
+          <div className="ai-review-blueprint-sections">
+            {aiReviewQualityLab.telegramBenchmark.blueprintSections.map((section) => (
+              <span key={section}>{section}</span>
+            ))}
+          </div>
+          <div className="ai-review-telegram-benchmark-grid" role="list">
+            {aiReviewQualityLab.telegramBenchmark.benchmarks.map((benchmark) => (
+              <section key={benchmark.name} role="listitem">
+                <strong>{benchmark.name}</strong>
+                <span>Chart facts: {benchmark.chartFacts.length}</span>
+                <span>Accents/rules: {benchmark.calculationAccents.length}</span>
+                <span>Follow-up questions: {benchmark.followUpQuestions.length}</span>
+                <span>Example grounded questions: {benchmark.followUpQuestions.slice(0, 3).join(" ")}</span>
+                <span>Caution: {benchmark.advancedClaimCautions[0]}</span>
+              </section>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

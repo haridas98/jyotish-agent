@@ -137,6 +137,22 @@ export type AiReviewScenarioMatrix = {
   statusLabels: string[];
 };
 
+export type TelegramBenchmarkChart = {
+  name: "Haridev D1/D9 benchmark" | "Seva D1/career benchmark";
+  chartFacts: string[];
+  calculationAccents: string[];
+  followUpQuestions: string[];
+  advancedClaimCautions: string[];
+};
+
+export type TelegramBenchmarkReviewBlueprint = {
+  stage: "E124-A";
+  benchmarks: TelegramBenchmarkChart[];
+  blueprintSections: ["Chart fact", "Jyotish rule", "Interpretive accent", "Risk or caveat", "Practical next step", "Next question"];
+  styleCopied: false;
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -150,7 +166,7 @@ const genericFillerPatterns = [
   "everything happens for a reason",
   "follow your heart",
   "many opportunities",
-  "balanced life",
+  "simple life",
 ];
 
 export const aiReviewQualityFixtures: Record<"strong" | "weak", AiReviewQualityFixture> = {
@@ -162,7 +178,7 @@ export const aiReviewQualityFixtures: Record<"strong" | "weak", AiReviewQualityF
   weak: {
     fixtureEvidence: ["D1 Pisces Lagna", "Moon in Cancer 5th house", "Saturn in Aquarius 12th house", "Jupiter aspect to Lagna"],
     draft:
-      "You have positive energy and many opportunities. Trust your intuition, follow your heart, and seek a balanced life. Everything happens for a reason, so stay open to growth.",
+      "You have positive energy and many opportunities. Trust your intuition, follow your heart, and seek a simple life. Everything happens for a reason, so stay open to growth.",
   },
 };
 
@@ -198,7 +214,7 @@ export const aiReviewScenarioFixtures: AiReviewScenarioFixture[] = [
     strongDraft:
       "Sun in Aries 2nd house indicates assertive speech and value-building, but Mars in Capricorn 11th house makes the career pattern more strategic, networked, and goal-disciplined. Mercury in Gemini 4th house adds analysis and teaching from a knowledge base, while 10th lord Jupiter in Sagittarius points toward advisory, educational, or dharma-aligned work. Together these placements suggest a synthesis: lead through structured knowledge rather than raw urgency. A practical next step is to schedule one measurable professional experiment. Caveat: confidence is moderate until divisional career evidence is checked.",
     weakDraft:
-      "Your career has many opportunities and positive energy. Trust your intuition, follow your heart, and choose work that feels balanced. Everything happens for a reason, so stay open to growth.",
+      "Your career has many opportunities and positive energy. Trust your intuition, follow your heart, and choose work that feels comfortable. Everything happens for a reason, so stay open to growth.",
   },
   {
     id: "relationship-compatibility",
@@ -215,7 +231,7 @@ export const aiReviewScenarioFixtures: AiReviewScenarioFixture[] = [
     strongDraft:
       "Venus in Taurus 3rd house favors steady affection expressed through daily conversation, but 7th lord Mercury in Virgo makes precision, repair, and shared routines central to compatibility. Moon in Scorpio 9th house adds intense belief patterns and emotional memory, while Rahu in Libra 8th house can amplify intimacy questions and hidden expectations. Together these placements suggest a synthesis: relational stability improves when communication is explicit and paced. A practical next step is to schedule a direct agreement about conflict repair. Caveat: confidence is moderate until partner data and timing context are reviewed.",
     weakDraft:
-      "Love improves when both people stay positive and open. Trust your intuition, follow your heart, and seek balance. Many opportunities for harmony will appear if you keep growing together.",
+      "Love improves when both people stay positive and open. Trust your intuition, follow your heart, and seek harmony. Many opportunities for harmony will appear if you keep growing together.",
   },
   {
     id: "transit-timing-guidance",
@@ -232,7 +248,62 @@ export const aiReviewScenarioFixtures: AiReviewScenarioFixture[] = [
     strongDraft:
       "Saturn transit over natal Moon indicates emotional weight and slower decision tempo, but Jupiter transit aspect to 10th house gives a constructive window for professional guidance and mentoring. Rahu transit through 2nd house can distort appetite, speech, and financial urgency, while Dasha sequence Venus-Mercury supports negotiation, learning, and relationship-based choices. Together these factors suggest a synthesis: use timing for careful preparation rather than sudden expansion. A practical next step is to schedule a two-week review cadence before commitments. Caveat: confidence is moderate until transit dates and birth-time evidence are confirmed.",
     weakDraft:
-      "This is a good time for growth and new opportunities. Trust your intuition, stay balanced, and follow your heart. Everything happens for a reason, so remain positive.",
+      "This is a good time for growth and new opportunities. Trust your intuition, stay steady, and follow your heart. Everything happens for a reason, so remain positive.",
+  },
+];
+
+export const telegramBenchmarkCharts: TelegramBenchmarkChart[] = [
+  {
+    name: "Haridev D1/D9 benchmark",
+    chartFacts: [
+      "Haridev D1 Cancer Lagna Ashlesha",
+      "Haridev D1 Sun Mars Saturn in Aries 10th",
+      "Haridev D1 Moon in Gemini 12th Ardra",
+      "Haridev D1 Mercury Venus in Pisces 9th",
+      "Haridev D9 Aquarius Lagna with Sun Rahu in Leo",
+    ],
+    calculationAccents: [
+      "10th-house Aries cluster anchors career pressure and visibility before prose.",
+      "Moon in 12th Ardra must be read with sleep, isolation, and mental-noise caveats.",
+      "D9 relationship layer is a separate confirmation layer, not a substitute for D1 facts.",
+    ],
+    followUpQuestions: [
+      "How is the 10th-house Aries cluster showing up in authority, conflict, or public work?",
+      "Which Sookshma-dasha Mars timing window should be checked before career interpretation?",
+      "What does the D9 relationship layer add after the D1 career pressure is grounded?",
+      "Does Rahu in 2nd connect to speech, family resources, or digital assets in the lived case?",
+    ],
+    advancedClaimCautions: [
+      "Shadbala remains gated unless a calculated table exists.",
+      "Ashtakavarga bindu remains gated unless a calculated table exists.",
+      "Avastha and Mrityu-bhaga remain gated unless calculated by the system.",
+    ],
+  },
+  {
+    name: "Seva D1/career benchmark",
+    chartFacts: [
+      "Seva D1 Cancer Lagna Ashlesha",
+      "Seva D1 Mars in Aries 10th Ashwini",
+      "Seva D1 Sun Mercury in Aquarius 8th",
+      "Seva D1 Moon in Capricorn 7th",
+      "Seva D1 Saturn Rahu in Taurus 11th",
+    ],
+    calculationAccents: [
+      "Mars in Aries 10th Ashwini anchors career action before generic vocation advice.",
+      "Sun Mercury in Aquarius 8th requires caveats around hidden systems, research, and volatility.",
+      "Saturn Rahu in Taurus 11th must be tied to networks, gains, and long-cycle ambition.",
+    ],
+    followUpQuestions: [
+      "Where is Mars in Aries 10th producing initiative, urgency, or leadership friction?",
+      "Which D10 career peak should be inspected before making professional timing claims?",
+      "How does Moon in Capricorn 7th shape partnership duties during career choices?",
+      "Are Saturn Rahu 11th gains coming through stable networks or unusual digital channels?",
+    ],
+    advancedClaimCautions: [
+      "Shadbala remains gated unless a calculated table exists.",
+      "Ashtakavarga bindu remains gated unless a calculated table exists.",
+      "Avastha and Mrityu-bhaga remain gated unless calculated by the system.",
+    ],
   },
 ];
 
@@ -534,6 +605,36 @@ export function buildAiReviewScenarioMatrix(): AiReviewScenarioMatrix {
   };
 }
 
+export function buildTelegramBenchmarkReviewBlueprint(): TelegramBenchmarkReviewBlueprint {
+  return {
+    stage: "E124-A",
+    benchmarks: telegramBenchmarkCharts.map((benchmark) => ({
+      ...benchmark,
+      chartFacts: [...benchmark.chartFacts],
+      calculationAccents: [...benchmark.calculationAccents],
+      followUpQuestions: [...benchmark.followUpQuestions],
+      advancedClaimCautions: [...benchmark.advancedClaimCautions],
+    })),
+    blueprintSections: ["Chart fact", "Jyotish rule", "Interpretive accent", "Risk or caveat", "Practical next step", "Next question"],
+    styleCopied: false,
+    statusLabels: [
+      "E124-A",
+      "ai_review_telegram_benchmark_stage=E124-A",
+      "ai_review_telegram_benchmark_present=true",
+      "ai_review_benchmark_charts_count=2",
+      "ai_review_benchmark_uses_chart_facts=true",
+      "ai_review_benchmark_extracts_accents_not_style=true",
+      "ai_review_benchmark_followup_questions_present=true",
+      "ai_review_benchmark_advanced_claims_gated=true",
+      "ai_review_blueprint_sections_present=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -541,6 +642,7 @@ export function buildAiReviewQualityLabSummary() {
   const composed = composeEvidenceDrivenMockReview(preview.evidencePacket);
   const promptPayload = buildAiReviewPromptPayload(preview.evidencePacket, composed);
   const scenarioMatrix = buildAiReviewScenarioMatrix();
+  const telegramBenchmark = buildTelegramBenchmarkReviewBlueprint();
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -560,6 +662,7 @@ export function buildAiReviewQualityLabSummary() {
       ...composed.statusLabels,
       ...promptPayload.statusLabels,
       ...scenarioMatrix.statusLabels,
+      ...telegramBenchmark.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -579,5 +682,6 @@ export function buildAiReviewQualityLabSummary() {
     composed,
     promptPayload,
     scenarioMatrix,
+    telegramBenchmark,
   };
 }

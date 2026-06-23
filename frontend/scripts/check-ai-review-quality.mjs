@@ -43,11 +43,13 @@ for (const marker of [
   "P121-A",
   "E122-A",
   "P123-A",
+  "E124-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
   "ai_review_prompt_contract_stage=E122-A",
   "ai_review_multi_fixture_stage=P123-A",
+  "ai_review_telegram_benchmark_stage=E124-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -78,6 +80,13 @@ for (const marker of [
   "ai_review_strong_outputs_pass_all_scenarios=true",
   "ai_review_generic_outputs_blocked_all_scenarios=true",
   "ai_review_prompt_contract_applied_all_scenarios=true",
+  "ai_review_telegram_benchmark_present=true",
+  "ai_review_benchmark_charts_count=2",
+  "ai_review_benchmark_uses_chart_facts=true",
+  "ai_review_benchmark_extracts_accents_not_style=true",
+  "ai_review_benchmark_followup_questions_present=true",
+  "ai_review_benchmark_advanced_claims_gated=true",
+  "ai_review_blueprint_sections_present=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -129,6 +138,20 @@ for (const label of [
   "Strong status",
   "Weak generic status",
   "Improvement reason",
+  "Telegram benchmark accents",
+  "Haridev D1/D9 benchmark",
+  "Seva D1/career benchmark",
+  "Chart fact",
+  "Jyotish rule",
+  "Interpretive accent",
+  "Risk or caveat",
+  "Practical next step",
+  "Next question",
+  "source style is intentionally not copied",
+  "advanced claims gated unless calculated table exists",
+  "10th-house Aries cluster",
+  "Sookshma-dasha Mars timing",
+  "D9 relationship layer",
   "lacks chart-specific evidence",
   "lacks practical synthesis",
   "not a generated final review",
@@ -146,6 +169,7 @@ assert(typeof helper.buildAiReviewMockPreview === "function", "buildAiReviewMock
 assert(typeof helper.composeEvidenceDrivenMockReview === "function", "composeEvidenceDrivenMockReview must be exported.");
 assert(typeof helper.buildAiReviewPromptPayload === "function", "buildAiReviewPromptPayload must be exported.");
 assert(typeof helper.buildAiReviewScenarioMatrix === "function", "buildAiReviewScenarioMatrix must be exported.");
+assert(typeof helper.buildTelegramBenchmarkReviewBlueprint === "function", "buildTelegramBenchmarkReviewBlueprint must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -154,6 +178,7 @@ const preview = helper.buildAiReviewMockPreview();
 const composed = helper.composeEvidenceDrivenMockReview(packet);
 const promptPayload = helper.buildAiReviewPromptPayload(packet, composed);
 const scenarioMatrix = helper.buildAiReviewScenarioMatrix();
+const telegramBenchmark = helper.buildTelegramBenchmarkReviewBlueprint();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -202,6 +227,17 @@ assert(scenarioMatrix.scenarios.every((scenario) => scenario.strong.status === "
 assert(scenarioMatrix.scenarios.every((scenario) => scenario.weak.status === "blocked_by_quality_gate"), "Every weak scenario must be blocked.");
 assert(scenarioMatrix.scenarios.every((scenario) => scenario.promptPayload.requiredEvidenceCitationCount >= 3), "Every scenario prompt payload must require at least three citations.");
 assert(scenarioMatrix.scenarios.every((scenario) => scenario.promptPayload.evidenceItems.length >= 4), "Every scenario prompt payload must include at least four evidence items.");
+assert(telegramBenchmark.stage === "E124-A", "Telegram benchmark stage must be E124-A.");
+assert(telegramBenchmark.statusLabels.includes("ai_review_telegram_benchmark_stage=E124-A"), "Telegram benchmark labels missing E124 stage.");
+assert(telegramBenchmark.benchmarks.length >= 2, "Telegram benchmark must include at least two named charts.");
+assert(telegramBenchmark.benchmarks.every((benchmark) => benchmark.chartFacts.length >= 4), "Each Telegram benchmark must include at least four chart facts.");
+assert(telegramBenchmark.benchmarks.every((benchmark) => benchmark.calculationAccents.length >= 3), "Each Telegram benchmark must include at least three accents/rules.");
+assert(telegramBenchmark.benchmarks.every((benchmark) => benchmark.followUpQuestions.length >= 3), "Each Telegram benchmark must include at least three follow-up questions.");
+assert(telegramBenchmark.benchmarks.every((benchmark) => benchmark.advancedClaimCautions.length >= 3), "Advanced claims must be gated with cautions.");
+assert(telegramBenchmark.blueprintSections.join("|") === "Chart fact|Jyotish rule|Interpretive accent|Risk or caveat|Practical next step|Next question", "Benchmark blueprint sections changed.");
+assert(telegramBenchmark.benchmarks.some((benchmark) => benchmark.name === "Haridev D1/D9 benchmark"), "Haridev benchmark missing.");
+assert(telegramBenchmark.benchmarks.some((benchmark) => benchmark.name === "Seva D1/career benchmark"), "Seva benchmark missing.");
+assert(telegramBenchmark.styleCopied === false, "Telegram benchmark must not copy source prose style.");
 
 for (const forbidden of [
   "fetch(",

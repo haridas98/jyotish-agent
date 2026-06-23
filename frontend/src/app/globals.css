@@ -839,6 +839,67 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.ai-review-telegram-benchmark {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d7e5e8;
+  border-radius: 8px;
+  background: #fbfdfd;
+}
+
+.ai-review-telegram-benchmark-head {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-review-blueprint-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ai-review-blueprint-sections span {
+  border: 1px solid #c9dedc;
+  border-radius: 999px;
+  background: #f5fbfa;
+  color: #102832;
+  font-weight: 850;
+  line-height: 1;
+  padding: 5px 8px;
+}
+
+.ai-review-telegram-benchmark-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-review-telegram-benchmark-grid section {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-telegram-benchmark strong {
+  color: var(--green);
+}
+
+.ai-review-telegram-benchmark span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
@@ -861,6 +922,10 @@ body .chart-profile-form textarea {
   }
 
   .ai-review-scenario-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-telegram-benchmark-grid {
     grid-template-columns: 1fr;
   }
 }
