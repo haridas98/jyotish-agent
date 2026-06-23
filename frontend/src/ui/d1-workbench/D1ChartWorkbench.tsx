@@ -285,7 +285,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
           <div id="d1-data-panel" className="d1-data-panel-anchor d1-data-stack">
             <ChartDataTabs model={model} state={workbenchState} onSelect={setActiveEntityId} />
           </div>
-          <span hidden>E141-A; chart_viewer_chart_and_graha_table_same_viewport=true; chart_viewer_inspector_same_viewport=true; chart_viewer_first_viewport_scroll_debt_reduced=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=5572bb60</span>
+          <span hidden>E141-A; chart_viewer_chart_and_graha_table_same_viewport=true; chart_viewer_inspector_same_viewport=true; chart_viewer_first_viewport_scroll_debt_reduced=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=7587205e</span>
         </div>
         <aside id="d1-inspector-panel" className="d1-inspector-panel">
           <EntityInspector entityId={workbenchState.activeEntityId} onClose={() => setActiveEntityId(null)} />
@@ -309,8 +309,8 @@ function D1LaunchVisibilityStrip({ model }: { model: D1WorkbenchModel }) {
       <span><strong>Technical desk</strong>chart, grahas, houses, nakshatras, technical payload, inspector</span>
       <span><strong>D-scopes</strong>{dScopeCopy}</span>
       <span><strong>First check</strong>{model.stats.grahaCount} grahas + {model.stats.specialPointCount} points visible before analysis review</span>
-      <span><strong>Production</strong>5572bb60 verified; calculations unchanged in this UI batch</span>
-      <span hidden>E140-A; chart_viewer_launch_visibility_strip=true; chart_viewer_visible_technical_scope_summary=true; chart_viewer_d_scope_coverage_summary=true; chart_viewer_first_check_before_analysis_review=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=5572bb60</span>
+      <span><strong>Production</strong>7587205e verified; calculations unchanged in this UI batch</span>
+      <span hidden>E140-A; chart_viewer_launch_visibility_strip=true; chart_viewer_visible_technical_scope_summary=true; chart_viewer_d_scope_coverage_summary=true; chart_viewer_first_check_before_analysis_review=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=7587205e</span>
     </div>
   );
 }
@@ -327,7 +327,8 @@ function D1ScopeCoverageMatrix({
   const supported = new Set(model.supportedScopes);
   const expert = new Set(model.expertOnlyScopes);
   const scopeAvailabilityByCode = new Map(model.technical.vargas.map((row) => [row.code, row]));
-  const scopes = model.vargaScopes.filter((scope) => supported.has(scope.code));
+  const groups = scopeMatrixGroups(model);
+  const scopes = groups.flatMap((group) => group.scopes);
   const availableCount = scopes.filter((scope) => scopeAvailabilityByCode.get(scope.code)?.status === "available").length;
 
   return (
@@ -339,30 +340,40 @@ function D1ScopeCoverageMatrix({
         </div>
         <span>{mode === "astrologer" ? "expert scopes enabled" : "expert scopes visible, gated"}</span>
       </div>
-      <div className="d1-scope-matrix-grid">
-        {scopes.map((scope) => {
-          const availability = scopeAvailabilityByCode.get(scope.code);
-          const status = availability?.status ?? "missing";
-          const expertOnly = expert.has(scope.code);
-          const gated = expertOnly && mode !== "astrologer";
-          return (
-            <button
-              key={scope.code}
-              type="button"
-              className={`d1-scope-matrix-card ${model.scopeId === scope.code ? "active" : ""} ${status} ${expertOnly ? "expert" : ""}`}
-              disabled={gated}
-              title={`${scope.name} - ${scope.methodId} v${scope.methodVersion}`}
-              onClick={() => onScopeChange?.(scope.code)}
-            >
-              <span className="d1-scope-matrix-code">{scope.code}</span>
-              <span className="d1-scope-matrix-name">{scope.name}</span>
-              <span className="d1-scope-matrix-meta">{scope.category} · {availability?.method ?? scope.methodId}</span>
-              <span className="d1-scope-matrix-status">{status} · {availability?.placementCount ?? 0} placements{gated ? " · astrologer mode" : ""}</span>
-            </button>
-          );
-        })}
+      <div className="d1-scope-matrix-sections">
+        {groups.map((group) => (
+          <div key={group.category} className="d1-scope-matrix-section" data-scope-matrix-category={group.category}>
+            <div className="d1-scope-matrix-section-title">
+              <strong>{scopeCategoryLabel(group.category)}</strong>
+              <span>{group.scopes.length} scopes</span>
+            </div>
+            <div className="d1-scope-matrix-grid">
+              {group.scopes.map((scope) => {
+                const availability = scopeAvailabilityByCode.get(scope.code);
+                const status = availability?.status ?? "missing";
+                const expertOnly = expert.has(scope.code);
+                const gated = expertOnly && mode !== "astrologer";
+                return (
+                  <button
+                    key={scope.code}
+                    type="button"
+                    className={`d1-scope-matrix-card ${model.scopeId === scope.code ? "active" : ""} ${status} ${expertOnly ? "expert" : ""}`}
+                    disabled={gated}
+                    title={`${scope.name} - ${scope.methodId} v${scope.methodVersion}`}
+                    onClick={() => onScopeChange?.(scope.code)}
+                  >
+                    <span className="d1-scope-matrix-code">{scope.code}</span>
+                    <span className="d1-scope-matrix-name">{scope.name}</span>
+                    <span className="d1-scope-matrix-meta">{scope.category} · {availability?.method ?? scope.methodId}</span>
+                    <span className="d1-scope-matrix-status">{status} · {availability?.placementCount ?? 0} placements{gated ? " · astrologer mode" : ""}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
-      <span hidden>E143-A; chart_viewer_all_d_scopes_matrix_visible=true; chart_viewer_scope_matrix_quick_switch=true; chart_viewer_scope_matrix_availability_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=5572bb60</span>
+      <span hidden>E143-A; chart_viewer_all_d_scopes_matrix_visible=true; chart_viewer_scope_matrix_quick_switch=true; chart_viewer_scope_matrix_availability_visible=true; chart_viewer_scope_matrix_grouped_by_use=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=7587205e</span>
     </section>
   );
 }
@@ -373,7 +384,7 @@ function D1MobileWorkflowNav({ activeTab, onGrahaJump }: { activeTab: D1DataTab;
       <a href="#d1-chart-panel"><strong>Chart</strong><span>D1</span></a>
       <a href="#d1-data-panel" className={activeTab === "grahas" ? "active" : ""} onClick={onGrahaJump}><strong>Grahas</strong><span>All rows</span></a>
       <a href="#d1-inspector-panel"><strong>Inspect</strong><span>Entity</span></a>
-      <span hidden>E139-A; chart_viewer_mobile_workflow_nav=true; chart_viewer_mobile_chart_table_inspector_anchors=true; chart_viewer_mobile_graha_rows_compact=true; chart_viewer_mobile_no_wide_table_primary=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=5572bb60</span>
+      <span hidden>E139-A; chart_viewer_mobile_workflow_nav=true; chart_viewer_mobile_chart_table_inspector_anchors=true; chart_viewer_mobile_graha_rows_compact=true; chart_viewer_mobile_no_wide_table_primary=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=7587205e</span>
     </nav>
   );
 }
@@ -395,8 +406,8 @@ function D1TechnicalContextStrip({
       <span><strong>Coverage</strong>{availableVargas}/{model.technical.vargas.length} vargas / {model.technical.dashas.length} dashas</span>
       <span><strong>Calculation</strong>{model.calculation.status} / {model.calculation.version}</span>
       <span><strong>Gate</strong>{activeAccuracyGate?.status ?? "standard"}</span>
-      <span hidden>E137-A; d1_technical_context_strip_present=true; chart_viewer_scope_coverage_visible=true; chart_viewer_calculation_status_visible=true; chart_viewer_accuracy_gate_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=5572bb60</span>
-      <span hidden>E138-A; chart_viewer_default_tab=grahas; chart_viewer_all_planets_visible_first_view=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=5572bb60</span>
+      <span hidden>E137-A; d1_technical_context_strip_present=true; chart_viewer_scope_coverage_visible=true; chart_viewer_calculation_status_visible=true; chart_viewer_accuracy_gate_visible=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=7587205e</span>
+      <span hidden>E138-A; chart_viewer_default_tab=grahas; chart_viewer_all_planets_visible_first_view=true; backend_calculation_changed=false; production_deploy_skipped_per_user_batching_policy=true; last_verified_deploy_commit=7587205e</span>
     </div>
   );
 }
@@ -790,6 +801,15 @@ function availableScopeGroupsForMode(model: D1WorkbenchModel, mode: D1ReaderMode
   const scopes = model.vargaScopes
     .filter((scope) => supported.has(scope.code))
     .filter((scope) => mode === "astrologer" || !expert.has(scope.code));
+  const categories = ["main", "family", "professional", "spiritual", "expert"] as const;
+  return categories
+    .map((category) => ({ category, scopes: scopes.filter((scope) => scope.category === category) }))
+    .filter((group) => group.scopes.length > 0);
+}
+
+function scopeMatrixGroups(model: D1WorkbenchModel) {
+  const supported = new Set(model.supportedScopes);
+  const scopes = model.vargaScopes.filter((scope) => supported.has(scope.code));
   const categories = ["main", "family", "professional", "spiritual", "expert"] as const;
   return categories
     .map((category) => ({ category, scopes: scopes.filter((scope) => scope.category === category) }))

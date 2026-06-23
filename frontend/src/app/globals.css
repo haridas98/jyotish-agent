@@ -2061,6 +2061,37 @@ body .chart-profile-form textarea {
   gap: 7px;
 }
 
+.d1-scope-matrix-sections {
+  display: grid;
+  gap: 8px;
+}
+
+.d1-scope-matrix-section {
+  display: grid;
+  grid-template-columns: minmax(86px, 0.14fr) minmax(0, 0.86fr);
+  gap: 8px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.d1-scope-matrix-section-title {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #f2faf8;
+  color: #48646c;
+  font-size: 11px;
+}
+
+.d1-scope-matrix-section-title strong {
+  color: #0c5962;
+  font-size: 12px;
+}
+
 .d1-scope-matrix-card {
   display: grid;
   gap: 3px;

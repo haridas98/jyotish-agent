@@ -88,19 +88,22 @@ for (const required of [
   "chart_viewer_inspector_same_viewport=true",
   "D1ScopeCoverageMatrix",
   "d1-scope-matrix",
+  "d1-scope-matrix-section",
   "d1-scope-matrix-grid",
   "d1-scope-matrix-card",
   "data-d1-scope-matrix-stage",
+  "data-scope-matrix-category",
   "chart_viewer_all_d_scopes_matrix_visible=true",
   "chart_viewer_scope_matrix_quick_switch=true",
   "chart_viewer_scope_matrix_availability_visible=true",
+  "chart_viewer_scope_matrix_grouped_by_use=true",
   "Technical desk",
   "D-scopes",
   "saved charts expose D1-D60",
   "First check",
   "chart_viewer_default_tab=grahas",
   "chart_viewer_all_planets_visible_first_view=true",
-  "last_verified_deploy_commit=5572bb60",
+  "last_verified_deploy_commit=7587205e",
   "D1MobileWorkflowNav",
   "data-d1-mobile-workflow-stage",
   "chart_viewer_mobile_workflow_nav=true",
@@ -176,6 +179,7 @@ assert(css.includes(".d1-technical-context-strip"), "E137 D1 technical context s
 assert(css.includes(".d1-launch-visibility-strip"), "E140 launch visibility strip CSS marker missing.");
 assert(css.includes(".d1-launch-visibility-strip span[hidden]"), "E140 launch visibility hidden marker CSS missing.");
 assert(css.includes(".d1-scope-matrix"), "E143 scope coverage matrix CSS marker missing.");
+assert(css.includes(".d1-scope-matrix-section"), "E143 grouped scope coverage section CSS marker missing.");
 assert(css.includes(".d1-scope-matrix-grid"), "E143 scope coverage matrix grid CSS marker missing.");
 assert(css.includes(".d1-scope-matrix-card"), "E143 scope coverage matrix card CSS marker missing.");
 assert(css.includes(".d1-first-viewport-grid"), "E141 first viewport grid CSS marker missing.");
