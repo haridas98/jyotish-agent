@@ -77,6 +77,7 @@ for (const required of [
   "chart_viewer_accuracy_gate_visible=true",
   "chart_viewer_default_tab=grahas",
   "chart_viewer_all_planets_visible_first_view=true",
+  "last_verified_deploy_commit=815c1f03",
   "D1MobileWorkflowNav",
   "data-d1-mobile-workflow-stage",
   "chart_viewer_mobile_workflow_nav=true",

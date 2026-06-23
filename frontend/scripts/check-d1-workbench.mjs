@@ -79,6 +79,7 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("chart_viewer_accuracy_gate_visible=true"), "D1 technical context strip must expose accuracy gate status");
   assert(component.includes('activeTab: "grahas"'), "D1 workbench first viewport must default to the graha table");
   assert(component.includes("chart_viewer_all_planets_visible_first_view=true"), "D1 workbench must expose first-view all-planets marker");
+  assert(component.includes("last_verified_deploy_commit=815c1f03"), "D1 workbench current launch markers must reference the latest verified production checkpoint");
   assert(component.includes("D1MobileWorkflowNav"), "D1 workbench must expose a mobile chart/table/inspector workflow nav");
   assert(component.includes('data-d1-mobile-workflow-stage="E139-A"'), "D1 mobile workflow nav must expose the E139 marker");
   assert(component.includes('href="#d1-chart-panel"') && component.includes('href="#d1-data-panel"') && component.includes('href="#d1-inspector-panel"'), "D1 mobile workflow nav must link chart, grahas, and inspector anchors");

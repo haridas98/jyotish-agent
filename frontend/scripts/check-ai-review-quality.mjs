@@ -910,6 +910,7 @@ assert(consultationMethodContract.aggregate.rawTranscriptCommitted === false, "C
 assert(consultationMethodContract.aggregate.finalOutputClaimed === false, "Consultation method must not claim final AI output.");
 assert(consultationMethodContract.gateRules.length >= 4, "Consultation method must include gate rules.");
 assert(consultationMethodContract.statusLabels.includes("ai_review_consultation_method_stage=P135-A"), "Consultation method labels missing P135 stage.");
+assert(consultationMethodContract.statusLabels.includes("last_verified_deploy_commit=815c1f03"), "Consultation method labels must reference the latest verified production checkpoint.");
 assert(page.includes("consultationMethodContract"), "/reports must render consultation method contract.");
 assert(mockReviewPage.includes("consultationMethodContract"), "/report-mock-review must render consultation method contract.");
 assert(page.includes('data-ai-review-consultation-method-stage="P135-A"'), "/reports must expose P135 hook.");
@@ -940,6 +941,7 @@ assert(blockedLiveComposerFromEvidencePack.gate.displayEligible === false, "Repo
 assert(blockedLiveComposerFromEvidencePack.gate.failedGateNames.includes("source_evidence_missing"), "Report evidence-pack blocked result must name missing approved evidence.");
 assert(blockedLiveComposerFromEvidencePack.statusLabels.includes("ai_review_live_composer_blocks_unapproved_report_evidence=true"), "Report evidence-pack blocked label missing.");
 assert(liveComposerContract.statusLabels.includes("ai_review_live_composer_stage=E136-A"), "Live composer labels missing E136 stage.");
+assert(liveComposerContract.statusLabels.includes("last_verified_deploy_commit=815c1f03"), "Live composer labels must reference the latest verified production checkpoint.");
 assert(page.includes("liveComposerContract"), "/reports must render live composer contract.");
 assert(mockReviewPage.includes("liveComposerContract"), "/report-mock-review must render live composer contract.");
 assert(page.includes('data-ai-review-live-composer-stage="E136-A"'), "/reports must expose E136 hook.");

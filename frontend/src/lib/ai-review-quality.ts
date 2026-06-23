@@ -2326,7 +2326,7 @@ export function buildAiReviewConsultationMethodContract(
       "ai_review_llm_network_call_executed=false",
       "backend_calculation_changed=false",
       "production_deploy_skipped_per_user_batching_policy=true",
-      "last_verified_deploy_commit=40120c8",
+      "last_verified_deploy_commit=815c1f03",
     ],
   };
 }
@@ -2397,7 +2397,7 @@ export function buildAiReviewLiveComposerContract(
       "ai_review_llm_network_call_executed=false",
       "backend_calculation_changed=false",
       "production_deploy_skipped_per_user_batching_policy=true",
-      "last_verified_deploy_commit=40120c8",
+      "last_verified_deploy_commit=815c1f03",
     ],
   };
 }
