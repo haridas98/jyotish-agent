@@ -13,7 +13,10 @@ function read(path) {
   return readFileSync(path, "utf8");
 }
 
+const moduleCache = new Map();
+
 function loadTsModule(path) {
+  if (moduleCache.has(path)) return moduleCache.get(path);
   const source = read(path);
   const output = ts.transpileModule(source, {
     compilerOptions: {
@@ -22,18 +25,28 @@ function loadTsModule(path) {
     },
   }).outputText;
   const module = { exports: {} };
-  vm.runInNewContext(output, { exports: module.exports, module }, { filename: path });
+  moduleCache.set(path, module.exports);
+  function localRequire(specifier) {
+    if (specifier === "@/lib/ai-review-benchmark") return loadTsModule("src/lib/ai-review-benchmark.ts");
+    if (specifier === "@/data/ai-review-telegram-benchmark.json") return { default: JSON.parse(read("src/data/ai-review-telegram-benchmark.json")) };
+    throw new Error(`Unsupported test loader import: ${specifier}`);
+  }
+  vm.runInNewContext(output, { exports: module.exports, module, require: localRequire, structuredClone }, { filename: path });
   return module.exports;
 }
 
 const helperPath = "src/lib/ai-review-quality.ts";
+const benchmarkHelperPath = "src/lib/ai-review-benchmark.ts";
+const benchmarkFixturePath = "src/data/ai-review-telegram-benchmark.json";
 const pagePath = "src/app/reports/page.tsx";
 const mockReviewPagePath = "src/app/report-mock-review/page.tsx";
 const packageJson = read("package.json");
 const helperSource = read(helperPath);
+const benchmarkHelperSource = read(benchmarkHelperPath);
+const benchmarkFixtureSource = read(benchmarkFixturePath);
 const page = read(pagePath);
 const mockReviewPage = read(mockReviewPagePath);
-const combinedSource = `${helperSource}\n${page}\n${mockReviewPage}`;
+const combinedSource = `${helperSource}\n${benchmarkHelperSource}\n${benchmarkFixtureSource}\n${page}\n${mockReviewPage}`;
 const combinedSourceLower = combinedSource.toLowerCase();
 const helper = loadTsModule(helperPath);
 
@@ -46,6 +59,7 @@ for (const marker of [
   "E122-A",
   "P123-A",
   "E124-A",
+  "R1",
   "P125-A",
   "E126-A",
   "P127-A",
@@ -61,6 +75,7 @@ for (const marker of [
   "ai_review_prompt_contract_stage=E122-A",
   "ai_review_multi_fixture_stage=P123-A",
   "ai_review_telegram_benchmark_stage=E124-A",
+  "ai_review_telegram_sanitized_benchmark_stage=R1",
   "ai_review_question_contract_stage=P125-A",
   "ai_review_assertion_ledger_stage=E126-A",
   "ai_review_narrative_rubric_stage=P127-A",
@@ -107,6 +122,11 @@ for (const marker of [
   "ai_review_benchmark_followup_questions_present=true",
   "ai_review_benchmark_advanced_claims_gated=true",
   "ai_review_blueprint_sections_present=true",
+  "ai_review_telegram_sanitized_benchmark_present=true",
+  "ai_review_telegram_raw_export_committed=false",
+  "ai_review_telegram_style_copied=false",
+  "ai_review_telegram_case_count>=2",
+  "ai_review_telegram_followup_questions_present=true",
   "ai_review_followup_question_contract_present=true",
   "ai_review_followup_questions_total>=8",
   "ai_review_followup_questions_ready>=5",
@@ -232,7 +252,7 @@ for (const marker of [
   "production_deploy_skipped_per_user_batching_policy=true",
   "last_verified_deploy_commit=508df50",
 ]) {
-  assert(helperSource.includes(marker) || page.includes(marker), `Missing P119 marker: ${marker}`);
+  assert(combinedSource.includes(marker), `Missing P119 marker: ${marker}`);
 }
 
 for (const label of [
@@ -278,8 +298,8 @@ for (const label of [
   "Weak generic status",
   "Improvement reason",
   "Telegram benchmark accents",
-  "Haridev D1/D9 benchmark",
-  "Seva D1/career benchmark",
+  "case_cancer_lagna_public_work",
+  "case_cancer_lagna_career",
   "Chart fact",
   "Jyotish rule",
   "Interpretive accent",
@@ -289,8 +309,8 @@ for (const label of [
   "source style is intentionally not copied",
   "advanced claims gated unless calculated table exists",
   "10th-house Aries cluster",
-  "Sookshma-dasha Mars timing",
-  "D9 relationship layer",
+  "dasha layer",
+  "D9 relationship or dharma claims",
   "Grounded follow-up question contract",
   "Ready chart-grounded questions",
   "Gated advanced claims",
@@ -475,8 +495,9 @@ assert(telegramBenchmark.benchmarks.every((benchmark) => benchmark.calculationAc
 assert(telegramBenchmark.benchmarks.every((benchmark) => benchmark.followUpQuestions.length >= 3), "Each Telegram benchmark must include at least three follow-up questions.");
 assert(telegramBenchmark.benchmarks.every((benchmark) => benchmark.advancedClaimCautions.length >= 3), "Advanced claims must be gated with cautions.");
 assert(telegramBenchmark.blueprintSections.join("|") === "Chart fact|Jyotish rule|Interpretive accent|Risk or caveat|Practical next step|Next question", "Benchmark blueprint sections changed.");
-assert(telegramBenchmark.benchmarks.some((benchmark) => benchmark.name === "Haridev D1/D9 benchmark"), "Haridev benchmark missing.");
-assert(telegramBenchmark.benchmarks.some((benchmark) => benchmark.name === "Seva D1/career benchmark"), "Seva benchmark missing.");
+assert(telegramBenchmark.statusLabels.includes("ai_review_telegram_sanitized_benchmark_stage=R1"), "Telegram benchmark must include R1 sanitized stage label.");
+assert(telegramBenchmark.benchmarks.some((benchmark) => benchmark.name === "Anonymized Telegram benchmark 1"), "Anonymized benchmark 1 missing.");
+assert(telegramBenchmark.benchmarks.some((benchmark) => benchmark.name === "Anonymized Telegram benchmark 2"), "Anonymized benchmark 2 missing.");
 assert(telegramBenchmark.styleCopied === false, "Telegram benchmark must not copy source prose style.");
 assert(questionContract.stage === "P125-A", "Question contract stage must be P125-A.");
 assert(questionContract.statusLabels.includes("ai_review_question_contract_stage=P125-A"), "Question contract labels missing P125 stage.");

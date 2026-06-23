@@ -1,3 +1,5 @@
+import { buildAiReviewTelegramSanitizedBenchmark } from "@/lib/ai-review-benchmark";
+
 export const AI_REVIEW_QUALITY_STAGE = "P119-A";
 
 export const AI_REVIEW_QUALITY_DIMENSIONS = [
@@ -138,7 +140,7 @@ export type AiReviewScenarioMatrix = {
 };
 
 export type TelegramBenchmarkChart = {
-  name: "Haridev D1/D9 benchmark" | "Seva D1/career benchmark";
+  name: string;
   chartFacts: string[];
   calculationAccents: string[];
   followUpQuestions: string[];
@@ -607,60 +609,18 @@ export const aiReviewScenarioFixtures: AiReviewScenarioFixture[] = [
   },
 ];
 
-export const telegramBenchmarkCharts: TelegramBenchmarkChart[] = [
-  {
-    name: "Haridev D1/D9 benchmark",
-    chartFacts: [
-      "Haridev D1 Cancer Lagna Ashlesha",
-      "Haridev D1 Sun Mars Saturn in Aries 10th",
-      "Haridev D1 Moon in Gemini 12th Ardra",
-      "Haridev D1 Mercury Venus in Pisces 9th",
-      "Haridev D9 Aquarius Lagna with Sun Rahu in Leo",
-    ],
-    calculationAccents: [
-      "10th-house Aries cluster anchors career pressure and visibility before prose.",
-      "Moon in 12th Ardra must be read with sleep, isolation, and mental-noise caveats.",
-      "D9 relationship layer is a separate confirmation layer, not a substitute for D1 facts.",
-    ],
-    followUpQuestions: [
-      "How is the 10th-house Aries cluster showing up in authority, conflict, or public work?",
-      "Which Sookshma-dasha Mars timing window should be checked before career interpretation?",
-      "What does the D9 relationship layer add after the D1 career pressure is grounded?",
-      "Does Rahu in 2nd connect to speech, family resources, or digital assets in the lived case?",
-    ],
-    advancedClaimCautions: [
-      "Shadbala remains gated unless a calculated table exists.",
-      "Ashtakavarga bindu remains gated unless a calculated table exists.",
-      "Avastha and Mrityu-bhaga remain gated unless calculated by the system.",
-    ],
-  },
-  {
-    name: "Seva D1/career benchmark",
-    chartFacts: [
-      "Seva D1 Cancer Lagna Ashlesha",
-      "Seva D1 Mars in Aries 10th Ashwini",
-      "Seva D1 Sun Mercury in Aquarius 8th",
-      "Seva D1 Moon in Capricorn 7th",
-      "Seva D1 Saturn Rahu in Taurus 11th",
-    ],
-    calculationAccents: [
-      "Mars in Aries 10th Ashwini anchors career action before generic vocation advice.",
-      "Sun Mercury in Aquarius 8th requires caveats around hidden systems, research, and volatility.",
-      "Saturn Rahu in Taurus 11th must be tied to networks, gains, and long-cycle ambition.",
-    ],
-    followUpQuestions: [
-      "Where is Mars in Aries 10th producing initiative, urgency, or leadership friction?",
-      "Which D10 career peak should be inspected before making professional timing claims?",
-      "How does Moon in Capricorn 7th shape partnership duties during career choices?",
-      "Are Saturn Rahu 11th gains coming through stable networks or unusual digital channels?",
-    ],
-    advancedClaimCautions: [
-      "Shadbala remains gated unless a calculated table exists.",
-      "Ashtakavarga bindu remains gated unless a calculated table exists.",
-      "Avastha and Mrityu-bhaga remain gated unless calculated by the system.",
-    ],
-  },
-];
+function buildTelegramBenchmarkChartsFromSanitized(): TelegramBenchmarkChart[] {
+  const benchmark = buildAiReviewTelegramSanitizedBenchmark();
+  return benchmark.cases.map((item, index) => ({
+    name: `Anonymized Telegram benchmark ${index + 1}`,
+    chartFacts: [...item.chartFacts, ...item.divisionalFacts],
+    calculationAccents: [...item.calculationAccents],
+    followUpQuestions: [...item.followUpQuestions],
+    advancedClaimCautions: [...item.advancedClaimCautions],
+  }));
+}
+
+export const telegramBenchmarkCharts: TelegramBenchmarkChart[] = buildTelegramBenchmarkChartsFromSanitized();
 
 function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -961,6 +921,7 @@ export function buildAiReviewScenarioMatrix(): AiReviewScenarioMatrix {
 }
 
 export function buildTelegramBenchmarkReviewBlueprint(): TelegramBenchmarkReviewBlueprint {
+  const sanitizedBenchmark = buildAiReviewTelegramSanitizedBenchmark();
   return {
     stage: "E124-A",
     benchmarks: telegramBenchmarkCharts.map((benchmark) => ({
@@ -982,6 +943,7 @@ export function buildTelegramBenchmarkReviewBlueprint(): TelegramBenchmarkReview
       "ai_review_benchmark_followup_questions_present=true",
       "ai_review_benchmark_advanced_claims_gated=true",
       "ai_review_blueprint_sections_present=true",
+      ...sanitizedBenchmark.statusLabels,
       "ai_review_llm_network_call_executed=false",
       "backend_calculation_changed=false",
       "production_deploy_skipped_per_user_batching_policy=true",
@@ -991,79 +953,79 @@ export function buildTelegramBenchmarkReviewBlueprint(): TelegramBenchmarkReview
 }
 
 export function buildAiReviewFollowupQuestionContract(): AiReviewFollowupQuestionContract {
-  const [haridev, seva] = telegramBenchmarkCharts;
+  const [publicWorkCase, careerCase] = telegramBenchmarkCharts;
   const candidates: AiReviewFollowupQuestionCandidate[] = [
     {
-      question: haridev.followUpQuestions[0],
-      anchorChartFact: "Haridev D1 Sun Mars Saturn in Aries 10th",
-      jyotishRuleAccent: "10th-house Aries cluster anchors career pressure and visibility before prose.",
+      question: publicWorkCase.followUpQuestions[0],
+      anchorChartFact: publicWorkCase.chartFacts[1],
+      jyotishRuleAccent: publicWorkCase.calculationAccents[0],
       status: "ready",
       reason: "Ready because the question names a concrete chart fact and asks for lived manifestation.",
-      sourceBenchmarkId: "haridev-d1-d9",
+      sourceBenchmarkId: "case_cancer_lagna_public_work",
     },
     {
-      question: haridev.followUpQuestions[1],
-      anchorChartFact: "Haridev D1 Sun Mars Saturn in Aries 10th",
-      jyotishRuleAccent: "Sookshma-dasha Mars timing must be checked before career interpretation.",
+      question: publicWorkCase.followUpQuestions[1],
+      anchorChartFact: publicWorkCase.chartFacts[3],
+      jyotishRuleAccent: "Dasha layer must be checked before timing interpretation.",
       status: "ready",
       reason: "Ready because the timing question is anchored to the Mars career cluster.",
-      sourceBenchmarkId: "haridev-d1-d9",
+      sourceBenchmarkId: "case_cancer_lagna_public_work",
     },
     {
-      question: haridev.followUpQuestions[2],
-      anchorChartFact: "Haridev D9 Aquarius Lagna with Sun Rahu in Leo",
-      jyotishRuleAccent: "D9 relationship layer is a separate confirmation layer, not a substitute for D1 facts.",
+      question: publicWorkCase.followUpQuestions[2],
+      anchorChartFact: publicWorkCase.chartFacts.find((fact) => fact.includes("D9")) ?? publicWorkCase.chartFacts[0],
+      jyotishRuleAccent: publicWorkCase.calculationAccents[2],
       status: "ready",
       reason: "Ready because the question asks what D9 adds after D1 is grounded.",
-      sourceBenchmarkId: "haridev-d1-d9",
+      sourceBenchmarkId: "case_cancer_lagna_public_work",
     },
     {
-      question: haridev.followUpQuestions[3],
-      anchorChartFact: "Haridev D1 Rahu Leo 2nd",
+      question: "Does the 2nd-house node connect to speech, family resources, or digital assets in the lived case?",
+      anchorChartFact: publicWorkCase.chartFacts[8],
       jyotishRuleAccent: "Rahu in 2nd must be tied to speech, family resources, and digital assets.",
       status: "ready",
       reason: "Ready because the question ties Rahu in 2nd to a concrete life domain.",
-      sourceBenchmarkId: "haridev-d1-d9",
+      sourceBenchmarkId: "case_cancer_lagna_public_work",
     },
     {
-      question: seva.followUpQuestions[0],
-      anchorChartFact: "Seva D1 Mars in Aries 10th Ashwini",
-      jyotishRuleAccent: "Mars in Aries 10th Ashwini anchors career action before generic vocation advice.",
+      question: careerCase.followUpQuestions[0],
+      anchorChartFact: careerCase.chartFacts[3],
+      jyotishRuleAccent: careerCase.calculationAccents[0],
       status: "ready",
       reason: "Ready because the question is career-specific and chart-fact anchored.",
-      sourceBenchmarkId: "seva-d1-career",
+      sourceBenchmarkId: "case_cancer_lagna_career",
     },
     {
-      question: seva.followUpQuestions[1],
-      anchorChartFact: "Seva D1 Mars in Aries 10th Ashwini",
+      question: careerCase.followUpQuestions[1],
+      anchorChartFact: careerCase.chartFacts[3],
       jyotishRuleAccent: "D10 career peak should be inspected before professional timing claims.",
       status: "ready",
       reason: "Ready because it asks for a concrete varga/timing follow-up before interpretation.",
-      sourceBenchmarkId: "seva-d1-career",
+      sourceBenchmarkId: "case_cancer_lagna_career",
     },
     {
       question: "Can Shadbala confirm the strength of the 10th-house Aries career cluster?",
-      anchorChartFact: "Haridev D1 Sun Mars Saturn in Aries 10th",
+      anchorChartFact: publicWorkCase.chartFacts[1],
       jyotishRuleAccent: "Shadbala requires a calculated table before strength claims.",
       status: "gated",
       reason: "Gated because Shadbala is an advanced claim and no calculated table exists.",
-      sourceBenchmarkId: "haridev-d1-d9",
+      sourceBenchmarkId: "case_cancer_lagna_public_work",
     },
     {
       question: "Do Ashtakavarga bindu values support the D10 career peak question?",
-      anchorChartFact: "Seva D1 Mars in Aries 10th Ashwini",
+      anchorChartFact: careerCase.chartFacts[3],
       jyotishRuleAccent: "Ashtakavarga requires a calculated table before bindu claims.",
       status: "gated",
       reason: "Gated because Ashtakavarga bindu is unavailable without a calculated table.",
-      sourceBenchmarkId: "seva-d1-career",
+      sourceBenchmarkId: "case_cancer_lagna_career",
     },
     {
       question: "Are Avastha or Mrityu-bhaga conditions changing this relationship reading?",
-      anchorChartFact: "Haridev D9 Aquarius Lagna with Sun Rahu in Leo",
+      anchorChartFact: publicWorkCase.chartFacts.find((fact) => fact.includes("D9")) ?? publicWorkCase.chartFacts[0],
       jyotishRuleAccent: "Avastha and Mrityu-bhaga require computed support before use.",
       status: "gated",
       reason: "Gated because Avastha and Mrityu-bhaga need a calculated table before interpretation.",
-      sourceBenchmarkId: "haridev-d1-d9",
+      sourceBenchmarkId: "case_cancer_lagna_public_work",
     },
     {
       question: "What should I do next?",
@@ -1115,50 +1077,50 @@ export function buildAiReviewFollowupQuestionContract(): AiReviewFollowupQuestio
 export function buildAiReviewAssertionLedger(): AiReviewAssertionLedger {
   const assertions: AiReviewAssertion[] = [
     {
-      id: "fact-haridev-cancer-lagna",
-      assertion: "Haridev D1 uses Cancer Lagna in Ashlesha as the review's starting frame.",
+      id: "fact-case-public-work-cancer-lagna",
+      assertion: "Benchmark case public-work D1 uses Cancer Lagna in Ashlesha as the review starting frame.",
       sourceType: "computed_chart_fact",
-      evidenceAnchor: "Haridev D1: Cancer Lagna Ashlesha",
+      evidenceAnchor: "case_cancer_lagna_public_work D1: Cancer Lagna Ashlesha",
       confidenceCaveat: "Use as fixture evidence only until live chart evidence is supplied.",
       status: "usable",
     },
     {
-      id: "fact-haridev-aries-tenth",
-      assertion: "Haridev D1 has Sun, Mars, and Saturn in Aries in the 10th house.",
+      id: "fact-case-public-work-aries-tenth",
+      assertion: "Benchmark case public-work D1 has Sun, Mars, and Saturn in Aries in the 10th house.",
       sourceType: "computed_chart_fact",
-      evidenceAnchor: "Haridev D1: Sun/Mars/Saturn Aries 10th",
+      evidenceAnchor: "case_cancer_lagna_public_work D1: Sun/Mars/Saturn Aries 10th",
       confidenceCaveat: "Treat as benchmark fixture evidence, not a newly computed production claim.",
       status: "usable",
     },
     {
-      id: "fact-haridev-moon-twelfth",
-      assertion: "Haridev D1 places Moon in Gemini 12th in Ardra.",
+      id: "fact-case-public-work-moon-twelfth",
+      assertion: "Benchmark case public-work D1 places Moon in Gemini 12th in Ardra.",
       sourceType: "computed_chart_fact",
-      evidenceAnchor: "Haridev D1: Moon Gemini 12th Ardra",
+      evidenceAnchor: "case_cancer_lagna_public_work D1: Moon Gemini 12th Ardra",
       confidenceCaveat: "Use only as the named benchmark chart fact.",
       status: "usable",
     },
     {
-      id: "fact-seva-mars-tenth",
-      assertion: "Seva D1 places Mars in Aries 10th in Ashwini.",
+      id: "fact-case-career-mars-tenth",
+      assertion: "Benchmark case career D1 places Mars in Aries 10th in Ashwini.",
       sourceType: "computed_chart_fact",
-      evidenceAnchor: "Seva D1: Mars Aries 10th Ashwini",
+      evidenceAnchor: "case_cancer_lagna_career D1: Mars Aries 10th Ashwini",
       confidenceCaveat: "Use as benchmark evidence until user-supplied chart evidence replaces it.",
       status: "usable",
     },
     {
-      id: "fact-seva-venus-ninth",
-      assertion: "Seva D1 places Venus in Pisces 9th.",
+      id: "fact-case-career-venus-ninth",
+      assertion: "Benchmark case career D1 places Venus in Pisces 9th.",
       sourceType: "computed_chart_fact",
-      evidenceAnchor: "Seva D1: Venus Pisces 9th",
+      evidenceAnchor: "case_cancer_lagna_career D1: Venus Pisces 9th",
       confidenceCaveat: "Use as compact fixture evidence, not a broad promise of outcome.",
       status: "usable",
     },
     {
-      id: "fact-seva-saturn-rahu-eleventh",
-      assertion: "Seva D1 places Saturn and Rahu in Taurus 11th.",
+      id: "fact-case-career-saturn-rahu-eleventh",
+      assertion: "Benchmark case career D1 places Saturn and Rahu in Taurus 11th.",
       sourceType: "computed_chart_fact",
-      evidenceAnchor: "Seva D1: Saturn/Rahu Taurus 11th",
+      evidenceAnchor: "case_cancer_lagna_career D1: Saturn/Rahu Taurus 11th",
       confidenceCaveat: "Use for question and synthesis scaffolding only.",
       status: "usable",
     },
@@ -1187,34 +1149,34 @@ export function buildAiReviewAssertionLedger(): AiReviewAssertionLedger {
       status: "usable",
     },
     {
-      id: "synthesis-haridev-career",
-      assertion: "Derived synthesis: Haridev's Aries 10th cluster can support leadership questions, but Saturn adds duty and delay.",
+      id: "synthesis-case-public-work-career",
+      assertion: "Derived synthesis: benchmark public-work Aries 10th cluster can support leadership questions, but Saturn adds duty and delay.",
       sourceType: "derived_synthesis",
-      evidenceAnchor: "Haridev D1: Sun/Mars/Saturn Aries 10th + rule-tenth-house-career",
+      evidenceAnchor: "case_cancer_lagna_public_work D1: Sun/Mars/Saturn Aries 10th + rule-tenth-house-career",
       confidenceCaveat: "Keep timing gated until dasha evidence is present.",
       status: "usable",
     },
     {
-      id: "synthesis-seva-career-network",
-      assertion: "Derived synthesis: Seva's Mars 10th and Saturn/Rahu 11th connect career drive with network pressure.",
+      id: "synthesis-case-career-network",
+      assertion: "Derived synthesis: benchmark career Mars 10th and Saturn/Rahu 11th connect career drive with network pressure.",
       sourceType: "derived_synthesis",
-      evidenceAnchor: "Seva D1: Mars Aries 10th + Saturn/Rahu Taurus 11th",
+      evidenceAnchor: "case_cancer_lagna_career D1: Mars Aries 10th + Saturn/Rahu Taurus 11th",
       confidenceCaveat: "Avoid claiming peak outcome without D10 and timing support.",
       status: "usable",
     },
     {
-      id: "guidance-haridev-career-question",
+      id: "guidance-case-public-work-career-question",
       assertion: "Practical guidance: ask which concrete career decision needs the Aries 10th-house pressure interpreted.",
       sourceType: "practical_guidance",
-      evidenceAnchor: "Haridev D1: Aries 10th cluster",
+      evidenceAnchor: "case_cancer_lagna_public_work D1: Aries 10th cluster",
       confidenceCaveat: "Frame as a next question, not as advice to take immediate action.",
       status: "usable",
     },
     {
-      id: "guidance-seva-timing-question",
-      assertion: "Practical guidance: ask for timing context before turning Seva's 10th-house Mars into a prediction.",
+      id: "guidance-case-career-timing-question",
+      assertion: "Practical guidance: ask for timing context before turning benchmark career 10th-house Mars into a prediction.",
       sourceType: "practical_guidance",
-      evidenceAnchor: "Seva D1: Mars Aries 10th",
+      evidenceAnchor: "case_cancer_lagna_career D1: Mars Aries 10th",
       confidenceCaveat: "Requires dasha/transit support before forecast language.",
       status: "usable",
     },
@@ -1249,18 +1211,18 @@ export function buildAiReviewAssertionLedger(): AiReviewAssertionLedger {
   const sections: AiReviewAssertionComposedSection[] = [
     {
       heading: "Grounded chart facts",
-      body: "Use ledger anchors fact-haridev-aries-tenth, fact-haridev-moon-twelfth, and fact-seva-mars-tenth before interpretation.",
-      anchorIds: ["fact-haridev-aries-tenth", "fact-haridev-moon-twelfth", "fact-seva-mars-tenth"],
+      body: "Use ledger anchors fact-case-public-work-aries-tenth, fact-case-public-work-moon-twelfth, and fact-case-career-mars-tenth before interpretation.",
+      anchorIds: ["fact-case-public-work-aries-tenth", "fact-case-public-work-moon-twelfth", "fact-case-career-mars-tenth"],
     },
     {
       heading: "Jyotish interpretation",
-      body: "Use rule-tenth-house-career and synthesis-haridev-career to connect public role, responsibility, and initiative without timing certainty.",
-      anchorIds: ["rule-tenth-house-career", "rule-aries-mars-action", "synthesis-haridev-career"],
+      body: "Use rule-tenth-house-career and synthesis-case-public-work-career to connect public role, responsibility, and initiative without timing certainty.",
+      anchorIds: ["rule-tenth-house-career", "rule-aries-mars-action", "synthesis-case-public-work-career"],
     },
     {
       heading: "Practical focus",
-      body: "Use guidance-haridev-career-question and guidance-seva-timing-question to turn the reading into grounded next questions.",
-      anchorIds: ["guidance-haridev-career-question", "guidance-seva-timing-question", "synthesis-seva-career-network"],
+      body: "Use guidance-case-public-work-career-question and guidance-case-career-timing-question to turn the reading into grounded next questions.",
+      anchorIds: ["guidance-case-public-work-career-question", "guidance-case-career-timing-question", "synthesis-case-career-network"],
     },
     {
       heading: "Caveats and blocked claims",
@@ -1316,10 +1278,10 @@ export function buildAiReviewNarrativeQualityRubric(
   assertionLedger = buildAiReviewAssertionLedger(),
 ): AiReviewNarrativeQualityRubric {
   const strongAnchors = [
-    "fact-haridev-aries-tenth",
+    "fact-case-public-work-aries-tenth",
     "rule-tenth-house-career",
-    "synthesis-haridev-career",
-    "guidance-haridev-career-question",
+    "synthesis-case-public-work-career",
+    "guidance-case-public-work-career-question",
   ];
   const blockedAdvanced = assertionLedger.assertions.filter((assertion) => assertion.sourceType === "gated_advanced_claim");
   const samples: AiReviewNarrativeSample[] = [
@@ -1327,7 +1289,7 @@ export function buildAiReviewNarrativeQualityRubric(
       id: "strong_grounded_review",
       label: "Strong grounded review",
       text:
-        "Using ledger anchors fact-haridev-aries-tenth and rule-tenth-house-career, the career reading starts from a visible 10th-house pressure rather than a mood. The tension is between Aries speed and Saturn duty, so synthesis-haridev-career keeps leadership useful without turning it into a timing promise. Practical next question: which concrete public role or career decision should guidance-haridev-career-question test against current dasha context? Caveat: Shadbala and Ashtakavarga stay blocked until computed tables exist.",
+        "Using ledger anchors fact-case-public-work-aries-tenth and rule-tenth-house-career, the career reading starts from a visible 10th-house pressure rather than a mood. The tension is between Aries speed and Saturn duty, so synthesis-case-public-work-career keeps leadership useful without turning it into a timing promise. Practical next question: which concrete public role or career decision should guidance-case-public-work-career-question test against current dasha context? Caveat: Shadbala and Ashtakavarga stay blocked until computed tables exist.",
       status: "passes_quality_rubric",
       passedDimensions: [...AI_REVIEW_NARRATIVE_DIMENSIONS],
       failedDimensions: [],
