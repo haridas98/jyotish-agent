@@ -795,6 +795,50 @@ body .chart-profile-form textarea {
   overflow-wrap: anywhere;
 }
 
+.ai-review-scenario-matrix {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d7e5e8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ai-review-scenario-matrix-head {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-review-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-review-scenario-grid section {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.ai-review-scenario-matrix strong {
+  color: var(--green);
+}
+
+.ai-review-scenario-matrix span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .ai-review-quality-lab span[hidden] {
   display: none !important;
 }
@@ -813,6 +857,10 @@ body .chart-profile-form textarea {
   }
 
   .ai-review-prompt-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-review-scenario-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -42,10 +42,12 @@ for (const marker of [
   "E120-A",
   "P121-A",
   "E122-A",
+  "P123-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
   "ai_review_prompt_contract_stage=E122-A",
+  "ai_review_multi_fixture_stage=P123-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -68,6 +70,14 @@ for (const marker of [
   "ai_review_prompt_sections_present=true",
   "ai_review_anti_generic_guardrails_present=true",
   "ai_review_quality_gate_before_final_answer=true",
+  "ai_review_quality_fixture_matrix_present=true",
+  "ai_review_multiple_intents_covered=true",
+  "ai_review_scenario_count=4",
+  "ai_review_each_scenario_has_four_evidence_items=true",
+  "ai_review_each_scenario_requires_three_citations=true",
+  "ai_review_strong_outputs_pass_all_scenarios=true",
+  "ai_review_generic_outputs_blocked_all_scenarios=true",
+  "ai_review_prompt_contract_applied_all_scenarios=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -109,6 +119,16 @@ for (const label of [
   "local-only and no LLM call was executed",
   "Require at least 3 evidence citations",
   "Block or revise generic text that lacks chart evidence and synthesis",
+  "AI review regression matrix",
+  "Natal personality",
+  "Career dharma",
+  "Relationship compatibility",
+  "Transit timing guidance",
+  "Evidence items",
+  "Required citations",
+  "Strong status",
+  "Weak generic status",
+  "Improvement reason",
   "lacks chart-specific evidence",
   "lacks practical synthesis",
   "not a generated final review",
@@ -125,6 +145,7 @@ assert(typeof helper.buildAiReviewEvidencePacket === "function", "buildAiReviewE
 assert(typeof helper.buildAiReviewMockPreview === "function", "buildAiReviewMockPreview must be exported.");
 assert(typeof helper.composeEvidenceDrivenMockReview === "function", "composeEvidenceDrivenMockReview must be exported.");
 assert(typeof helper.buildAiReviewPromptPayload === "function", "buildAiReviewPromptPayload must be exported.");
+assert(typeof helper.buildAiReviewScenarioMatrix === "function", "buildAiReviewScenarioMatrix must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -132,6 +153,7 @@ const packet = helper.buildAiReviewEvidencePacket();
 const preview = helper.buildAiReviewMockPreview();
 const composed = helper.composeEvidenceDrivenMockReview(packet);
 const promptPayload = helper.buildAiReviewPromptPayload(packet, composed);
+const scenarioMatrix = helper.buildAiReviewScenarioMatrix();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -166,6 +188,20 @@ assert(promptPayload.localOnly === true, "Prompt payload must be local-only.");
 assert(promptPayload.llmNetworkCallExecuted === false, "Prompt payload must not execute an LLM/network call.");
 assert(promptPayload.antiGenericGuardrails.some((item) => item.includes("Block or revise generic text")), "Prompt payload must block/revise generic text.");
 assert(promptPayload.qualityGateBeforeFinalAnswer.join(",") === "interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence", "Prompt payload quality gate dimensions changed.");
+assert(scenarioMatrix.stage === "P123-A", "Scenario matrix stage must be P123-A.");
+assert(scenarioMatrix.statusLabels.includes("ai_review_multi_fixture_stage=P123-A"), "Scenario matrix status labels missing P123 stage.");
+assert(scenarioMatrix.scenarios.length >= 4, "Scenario matrix must cover at least four review scenarios.");
+assert(scenarioMatrix.aggregate.scenarioCount >= 4, "Scenario aggregate must report at least four scenarios.");
+assert(scenarioMatrix.aggregate.strongPassCount === scenarioMatrix.scenarios.length, "Every strong scenario must pass.");
+assert(scenarioMatrix.aggregate.weakBlockedCount === scenarioMatrix.scenarios.length, "Every weak scenario must be blocked.");
+assert(scenarioMatrix.aggregate.minimumEvidenceItemCount >= 4, "Every scenario must carry at least four evidence items.");
+assert(scenarioMatrix.aggregate.promptContractAppliedAllScenarios === true, "Prompt contract must apply to all scenarios.");
+assert(scenarioMatrix.scenarios.every((scenario) => scenario.evidenceItems.length >= 4), "Each scenario must include at least four evidence items.");
+assert(scenarioMatrix.scenarios.every((scenario) => scenario.requiredEvidenceCitationCount >= 3), "Each scenario must require at least three citations.");
+assert(scenarioMatrix.scenarios.every((scenario) => scenario.strong.status === "passes_quality_gate"), "Every strong scenario must pass the gate.");
+assert(scenarioMatrix.scenarios.every((scenario) => scenario.weak.status === "blocked_by_quality_gate"), "Every weak scenario must be blocked.");
+assert(scenarioMatrix.scenarios.every((scenario) => scenario.promptPayload.requiredEvidenceCitationCount >= 3), "Every scenario prompt payload must require at least three citations.");
+assert(scenarioMatrix.scenarios.every((scenario) => scenario.promptPayload.evidenceItems.length >= 4), "Every scenario prompt payload must include at least four evidence items.");
 
 for (const forbidden of [
   "fetch(",

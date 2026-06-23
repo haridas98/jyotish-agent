@@ -251,6 +251,29 @@ export default function ReportBuilderPage() {
             <span>Quality gate dimensions: {aiReviewQualityLab.promptPayload.qualityGateBeforeFinalAnswer.join(",")}</span>
           </div>
         </div>
+        <div className="ai-review-scenario-matrix" data-ai-review-multi-fixture-stage="P123-A">
+          <div className="ai-review-scenario-matrix-head">
+            <strong>AI review regression matrix</strong>
+            <span>
+              {aiReviewQualityLab.scenarioMatrix.aggregate.scenarioCount} scenarios; strong pass{" "}
+              {aiReviewQualityLab.scenarioMatrix.aggregate.strongPassCount}; weak blocked{" "}
+              {aiReviewQualityLab.scenarioMatrix.aggregate.weakBlockedCount}; minimum evidence{" "}
+              {aiReviewQualityLab.scenarioMatrix.aggregate.minimumEvidenceItemCount}.
+            </span>
+          </div>
+          <div className="ai-review-scenario-grid" role="list">
+            {aiReviewQualityLab.scenarioMatrix.scenarios.map((scenario) => (
+              <section key={scenario.id} role="listitem">
+                <strong>{scenario.intent}</strong>
+                <span>Evidence items: {scenario.evidenceItems.length}</span>
+                <span>Required citations: {scenario.requiredEvidenceCitationCount}</span>
+                <span>Strong status: {scenario.strong.status}</span>
+                <span>Weak generic status: {scenario.weak.status}</span>
+                <span>Improvement reason: {scenario.weak.improvementReason}</span>
+              </section>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

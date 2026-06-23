@@ -100,6 +100,43 @@ export type AiReviewPromptPayload = {
   statusLabels: string[];
 };
 
+export type AiReviewScenarioFixture = {
+  id: string;
+  intent: string;
+  evidencePacket: AiReviewEvidencePacket;
+  strongDraft: string;
+  weakDraft: string;
+};
+
+export type AiReviewScenarioMatrixRow = {
+  id: string;
+  intent: string;
+  evidenceItems: string[];
+  requiredEvidenceCitationCount: number;
+  strong: {
+    status: "passes_quality_gate" | "fails_quality_gate";
+    matchedEvidenceCount: number;
+  };
+  weak: {
+    status: "blocked_by_quality_gate" | "passes_quality_gate";
+    improvementReason: string;
+  };
+  promptPayload: AiReviewPromptPayload;
+};
+
+export type AiReviewScenarioMatrix = {
+  stage: "P123-A";
+  scenarios: AiReviewScenarioMatrixRow[];
+  aggregate: {
+    scenarioCount: number;
+    strongPassCount: number;
+    weakBlockedCount: number;
+    minimumEvidenceItemCount: number;
+    promptContractAppliedAllScenarios: boolean;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -128,6 +165,76 @@ export const aiReviewQualityFixtures: Record<"strong" | "weak", AiReviewQualityF
       "You have positive energy and many opportunities. Trust your intuition, follow your heart, and seek a balanced life. Everything happens for a reason, so stay open to growth.",
   },
 };
+
+export const aiReviewScenarioFixtures: AiReviewScenarioFixture[] = [
+  {
+    id: "natal-personality",
+    intent: "Natal personality",
+    evidencePacket: {
+      chartEvidenceItems: ["D1 Pisces Lagna", "Moon in Cancer 5th house", "Saturn in Aquarius 12th house", "Jupiter aspect to Lagna"],
+      synthesisLinks: [
+        "Connect D1 Pisces Lagna with Moon in Cancer 5th house before temperament advice.",
+        "Connect Saturn in Aquarius 12th house with Jupiter aspect to Lagna before confidence.",
+      ],
+      practicalNextStepRequirement: "Include practical next-step framing for study, rest, and advisory boundaries.",
+      caveatConfidenceRequirement: "Include caveat/confidence language until birth-time evidence is reviewed.",
+    },
+    strongDraft:
+      "D1 Pisces Lagna shows porous motivation and devotional identity, but Moon in Cancer 5th house gives emotional intelligence and a teaching instinct. Saturn in Aquarius 12th house suggests private discipline, sleep boundaries, and karmic work behind the scenes, while Jupiter aspect to Lagna softens judgment and supports counsel. Together these factors suggest a synthesis: protect rest before serving others. A practical next step is to schedule reflective study before commitments. Caveat: confidence is moderate until birth-time evidence is reviewed.",
+    weakDraft: aiReviewQualityFixtures.weak.draft,
+  },
+  {
+    id: "career-dharma",
+    intent: "Career dharma",
+    evidencePacket: {
+      chartEvidenceItems: ["Sun in Aries 2nd house", "Mars in Capricorn 11th house", "Mercury in Gemini 4th house", "10th lord Jupiter in Sagittarius"],
+      synthesisLinks: [
+        "Connect Sun in Aries 2nd house with Mars in Capricorn 11th house before career direction.",
+        "Connect Mercury in Gemini 4th house with 10th lord Jupiter in Sagittarius before role design.",
+      ],
+      practicalNextStepRequirement: "Include practical next-step framing for one measurable professional experiment.",
+      caveatConfidenceRequirement: "Include caveat/confidence language before treating career timing as fixed.",
+    },
+    strongDraft:
+      "Sun in Aries 2nd house indicates assertive speech and value-building, but Mars in Capricorn 11th house makes the career pattern more strategic, networked, and goal-disciplined. Mercury in Gemini 4th house adds analysis and teaching from a knowledge base, while 10th lord Jupiter in Sagittarius points toward advisory, educational, or dharma-aligned work. Together these placements suggest a synthesis: lead through structured knowledge rather than raw urgency. A practical next step is to schedule one measurable professional experiment. Caveat: confidence is moderate until divisional career evidence is checked.",
+    weakDraft:
+      "Your career has many opportunities and positive energy. Trust your intuition, follow your heart, and choose work that feels balanced. Everything happens for a reason, so stay open to growth.",
+  },
+  {
+    id: "relationship-compatibility",
+    intent: "Relationship compatibility",
+    evidencePacket: {
+      chartEvidenceItems: ["Venus in Taurus 3rd house", "7th lord Mercury in Virgo", "Moon in Scorpio 9th house", "Rahu in Libra 8th house"],
+      synthesisLinks: [
+        "Connect Venus in Taurus 3rd house with 7th lord Mercury in Virgo before compatibility advice.",
+        "Connect Moon in Scorpio 9th house with Rahu in Libra 8th house before emotional risk framing.",
+      ],
+      practicalNextStepRequirement: "Include practical next-step framing for communication agreements and pacing.",
+      caveatConfidenceRequirement: "Include caveat/confidence language before drawing relationship conclusions.",
+    },
+    strongDraft:
+      "Venus in Taurus 3rd house favors steady affection expressed through daily conversation, but 7th lord Mercury in Virgo makes precision, repair, and shared routines central to compatibility. Moon in Scorpio 9th house adds intense belief patterns and emotional memory, while Rahu in Libra 8th house can amplify intimacy questions and hidden expectations. Together these placements suggest a synthesis: relational stability improves when communication is explicit and paced. A practical next step is to schedule a direct agreement about conflict repair. Caveat: confidence is moderate until partner data and timing context are reviewed.",
+    weakDraft:
+      "Love improves when both people stay positive and open. Trust your intuition, follow your heart, and seek balance. Many opportunities for harmony will appear if you keep growing together.",
+  },
+  {
+    id: "transit-timing-guidance",
+    intent: "Transit timing guidance",
+    evidencePacket: {
+      chartEvidenceItems: ["Saturn transit over natal Moon", "Jupiter transit aspect to 10th house", "Rahu transit through 2nd house", "Dasha sequence Venus-Mercury"],
+      synthesisLinks: [
+        "Connect Saturn transit over natal Moon with Jupiter transit aspect to 10th house before timing advice.",
+        "Connect Rahu transit through 2nd house with Dasha sequence Venus-Mercury before guidance.",
+      ],
+      practicalNextStepRequirement: "Include practical next-step framing for timing decisions and review cadence.",
+      caveatConfidenceRequirement: "Include caveat/confidence language before relying on timing guidance.",
+    },
+    strongDraft:
+      "Saturn transit over natal Moon indicates emotional weight and slower decision tempo, but Jupiter transit aspect to 10th house gives a constructive window for professional guidance and mentoring. Rahu transit through 2nd house can distort appetite, speech, and financial urgency, while Dasha sequence Venus-Mercury supports negotiation, learning, and relationship-based choices. Together these factors suggest a synthesis: use timing for careful preparation rather than sudden expansion. A practical next step is to schedule a two-week review cadence before commitments. Caveat: confidence is moderate until transit dates and birth-time evidence are confirmed.",
+    weakDraft:
+      "This is a good time for growth and new opportunities. Trust your intuition, stay balanced, and follow your heart. Everything happens for a reason, so remain positive.",
+  },
+];
 
 function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -364,12 +471,76 @@ export function buildAiReviewPromptPayload(
   };
 }
 
+export function buildAiReviewScenarioMatrix(): AiReviewScenarioMatrix {
+  const scenarios = aiReviewScenarioFixtures.map((scenario): AiReviewScenarioMatrixRow => {
+    const composed = composeEvidenceDrivenMockReview(scenario.evidencePacket);
+    const promptPayload = buildAiReviewPromptPayload(scenario.evidencePacket, composed);
+    const strong = evaluateAiReviewDraft(scenario.strongDraft, scenario.evidencePacket.chartEvidenceItems);
+    const weak = evaluateAiReviewDraft(scenario.weakDraft, scenario.evidencePacket.chartEvidenceItems);
+    const failedFeedback = weak.dimensions.filter((item) => !item.passed).map(feedbackForFailedDimension);
+
+    return {
+      id: scenario.id,
+      intent: scenario.intent,
+      evidenceItems: [...scenario.evidencePacket.chartEvidenceItems],
+      requiredEvidenceCitationCount: promptPayload.requiredEvidenceCitationCount,
+      strong: {
+        status: strong.passed ? "passes_quality_gate" : "fails_quality_gate",
+        matchedEvidenceCount: strong.matchedEvidence.length,
+      },
+      weak: {
+        status: weak.passed ? "passes_quality_gate" : "blocked_by_quality_gate",
+        improvementReason:
+          failedFeedback.find((item) => item.includes("chart-specific evidence")) ||
+          failedFeedback.find((item) => item.includes("practical synthesis")) ||
+          "Weak generic output must add chart-specific evidence and practical synthesis.",
+      },
+      promptPayload,
+    };
+  });
+  const evidenceCounts = scenarios.map((scenario) => scenario.evidenceItems.length);
+
+  return {
+    stage: "P123-A",
+    scenarios,
+    aggregate: {
+      scenarioCount: scenarios.length,
+      strongPassCount: scenarios.filter((scenario) => scenario.strong.status === "passes_quality_gate").length,
+      weakBlockedCount: scenarios.filter((scenario) => scenario.weak.status === "blocked_by_quality_gate").length,
+      minimumEvidenceItemCount: Math.min(...evidenceCounts),
+      promptContractAppliedAllScenarios: scenarios.every(
+        (scenario) =>
+          scenario.promptPayload.stage === "E122-A" &&
+          scenario.promptPayload.evidenceItems.length >= 4 &&
+          scenario.promptPayload.requiredEvidenceCitationCount >= 3,
+      ),
+    },
+    statusLabels: [
+      "P123-A",
+      "ai_review_multi_fixture_stage=P123-A",
+      "ai_review_quality_fixture_matrix_present=true",
+      "ai_review_multiple_intents_covered=true",
+      "ai_review_scenario_count=4",
+      "ai_review_each_scenario_has_four_evidence_items=true",
+      "ai_review_each_scenario_requires_three_citations=true",
+      "ai_review_strong_outputs_pass_all_scenarios=true",
+      "ai_review_generic_outputs_blocked_all_scenarios=true",
+      "ai_review_prompt_contract_applied_all_scenarios=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
   const preview = buildAiReviewMockPreview();
   const composed = composeEvidenceDrivenMockReview(preview.evidencePacket);
   const promptPayload = buildAiReviewPromptPayload(preview.evidencePacket, composed);
+  const scenarioMatrix = buildAiReviewScenarioMatrix();
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -388,6 +559,7 @@ export function buildAiReviewQualityLabSummary() {
       ...preview.statusLabels,
       ...composed.statusLabels,
       ...promptPayload.statusLabels,
+      ...scenarioMatrix.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -406,5 +578,6 @@ export function buildAiReviewQualityLabSummary() {
     preview,
     composed,
     promptPayload,
+    scenarioMatrix,
   };
 }
