@@ -188,6 +188,13 @@ if (!/CODEX_GENERATION_QUEUE_ENABLED=false/.test(productionEnvExample)) {
   failed = true;
 }
 for (const marker of [
+  "expectedDeployCommit",
+  "checkedPages",
+  "checkedApi",
+  "health.deploy_commit",
+  'health.status === "ok"',
+  'health.service === "jyotish-agent"',
+  '"/charts"',
   "/charts/demo-d1",
   "/api/auth/csrf",
   "/api/calculations/ephemeris/status",

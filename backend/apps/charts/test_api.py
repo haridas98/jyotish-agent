@@ -1496,7 +1496,7 @@ def test_transit_workbench_contract_matches_snapshot(user, monkeypatch):
         "specialPointObjectRefs": [item["objectRef"] for item in response.data["specialPoints"]],
         "capabilityFlags": {key: response.data["capabilities"][key] for key in ["natalOverlay", "aspects", "ashtakavarga", "sadeSati", "ai"]},
     }
-    expected = json.loads(Path("backend/apps/charts/fixtures/transit_workbench_contract_v1.json").read_text(encoding="utf-8"))
+    expected = json.loads((Path(__file__).with_name("fixtures") / "transit_workbench_contract_v1.json").read_text(encoding="utf-8"))
     assert summary == expected
 
 @pytest.mark.django_db

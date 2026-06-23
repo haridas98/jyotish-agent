@@ -125,7 +125,7 @@
 - [x] A2 technical payload panel implemented and verified locally.
 - [x] A3 calculator-only AI worker gate implemented.
 - [x] Calculator launch smoke added and verified locally against real backend/frontend.
-- [ ] Production deploy checkpoint remains pending; do not deploy on every small batch.
+- [x] Production deploy checkpoint completed at `815c1f03`; public health and read-only production smoke passed with `deploy_commit=815c1f03`.
 
 ---
 
