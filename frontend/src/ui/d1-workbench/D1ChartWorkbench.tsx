@@ -430,7 +430,9 @@ function GrahaTable({ model, state, onSelect }: { model: D1WorkbenchModel; state
           <thead>
             <tr>
               <th>Граха</th>
+              {isAstrologer ? <th>Longitude</th> : null}
               {isAstrologer ? <th>Градус</th> : null}
+              {isAstrologer ? <th>Speed</th> : null}
               <th>Знак</th>
               <th>Дом</th>
               {isAstrologer && model.capabilities.nakshatrasAvailable ? <th>Накшатра</th> : null}
@@ -444,7 +446,9 @@ function GrahaTable({ model, state, onSelect }: { model: D1WorkbenchModel; state
             {model.grahas.map((graha) => (
               <tr key={graha.code}>
                 <td><button type="button" onClick={() => onSelect(graha.placementEntityId ?? graha.entityId)}>{placementLabel(graha, state.terminologyMode)}</button></td>
+                {isAstrologer ? <td>{graha.absoluteLongitude}</td> : null}
                 {isAstrologer ? <td>{graha.degreeInSign}</td> : null}
+                {isAstrologer ? <td>{graha.speedLongitude}</td> : null}
                 <td>{graha.rashiEntityId ? <button type="button" onClick={() => onSelect(graha.rashiEntityId!)}>{graha.rashiName}</button> : graha.rashiName}</td>
                 <td>{graha.houseEntityId ? <button type="button" onClick={() => onSelect(graha.houseEntityId!)}>{graha.house}</button> : "-"}</td>
                 {isAstrologer && model.capabilities.nakshatrasAvailable ? <td>{graha.nakshatraEntityId ? <button type="button" onClick={() => onSelect(graha.nakshatraEntityId!)}>{graha.nakshatra}</button> : "-"}</td> : null}
@@ -580,7 +584,27 @@ function TechnicalPayloadPanel({ model }: { model: D1WorkbenchModel }) {
         <div className="d1-chart-title"><h2>Classical</h2><span>Avasthas, bala, yogas and auxiliary modules</span></div>
         <TechnicalSummaryRows rows={model.technical.classical} />
       </section>
+      <InternalJsonSnapshot model={model} />
     </div>
+  );
+}
+
+function InternalJsonSnapshot({ model }: { model: D1WorkbenchModel }) {
+  const snapshot = {
+    schemaVersion: model.schemaVersion,
+    scopeId: model.scopeId,
+    calculation: model.calculation,
+    stats: model.stats,
+    technical: model.technical,
+  };
+  return (
+    <section className="d1-table-card" data-technical-section="internal-json">
+      <div className="d1-chart-title"><h2>Internal JSON</h2><span>Reviewer snapshot, not client interpretation</span></div>
+      <details>
+        <summary>Show compact JSON snapshot</summary>
+        <pre>{JSON.stringify(snapshot, null, 2)}</pre>
+      </details>
+    </section>
   );
 }
 

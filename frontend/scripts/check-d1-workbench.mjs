@@ -45,6 +45,8 @@ if (exists("src/astrology/d1-workbench.ts")) {
   assert(model.includes("chartObjectCount"), "D1 model must expose total chart object count");
   assert(model.includes("technical:"), "D1 model must expose technical calculation payload");
   assert(model.includes("buildTechnicalPayload"), "D1 model must normalize panchanga, dashas, vargas, house cusps and classical payload");
+  assert(model.includes("speedLongitude"), "D1 graha rows must expose speed_longitude for technical review");
+  assert(model.includes("absoluteLongitude"), "D1 graha rows must expose absolute longitude for technical review");
   assert(model.includes("grahaEntityId"), "D1 graha entity ids missing");
   assert(model.includes("houseEntityId"), "D1 house entity ids missing");
   assert(model.includes("rashiEntityId"), "D1 rashi entity ids missing");
@@ -70,6 +72,9 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("activeTab"), "D1 workbench must keep active data tab in shared state");
   assert(component.includes("chartStyle === \"north\"") && component.includes("chartStyle === \"south\""), "D1 workbench must support north/south style toggle");
   assert(component.includes("TechnicalPayloadPanel"), "D1 workbench must render a technical payload panel");
+  assert(component.includes("InternalJsonSnapshot"), "D1 workbench must expose an internal JSON snapshot for reviewer debugging");
+  assert(component.includes("graha.speedLongitude"), "D1 graha table must render speed longitude when available");
+  assert(component.includes("graha.absoluteLongitude"), "D1 graha table must render absolute longitude when available");
   for (const marker of [
     'data-technical-section="settings"',
     'data-technical-section="panchanga"',

@@ -87,6 +87,8 @@ type D1PlacementRow = {
   shortLabel: string;
   placementEntityId: EntityId | null;
   longitude: number | null;
+  absoluteLongitude: string;
+  speedLongitude: string;
   degreeInSign: string;
   rashiName: string;
   rashiIndex: number | null;
@@ -510,6 +512,8 @@ function buildPlacementRow(scope: ScopeSource, placement: NormalizedPlacement, e
     entityId: meta.kind === "graha" ? grahaEntityId(placement.body) : meta.entityId,
     placementEntityId: house && meta.kind === "graha" ? (`placement.${meta.code}.house.${house}` as EntityId) : null,
     longitude,
+    absoluteLongitude: longitude !== null ? formatLongitude(longitude) : "-",
+    speedLongitude: typeof placement.speed_longitude === "number" ? formatSpeed(placement.speed_longitude) : "-",
     degreeInSign: longitude !== null ? formatDegreeInSign(longitude) : "-",
     rashiName: placement.rashi,
     rashiIndex,
@@ -616,4 +620,8 @@ function formatDegreeInSign(longitude: number): string {
 
 function formatLongitude(longitude: number): string {
   return `${longitude.toFixed(6)}°`;
+}
+
+function formatSpeed(speed: number): string {
+  return `${speed.toFixed(6)}°/day`;
 }
