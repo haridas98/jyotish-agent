@@ -9658,6 +9658,11 @@ export default function Home({ initialAnalysisTab = "overview" }: { initialAnaly
                       <option value="south">Южный</option>
                     </select>
                   </label>
+                  <div className="main-chart-style-affordance" data-main-chart-style-stage="E112-A" aria-label="Chart style behavior">
+                    <span><strong>North: houses fixed</strong></span>
+                    <span><strong>South: signs fixed</strong></span>
+                    <span hidden>E112-A main chart style affordance; north_chart_style=houses_fixed; south_chart_style=signs_fixed; parity_success_claimed=false; release_ready=false; release_gate_status=blocked</span>
+                  </div>
                   <label>
                     Язык терминов
                     <select value={termLanguage} onChange={(event) => handleTermLanguageChange(event.target.value as TermLanguage)}>

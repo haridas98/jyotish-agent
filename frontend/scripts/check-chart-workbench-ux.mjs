@@ -11,10 +11,11 @@ function assert(condition, message) {
 }
 
 const page = read("../src/app/charts/[id]/page.tsx");
+const mainPage = read("../src/app/page.tsx");
 const component = read("../src/ui/d1-workbench/D1ChartWorkbench.tsx");
 const model = read("../src/astrology/d1-workbench.ts");
 const css = read("../src/app/globals.css");
-const combined = [page, component, model, css].join("\n");
+const combined = [page, mainPage, component, model, css].join("\n");
 
 for (const marker of ["Рћ", "Рљ", "РЎ", "Рџ", "Р’", "В·", "В°", "�"]) {
   assert(!combined.includes(marker), `Mojibake marker found: ${marker}`);
@@ -54,6 +55,11 @@ for (const required of [
   "data-chart-demo-kind",
   "E108-A",
   "E110-A",
+  "E112-A",
+  "main-chart-style-affordance",
+  "data-main-chart-style-stage",
+  "North: houses fixed",
+  "South: signs fixed",
   "d1-orientation-legend",
   "data-chart-orientation-stage",
   "data-chart-orientation-mode",
