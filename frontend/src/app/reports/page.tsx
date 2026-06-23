@@ -319,6 +319,39 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-assertion-ledger" data-ai-review-assertion-ledger-stage="E126-A">
+          <div className="ai-review-assertion-ledger-head">
+            <strong>Assertion ledger</strong>
+            <span>Local deterministic quality harness, not final AI output.</span>
+          </div>
+          <div className="ai-review-assertion-counts" aria-label="Assertion count by source type">
+            <span>computed_chart_fact: {aiReviewQualityLab.assertionLedger.aggregate.computedChartFactCount}</span>
+            <span>jyotish_rule: {aiReviewQualityLab.assertionLedger.aggregate.jyotishRuleCount}</span>
+            <span>derived_synthesis: {aiReviewQualityLab.assertionLedger.aggregate.derivedSynthesisCount}</span>
+            <span>practical_guidance: {aiReviewQualityLab.assertionLedger.aggregate.practicalGuidanceCount}</span>
+            <span>gated_advanced_claim: {aiReviewQualityLab.assertionLedger.aggregate.blockedAdvancedCount}</span>
+            <span>usable: {aiReviewQualityLab.assertionLedger.aggregate.usableCount}</span>
+            <span>blocked: {aiReviewQualityLab.assertionLedger.aggregate.blockedCount}</span>
+          </div>
+          <div className="ai-review-composed-ledger-grid" role="list">
+            {aiReviewQualityLab.assertionLedger.composedReview.sections.map((section) => (
+              <section key={section.heading} role="listitem">
+                <strong>{section.heading}</strong>
+                <span>{section.body}</span>
+                <span>Ledger anchors: {section.anchorIds.join(", ")}</span>
+              </section>
+            ))}
+          </div>
+          <div className="ai-review-advanced-blocks">
+            {aiReviewQualityLab.assertionLedger.assertions
+              .filter((assertion) => assertion.status === "blocked")
+              .map((assertion) => (
+                <span key={assertion.id}>
+                  {assertion.assertion} Reason: {assertion.confidenceCaveat}
+                </span>
+              ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

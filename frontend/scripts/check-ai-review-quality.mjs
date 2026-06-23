@@ -45,6 +45,7 @@ for (const marker of [
   "P123-A",
   "E124-A",
   "P125-A",
+  "E126-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -52,6 +53,7 @@ for (const marker of [
   "ai_review_multi_fixture_stage=P123-A",
   "ai_review_telegram_benchmark_stage=E124-A",
   "ai_review_question_contract_stage=P125-A",
+  "ai_review_assertion_ledger_stage=E126-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -99,6 +101,18 @@ for (const marker of [
   "ai_review_followup_questions_avoid_generic_prompts=true",
   "ai_review_advanced_claims_blocked_without_calculation=true",
   "ai_review_question_contract_visible=true",
+  "ai_review_assertion_ledger_present=true",
+  "ai_review_assertions_total>=12",
+  "ai_review_assertions_computed_chart_facts>=5",
+  "ai_review_assertions_jyotish_rules>=3",
+  "ai_review_assertions_derived_synthesis>=2",
+  "ai_review_assertions_practical_guidance>=2",
+  "ai_review_assertions_blocked_advanced>=2",
+  "ai_review_composed_review_sections_present=true",
+  "ai_review_composed_review_uses_only_usable_assertions=true",
+  "ai_review_composed_review_cites_ledger_anchors=true",
+  "ai_review_advanced_claims_visible_as_blocked=true",
+  "ai_review_local_quality_harness_not_final_output=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -171,6 +185,17 @@ for (const label of [
   "Anchor fact",
   "Rule/accent",
   "Question status",
+  "Assertion ledger",
+  "computed_chart_fact",
+  "jyotish_rule",
+  "derived_synthesis",
+  "practical_guidance",
+  "gated_advanced_claim",
+  "Grounded chart facts",
+  "Jyotish interpretation",
+  "Practical focus",
+  "Caveats and blocked claims",
+  "local deterministic quality harness, not final AI output",
   "Shadbala",
   "Ashtakavarga",
   "Avastha",
@@ -194,6 +219,7 @@ assert(typeof helper.buildAiReviewPromptPayload === "function", "buildAiReviewPr
 assert(typeof helper.buildAiReviewScenarioMatrix === "function", "buildAiReviewScenarioMatrix must be exported.");
 assert(typeof helper.buildTelegramBenchmarkReviewBlueprint === "function", "buildTelegramBenchmarkReviewBlueprint must be exported.");
 assert(typeof helper.buildAiReviewFollowupQuestionContract === "function", "buildAiReviewFollowupQuestionContract must be exported.");
+assert(typeof helper.buildAiReviewAssertionLedger === "function", "buildAiReviewAssertionLedger must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -204,6 +230,7 @@ const promptPayload = helper.buildAiReviewPromptPayload(packet, composed);
 const scenarioMatrix = helper.buildAiReviewScenarioMatrix();
 const telegramBenchmark = helper.buildTelegramBenchmarkReviewBlueprint();
 const questionContract = helper.buildAiReviewFollowupQuestionContract();
+const assertionLedger = helper.buildAiReviewAssertionLedger();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -280,6 +307,38 @@ assert(
     .filter((candidate) => advancedTerms.some((term) => candidate.question.includes(term) || candidate.jyotishRuleAccent.includes(term)))
     .every((candidate) => candidate.status === "gated" && candidate.reason.includes("calculated table")),
   "Advanced claim questions must be gated unless computed-table support exists.",
+);
+assert(assertionLedger.stage === "E126-A", "Assertion ledger stage must be E126-A.");
+assert(assertionLedger.statusLabels.includes("ai_review_assertion_ledger_stage=E126-A"), "Assertion ledger labels missing E126 stage.");
+assert(assertionLedger.assertions.length >= 12, "Assertion ledger must include at least twelve assertions.");
+assert(assertionLedger.aggregate.computedChartFactCount >= 5, "Assertion ledger must include at least five computed chart facts.");
+assert(assertionLedger.aggregate.jyotishRuleCount >= 3, "Assertion ledger must include at least three jyotish rules.");
+assert(assertionLedger.aggregate.derivedSynthesisCount >= 2, "Assertion ledger must include at least two derived synthesis assertions.");
+assert(assertionLedger.aggregate.practicalGuidanceCount >= 2, "Assertion ledger must include at least two practical guidance assertions.");
+assert(assertionLedger.aggregate.blockedAdvancedCount >= 2, "Assertion ledger must include at least two blocked advanced claims.");
+assert(assertionLedger.aggregate.usableCount > assertionLedger.aggregate.blockedCount, "Assertion ledger should have usable assertions plus blocked claims.");
+assert(assertionLedger.composedReview.sections.map((section) => section.heading).join("|") === "Grounded chart facts|Jyotish interpretation|Practical focus|Caveats and blocked claims", "Assertion-ledger composed sections changed.");
+assert(assertionLedger.composedReview.sections.every((section) => section.anchorIds.length >= 1), "Every composed-review section must cite ledger anchors.");
+assert(assertionLedger.composedReview.sections.every((section) => section.anchorIds.every((id) => assertionLedger.assertions.some((assertion) => assertion.id === id))), "Composed-review anchors must resolve to ledger assertions.");
+const usableAssertionIds = new Set(assertionLedger.assertions.filter((assertion) => assertion.status === "usable").map((assertion) => assertion.id));
+const blockedAssertionIds = new Set(assertionLedger.assertions.filter((assertion) => assertion.status === "blocked").map((assertion) => assertion.id));
+assert(
+  assertionLedger.composedReview.sections
+    .filter((section) => section.heading !== "Caveats and blocked claims")
+    .every((section) => section.anchorIds.every((id) => usableAssertionIds.has(id))),
+  "Usable composed-review sections must not include blocked assertions.",
+);
+assert(
+  assertionLedger.composedReview.sections
+    .find((section) => section.heading === "Caveats and blocked claims")
+    ?.anchorIds.some((id) => blockedAssertionIds.has(id)),
+  "Caveats section must cite blocked advanced claims.",
+);
+assert(
+  assertionLedger.assertions
+    .filter((assertion) => advancedTerms.some((term) => assertion.assertion.includes(term)))
+    .every((assertion) => assertion.status === "blocked" && assertion.sourceType === "gated_advanced_claim"),
+  "Advanced terms must appear only as blocked gated advanced claims.",
 );
 
 for (const forbidden of [

@@ -178,6 +178,51 @@ export type AiReviewFollowupQuestionContract = {
   statusLabels: string[];
 };
 
+export type AiReviewAssertionSourceType =
+  | "computed_chart_fact"
+  | "jyotish_rule"
+  | "derived_synthesis"
+  | "practical_guidance"
+  | "gated_advanced_claim";
+
+export type AiReviewAssertionStatus = "usable" | "blocked";
+
+export type AiReviewAssertion = {
+  id: string;
+  assertion: string;
+  sourceType: AiReviewAssertionSourceType;
+  evidenceAnchor: string;
+  confidenceCaveat: string;
+  status: AiReviewAssertionStatus;
+};
+
+export type AiReviewAssertionComposedSection = {
+  heading: "Grounded chart facts" | "Jyotish interpretation" | "Practical focus" | "Caveats and blocked claims";
+  body: string;
+  anchorIds: string[];
+};
+
+export type AiReviewAssertionLedger = {
+  stage: "E126-A";
+  assertions: AiReviewAssertion[];
+  aggregate: {
+    totalCount: number;
+    computedChartFactCount: number;
+    jyotishRuleCount: number;
+    derivedSynthesisCount: number;
+    practicalGuidanceCount: number;
+    blockedAdvancedCount: number;
+    usableCount: number;
+    blockedCount: number;
+  };
+  composedReview: {
+    sections: AiReviewAssertionComposedSection[];
+    usesOnlyUsableAssertions: boolean;
+    citesLedgerAnchors: boolean;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -782,6 +827,206 @@ export function buildAiReviewFollowupQuestionContract(): AiReviewFollowupQuestio
   };
 }
 
+export function buildAiReviewAssertionLedger(): AiReviewAssertionLedger {
+  const assertions: AiReviewAssertion[] = [
+    {
+      id: "fact-haridev-cancer-lagna",
+      assertion: "Haridev D1 uses Cancer Lagna in Ashlesha as the review's starting frame.",
+      sourceType: "computed_chart_fact",
+      evidenceAnchor: "Haridev D1: Cancer Lagna Ashlesha",
+      confidenceCaveat: "Use as fixture evidence only until live chart evidence is supplied.",
+      status: "usable",
+    },
+    {
+      id: "fact-haridev-aries-tenth",
+      assertion: "Haridev D1 has Sun, Mars, and Saturn in Aries in the 10th house.",
+      sourceType: "computed_chart_fact",
+      evidenceAnchor: "Haridev D1: Sun/Mars/Saturn Aries 10th",
+      confidenceCaveat: "Treat as benchmark fixture evidence, not a newly computed production claim.",
+      status: "usable",
+    },
+    {
+      id: "fact-haridev-moon-twelfth",
+      assertion: "Haridev D1 places Moon in Gemini 12th in Ardra.",
+      sourceType: "computed_chart_fact",
+      evidenceAnchor: "Haridev D1: Moon Gemini 12th Ardra",
+      confidenceCaveat: "Use only as the named benchmark chart fact.",
+      status: "usable",
+    },
+    {
+      id: "fact-seva-mars-tenth",
+      assertion: "Seva D1 places Mars in Aries 10th in Ashwini.",
+      sourceType: "computed_chart_fact",
+      evidenceAnchor: "Seva D1: Mars Aries 10th Ashwini",
+      confidenceCaveat: "Use as benchmark evidence until user-supplied chart evidence replaces it.",
+      status: "usable",
+    },
+    {
+      id: "fact-seva-venus-ninth",
+      assertion: "Seva D1 places Venus in Pisces 9th.",
+      sourceType: "computed_chart_fact",
+      evidenceAnchor: "Seva D1: Venus Pisces 9th",
+      confidenceCaveat: "Use as compact fixture evidence, not a broad promise of outcome.",
+      status: "usable",
+    },
+    {
+      id: "fact-seva-saturn-rahu-eleventh",
+      assertion: "Seva D1 places Saturn and Rahu in Taurus 11th.",
+      sourceType: "computed_chart_fact",
+      evidenceAnchor: "Seva D1: Saturn/Rahu Taurus 11th",
+      confidenceCaveat: "Use for question and synthesis scaffolding only.",
+      status: "usable",
+    },
+    {
+      id: "rule-tenth-house-career",
+      assertion: "Jyotish rule: the 10th house frames public role, work visibility, and responsibility.",
+      sourceType: "jyotish_rule",
+      evidenceAnchor: "10th-house Aries cluster",
+      confidenceCaveat: "Needs dasha and divisional support before timing claims.",
+      status: "usable",
+    },
+    {
+      id: "rule-aries-mars-action",
+      assertion: "Jyotish rule: Aries and Mars accents sharpen initiative, speed, and conflict risk.",
+      sourceType: "jyotish_rule",
+      evidenceAnchor: "Mars/Aries career emphasis",
+      confidenceCaveat: "Interpret with benefic/malefic context and house ownership.",
+      status: "usable",
+    },
+    {
+      id: "rule-twelfth-house-withdrawal",
+      assertion: "Jyotish rule: the 12th house can show retreat, hidden work, sleep, expense, or foreign distance.",
+      sourceType: "jyotish_rule",
+      evidenceAnchor: "Moon Gemini 12th Ardra",
+      confidenceCaveat: "Do not turn this into certainty about loss without corroboration.",
+      status: "usable",
+    },
+    {
+      id: "synthesis-haridev-career",
+      assertion: "Derived synthesis: Haridev's Aries 10th cluster can support leadership questions, but Saturn adds duty and delay.",
+      sourceType: "derived_synthesis",
+      evidenceAnchor: "Haridev D1: Sun/Mars/Saturn Aries 10th + rule-tenth-house-career",
+      confidenceCaveat: "Keep timing gated until dasha evidence is present.",
+      status: "usable",
+    },
+    {
+      id: "synthesis-seva-career-network",
+      assertion: "Derived synthesis: Seva's Mars 10th and Saturn/Rahu 11th connect career drive with network pressure.",
+      sourceType: "derived_synthesis",
+      evidenceAnchor: "Seva D1: Mars Aries 10th + Saturn/Rahu Taurus 11th",
+      confidenceCaveat: "Avoid claiming peak outcome without D10 and timing support.",
+      status: "usable",
+    },
+    {
+      id: "guidance-haridev-career-question",
+      assertion: "Practical guidance: ask which concrete career decision needs the Aries 10th-house pressure interpreted.",
+      sourceType: "practical_guidance",
+      evidenceAnchor: "Haridev D1: Aries 10th cluster",
+      confidenceCaveat: "Frame as a next question, not as advice to take immediate action.",
+      status: "usable",
+    },
+    {
+      id: "guidance-seva-timing-question",
+      assertion: "Practical guidance: ask for timing context before turning Seva's 10th-house Mars into a prediction.",
+      sourceType: "practical_guidance",
+      evidenceAnchor: "Seva D1: Mars Aries 10th",
+      confidenceCaveat: "Requires dasha/transit support before forecast language.",
+      status: "usable",
+    },
+    {
+      id: "blocked-shadbala",
+      assertion: "Shadbala strength cannot be asserted without a computed Shadbala table.",
+      sourceType: "gated_advanced_claim",
+      evidenceAnchor: "Missing calculated Shadbala table",
+      confidenceCaveat: "Blocked: advanced strength claim is not usable in the composed review.",
+      status: "blocked",
+    },
+    {
+      id: "blocked-ashtakavarga",
+      assertion: "Ashtakavarga bindu support cannot be asserted without a computed Ashtakavarga table.",
+      sourceType: "gated_advanced_claim",
+      evidenceAnchor: "Missing calculated Ashtakavarga table",
+      confidenceCaveat: "Blocked: bindu claim is not usable in the composed review.",
+      status: "blocked",
+    },
+    {
+      id: "blocked-avastha-mrityu",
+      assertion: "Avastha or Mrityu-bhaga status cannot be asserted without computed Avastha/Mrityu-bhaga tables.",
+      sourceType: "gated_advanced_claim",
+      evidenceAnchor: "Missing computed Avastha/Mrityu-bhaga table",
+      confidenceCaveat: "Blocked: advanced condition claim is not usable in the composed review.",
+      status: "blocked",
+    },
+  ];
+
+  const countByType = (sourceType: AiReviewAssertionSourceType) => assertions.filter((assertion) => assertion.sourceType === sourceType).length;
+  const usableIds = new Set(assertions.filter((assertion) => assertion.status === "usable").map((assertion) => assertion.id));
+  const sections: AiReviewAssertionComposedSection[] = [
+    {
+      heading: "Grounded chart facts",
+      body: "Use ledger anchors fact-haridev-aries-tenth, fact-haridev-moon-twelfth, and fact-seva-mars-tenth before interpretation.",
+      anchorIds: ["fact-haridev-aries-tenth", "fact-haridev-moon-twelfth", "fact-seva-mars-tenth"],
+    },
+    {
+      heading: "Jyotish interpretation",
+      body: "Use rule-tenth-house-career and synthesis-haridev-career to connect public role, responsibility, and initiative without timing certainty.",
+      anchorIds: ["rule-tenth-house-career", "rule-aries-mars-action", "synthesis-haridev-career"],
+    },
+    {
+      heading: "Practical focus",
+      body: "Use guidance-haridev-career-question and guidance-seva-timing-question to turn the reading into grounded next questions.",
+      anchorIds: ["guidance-haridev-career-question", "guidance-seva-timing-question", "synthesis-seva-career-network"],
+    },
+    {
+      heading: "Caveats and blocked claims",
+      body: "Blocked claim reasons: blocked-shadbala and blocked-ashtakavarga require calculated tables; blocked-avastha-mrityu requires computed Avastha/Mrityu-bhaga support.",
+      anchorIds: ["blocked-shadbala", "blocked-ashtakavarga", "blocked-avastha-mrityu"],
+    },
+  ];
+
+  return {
+    stage: "E126-A",
+    assertions,
+    aggregate: {
+      totalCount: assertions.length,
+      computedChartFactCount: countByType("computed_chart_fact"),
+      jyotishRuleCount: countByType("jyotish_rule"),
+      derivedSynthesisCount: countByType("derived_synthesis"),
+      practicalGuidanceCount: countByType("practical_guidance"),
+      blockedAdvancedCount: countByType("gated_advanced_claim"),
+      usableCount: assertions.filter((assertion) => assertion.status === "usable").length,
+      blockedCount: assertions.filter((assertion) => assertion.status === "blocked").length,
+    },
+    composedReview: {
+      sections,
+      usesOnlyUsableAssertions: sections
+        .filter((section) => section.heading !== "Caveats and blocked claims")
+        .every((section) => section.anchorIds.every((id) => usableIds.has(id))),
+      citesLedgerAnchors: sections.every((section) => section.anchorIds.length > 0),
+    },
+    statusLabels: [
+      "E126-A",
+      "ai_review_assertion_ledger_stage=E126-A",
+      "ai_review_assertion_ledger_present=true",
+      "ai_review_assertions_total>=12",
+      "ai_review_assertions_computed_chart_facts>=5",
+      "ai_review_assertions_jyotish_rules>=3",
+      "ai_review_assertions_derived_synthesis>=2",
+      "ai_review_assertions_practical_guidance>=2",
+      "ai_review_assertions_blocked_advanced>=2",
+      "ai_review_composed_review_sections_present=true",
+      "ai_review_composed_review_uses_only_usable_assertions=true",
+      "ai_review_composed_review_cites_ledger_anchors=true",
+      "ai_review_advanced_claims_visible_as_blocked=true",
+      "ai_review_local_quality_harness_not_final_output=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -791,6 +1036,7 @@ export function buildAiReviewQualityLabSummary() {
   const scenarioMatrix = buildAiReviewScenarioMatrix();
   const telegramBenchmark = buildTelegramBenchmarkReviewBlueprint();
   const followupQuestionContract = buildAiReviewFollowupQuestionContract();
+  const assertionLedger = buildAiReviewAssertionLedger();
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -812,6 +1058,7 @@ export function buildAiReviewQualityLabSummary() {
       ...scenarioMatrix.statusLabels,
       ...telegramBenchmark.statusLabels,
       ...followupQuestionContract.statusLabels,
+      ...assertionLedger.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -833,5 +1080,6 @@ export function buildAiReviewQualityLabSummary() {
     scenarioMatrix,
     telegramBenchmark,
     followupQuestionContract,
+    assertionLedger,
   };
 }
