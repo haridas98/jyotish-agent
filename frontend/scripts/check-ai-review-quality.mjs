@@ -44,12 +44,14 @@ for (const marker of [
   "E122-A",
   "P123-A",
   "E124-A",
+  "P125-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
   "ai_review_prompt_contract_stage=E122-A",
   "ai_review_multi_fixture_stage=P123-A",
   "ai_review_telegram_benchmark_stage=E124-A",
+  "ai_review_question_contract_stage=P125-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -87,6 +89,16 @@ for (const marker of [
   "ai_review_benchmark_followup_questions_present=true",
   "ai_review_benchmark_advanced_claims_gated=true",
   "ai_review_blueprint_sections_present=true",
+  "ai_review_followup_question_contract_present=true",
+  "ai_review_followup_questions_total>=8",
+  "ai_review_followup_questions_ready>=5",
+  "ai_review_followup_questions_gated>=2",
+  "ai_review_followup_questions_rejected_generic>=1",
+  "ai_review_followup_questions_grounded_in_chart_facts=true",
+  "ai_review_followup_questions_use_benchmark_blueprint=true",
+  "ai_review_followup_questions_avoid_generic_prompts=true",
+  "ai_review_advanced_claims_blocked_without_calculation=true",
+  "ai_review_question_contract_visible=true",
   "ai_review_quality_dimensions=interpretation_depth,specific_chart_evidence,practical_synthesis,caveats_confidence",
   "ai_review_llm_network_call_executed=false",
   "backend_calculation_changed=false",
@@ -152,6 +164,17 @@ for (const label of [
   "10th-house Aries cluster",
   "Sookshma-dasha Mars timing",
   "D9 relationship layer",
+  "Grounded follow-up question contract",
+  "Ready chart-grounded questions",
+  "Gated advanced claims",
+  "Rejected generic prompts",
+  "Anchor fact",
+  "Rule/accent",
+  "Question status",
+  "Shadbala",
+  "Ashtakavarga",
+  "Avastha",
+  "Mrityu-bhaga",
   "lacks chart-specific evidence",
   "lacks practical synthesis",
   "not a generated final review",
@@ -170,6 +193,7 @@ assert(typeof helper.composeEvidenceDrivenMockReview === "function", "composeEvi
 assert(typeof helper.buildAiReviewPromptPayload === "function", "buildAiReviewPromptPayload must be exported.");
 assert(typeof helper.buildAiReviewScenarioMatrix === "function", "buildAiReviewScenarioMatrix must be exported.");
 assert(typeof helper.buildTelegramBenchmarkReviewBlueprint === "function", "buildTelegramBenchmarkReviewBlueprint must be exported.");
+assert(typeof helper.buildAiReviewFollowupQuestionContract === "function", "buildAiReviewFollowupQuestionContract must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -179,6 +203,7 @@ const composed = helper.composeEvidenceDrivenMockReview(packet);
 const promptPayload = helper.buildAiReviewPromptPayload(packet, composed);
 const scenarioMatrix = helper.buildAiReviewScenarioMatrix();
 const telegramBenchmark = helper.buildTelegramBenchmarkReviewBlueprint();
+const questionContract = helper.buildAiReviewFollowupQuestionContract();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -238,6 +263,24 @@ assert(telegramBenchmark.blueprintSections.join("|") === "Chart fact|Jyotish rul
 assert(telegramBenchmark.benchmarks.some((benchmark) => benchmark.name === "Haridev D1/D9 benchmark"), "Haridev benchmark missing.");
 assert(telegramBenchmark.benchmarks.some((benchmark) => benchmark.name === "Seva D1/career benchmark"), "Seva benchmark missing.");
 assert(telegramBenchmark.styleCopied === false, "Telegram benchmark must not copy source prose style.");
+assert(questionContract.stage === "P125-A", "Question contract stage must be P125-A.");
+assert(questionContract.statusLabels.includes("ai_review_question_contract_stage=P125-A"), "Question contract labels missing P125 stage.");
+assert(questionContract.candidates.length >= 8, "Question contract must include at least eight candidates.");
+assert(questionContract.aggregate.readyCount >= 5, "Question contract must include at least five ready questions.");
+assert(questionContract.aggregate.gatedCount >= 2, "Question contract must include at least two gated questions.");
+assert(questionContract.aggregate.rejectedGenericCount >= 1, "Question contract must include at least one rejected generic question.");
+assert(questionContract.aggregate.groundedInChartFacts === true, "Ready questions must be grounded in chart facts.");
+assert(questionContract.aggregate.advancedClaimsBlockedWithoutCalculation === true, "Advanced claims must be blocked without calculated tables.");
+assert(questionContract.candidates.filter((candidate) => candidate.status === "ready").every((candidate) => candidate.anchorChartFact && candidate.jyotishRuleAccent), "Ready questions must include anchor facts and rules.");
+assert(questionContract.candidates.filter((candidate) => candidate.status === "rejected").every((candidate) => candidate.reason.includes("generic")), "Rejected questions must explain generic prompt failure.");
+assert(questionContract.candidates.some((candidate) => candidate.status === "rejected" && candidate.question.includes("What should I do next?")), "Generic rejected question fixture missing.");
+const advancedTerms = ["Shadbala", "Ashtakavarga", "Avastha", "Mrityu-bhaga"];
+assert(
+  questionContract.candidates
+    .filter((candidate) => advancedTerms.some((term) => candidate.question.includes(term) || candidate.jyotishRuleAccent.includes(term)))
+    .every((candidate) => candidate.status === "gated" && candidate.reason.includes("calculated table")),
+  "Advanced claim questions must be gated unless computed-table support exists.",
+);
 
 for (const forbidden of [
   "fetch(",

@@ -298,6 +298,27 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-question-contract" data-ai-review-question-contract-stage="P125-A">
+          <div className="ai-review-question-contract-head">
+            <strong>Grounded follow-up question contract</strong>
+            <span>
+              Ready chart-grounded questions: {aiReviewQualityLab.followupQuestionContract.aggregate.readyCount}; gated advanced claims:{" "}
+              {aiReviewQualityLab.followupQuestionContract.aggregate.gatedCount}; rejected generic prompts:{" "}
+              {aiReviewQualityLab.followupQuestionContract.aggregate.rejectedGenericCount}.
+            </span>
+          </div>
+          <div className="ai-review-question-grid" role="list">
+            {aiReviewQualityLab.followupQuestionContract.candidates.map((candidate) => (
+              <section key={`${candidate.sourceBenchmarkId}-${candidate.question}`} role="listitem">
+                <strong>{candidate.question}</strong>
+                <span>Anchor fact: {candidate.anchorChartFact || "none"}</span>
+                <span>Rule/accent: {candidate.jyotishRuleAccent || "none"}</span>
+                <span>Question status: {candidate.status}</span>
+                <span>Reason: {candidate.reason}</span>
+              </section>
+            ))}
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

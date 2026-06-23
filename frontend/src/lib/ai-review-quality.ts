@@ -153,6 +153,31 @@ export type TelegramBenchmarkReviewBlueprint = {
   statusLabels: string[];
 };
 
+export type AiReviewFollowupQuestionStatus = "ready" | "gated" | "rejected";
+
+export type AiReviewFollowupQuestionCandidate = {
+  question: string;
+  anchorChartFact: string;
+  jyotishRuleAccent: string;
+  status: AiReviewFollowupQuestionStatus;
+  reason: string;
+  sourceBenchmarkId: string;
+};
+
+export type AiReviewFollowupQuestionContract = {
+  stage: "P125-A";
+  candidates: AiReviewFollowupQuestionCandidate[];
+  aggregate: {
+    totalCount: number;
+    readyCount: number;
+    gatedCount: number;
+    rejectedGenericCount: number;
+    groundedInChartFacts: boolean;
+    advancedClaimsBlockedWithoutCalculation: boolean;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -635,6 +660,128 @@ export function buildTelegramBenchmarkReviewBlueprint(): TelegramBenchmarkReview
   };
 }
 
+export function buildAiReviewFollowupQuestionContract(): AiReviewFollowupQuestionContract {
+  const [haridev, seva] = telegramBenchmarkCharts;
+  const candidates: AiReviewFollowupQuestionCandidate[] = [
+    {
+      question: haridev.followUpQuestions[0],
+      anchorChartFact: "Haridev D1 Sun Mars Saturn in Aries 10th",
+      jyotishRuleAccent: "10th-house Aries cluster anchors career pressure and visibility before prose.",
+      status: "ready",
+      reason: "Ready because the question names a concrete chart fact and asks for lived manifestation.",
+      sourceBenchmarkId: "haridev-d1-d9",
+    },
+    {
+      question: haridev.followUpQuestions[1],
+      anchorChartFact: "Haridev D1 Sun Mars Saturn in Aries 10th",
+      jyotishRuleAccent: "Sookshma-dasha Mars timing must be checked before career interpretation.",
+      status: "ready",
+      reason: "Ready because the timing question is anchored to the Mars career cluster.",
+      sourceBenchmarkId: "haridev-d1-d9",
+    },
+    {
+      question: haridev.followUpQuestions[2],
+      anchorChartFact: "Haridev D9 Aquarius Lagna with Sun Rahu in Leo",
+      jyotishRuleAccent: "D9 relationship layer is a separate confirmation layer, not a substitute for D1 facts.",
+      status: "ready",
+      reason: "Ready because the question asks what D9 adds after D1 is grounded.",
+      sourceBenchmarkId: "haridev-d1-d9",
+    },
+    {
+      question: haridev.followUpQuestions[3],
+      anchorChartFact: "Haridev D1 Rahu Leo 2nd",
+      jyotishRuleAccent: "Rahu in 2nd must be tied to speech, family resources, and digital assets.",
+      status: "ready",
+      reason: "Ready because the question ties Rahu in 2nd to a concrete life domain.",
+      sourceBenchmarkId: "haridev-d1-d9",
+    },
+    {
+      question: seva.followUpQuestions[0],
+      anchorChartFact: "Seva D1 Mars in Aries 10th Ashwini",
+      jyotishRuleAccent: "Mars in Aries 10th Ashwini anchors career action before generic vocation advice.",
+      status: "ready",
+      reason: "Ready because the question is career-specific and chart-fact anchored.",
+      sourceBenchmarkId: "seva-d1-career",
+    },
+    {
+      question: seva.followUpQuestions[1],
+      anchorChartFact: "Seva D1 Mars in Aries 10th Ashwini",
+      jyotishRuleAccent: "D10 career peak should be inspected before professional timing claims.",
+      status: "ready",
+      reason: "Ready because it asks for a concrete varga/timing follow-up before interpretation.",
+      sourceBenchmarkId: "seva-d1-career",
+    },
+    {
+      question: "Can Shadbala confirm the strength of the 10th-house Aries career cluster?",
+      anchorChartFact: "Haridev D1 Sun Mars Saturn in Aries 10th",
+      jyotishRuleAccent: "Shadbala requires a calculated table before strength claims.",
+      status: "gated",
+      reason: "Gated because Shadbala is an advanced claim and no calculated table exists.",
+      sourceBenchmarkId: "haridev-d1-d9",
+    },
+    {
+      question: "Do Ashtakavarga bindu values support the D10 career peak question?",
+      anchorChartFact: "Seva D1 Mars in Aries 10th Ashwini",
+      jyotishRuleAccent: "Ashtakavarga requires a calculated table before bindu claims.",
+      status: "gated",
+      reason: "Gated because Ashtakavarga bindu is unavailable without a calculated table.",
+      sourceBenchmarkId: "seva-d1-career",
+    },
+    {
+      question: "Are Avastha or Mrityu-bhaga conditions changing this relationship reading?",
+      anchorChartFact: "Haridev D9 Aquarius Lagna with Sun Rahu in Leo",
+      jyotishRuleAccent: "Avastha and Mrityu-bhaga require computed support before use.",
+      status: "gated",
+      reason: "Gated because Avastha and Mrityu-bhaga need a calculated table before interpretation.",
+      sourceBenchmarkId: "haridev-d1-d9",
+    },
+    {
+      question: "What should I do next?",
+      anchorChartFact: "",
+      jyotishRuleAccent: "",
+      status: "rejected",
+      reason: "Rejected generic prompt: no chart-fact anchor, rule/accent, or benchmark source.",
+      sourceBenchmarkId: "generic-rejected",
+    },
+  ];
+  const readyQuestions = candidates.filter((candidate) => candidate.status === "ready");
+  const advancedTerms = ["Shadbala", "Ashtakavarga", "Avastha", "Mrityu-bhaga"];
+  const advancedCandidates = candidates.filter((candidate) =>
+    advancedTerms.some((term) => candidate.question.includes(term) || candidate.jyotishRuleAccent.includes(term)),
+  );
+
+  return {
+    stage: "P125-A",
+    candidates,
+    aggregate: {
+      totalCount: candidates.length,
+      readyCount: readyQuestions.length,
+      gatedCount: candidates.filter((candidate) => candidate.status === "gated").length,
+      rejectedGenericCount: candidates.filter((candidate) => candidate.status === "rejected").length,
+      groundedInChartFacts: readyQuestions.every((candidate) => Boolean(candidate.anchorChartFact && candidate.jyotishRuleAccent)),
+      advancedClaimsBlockedWithoutCalculation: advancedCandidates.every((candidate) => candidate.status === "gated"),
+    },
+    statusLabels: [
+      "P125-A",
+      "ai_review_question_contract_stage=P125-A",
+      "ai_review_followup_question_contract_present=true",
+      "ai_review_followup_questions_total>=8",
+      "ai_review_followup_questions_ready>=5",
+      "ai_review_followup_questions_gated>=2",
+      "ai_review_followup_questions_rejected_generic>=1",
+      "ai_review_followup_questions_grounded_in_chart_facts=true",
+      "ai_review_followup_questions_use_benchmark_blueprint=true",
+      "ai_review_followup_questions_avoid_generic_prompts=true",
+      "ai_review_advanced_claims_blocked_without_calculation=true",
+      "ai_review_question_contract_visible=true",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=508df50",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -643,6 +790,7 @@ export function buildAiReviewQualityLabSummary() {
   const promptPayload = buildAiReviewPromptPayload(preview.evidencePacket, composed);
   const scenarioMatrix = buildAiReviewScenarioMatrix();
   const telegramBenchmark = buildTelegramBenchmarkReviewBlueprint();
+  const followupQuestionContract = buildAiReviewFollowupQuestionContract();
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -663,6 +811,7 @@ export function buildAiReviewQualityLabSummary() {
       ...promptPayload.statusLabels,
       ...scenarioMatrix.statusLabels,
       ...telegramBenchmark.statusLabels,
+      ...followupQuestionContract.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -683,5 +832,6 @@ export function buildAiReviewQualityLabSummary() {
     promptPayload,
     scenarioMatrix,
     telegramBenchmark,
+    followupQuestionContract,
   };
 }
