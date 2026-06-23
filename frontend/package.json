@@ -38,6 +38,7 @@
     "test:ai-human-review-mock": "node scripts/check-ai-human-review-mock.mjs",
     "test:ai-report-workspace": "node scripts/check-ai-report-workspace.mjs",
     "test:ai-review-telegram-benchmark": "node scripts/check-ai-review-telegram-benchmark.mjs",
+    "test:ai-review-benchmark-parity": "node scripts/check-ai-review-benchmark-parity.mjs",
     "test:ai-review-quality": "node scripts/check-ai-review-quality.mjs",
     "test:d1-workbench": "node scripts/check-d1-workbench.mjs",
     "test:chart-detail-smoke": "node scripts/check-chart-detail-smoke.mjs",

@@ -1,4 +1,5 @@
 import { buildAiReviewTelegramSanitizedBenchmark } from "@/lib/ai-review-benchmark";
+import { buildAiReviewBenchmarkParityReport } from "@/lib/ai-review-benchmark-parity";
 
 export const AI_REVIEW_QUALITY_STAGE = "P119-A";
 
@@ -2032,6 +2033,7 @@ export function buildAiReviewQualityLabSummary() {
   const groundedDraftEvaluator = buildAiReviewGroundedDraftEvaluator(calculationPromptPacket);
   const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
   const generationBoundary = buildAiReviewGenerationBoundary(calculationPromptPacket, groundedDraftEvaluator, groundedComposer);
+  const benchmarkParityReport = buildAiReviewBenchmarkParityReport();
 
   return {
     stage: AI_REVIEW_QUALITY_STAGE,
@@ -2061,6 +2063,7 @@ export function buildAiReviewQualityLabSummary() {
       ...groundedDraftEvaluator.statusLabels,
       ...groundedComposer.statusLabels,
       ...generationBoundary.statusLabels,
+      ...benchmarkParityReport.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
       id,
@@ -2090,5 +2093,6 @@ export function buildAiReviewQualityLabSummary() {
     groundedDraftEvaluator,
     groundedComposer,
     generationBoundary,
+    benchmarkParityReport,
   };
 }

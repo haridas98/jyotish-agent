@@ -28,6 +28,7 @@ function loadTsModule(path) {
   moduleCache.set(path, module.exports);
   function localRequire(specifier) {
     if (specifier === "@/lib/ai-review-benchmark") return loadTsModule("src/lib/ai-review-benchmark.ts");
+    if (specifier === "@/lib/ai-review-benchmark-parity") return loadTsModule("src/lib/ai-review-benchmark-parity.ts");
     if (specifier === "@/data/ai-review-telegram-benchmark.json") return { default: JSON.parse(read("src/data/ai-review-telegram-benchmark.json")) };
     throw new Error(`Unsupported test loader import: ${specifier}`);
   }
@@ -37,16 +38,18 @@ function loadTsModule(path) {
 
 const helperPath = "src/lib/ai-review-quality.ts";
 const benchmarkHelperPath = "src/lib/ai-review-benchmark.ts";
+const benchmarkParityPath = "src/lib/ai-review-benchmark-parity.ts";
 const benchmarkFixturePath = "src/data/ai-review-telegram-benchmark.json";
 const pagePath = "src/app/reports/page.tsx";
 const mockReviewPagePath = "src/app/report-mock-review/page.tsx";
 const packageJson = read("package.json");
 const helperSource = read(helperPath);
 const benchmarkHelperSource = read(benchmarkHelperPath);
+const benchmarkParitySource = read(benchmarkParityPath);
 const benchmarkFixtureSource = read(benchmarkFixturePath);
 const page = read(pagePath);
 const mockReviewPage = read(mockReviewPagePath);
-const combinedSource = `${helperSource}\n${benchmarkHelperSource}\n${benchmarkFixtureSource}\n${page}\n${mockReviewPage}`;
+const combinedSource = `${helperSource}\n${benchmarkHelperSource}\n${benchmarkParitySource}\n${benchmarkFixtureSource}\n${page}\n${mockReviewPage}`;
 const combinedSourceLower = combinedSource.toLowerCase();
 const helper = loadTsModule(helperPath);
 
@@ -60,6 +63,7 @@ for (const marker of [
   "P123-A",
   "E124-A",
   "R1",
+  "R2",
   "P125-A",
   "E126-A",
   "P127-A",
@@ -76,6 +80,7 @@ for (const marker of [
   "ai_review_multi_fixture_stage=P123-A",
   "ai_review_telegram_benchmark_stage=E124-A",
   "ai_review_telegram_sanitized_benchmark_stage=R1",
+  "ai_review_benchmark_parity_stage=R2",
   "ai_review_question_contract_stage=P125-A",
   "ai_review_assertion_ledger_stage=E126-A",
   "ai_review_narrative_rubric_stage=P127-A",
@@ -127,6 +132,11 @@ for (const marker of [
   "ai_review_telegram_style_copied=false",
   "ai_review_telegram_case_count>=2",
   "ai_review_telegram_followup_questions_present=true",
+  "ai_review_benchmark_parity_present=true",
+  "ai_review_benchmark_d1_rows_checked>=18",
+  "ai_review_benchmark_unsupported_advanced_claims_gated=true",
+  "ai_review_benchmark_lagna_present=true",
+  "ai_review_benchmark_nakshatra_present=true",
   "ai_review_followup_question_contract_present=true",
   "ai_review_followup_questions_total>=8",
   "ai_review_followup_questions_ready>=5",
@@ -420,6 +430,7 @@ assert(typeof helper.buildAiReviewCalculationPromptPacket === "function", "build
 assert(typeof helper.buildAiReviewGroundedDraftEvaluator === "function", "buildAiReviewGroundedDraftEvaluator must be exported.");
 assert(typeof helper.buildAiReviewGroundedComposer === "function", "buildAiReviewGroundedComposer must be exported.");
 assert(typeof helper.buildAiReviewGenerationBoundary === "function", "buildAiReviewGenerationBoundary must be exported.");
+assert(typeof helper.buildAiReviewQualityLabSummary === "function", "buildAiReviewQualityLabSummary must be exported.");
 
 const strong = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.strong.draft, helper.aiReviewQualityFixtures.strong.fixtureEvidence);
 const weak = helper.evaluateAiReviewDraft(helper.aiReviewQualityFixtures.weak.draft, helper.aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -439,6 +450,7 @@ const calculationPromptPacket = helper.buildAiReviewCalculationPromptPacket();
 const groundedDraftEvaluator = helper.buildAiReviewGroundedDraftEvaluator();
 const groundedComposer = helper.buildAiReviewGroundedComposer();
 const generationBoundary = helper.buildAiReviewGenerationBoundary();
+const qualityLab = helper.buildAiReviewQualityLabSummary();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
 assert(weak.passed === false, "Weak fixture must fail the quality gate.");
@@ -718,6 +730,10 @@ assert(page.includes("generationBoundary"), "/reports must render generation bou
 assert(mockReviewPage.includes("generationBoundary"), "/report-mock-review must render generation boundary.");
 assert(page.includes('data-ai-review-generation-boundary-stage="P133-A"'), "/reports must expose P133 hook.");
 assert(mockReviewPage.includes('data-ai-review-generation-boundary-stage="P133-A"'), "/report-mock-review must expose P133 hook.");
+assert(qualityLab.benchmarkParityReport?.stage === "R2", "Quality summary must expose R2 benchmark parity report.");
+assert(qualityLab.statusLabels.includes("ai_review_benchmark_parity_stage=R2"), "Quality summary status labels must include R2 parity stage.");
+assert(qualityLab.benchmarkParityReport.aggregate.d1RowsChecked >= 18, "Quality summary parity report must check at least 18 D1 rows.");
+assert(qualityLab.benchmarkParityReport.aggregate.unsupportedAdvancedClaimsGated === true, "Quality summary parity report must gate unsupported advanced claims.");
 
 for (const forbidden of [
   "fetch(",
