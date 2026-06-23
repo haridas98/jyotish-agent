@@ -537,6 +537,32 @@ export type AiReviewAudioConsultationBenchmark = {
   statusLabels: string[];
 };
 
+export type AiReviewConsultationMethodStepName = "ChartFacts" | "Evidence" | "ReviewSections" | "QualityGate";
+
+export type AiReviewConsultationMethodStep = {
+  name: AiReviewConsultationMethodStepName;
+  requiredInputs: string[];
+  outputContract: string;
+};
+
+export type AiReviewConsultationMethodContract = {
+  stage: "P135-A";
+  sourceBenchmarkStage: "E134-A";
+  pipeline: AiReviewConsultationMethodStep[];
+  gateRules: string[];
+  aggregate: {
+    pipelineExact: boolean;
+    usesAudioBenchmark: boolean;
+    usesGroundedComposer: boolean;
+    usesGenerationBoundary: boolean;
+    rawTranscriptCommitted: false;
+    sourceAudioCommitted: false;
+    finalOutputClaimed: false;
+    localOnlyNotFinalOutput: true;
+  };
+  statusLabels: string[];
+};
+
 const dimensionLabels: Record<AiReviewQualityDimension, string> = {
   interpretation_depth: "Interpretation depth",
   specific_chart_evidence: "Specific chart evidence",
@@ -2129,6 +2155,79 @@ export function buildAiReviewAudioConsultationBenchmark(): AiReviewAudioConsulta
   };
 }
 
+export function buildAiReviewConsultationMethodContract(
+  audioConsultationBenchmark = buildAiReviewAudioConsultationBenchmark(),
+  groundedComposer = buildAiReviewGroundedComposer(),
+  generationBoundary = buildAiReviewGenerationBoundary(),
+): AiReviewConsultationMethodContract {
+  const pipeline: AiReviewConsultationMethodStep[] = [
+    {
+      name: "ChartFacts",
+      requiredInputs: [
+        "birth data and calculation settings",
+        "lagna, graha, house, varga, panchanga, dasha, strength, and yoga facts",
+      ],
+      outputContract: "Normalized chart facts with ids that can be cited by every review section.",
+    },
+    {
+      name: "Evidence",
+      requiredInputs: [
+        "calculation evidence groups from the prompt packet",
+        "sanitized E134 consultation method patterns",
+      ],
+      outputContract: "Evidence links explain why each chart fact matters without copying source style or raw transcript text.",
+    },
+    {
+      name: "ReviewSections",
+      requiredInputs: groundedComposer.sections.map((section) => section.name),
+      outputContract: "Each section separates objective factor, rule chain, mixed interpretation, practical next question, and caveat.",
+    },
+    {
+      name: "QualityGate",
+      requiredInputs: generationBoundary.request.forbiddenOutputClasses,
+      outputContract: "Unsupported claims, generic prose, copied style, and missing calculation anchors are blocked before display.",
+    },
+  ];
+
+  return {
+    stage: "P135-A",
+    sourceBenchmarkStage: audioConsultationBenchmark.stage,
+    pipeline,
+    gateRules: [
+      "Every interpretive paragraph must cite at least one computed chart fact.",
+      "House and yoga conclusions must show the factor chain before the conclusion.",
+      "Mixed outcomes must keep both support and pressure visible.",
+      "Advanced claims require timing, varga, and strength anchors before display.",
+      "Practical next questions must be tied to a computed factor.",
+    ],
+    aggregate: {
+      pipelineExact: pipeline.map((step) => step.name).join("|") === "ChartFacts|Evidence|ReviewSections|QualityGate",
+      usesAudioBenchmark: audioConsultationBenchmark.aggregate.witnessOnly === true,
+      usesGroundedComposer: groundedComposer.aggregate.usesGroundedEvaluator === true,
+      usesGenerationBoundary: generationBoundary.aggregate.blockedNotDisplayEligible === true,
+      rawTranscriptCommitted: false,
+      sourceAudioCommitted: false,
+      finalOutputClaimed: false,
+      localOnlyNotFinalOutput: true,
+    },
+    statusLabels: [
+      "P135-A",
+      "ai_review_consultation_method_stage=P135-A",
+      "ai_review_consultation_method_pipeline=ChartFacts>Evidence>ReviewSections>QualityGate",
+      "ai_review_consultation_method_uses_e134_audio_benchmark=true",
+      "ai_review_consultation_method_uses_grounded_composer=true",
+      "ai_review_consultation_method_uses_generation_boundary=true",
+      "ai_review_consultation_method_raw_transcript_committed=false",
+      "ai_review_consultation_method_source_audio_committed=false",
+      "ai_review_consultation_method_final_output_claimed=false",
+      "ai_review_llm_network_call_executed=false",
+      "backend_calculation_changed=false",
+      "production_deploy_skipped_per_user_batching_policy=true",
+      "last_verified_deploy_commit=40120c8",
+    ],
+  };
+}
+
 export function buildAiReviewQualityLabSummary() {
   const strong = evaluateAiReviewDraft(aiReviewQualityFixtures.strong.draft, aiReviewQualityFixtures.strong.fixtureEvidence);
   const weak = evaluateAiReviewDraft(aiReviewQualityFixtures.weak.draft, aiReviewQualityFixtures.weak.fixtureEvidence);
@@ -2147,6 +2246,11 @@ export function buildAiReviewQualityLabSummary() {
   const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
   const generationBoundary = buildAiReviewGenerationBoundary(calculationPromptPacket, groundedDraftEvaluator, groundedComposer);
   const audioConsultationBenchmark = buildAiReviewAudioConsultationBenchmark();
+  const consultationMethodContract = buildAiReviewConsultationMethodContract(
+    audioConsultationBenchmark,
+    groundedComposer,
+    generationBoundary,
+  );
   const benchmarkParityReport = buildAiReviewBenchmarkParityReport();
 
   return {
@@ -2178,6 +2282,7 @@ export function buildAiReviewQualityLabSummary() {
       ...groundedComposer.statusLabels,
       ...generationBoundary.statusLabels,
       ...audioConsultationBenchmark.statusLabels,
+      ...consultationMethodContract.statusLabels,
       ...benchmarkParityReport.statusLabels,
     ],
     dimensions: AI_REVIEW_QUALITY_DIMENSIONS.map((id) => ({
@@ -2209,6 +2314,7 @@ export function buildAiReviewQualityLabSummary() {
     groundedComposer,
     generationBoundary,
     audioConsultationBenchmark,
+    consultationMethodContract,
     benchmarkParityReport,
   };
 }

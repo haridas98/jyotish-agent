@@ -201,11 +201,11 @@
 - Telegram examples may inform “interesting accents/questions” only.
 
 **Plan:**
-- [ ] Confirm ASR path: local Whisper/faster-whisper if installed, or API transcription if credentials are available.
-- [ ] Chunk audio with ffmpeg into 10-15 minute segments.
-- [ ] Transcribe first 3-5 minutes from each MP3 as proof.
-- [ ] Full transcription in background.
-- [ ] Distill non-verbatim benchmark rubric:
+- [x] Confirm ASR path: local Whisper/faster-whisper if installed, or API transcription if credentials are available.
+- [x] Chunk audio with ffmpeg into 10-15 minute segments.
+- [x] Transcribe first 3-5 minutes from each MP3 as proof.
+- [x] Full transcription in background.
+- [x] Distill non-verbatim benchmark rubric:
   - opening framing;
   - calculation fact chain;
   - major life themes;
@@ -214,8 +214,10 @@
   - question prompts;
   - uncertainty language;
   - what makes the review feel expert.
-- [ ] Build AI composer around `ChartFacts -> Evidence -> ReviewSections -> QualityGate`.
-- [ ] Quality gate must fail unsupported claims, generic text, copied style, and missing calculation anchors.
+- [x] Add a deterministic consultation-method contract around `ChartFacts -> Evidence -> ReviewSections -> QualityGate` (`P135-A`) using the sanitized `E134-A` witness.
+- [x] Offline quality gate fixtures fail unsupported claims, generic text, copied style, and missing calculation anchors before display.
+- [ ] Build the live AI composer path that consumes real saved-chart `ChartFacts` and literature evidence instead of fixture data.
+- [ ] Add live composer gate tests proving generated reviews cannot display without calculation anchors, source/evidence links, caveats, and practical next questions.
 
 ---
 

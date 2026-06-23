@@ -12,6 +12,7 @@ import { debugRoutesEnabled } from "@/app/debug-route-guard";
 import {
   buildAiReviewAudioConsultationBenchmark,
   buildAiReviewCalculationPromptPacket,
+  buildAiReviewConsultationMethodContract,
   buildAiReviewGenerationBoundary,
   buildAiReviewGroundedDraftEvaluator,
   buildAiReviewGroundedComposer,
@@ -66,6 +67,11 @@ export default function ReportMockReviewPage() {
   const groundedComposer = buildAiReviewGroundedComposer(calculationPromptPacket, groundedDraftEvaluator);
   const generationBoundary = buildAiReviewGenerationBoundary(calculationPromptPacket, groundedDraftEvaluator, groundedComposer);
   const audioConsultationBenchmark = buildAiReviewAudioConsultationBenchmark();
+  const consultationMethodContract = buildAiReviewConsultationMethodContract(
+    audioConsultationBenchmark,
+    groundedComposer,
+    generationBoundary,
+  );
 
   return (
     <main style={pageStyle}>
@@ -283,6 +289,33 @@ export default function ReportMockReviewPage() {
             ))}
           </div>
           <span hidden>{audioConsultationBenchmark.statusLabels.join("; ")}</span>
+        </section>
+
+        <section
+          aria-label="Consultation method contract"
+          data-ai-review-consultation-method-stage="P135-A"
+          style={{ border: "1px solid #d5e3e0", borderRadius: 8, marginTop: 20, padding: 16 }}
+        >
+          <h2 style={{ marginTop: 0 }}>Consultation method contract</h2>
+          <p style={{ color: "#53656b", marginTop: 0 }}>
+            ChartFacts to Evidence to ReviewSections to QualityGate; local contract, not final AI output.
+          </p>
+          <div style={gridStyle}>
+            <Metric label="Pipeline" value={consultationMethodContract.pipeline.map((step) => step.name).join(" > ")} />
+            <Metric label="Uses E134" value={consultationMethodContract.aggregate.usesAudioBenchmark ? "yes" : "no"} />
+            <Metric label="Gate rules" value={String(consultationMethodContract.gateRules.length)} />
+            <Metric label="Final output claimed" value={consultationMethodContract.aggregate.finalOutputClaimed ? "yes" : "no"} />
+          </div>
+          <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            {consultationMethodContract.pipeline.map((step) => (
+              <article key={step.name} style={{ background: "#f8fbfa", border: "1px solid #d5e3e0", borderRadius: 8, padding: 12 }}>
+                <strong>{step.name}</strong>
+                <p style={{ color: "#53656b", margin: "6px 0" }}>Inputs: {step.requiredInputs.join(" ")}</p>
+                <p style={{ color: "#53656b", margin: 0 }}>Output contract: {step.outputContract}</p>
+              </article>
+            ))}
+          </div>
+          <span hidden>{consultationMethodContract.statusLabels.join("; ")}</span>
         </section>
 
         <section aria-label="Review items" style={{ display: "grid", gap: 16, marginTop: 20 }}>

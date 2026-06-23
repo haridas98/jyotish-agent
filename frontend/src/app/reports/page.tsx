@@ -499,6 +499,26 @@ export default function ReportBuilderPage() {
             ))}
           </div>
         </div>
+        <div className="ai-review-consultation-method-contract" data-ai-review-consultation-method-stage="P135-A">
+          <div className="ai-review-consultation-method-head">
+            <strong>Consultation method contract</strong>
+            <span>ChartFacts to Evidence to ReviewSections to QualityGate; local contract, not final AI output.</span>
+          </div>
+          <div className="ai-review-consultation-method-grid" role="list">
+            {aiReviewQualityLab.consultationMethodContract.pipeline.map((step) => (
+              <section key={step.name} role="listitem">
+                <strong>{step.name}</strong>
+                <span>Inputs: {step.requiredInputs.join(" ")}</span>
+                <span>Output contract: {step.outputContract}</span>
+              </section>
+            ))}
+          </div>
+          <div className="ai-review-consultation-method-rules">
+            <span>Gate rules: {aiReviewQualityLab.consultationMethodContract.gateRules.length}</span>
+            <span>Uses E134: {aiReviewQualityLab.consultationMethodContract.aggregate.usesAudioBenchmark ? "yes" : "no"}</span>
+            <span>Final output claimed: {aiReviewQualityLab.consultationMethodContract.aggregate.finalOutputClaimed ? "yes" : "no"}</span>
+          </div>
+        </div>
         <span hidden>{aiReviewQualityLab.statusLabels.join("; ")}</span>
       </section>
 

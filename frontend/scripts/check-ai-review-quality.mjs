@@ -74,6 +74,7 @@ for (const marker of [
   "E132-A",
   "P133-A",
   "E134-A",
+  "P135-A",
   "ai_review_quality_eval_stage=P119-A",
   "ai_review_quality_preview_stage=E120-A",
   "ai_review_composer_stage=P121-A",
@@ -92,6 +93,7 @@ for (const marker of [
   "ai_review_grounded_composer_stage=E132-A",
   "ai_review_generation_boundary_stage=P133-A",
   "ai_review_audio_consultation_benchmark_stage=E134-A",
+  "ai_review_consultation_method_stage=P135-A",
   "ai_review_quality_gate_present=true",
   "ai_review_fixture_strong_passes=true",
   "ai_review_fixture_weak_fails=true",
@@ -453,6 +455,7 @@ assert(typeof helper.buildAiReviewCalculationPromptPacket === "function", "build
 assert(typeof helper.buildAiReviewGroundedDraftEvaluator === "function", "buildAiReviewGroundedDraftEvaluator must be exported.");
 assert(typeof helper.buildAiReviewGroundedComposer === "function", "buildAiReviewGroundedComposer must be exported.");
 assert(typeof helper.buildAiReviewAudioConsultationBenchmark === "function", "buildAiReviewAudioConsultationBenchmark must be exported.");
+assert(typeof helper.buildAiReviewConsultationMethodContract === "function", "buildAiReviewConsultationMethodContract must be exported.");
 assert(typeof helper.buildAiReviewGenerationBoundary === "function", "buildAiReviewGenerationBoundary must be exported.");
 assert(typeof helper.buildAiReviewQualityLabSummary === "function", "buildAiReviewQualityLabSummary must be exported.");
 
@@ -475,6 +478,7 @@ const groundedDraftEvaluator = helper.buildAiReviewGroundedDraftEvaluator();
 const groundedComposer = helper.buildAiReviewGroundedComposer();
 const generationBoundary = helper.buildAiReviewGenerationBoundary();
 const audioConsultationBenchmark = helper.buildAiReviewAudioConsultationBenchmark();
+const consultationMethodContract = helper.buildAiReviewConsultationMethodContract();
 const qualityLab = helper.buildAiReviewQualityLabSummary();
 
 assert(strong.passed === true, "Strong fixture must pass the quality gate.");
@@ -772,10 +776,25 @@ assert(page.includes("audioConsultationBenchmark"), "/reports must render audio 
 assert(mockReviewPage.includes("audioConsultationBenchmark"), "/report-mock-review must render audio consultation benchmark.");
 assert(page.includes('data-ai-review-audio-consultation-stage="E134-A"'), "/reports must expose E134 hook.");
 assert(mockReviewPage.includes('data-ai-review-audio-consultation-stage="E134-A"'), "/report-mock-review must expose E134 hook.");
+assert(consultationMethodContract.stage === "P135-A", "Consultation method contract stage must be P135-A.");
+assert(consultationMethodContract.pipeline.map((step) => step.name).join("|") === "ChartFacts|Evidence|ReviewSections|QualityGate", "Consultation method pipeline changed.");
+assert(consultationMethodContract.aggregate.usesAudioBenchmark === true, "Consultation method must use E134 audio benchmark.");
+assert(consultationMethodContract.aggregate.usesGroundedComposer === true, "Consultation method must use grounded composer.");
+assert(consultationMethodContract.aggregate.usesGenerationBoundary === true, "Consultation method must use generation boundary.");
+assert(consultationMethodContract.aggregate.rawTranscriptCommitted === false, "Consultation method must not commit raw transcript.");
+assert(consultationMethodContract.aggregate.finalOutputClaimed === false, "Consultation method must not claim final AI output.");
+assert(consultationMethodContract.gateRules.length >= 4, "Consultation method must include gate rules.");
+assert(consultationMethodContract.statusLabels.includes("ai_review_consultation_method_stage=P135-A"), "Consultation method labels missing P135 stage.");
+assert(page.includes("consultationMethodContract"), "/reports must render consultation method contract.");
+assert(mockReviewPage.includes("consultationMethodContract"), "/report-mock-review must render consultation method contract.");
+assert(page.includes('data-ai-review-consultation-method-stage="P135-A"'), "/reports must expose P135 hook.");
+assert(mockReviewPage.includes('data-ai-review-consultation-method-stage="P135-A"'), "/report-mock-review must expose P135 hook.");
 assert(qualityLab.benchmarkParityReport?.stage === "R2", "Quality summary must expose R2 benchmark parity report.");
 assert(qualityLab.statusLabels.includes("ai_review_benchmark_parity_stage=R2"), "Quality summary status labels must include R2 parity stage.");
 assert(qualityLab.audioConsultationBenchmark?.stage === "E134-A", "Quality summary must expose E134 audio consultation benchmark.");
 assert(qualityLab.statusLabels.includes("ai_review_audio_consultation_benchmark_stage=E134-A"), "Quality summary status labels must include E134 audio benchmark stage.");
+assert(qualityLab.consultationMethodContract?.stage === "P135-A", "Quality summary must expose P135 consultation method contract.");
+assert(qualityLab.statusLabels.includes("ai_review_consultation_method_stage=P135-A"), "Quality summary status labels must include P135 consultation method stage.");
 assert(qualityLab.benchmarkParityReport.aggregate.d1RowsChecked >= 18, "Quality summary parity report must check at least 18 D1 rows.");
 assert(qualityLab.benchmarkParityReport.aggregate.unsupportedAdvancedClaimsGated === true, "Quality summary parity report must gate unsupported advanced claims.");
 
