@@ -1,6 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { ProductShell } from "@/app/product-shell";
+
+type HealthState = {
+  status: "checking" | "ok" | "error";
+  service: string;
+  deployCommit: string;
+  checkedAt: string;
+  message: string;
+};
 
 const launchFacts = [
   { label: "Technical chart service", value: "Ready for private use", detail: "Saved chart create, calculate, detail, edit, and demo flows are covered by launch smoke." },
@@ -16,6 +26,48 @@ const verificationRows = [
 ];
 
 export default function LaunchStatusPage() {
+  const [health, setHealth] = useState<HealthState>({
+    status: "checking",
+    service: "jyotish-agent",
+    deployCommit: "checking",
+    checkedAt: "",
+    message: "Checking /api/health",
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/health", { headers: { Accept: "application/json" }, cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        if (!active) return;
+        setHealth({
+          status: payload.status === "ok" ? "ok" : "error",
+          service: typeof payload.service === "string" ? payload.service : "unknown",
+          deployCommit: typeof payload.deploy_commit === "string" ? payload.deploy_commit : "missing",
+          checkedAt: new Date().toISOString(),
+          message: payload.status === "ok" ? "Health API is OK" : "Health API returned a non-ok status",
+        });
+      })
+      .catch((error) => {
+        if (!active) return;
+        setHealth({
+          status: "error",
+          service: "unknown",
+          deployCommit: "unavailable",
+          checkedAt: new Date().toISOString(),
+          message: error instanceof Error ? error.message : "Health check failed",
+        });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <ProductShell active="charts">
       <section className="charts-dashboard-head" data-launch-status-stage="E148-A">
@@ -40,6 +92,41 @@ export default function LaunchStatusPage() {
         ))}
       </section>
 
+      <section
+        className="settings-panel"
+        aria-label="Live launch health"
+        data-launch-live-health-stage="E153-A"
+      >
+        <div className="settings-panel-head">
+          <div>
+            <h1>Live health</h1>
+            <span>Same-origin `/api/health` check for the currently served deployment.</span>
+          </div>
+        </div>
+        <div className="settings-form-grid">
+          <div>
+            <span>Status</span>
+            <strong>{health.status}</strong>
+          </div>
+          <div>
+            <span>Service</span>
+            <strong>{health.service}</strong>
+          </div>
+          <div>
+            <span>Deploy commit</span>
+            <strong>{health.deployCommit}</strong>
+          </div>
+          <div>
+            <span>Checked at</span>
+            <strong>{health.checkedAt || "pending"}</strong>
+          </div>
+          <div>
+            <span>Message</span>
+            <strong>{health.message}</strong>
+          </div>
+        </div>
+      </section>
+
       <section className="settings-panel" aria-label="Launch verification commands">
         <div className="settings-panel-head">
           <div>
@@ -61,7 +148,8 @@ export default function LaunchStatusPage() {
         launch_ready_technical_chart_service=true; d_scope_visibility=D1-D60; ai_review_quality_contract_gated=true;
         jh_pl_witness_only=true; ocr_literature_track_separate=true; production_deploy_checkpoint_visible=true;
         smoke:calculator-launch; smoke:production-live; backend_calculation_changed=false;
-        production_deploy_commit_checked_by_health=true
+        production_deploy_commit_checked_by_health=true; launch_status_live_health_check_enabled=true;
+        launch_status_live_deploy_commit_visible=true; data-launch-live-health-stage=E153-A
       </span>
     </ProductShell>
   );

@@ -19,7 +19,7 @@ if (expectedDeployCommit) {
   );
 }
 
-const pagePaths = ["/", "/charts", "/charts/new", "/charts/demo-d1", "/reports", "/dashas"];
+const pagePaths = ["/", "/charts", "/charts/new", "/charts/demo-d1", "/launch-status", "/reports", "/dashas"];
 for (const path of pagePaths) {
   await assertPageOk(`${frontendBaseUrl}${path}`, path);
 }
@@ -36,6 +36,14 @@ const technicalDemoMarkers = [
 const demoHtml = await assertPageOk(`${frontendBaseUrl}/charts/demo-d1`, "/charts/demo-d1");
 assertPageContains(demoHtml, technicalDemoMarkers, "/charts/demo-d1");
 
+const launchStatusMarkers = [
+  'data-launch-live-health-stage="E153-A"',
+  "launch_status_live_health_check_enabled=true",
+  "launch_status_live_deploy_commit_visible=true",
+];
+const launchStatusHtml = await assertPageOk(`${frontendBaseUrl}/launch-status`, "/launch-status");
+assertPageContains(launchStatusHtml, launchStatusMarkers, "/launch-status");
+
 await assertStatus(`${apiBaseUrl}/api/auth/csrf`, "CSRF endpoint", [200]);
 await assertStatus(`${apiBaseUrl}/api/calculations/ephemeris/status`, "private calculation API gate", [200, 401, 403]);
 
@@ -46,7 +54,7 @@ console.log(
       deployCommit: health.deploy_commit,
       checkedPages: pagePaths,
       checkedApi: ["/api/auth/csrf", "/api/calculations/ephemeris/status"],
-      checkedMarkers: technicalDemoMarkers,
+      checkedMarkers: [...technicalDemoMarkers, ...launchStatusMarkers],
       writeOperations: false,
     },
     null,

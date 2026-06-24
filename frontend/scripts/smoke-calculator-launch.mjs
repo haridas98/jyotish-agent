@@ -105,8 +105,11 @@ if (frontendBaseUrl) {
   const launchStatusHtml = await assertPageOk(`${frontendBaseUrl}/launch-status`, "launch status page");
   assertPageContains(launchStatusHtml, [
     'data-launch-status-stage="E148-A"',
+    'data-launch-live-health-stage="E153-A"',
     "launch_ready_technical_chart_service=true",
     "production_deploy_checkpoint_visible=true",
+    "launch_status_live_health_check_enabled=true",
+    "launch_status_live_deploy_commit_visible=true",
   ], "launch status page");
 }
 
