@@ -25,6 +25,8 @@ const reportsPage = read("src/app/reports/page.tsx");
 const mockReviewPage = read("src/app/report-mock-review/page.tsx");
 const chartsPage = read("src/app/charts/page.tsx");
 const launchStatusPage = read("src/app/launch-status/page.tsx");
+const packageScripts = JSON.parse(packageJson).scripts || {};
+const launchDScopes = ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"];
 
 for (const marker of [
   "test:launch-readiness",
@@ -37,6 +39,15 @@ for (const marker of [
 ]) {
   assert(packageJson.includes(`"${marker}"`), `package.json missing launch marker: ${marker}`);
 }
+
+assert(
+  packageScripts["smoke:calculator-launch"] === "node scripts/smoke-calculator-launch.mjs",
+  "package.json must keep smoke:calculator-launch wired to the real saved-chart calculator smoke",
+);
+assert(
+  packageScripts["test:launch-readiness"] === "node scripts/check-launch-readiness-contract.mjs",
+  "package.json must keep test:launch-readiness wired to the launch-readiness contract",
+);
 
 for (const marker of [
   "CODEX_GENERATION_QUEUE_ENABLED=false",
@@ -99,6 +110,10 @@ for (const marker of [
   assert(launchStatusBrowserSmoke.includes(marker), `launch-status browser smoke missing marker: ${marker}`);
 }
 
+for (const scope of launchDScopes) {
+  assert(calculatorSmoke.includes(`"${scope}"`), `calculator launch smoke missing required D scope: ${scope}`);
+}
+
 for (const marker of [
   "Resolve-NpmCommand",
   "Get-Command \"npm.cmd\"",
@@ -109,11 +124,18 @@ for (const marker of [
 }
 
 for (const marker of [
+  `const requiredScopes = [${launchDScopes.map((scope) => `"${scope}"`).join(", ")}]`,
   "Launch smoke chart",
-  "D1",
-  "D9",
-  "D60",
+  "/api/auth/register",
+  'apiFetch("/api/charts"',
+  "/api/charts/profiles/${profile.id}/calculate",
+  "/api/charts/${profile.id}",
+  "/api/charts/${profile.id}/workbench?scope=d1",
+  "for (const scope of requiredScopes.filter",
+  "validateWorkbench(workbench, scope)",
+  "checkedScopes: requiredScopes",
   "validateTechnicalPayload",
+  "validateTechnicalPayload(d1Workbench.result)",
   "/charts/${profile.id}/edit",
   "/charts/demo-d1",
   "/launch-status",
@@ -121,6 +143,9 @@ for (const marker of [
   "assertPageContains",
   "checkedFrontendPages",
   "data-d1-technical-payload-index-stage",
+  "E146-A",
+  "chart_viewer_technical_payload_index_visible=true",
+  "chart_viewer_payload_section_counts_visible=true",
   "chart_viewer_payload_index_opens_technical_tab=true",
   "data-d1-calculation-passport-stage",
   "E150-A",
@@ -128,8 +153,13 @@ for (const marker of [
   "calculation_passport_birth_coordinates_visible=true",
   "E151-A",
   "chart_viewer_classical_payload_status_visible=true",
+  "classical_payload_avasthas_status_visible=true",
+  "classical_payload_vimshopaka_status_visible=true",
+  "classical_payload_argala_status_visible=true",
+  "classical_payload_special_points_status_visible=true",
   "E152-A",
   "chart_viewer_dasha_status_visible=true",
+  "dasha_payload_period_window_visible=true",
   "data-launch-status-stage",
   "data-launch-live-health-stage",
   "launch_status_live_health_check_enabled=true",

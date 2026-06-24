@@ -86,6 +86,9 @@ if (frontendBaseUrl) {
   const demoDetailHtml = await assertPageOk(`${frontendBaseUrl}/charts/demo-d1`, "demo chart detail page");
   assertPageContains(demoDetailHtml, [
     'data-d1-technical-payload-index-stage="E145-A"',
+    "E146-A",
+    "chart_viewer_technical_payload_index_visible=true",
+    "chart_viewer_payload_section_counts_visible=true",
     "chart_viewer_payload_index_opens_technical_tab=true",
     'data-d1-calculation-passport-stage="E149-A"',
     "E150-A",
@@ -94,13 +97,18 @@ if (frontendBaseUrl) {
     "calculation_passport_birth_coordinates_visible=true",
     'data-d1-classical-payload-status-stage="E151-A"',
     "chart_viewer_classical_payload_status_visible=true",
+    "classical_payload_avasthas_status_visible=true",
+    "classical_payload_vimshopaka_status_visible=true",
     "classical_payload_shadbala_status_visible=true",
     "classical_payload_ashtakavarga_status_visible=true",
     "classical_payload_yogas_status_visible=true",
+    "classical_payload_argala_status_visible=true",
+    "classical_payload_special_points_status_visible=true",
     'data-d1-dasha-status-stage="E152-A"',
     "chart_viewer_dasha_status_visible=true",
     "dasha_payload_vimshottari_status_visible=true",
     "dasha_payload_mahadasha_count_visible=true",
+    "dasha_payload_period_window_visible=true",
   ], "demo chart detail page");
   const launchStatusHtml = await assertPageOk(`${frontendBaseUrl}/launch-status`, "launch status page");
   assertPageContains(launchStatusHtml, [

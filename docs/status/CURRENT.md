@@ -13,15 +13,17 @@ Updated: 2026-06-24
 
 ## Last Completed Milestone
 
-Stage 1 Technical Core Audit.
+Stage 2 Live Workbench Contract Gate.
 
 Evidence:
 
 - Audit handoff: `docs/handoffs/2026-06-24-technical-core-audit.md`
+- Stage 2 handoff: `docs/handoffs/2026-06-24-live-workbench-contract-gate.md`
 - Baseline commit audited: `3669f619`
 - Production runtime remains `8c23a784`; `/api/health` returns `deploy_commit=8c23a784`.
 - D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24/D27/D30/D40/D45/D60 have backend calculation, saved workbench API, frontend switch/display, and automated evidence.
-- Focused validation passed: backend varga/chart API/services pytest, `test:launch-readiness`, `test:d1-workbench`, `test:chart-workbench-ux`, `test:chart-detail-smoke`, `test:dasha-workbench`, `typecheck`, `production-check`.
+- Focused validation passed: backend varga/chart API/services pytest, real local `smoke:calculator-launch`, `test:launch-readiness`, `test:d1-workbench`, `test:chart-workbench-ux`, `test:chart-detail-smoke`, `test:dasha-workbench`, `typecheck`, `build`, `production-check`.
+- `test:launch-readiness` now requires `smoke:calculator-launch` as release evidence for D1-D60 saved workbench scopes and core payload/status markers.
 - Runtime code was not changed.
 
 ## Latest Non-Deployed Branch Work
@@ -32,12 +34,13 @@ Known non-deployed branch work:
 
 - `e2b7bded` adds `smoke:launch-status-browser`.
 - `d8c40a9e` documents the Stage 1 Technical Core Audit.
+- Stage 2 Live Workbench Contract Gate adds test/smoke/docs evidence requiring `smoke:calculator-launch`.
 - Current branch tip: run `git log -1 --oneline`.
 - Reason not deployed: no production runtime change requiring deploy.
 
 ## Active Milestone
 
-Stage 2 planned, not implemented in this supervisor thread.
+Stage 3 planned, not implemented in this supervisor thread.
 
 Next work must start from a fresh session with a single ExecPlan under `docs/exec/`.
 
@@ -45,19 +48,16 @@ UX/UI work must start from a separate design session using `docs/design/` as the
 
 ## Exact Next Action
 
-Run Stage 2 Live Workbench Contract Gate in a fresh session:
+Run Stage 3 Chart Workflow Hardening in a fresh session after adding a dedicated ExecPlan:
 
-- ExecPlan: `docs/exec/2026-06-24-02-live-workbench-contract-gate.md`
+- ExecPlan: create `docs/exec/2026-06-24-03-chart-workflow-hardening.md`
 - Prompt: `docs/exec/2026-06-24-session-prompts.md`
 
-Do not implement formulas before the live saved-chart workbench gate proves a runtime failure.
+Do not implement formulas, AI review, OCR, JH/PL witness work, or UX redesign in the chart workflow hardening milestone.
 
 Recommended next candidates:
 
-- Live workbench contract gate: make `smoke:calculator-launch` required release evidence for D1-D60 and payload status.
-- D40/D45 golden tests: add formula-specific boundary/snapshot tests if the live gate is already stable.
-- Classical payload detail: add one detailed contract for a selected classical group after the live gate.
-- AI review quality: connect real saved-chart facts to gated review output without public quality claims.
+- Chart workflow hardening: create/edit/calculate/view/recalculate state contracts and smoke checks.
 
 ## Do Not Touch Without New ExecPlan
 
