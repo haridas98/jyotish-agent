@@ -17,8 +17,10 @@ No active milestone in the current long supervisor thread.
 - AI review quality: one gated, non-public-review milestone using saved chart facts and approved evidence only.
 - Calculation witness: one reviewed JH/PL witness packet, explicitly witness-only.
 - OCR pipeline: one validator milestone for reviewed OCR artifacts.
-- UX structure: one route-level workflow milestone only after a written design brief.
+- UX/UI design: separate design session for `/charts/:id`; audit, brief, three visual directions, then selected visual source before code.
 
 ## Operating Rule
 
 One milestone, one branch/worktree, one focused session, one review, one green commit, then handoff.
+
+UX/UI has an extra gate: design session first, implementation session second, visual QA session third.

@@ -6,7 +6,7 @@ Updated: 2026-06-24
 
 - Production commit: `8c23a784`
 - Branch: `codex/technical-launch-b`
-- Latest pushed branch commit: `e2b7bded`
+- Latest pushed branch commit: branch tip; run `git log -1 --oneline`
 - Production URL: `https://jyotish-agent.duckdns.org/`
 - Health: `/api/health` returns `deploy_commit=8c23a784`
 - Working tree expected: clean
@@ -41,6 +41,8 @@ None in this thread.
 
 Next work must start from a fresh session with a single ExecPlan under `docs/exec/`.
 
+UX/UI work must start from a separate design session using `docs/design/` as the source of truth. Do not redesign in this technical supervisor thread.
+
 ## Exact Next Action
 
 Choose one next milestone and write a self-contained ExecPlan before editing code.
@@ -50,6 +52,7 @@ Recommended next candidates:
 - AI review quality: connect real saved-chart facts to gated review output without public quality claims.
 - Calculation accuracy witness: add one reviewed JH/PL witness packet without parity claims.
 - OCR artifact pipeline: validator for reviewed OCR chart/table artifacts.
+- UX/UI design: audit `/charts/:id`, write a design brief, produce three visual directions, and stop for selection before code.
 
 ## Do Not Touch Without New ExecPlan
 
@@ -59,6 +62,7 @@ Recommended next candidates:
 - OCR literature import/runtime citation behavior.
 - JH/PL proprietary internals or parity claims.
 - Cosmetic redesign or Tailwind/shadcn migration.
+- UI implementation without approved visual source and design ExecPlan.
 
 ## Session Policy
 
