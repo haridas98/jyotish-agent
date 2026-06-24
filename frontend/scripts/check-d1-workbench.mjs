@@ -158,6 +158,18 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   ]) {
     assert(component.includes(marker), `D1 classical payload status missing marker: ${marker}`);
   }
+  assert(component.includes("D1DashaStatusStrip"), "D1 workbench must render a visible dasha status strip");
+  assert(component.includes('data-d1-dasha-status-stage="E152-A"'), "D1 dasha status strip must expose the E152 marker");
+  assert(component.includes("chart_viewer_dasha_status_visible=true"), "D1 dasha status strip must expose visibility status");
+  assert(component.includes("dashaStatusItems"), "D1 dasha status strip must use one item registry");
+  assert(component.includes("model.technical.dashas[0]"), "D1 dasha status strip must use the first saved mahadasha row");
+  for (const marker of [
+    "dasha_payload_vimshottari_status_visible=true",
+    "dasha_payload_mahadasha_count_visible=true",
+    "dasha_payload_period_window_visible=true",
+  ]) {
+    assert(component.includes(marker), `D1 dasha status missing marker: ${marker}`);
+  }
   for (const marker of [
     'id: "birth-input"',
     'id: "settings"',

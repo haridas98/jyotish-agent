@@ -97,6 +97,10 @@ if (frontendBaseUrl) {
     "classical_payload_shadbala_status_visible=true",
     "classical_payload_ashtakavarga_status_visible=true",
     "classical_payload_yogas_status_visible=true",
+    'data-d1-dasha-status-stage="E152-A"',
+    "chart_viewer_dasha_status_visible=true",
+    "dasha_payload_vimshottari_status_visible=true",
+    "dasha_payload_mahadasha_count_visible=true",
   ], "demo chart detail page");
   const launchStatusHtml = await assertPageOk(`${frontendBaseUrl}/launch-status`, "launch status page");
   assertPageContains(launchStatusHtml, [

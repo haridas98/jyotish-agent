@@ -272,6 +272,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
       <D1TechnicalPayloadIndex model={model} onOpenTechnical={() => setActiveTab("technical")} />
       <D1CalculationPassport model={model} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
       <D1ClassicalPayloadStatusStrip model={model} />
+      <D1DashaStatusStrip model={model} />
       <D1MobileWorkflowNav activeTab={workbenchState.activeTab} onGrahaJump={() => setActiveTab("grahas")} />
 
       <div className="d1-main-grid">
@@ -539,6 +540,35 @@ function D1ClassicalPayloadStatusStrip({ model }: { model: D1WorkbenchModel }) {
         ))}
       </div>
       <span hidden>E151-A; chart_viewer_classical_payload_status_visible=true; classical_payload_avasthas_status_visible=true; classical_payload_vimshopaka_status_visible=true; classical_payload_ashtakavarga_status_visible=true; classical_payload_shadbala_status_visible=true; classical_payload_yogas_status_visible=true; classical_payload_argala_status_visible=true; classical_payload_special_points_status_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
+    </section>
+  );
+}
+
+function D1DashaStatusStrip({ model }: { model: D1WorkbenchModel }) {
+  const firstDasha = model.technical.dashas[0];
+  const lastDasha = model.technical.dashas.at(-1);
+  const dashaStatusItems = [
+    { key: "system", label: "System", value: model.technical.dashas.length ? "Vimshottari" : "missing" },
+    { key: "mahadashas", label: "Mahadashas", value: `${model.technical.dashas.length}` },
+    { key: "first-lord", label: "First lord", value: firstDasha?.lord ?? "-" },
+    { key: "window", label: "Window", value: firstDasha && lastDasha ? `${firstDasha.startsAt} -> ${lastDasha.endsAt}` : "-" },
+  ];
+
+  return (
+    <section className="d1-dasha-status" data-d1-dasha-status-stage="E152-A" aria-label="Dasha payload status">
+      <div className="d1-dasha-status-title">
+        <strong>Dasha status</strong>
+        <span>Vimshottari mahadasha rows from the saved calculation</span>
+      </div>
+      <div className="d1-dasha-status-grid">
+        {dashaStatusItems.map((item) => (
+          <span key={item.key} data-dasha-status-item={item.key}>
+            <strong>{item.label}</strong>
+            {item.value}
+          </span>
+        ))}
+      </div>
+      <span hidden>E152-A; chart_viewer_dasha_status_visible=true; dasha_payload_vimshottari_status_visible=true; dasha_payload_mahadasha_count_visible=true; dasha_payload_period_window_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </section>
   );
 }
