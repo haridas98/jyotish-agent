@@ -131,6 +131,33 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes("model.technical.solarDay"), "D1 calculation passport must include solar-day payload facts");
   assert(component.includes("model.technical.houseCusps.length"), "D1 calculation passport must include house cusp count");
   assert(component.includes("data-calculation-passport-item={item.id}"), "D1 calculation passport must render stable item markers from registry ids");
+  assert(component.includes("D1ClassicalPayloadStatusStrip"), "D1 workbench must render a visible classical payload status strip");
+  assert(component.includes('data-d1-classical-payload-status-stage="E151-A"'), "D1 classical payload status strip must expose the E151 marker");
+  assert(component.includes("chart_viewer_classical_payload_status_visible=true"), "D1 classical payload status strip must expose visibility status");
+  assert(component.includes("classicalPayloadStatusItems"), "D1 classical payload status strip must use one module registry");
+  assert(component.includes("technicalSummaryValue(model.technical.classical"), "D1 classical payload status strip must use existing classical technical rows");
+  for (const marker of [
+    'key: "avasthas"',
+    'key: "vimshopaka_bala"',
+    'key: "ashtakavarga"',
+    'key: "shadbala"',
+    'key: "yogas"',
+    'key: "argala"',
+    'key: "special_points"',
+  ]) {
+    assert(component.includes(marker), `D1 classical payload status missing registry key: ${marker}`);
+  }
+  for (const marker of [
+    "classical_payload_avasthas_status_visible=true",
+    "classical_payload_vimshopaka_status_visible=true",
+    "classical_payload_ashtakavarga_status_visible=true",
+    "classical_payload_shadbala_status_visible=true",
+    "classical_payload_yogas_status_visible=true",
+    "classical_payload_argala_status_visible=true",
+    "classical_payload_special_points_status_visible=true",
+  ]) {
+    assert(component.includes(marker), `D1 classical payload status missing marker: ${marker}`);
+  }
   for (const marker of [
     'id: "birth-input"',
     'id: "settings"',

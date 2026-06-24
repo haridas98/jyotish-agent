@@ -2241,6 +2241,60 @@ body .chart-profile-form textarea {
   display: none !important;
 }
 
+.d1-classical-payload-status {
+  display: grid;
+  gap: 8px;
+  margin: -2px 0 10px;
+  padding: 10px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #fbfefd;
+}
+
+.d1-classical-payload-status-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: #334b59;
+  font-size: 12px;
+}
+
+.d1-classical-payload-status-title strong {
+  color: #0c5962;
+  font-size: 13px;
+}
+
+.d1-classical-payload-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+  gap: 6px;
+}
+
+.d1-classical-payload-status-grid span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d5e3e6;
+  border-radius: 8px;
+  background: #fff;
+  color: #334b59;
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.d1-classical-payload-status-grid strong {
+  color: #0c5962;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.d1-classical-payload-status span[hidden] {
+  display: none !important;
+}
+
 .d1-calculation-passport {
   display: grid;
   gap: 8px;

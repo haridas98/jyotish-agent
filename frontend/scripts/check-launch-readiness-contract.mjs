@@ -89,6 +89,8 @@ for (const marker of [
   "E150-A",
   "chart_viewer_calculation_passport_visible=true",
   "calculation_passport_birth_coordinates_visible=true",
+  "E151-A",
+  "chart_viewer_classical_payload_status_visible=true",
   "data-launch-status-stage",
   "classical shadbala payload missing",
   "classical ashtakavarga payload missing",

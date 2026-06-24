@@ -92,6 +92,11 @@ if (frontendBaseUrl) {
     "chart_viewer_calculation_passport_visible=true",
     "calculation_passport_input_settings_visible=true",
     "calculation_passport_birth_coordinates_visible=true",
+    'data-d1-classical-payload-status-stage="E151-A"',
+    "chart_viewer_classical_payload_status_visible=true",
+    "classical_payload_shadbala_status_visible=true",
+    "classical_payload_ashtakavarga_status_visible=true",
+    "classical_payload_yogas_status_visible=true",
   ], "demo chart detail page");
   const launchStatusHtml = await assertPageOk(`${frontendBaseUrl}/launch-status`, "launch status page");
   assertPageContains(launchStatusHtml, [

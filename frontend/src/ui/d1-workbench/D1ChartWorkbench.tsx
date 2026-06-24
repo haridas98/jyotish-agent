@@ -271,6 +271,7 @@ export function D1ChartWorkbench({ model, onRecalculate, onScopeChange, readOnly
       <D1ActiveScopeReviewStrip model={model} mode={workbenchState.mode} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
       <D1TechnicalPayloadIndex model={model} onOpenTechnical={() => setActiveTab("technical")} />
       <D1CalculationPassport model={model} activeScopeMeta={activeScopeMeta} activeAccuracyGate={activeAccuracyGate} />
+      <D1ClassicalPayloadStatusStrip model={model} />
       <D1MobileWorkflowNav activeTab={workbenchState.activeTab} onGrahaJump={() => setActiveTab("grahas")} />
 
       <div className="d1-main-grid">
@@ -508,6 +509,36 @@ function D1CalculationPassport({
         ))}
       </div>
       <span hidden>E149-A; E150-A; chart_viewer_calculation_passport_visible=true; calculation_passport_input_settings_visible=true; calculation_passport_birth_coordinates_visible=true; calculation_passport_panchanga_visible=true; calculation_passport_varga_scope_counts_visible=true; calculation_passport_dasha_classical_counts_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
+    </section>
+  );
+}
+
+function D1ClassicalPayloadStatusStrip({ model }: { model: D1WorkbenchModel }) {
+  const classicalPayloadStatusItems = [
+    { key: "avasthas", label: "Avasthas" },
+    { key: "vimshopaka_bala", label: "Vimshopaka" },
+    { key: "ashtakavarga", label: "Ashtakavarga" },
+    { key: "shadbala", label: "Shadbala" },
+    { key: "yogas", label: "Yogas" },
+    { key: "argala", label: "Argala" },
+    { key: "special_points", label: "Special points" },
+  ];
+
+  return (
+    <section className="d1-classical-payload-status" data-d1-classical-payload-status-stage="E151-A" aria-label="Classical payload status">
+      <div className="d1-classical-payload-status-title">
+        <strong>Classical modules</strong>
+        <span>status labels from the saved calculation payload</span>
+      </div>
+      <div className="d1-classical-payload-status-grid">
+        {classicalPayloadStatusItems.map((item) => (
+          <span key={item.key} data-classical-payload-status-item={item.key}>
+            <strong>{item.label}</strong>
+            {technicalSummaryValue(model.technical.classical, item.key)}
+          </span>
+        ))}
+      </div>
+      <span hidden>E151-A; chart_viewer_classical_payload_status_visible=true; classical_payload_avasthas_status_visible=true; classical_payload_vimshopaka_status_visible=true; classical_payload_ashtakavarga_status_visible=true; classical_payload_shadbala_status_visible=true; classical_payload_yogas_status_visible=true; classical_payload_argala_status_visible=true; classical_payload_special_points_status_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </section>
   );
 }
