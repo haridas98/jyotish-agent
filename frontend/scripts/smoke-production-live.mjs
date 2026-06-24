@@ -24,6 +24,18 @@ for (const path of pagePaths) {
   await assertPageOk(`${frontendBaseUrl}${path}`, path);
 }
 
+const technicalDemoMarkers = [
+  'data-d1-calculation-passport-stage="E149-A"',
+  "E150-A",
+  'data-d1-classical-payload-status-stage="E151-A"',
+  'data-d1-dasha-status-stage="E152-A"',
+  "calculation_passport_birth_coordinates_visible=true",
+  "chart_viewer_classical_payload_status_visible=true",
+  "chart_viewer_dasha_status_visible=true",
+];
+const demoHtml = await assertPageOk(`${frontendBaseUrl}/charts/demo-d1`, "/charts/demo-d1");
+assertPageContains(demoHtml, technicalDemoMarkers, "/charts/demo-d1");
+
 await assertStatus(`${apiBaseUrl}/api/auth/csrf`, "CSRF endpoint", [200]);
 await assertStatus(`${apiBaseUrl}/api/calculations/ephemeris/status`, "private calculation API gate", [200, 401, 403]);
 
@@ -34,6 +46,7 @@ console.log(
       deployCommit: health.deploy_commit,
       checkedPages: pagePaths,
       checkedApi: ["/api/auth/csrf", "/api/calculations/ephemeris/status"],
+      checkedMarkers: technicalDemoMarkers,
       writeOperations: false,
     },
     null,
@@ -55,9 +68,17 @@ async function assertPageOk(url, label) {
   const response = await fetchWithTimeout(url, {
     headers: { Accept: "text/html" },
   });
+  const text = await response.text();
   const contentType = response.headers.get("content-type") || "";
   assert(response.ok, `${label} page failed: HTTP ${response.status}`);
   assert(contentType.includes("text/html"), `${label} page must return HTML, got ${contentType}`);
+  return text;
+}
+
+function assertPageContains(html, markers, label) {
+  for (const marker of markers) {
+    assert(html.includes(marker), `${label} page missing marker: ${marker}`);
+  }
 }
 
 async function assertStatus(url, label, allowedStatuses) {
