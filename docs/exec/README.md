@@ -2,6 +2,11 @@
 
 Create one file per independently verifiable milestone.
 
+Start managed work from:
+
+- `2026-06-24-stage-outcomes-and-manager-program.md`
+- `2026-06-24-manager-prompts.md`
+
 Each ExecPlan must include:
 
 - purpose;

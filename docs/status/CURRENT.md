@@ -40,7 +40,7 @@ Known non-deployed branch work:
 
 ## Active Milestone
 
-Stage 3 planned, not implemented in this supervisor thread.
+Managed execution tree being introduced. Stage 3 is planned, not implemented in this supervisor thread.
 
 Next work must start from a fresh session with a single ExecPlan under `docs/exec/`.
 
@@ -48,7 +48,14 @@ UX/UI work must start from a separate design session using `docs/design/` as the
 
 ## Exact Next Action
 
-Run Stage 3 Chart Workflow Hardening in a fresh session after adding a dedicated ExecPlan:
+Use the manager tree before running more implementation:
+
+- Manager program: `docs/exec/2026-06-24-stage-outcomes-and-manager-program.md`
+- Manager prompts: `docs/exec/2026-06-24-manager-prompts.md`
+
+The Calculation / Technical Core Manager must first independently verify Stage 2 commit `5a2ad2c9c2cb0aebfa95079cb01bb29c12100a84`.
+
+After Stage 2 is accepted, run Stage 3 Chart Workflow Hardening in a fresh worker session after adding a dedicated ExecPlan:
 
 - ExecPlan: create `docs/exec/2026-06-24-03-chart-workflow-hardening.md`
 - Prompt: `docs/exec/2026-06-24-session-prompts.md`
