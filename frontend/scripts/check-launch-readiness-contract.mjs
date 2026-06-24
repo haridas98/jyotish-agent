@@ -17,6 +17,7 @@ const aiReviewDocs = read("../docs/ai_review_quality_reset.md");
 const productionCheck = read("scripts/production-check.mjs");
 const calculatorSmoke = read("scripts/smoke-calculator-launch.mjs");
 const productionLiveSmoke = read("scripts/smoke-production-live.mjs");
+const launchStatusBrowserSmoke = read("scripts/smoke-launch-status-browser.mjs");
 const startDevScript = read("../start-dev.ps1");
 const aiReviewQuality = read("src/lib/ai-review-quality.ts");
 const aiReviewQualityCheck = read("scripts/check-ai-review-quality.mjs");
@@ -29,6 +30,7 @@ for (const marker of [
   "test:launch-readiness",
   "smoke:calculator-launch",
   "smoke:production-live",
+  "smoke:launch-status-browser",
   "test:ai-review-quality",
   "production-check",
   "build:prod",
@@ -82,6 +84,19 @@ for (const marker of [
   "writeOperations: false",
 ]) {
   assert(productionLiveSmoke.includes(marker), `production live smoke missing marker: ${marker}`);
+}
+
+for (const marker of [
+  "LAUNCH_STATUS_BROWSER_SMOKE_URL",
+  "JYOTISH_PUBLIC_EXPECTED_DEPLOY_COMMIT",
+  'data-launch-live-health-stage="E153-A"',
+  "/api/health",
+  "launch_status_browser_health_fetch_observed=true",
+  "launch_status_browser_deploy_commit_rendered=true",
+  "findBrowserExecutable",
+  "Fetch.fulfillRequest",
+]) {
+  assert(launchStatusBrowserSmoke.includes(marker), `launch-status browser smoke missing marker: ${marker}`);
 }
 
 for (const marker of [
