@@ -45,7 +45,12 @@ UX/UI work must start from a separate design session using `docs/design/` as the
 
 ## Exact Next Action
 
-Choose one next milestone and write a self-contained ExecPlan before editing code.
+Run Stage 1 Technical Core Audit in a fresh session:
+
+- ExecPlan: `docs/exec/2026-06-24-01-technical-core-audit.md`
+- Prompt: `docs/exec/2026-06-24-session-prompts.md`
+
+Do not implement formulas before this audit proves the actual gap.
 
 Recommended next candidates:
 
