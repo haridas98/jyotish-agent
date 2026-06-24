@@ -61,19 +61,19 @@ UX/UI work must start from a separate design session using `docs/design/` as the
 
 ## Exact Next Action
 
-Independent verifier should review Stage 3 worker output:
+Independent verifier should review AI Review Saved Chart Grounding Gate output:
 
-- Manager program: `docs/exec/2026-06-24-stage-outcomes-and-manager-program.md`
-- Manager prompts: `docs/exec/2026-06-24-manager-prompts.md`
-- Stage 3 handoff: `docs/handoffs/2026-06-24-chart-workflow-hardening.md`
+- ExecPlan: `docs/exec/2026-06-24-ai-review-quality-saved-chart-gate.md`
+- Handoff: `docs/handoffs/2026-06-24-ai-review-saved-chart-grounding-gate.md`
+- Base milestone: `48e4b896fea184a53e748672cf85a0e682a9c124`
 
-After Stage 3 is accepted, choose the next single milestone through the manager tree.
+After this gate is accepted, choose the next single milestone through the manager tree.
 
 Do not implement formulas, AI review, OCR, JH/PL witness work, or UX redesign in this verification step.
 
 Recommended next candidates:
 
-- Accuracy Witness or another manager-selected single ExecPlan after Stage 3 verifier acceptance.
+- Accuracy Witness or another manager-selected single ExecPlan after gate verifier acceptance.
 
 ## Do Not Touch Without New ExecPlan
 
