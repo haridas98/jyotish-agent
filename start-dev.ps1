@@ -27,12 +27,32 @@ function Repair-PathEnvironment {
     }
 }
 
-Repair-PathEnvironment
+function Resolve-NpmCommand {
+    $command = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
+    }
 
-$NpmCommand = Get-Command "npm.cmd" -ErrorAction SilentlyContinue
-if (-not $NpmCommand) {
-    $NpmCommand = Get-Command "npm" -ErrorAction SilentlyContinue
+    $command = Get-Command "npm" -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
+    }
+
+    foreach ($candidate in @(
+        "C:\Program Files\nodejs\npm.cmd",
+        "C:\Program Files (x86)\nodejs\npm.cmd",
+        "$env:APPDATA\npm\npm.cmd"
+    )) {
+        if ($candidate -and (Test-Path $candidate)) {
+            return $candidate
+        }
+    }
+
+    return $null
 }
+
+Repair-PathEnvironment
+$NpmCommandPath = Resolve-NpmCommand
 
 function Write-Step($Message) {
     Write-Host "[jyotish-agent] $Message" -ForegroundColor Cyan
@@ -105,10 +125,10 @@ if ($Install) {
     Invoke-Checked $BackendDir $Python @("-m", "pip", "install", "-e", ".[dev]")
 
     Write-Step "Installing frontend dependencies"
-    if (-not $NpmCommand) {
+    if (-not $NpmCommandPath) {
         throw "npm is not installed or not in PATH"
     }
-    Invoke-Checked $FrontendDir $NpmCommand.Source @("install")
+    Invoke-Checked $FrontendDir $NpmCommandPath @("install")
 
     Write-Step "Running migrations and seed commands"
     Invoke-Checked $BackendDir $Python @("manage.py", "migrate")
@@ -121,7 +141,7 @@ if (-not (Test-Path $Python)) {
     throw "Backend venv not found. Run: .\start-dev.ps1 -Install"
 }
 
-if (-not $NpmCommand) {
+if (-not $NpmCommandPath) {
     throw "npm is not installed or not in PATH"
 }
 
@@ -168,7 +188,7 @@ $BackendProcess = Start-Process `
 
 Write-Step "Starting frontend on 127.0.0.1:$FrontendPort"
 $FrontendProcess = Start-Process `
-    -FilePath $NpmCommand.Source `
+    -FilePath $NpmCommandPath `
     -ArgumentList @("run", "dev", "--", "--hostname", "127.0.0.1", "--port", "$FrontendPort") `
     -WorkingDirectory $FrontendDir `
     -RedirectStandardOutput $FrontendOut `

@@ -17,6 +17,7 @@ const aiReviewDocs = read("../docs/ai_review_quality_reset.md");
 const productionCheck = read("scripts/production-check.mjs");
 const calculatorSmoke = read("scripts/smoke-calculator-launch.mjs");
 const productionLiveSmoke = read("scripts/smoke-production-live.mjs");
+const startDevScript = read("../start-dev.ps1");
 const aiReviewQuality = read("src/lib/ai-review-quality.ts");
 const aiReviewQualityCheck = read("scripts/check-ai-review-quality.mjs");
 const reportsPage = read("src/app/reports/page.tsx");
@@ -69,6 +70,15 @@ for (const marker of [
   "writeOperations: false",
 ]) {
   assert(productionLiveSmoke.includes(marker), `production live smoke missing marker: ${marker}`);
+}
+
+for (const marker of [
+  "Resolve-NpmCommand",
+  "Get-Command \"npm.cmd\"",
+  "C:\\Program Files\\nodejs\\npm.cmd",
+  "$NpmCommandPath",
+]) {
+  assert(startDevScript.includes(marker), `start-dev.ps1 missing npm resolution marker: ${marker}`);
 }
 
 for (const marker of [
