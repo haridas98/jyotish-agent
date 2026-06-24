@@ -76,6 +76,7 @@
     "smoke:transits-browser": "node scripts/smoke-transits-browser.mjs",
     "smoke:launch-status-browser": "node scripts/smoke-launch-status-browser.mjs",
     "smoke:calculator-launch": "node scripts/smoke-calculator-launch.mjs",
+    "smoke:chart-workflow": "node scripts/smoke-chart-workflow.mjs",
     "smoke:production-live": "node scripts/smoke-production-live.mjs",
     "smoke:public-transit-contract": "node scripts/check-public-transit-contract.mjs",
     "smoke:ai-staging": "node scripts/smoke-ai-staging.mjs",

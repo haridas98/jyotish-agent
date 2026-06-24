@@ -2595,8 +2595,21 @@ export type ChartProfile = {
     status: string;
     calculation_version: string;
     graha_count: number;
+    error: string;
     created_at: string;
     updated_at: string;
+  };
+  calculation_state: {
+    status: "not_calculated" | "calculation_requested" | "complete" | "failed" | "stale" | string;
+    has_calculation: boolean;
+    has_complete_calculation: boolean;
+    latest_calculation_id: number | null;
+    latest_calculation_status: string | null;
+    requires_recalculation: boolean;
+    is_stale: boolean;
+    message: string;
+    calculated_at: string | null;
+    updated_at: string | null;
   };
   created_at: string;
   updated_at: string;
@@ -2696,7 +2709,9 @@ export type ChartCalculationRecord = {
   ayanamsa: string;
   house_system: string;
   status: string;
+  reused: boolean;
   error: string;
+  message: string;
   result: BirthChart;
   created_at: string;
   updated_at: string;

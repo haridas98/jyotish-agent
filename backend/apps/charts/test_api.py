@@ -8,7 +8,7 @@ from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
-from apps.calculations.chart import CALCULATION_VERSION
+from apps.calculations.chart import CALCULATION_VERSION, ChartInputError
 
 from .models import BirthProfile, BirthProfileRelationship, ChartCalculation
 from .services import _profile_input
@@ -61,6 +61,25 @@ def _add_secondary_shodasha_fixture_vargas(calculation: ChartCalculation) -> Non
         }
     )
     calculation.save(update_fields=["result"])
+
+
+def _minimal_chart_result() -> dict:
+    return {
+        "settings": {
+            "ayanamsa": "lahiri",
+            "house_system": "whole_sign",
+            "node_type": "true",
+            "calculation_model": "drik_siddhanta",
+        },
+        "ascendant": {"body": "Lagna", "longitude": 90.0, "rashi": "Cancer", "rashi_index": 3, "nakshatra": "Pushya", "pada": 1},
+        "grahas": [
+            {"body": "Surya", "longitude": 120.0, "rashi": "Leo", "rashi_index": 4, "nakshatra": "Magha", "pada": 1},
+        ],
+        "houses": [{"house": 1, "rashi": "Cancer", "rashi_index": 3}],
+        "vargas": {},
+        "panchanga": {},
+        "dashas": {},
+    }
 
 
 @pytest.mark.django_db
@@ -458,7 +477,6 @@ def test_birth_profile_list_batches_latest_calculation_queries(user):
     assert all(item["latest_calculation"]["graha_count"] == 1 for item in response.data["profiles"])
     assert len(captured.captured_queries) <= 5
     sql = "\n".join(query["sql"].lower() for query in captured.captured_queries)
-    assert '"charts_chartcalculation"."input_snapshot"' not in sql
     assert '"charts_chartcalculation"."result"' not in sql
 
 
@@ -491,6 +509,224 @@ def test_birth_profile_calculate_reuses_current_complete_calculation(user):
     assert response.data["calculation"]["id"] == existing.id
     assert response.data["calculation"]["reused"] is True
     assert ChartCalculation.objects.filter(profile=profile).count() == 1
+
+
+@pytest.mark.django_db
+def test_chart_profile_detail_marks_saved_not_calculated(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Saved only chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    response = client.get(f"/api/charts/profiles/{create_response.data['profile']['id']}")
+
+    assert response.status_code == 200
+    state = response.data["profile"]["calculation_state"]
+    assert state["status"] == "not_calculated"
+    assert state["has_calculation"] is False
+    assert state["requires_recalculation"] is False
+    assert "not been calculated" in state["message"]
+
+
+@pytest.mark.django_db
+def test_chart_profile_detail_marks_current_calculation_complete(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Current complete chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result=_minimal_chart_result(),
+    )
+
+    response = client.get(f"/api/charts/profiles/{profile.id}")
+
+    assert response.status_code == 200
+    assert response.data["profile"]["latest_calculation"]["status"] == "complete"
+    state = response.data["profile"]["calculation_state"]
+    assert state["status"] == "complete"
+    assert state["has_complete_calculation"] is True
+    assert state["requires_recalculation"] is False
+
+
+@pytest.mark.django_db
+def test_chart_profile_calculate_returns_failed_state_with_message(user, monkeypatch):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Failed chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+
+    def fake_build_birth_chart(data, provider=None):
+        raise ChartInputError("birth_time must be HH:MM")
+
+    monkeypatch.setattr("apps.charts.services.build_birth_chart", fake_build_birth_chart)
+
+    response = client.post(f"/api/charts/profiles/{create_response.data['profile']['id']}/calculate")
+    detail_response = client.get(f"/api/charts/profiles/{create_response.data['profile']['id']}")
+
+    assert response.status_code == 503
+    assert response.data["calculation"]["status"] == "failed"
+    assert response.data["calculation"]["error"] == "birth_time must be HH:MM"
+    assert response.data["calculation"]["message"] == "birth_time must be HH:MM"
+    assert detail_response.data["profile"]["calculation_state"]["status"] == "failed"
+    assert detail_response.data["profile"]["calculation_state"]["message"] == "birth_time must be HH:MM"
+
+
+@pytest.mark.django_db
+def test_chart_profile_responses_mark_stale_after_birth_data_edit(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Stale chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result=_minimal_chart_result(),
+    )
+
+    patch_response = client.patch(
+        f"/api/charts/profiles/{profile.id}",
+        {"birth_time": "11:25"},
+        format="json",
+    )
+    detail_response = client.get(f"/api/charts/profiles/{profile.id}")
+    list_response = client.get("/api/charts/profiles")
+    workbench_response = client.get(f"/api/charts/{profile.id}/workbench?scope=d1")
+
+    assert patch_response.status_code == 200
+    for payload in [
+        patch_response.data["profile"],
+        detail_response.data["profile"],
+        list_response.data["profiles"][0],
+        workbench_response.data["profile"],
+    ]:
+        state = payload["calculation_state"]
+        assert state["status"] == "stale"
+        assert state["requires_recalculation"] is True
+        assert state["is_stale"] is True
+
+
+@pytest.mark.django_db
+def test_chart_profile_recalculation_after_stale_edit_marks_complete(user, monkeypatch):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Recalculated chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+        },
+        format="json",
+    )
+    profile = BirthProfile.objects.select_related("place").get(id=create_response.data["profile"]["id"])
+    old_calculation = ChartCalculation.objects.create(
+        profile=profile,
+        calculation_version=CALCULATION_VERSION,
+        input_snapshot=_profile_input(profile),
+        status=ChartCalculation.Status.COMPLETE,
+        result=_minimal_chart_result(),
+    )
+    client.patch(f"/api/charts/profiles/{profile.id}", {"birth_time": "11:25"}, format="json")
+
+    monkeypatch.setattr("apps.charts.services.build_birth_chart", lambda data, provider=None: _minimal_chart_result())
+
+    response = client.post(f"/api/charts/profiles/{profile.id}/calculate")
+    profile.refresh_from_db()
+    new_calculation = ChartCalculation.objects.order_by("-created_at", "-id").first()
+    detail_response = client.get(f"/api/charts/profiles/{profile.id}")
+
+    assert response.status_code == 201
+    assert response.data["calculation"]["status"] == "complete"
+    assert response.data["calculation"]["id"] != old_calculation.id
+    assert new_calculation.input_snapshot == _profile_input(profile)
+    assert detail_response.data["profile"]["calculation_state"]["status"] == "complete"
+    assert detail_response.data["profile"]["calculation_state"]["requires_recalculation"] is False
+
+
+@pytest.mark.django_db
+def test_chart_profile_edit_preserves_birth_data_and_calculation_assumptions(user):
+    client = APIClient()
+    client.force_authenticate(user=user)
+    create_response = client.post(
+        "/api/charts/profiles",
+        {
+            "display_name": "Editable assumptions chart",
+            "birth_date": "1990-08-15",
+            "birth_time": "10:24",
+            "place_name": "Vrindavan",
+            "node_type": "mean",
+            "ayanamsa": "lahiri",
+            "house_system": "whole_sign",
+            "varga_scheme": "parashara",
+        },
+        format="json",
+    )
+
+    patch_response = client.patch(
+        f"/api/charts/profiles/{create_response.data['profile']['id']}",
+        {
+            "birth_date": "1990-08-16",
+            "birth_time": "11:25",
+            "place_name": "Mayapur",
+            "node_type": "true",
+            "ayanamsa": "lahiri",
+            "house_system": "whole_sign",
+            "varga_scheme": "jhora_uma_shambhu",
+        },
+        format="json",
+    )
+    detail_response = client.get(f"/api/charts/profiles/{create_response.data['profile']['id']}")
+
+    assert patch_response.status_code == 200
+    profile_payload = detail_response.data["profile"]
+    assert profile_payload["birth_date"] == "1990-08-16"
+    assert profile_payload["birth_time"] == "11:25"
+    assert profile_payload["place"]["label"] == "Mayapur, West Bengal, IN"
+    assert profile_payload["calculation_settings"]["node_type"] == "true"
+    assert profile_payload["calculation_settings"]["ayanamsa"] == "lahiri"
+    assert profile_payload["calculation_settings"]["house_system"] == "whole_sign"
+    assert profile_payload["calculation_settings"]["varga_scheme"] == "jhora_uma_shambhu"
 
 
 @pytest.mark.django_db

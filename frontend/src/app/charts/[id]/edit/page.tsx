@@ -44,6 +44,7 @@ export default function EditChartPage() {
 
   return (
     <ProductShell active="charts">
+      <span hidden>chart-workflow-edit-preserves-assumptions</span>
       {status ? <div className="product-status">{status}</div> : null}
       {profile ? (
         <ChartProfileForm mode="edit" profile={profile} onSaved={(saved) => router.push(`/charts/${saved.id}`)} />

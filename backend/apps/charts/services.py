@@ -224,7 +224,19 @@ def profiles_payload(profiles: list[BirthProfile]) -> list[dict[str, Any]]:
         .values_list("latest_calculation_id", flat=True)
         if calculation_id is not None
     ]
-    calculations = ChartCalculation.objects.filter(id__in=latest_ids).defer("input_snapshot", "result")
+    calculations = ChartCalculation.objects.filter(id__in=latest_ids).only(
+        "id",
+        "profile_id",
+        "calculation_version",
+        "ayanamsa",
+        "house_system",
+        "input_snapshot",
+        "graha_count",
+        "status",
+        "error",
+        "created_at",
+        "updated_at",
+    )
     by_profile_id = {calculation.profile_id: calculation for calculation in calculations}
     return [
         profile_payload(profile, latest_calculation=by_profile_id.get(profile.id))
@@ -250,6 +262,7 @@ def profile_payload(profile: BirthProfile, *, latest_calculation: ChartCalculati
         "latest_calculation": latest_calculation_summary(latest_calculation)
         if isinstance(latest_calculation, ChartCalculation)
         else None,
+        "calculation_state": calculation_state_payload(profile, latest_calculation=latest_calculation),
         "created_at": profile.created_at.isoformat(),
         "updated_at": profile.updated_at.isoformat(),
     }
@@ -547,6 +560,7 @@ def place_payload(place: Place) -> dict[str, Any]:
 
 
 def calculation_payload(calculation: ChartCalculation) -> dict[str, Any]:
+    message = calculation_state_message(calculation, is_stale=False)
     return {
         "id": calculation.id,
         "profile_id": calculation.profile_id,
@@ -556,6 +570,7 @@ def calculation_payload(calculation: ChartCalculation) -> dict[str, Any]:
         "status": calculation.status,
         "reused": bool(getattr(calculation, "_jyotish_reused", False)),
         "error": calculation.error,
+        "message": message,
         "result": calculation.result,
         "created_at": calculation.created_at.isoformat(),
         "updated_at": calculation.updated_at.isoformat(),
@@ -568,9 +583,66 @@ def latest_calculation_summary(calculation: ChartCalculation) -> dict[str, Any]:
         "status": calculation.status,
         "calculation_version": calculation.calculation_version,
         "graha_count": calculation.graha_count,
+        "error": calculation.error,
         "created_at": calculation.created_at.isoformat(),
         "updated_at": calculation.updated_at.isoformat(),
     }
+
+
+def calculation_state_payload(
+    profile: BirthProfile,
+    *,
+    latest_calculation: ChartCalculation | object | None = _LATEST_CALCULATION_SENTINEL,
+) -> dict[str, Any]:
+    if latest_calculation is _LATEST_CALCULATION_SENTINEL:
+        latest_calculation = profile.calculations.order_by("-created_at", "-id").first()
+
+    if not isinstance(latest_calculation, ChartCalculation):
+        return {
+            "status": "not_calculated",
+            "has_calculation": False,
+            "has_complete_calculation": False,
+            "latest_calculation_id": None,
+            "latest_calculation_status": None,
+            "requires_recalculation": False,
+            "is_stale": False,
+            "message": "Saved profile has not been calculated yet. Calculate the saved profile to create chart results.",
+            "calculated_at": None,
+            "updated_at": None,
+        }
+
+    is_stale = latest_calculation.input_snapshot != _profile_input(profile)
+    if is_stale:
+        status = "stale"
+    elif latest_calculation.status == ChartCalculation.Status.COMPLETE:
+        status = "complete"
+    elif latest_calculation.status == ChartCalculation.Status.FAILED:
+        status = "failed"
+    else:
+        status = "calculation_requested"
+
+    return {
+        "status": status,
+        "has_calculation": True,
+        "has_complete_calculation": latest_calculation.status == ChartCalculation.Status.COMPLETE,
+        "latest_calculation_id": latest_calculation.id,
+        "latest_calculation_status": latest_calculation.status,
+        "requires_recalculation": is_stale,
+        "is_stale": is_stale,
+        "message": calculation_state_message(latest_calculation, is_stale=is_stale),
+        "calculated_at": latest_calculation.created_at.isoformat(),
+        "updated_at": latest_calculation.updated_at.isoformat(),
+    }
+
+
+def calculation_state_message(calculation: ChartCalculation, *, is_stale: bool) -> str:
+    if is_stale:
+        return "Saved birth data or calculation settings changed after this calculation. Recalculate to update chart results."
+    if calculation.status == ChartCalculation.Status.COMPLETE:
+        return "Calculation is complete for the saved profile data."
+    if calculation.status == ChartCalculation.Status.FAILED:
+        return calculation.error or "Calculation failed. Review the saved birth data and calculate again."
+    return "Calculation has been requested and is not complete yet."
 
 
 def _resolve_profile_place(data: dict[str, Any], place_name: str) -> PlaceCandidate:

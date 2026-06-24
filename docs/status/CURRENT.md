@@ -13,18 +13,20 @@ Updated: 2026-06-24
 
 ## Last Completed Milestone
 
-Stage 2 Live Workbench Contract Gate.
+Stage 3 Chart Workflow Hardening.
 
 Evidence:
 
 - Audit handoff: `docs/handoffs/2026-06-24-technical-core-audit.md`
 - Stage 2 handoff: `docs/handoffs/2026-06-24-live-workbench-contract-gate.md`
+- Stage 3 handoff: `docs/handoffs/2026-06-24-chart-workflow-hardening.md`
 - Baseline commit audited: `3669f619`
 - Production runtime remains `8c23a784`; `/api/health` returns `deploy_commit=8c23a784`.
 - D1/D2/D3/D4/D7/D9/D10/D12/D16/D20/D24/D27/D30/D40/D45/D60 have backend calculation, saved workbench API, frontend switch/display, and automated evidence.
-- Focused validation passed: backend varga/chart API/services pytest, real local `smoke:calculator-launch`, `test:launch-readiness`, `test:d1-workbench`, `test:chart-workbench-ux`, `test:chart-detail-smoke`, `test:dasha-workbench`, `typecheck`, `build`, `production-check`.
+- Chart workflow state contract is explicit for saved/not calculated, calculation requested, complete, failed, stale, and recalculated states.
+- Focused validation passed: backend chart API pytest, real local `smoke:calculator-launch`, real local `smoke:chart-workflow`, `test:launch-readiness`, `test:chart-detail-smoke`, `typecheck`, `build`, `production-check`.
 - `test:launch-readiness` now requires `smoke:calculator-launch` as release evidence for D1-D60 saved workbench scopes and core payload/status markers.
-- Runtime code was not changed.
+- Runtime code changed on branch only; production was not deployed.
 
 ## Latest Non-Deployed Branch Work
 
@@ -40,7 +42,7 @@ Known non-deployed branch work:
 
 ## Active Milestone
 
-Managed execution tree being introduced. Stage 3 is planned, not implemented in this supervisor thread.
+Stage 3 Chart Workflow Hardening is implemented and ready for independent verifier review.
 
 Next work must start from a fresh session with a single ExecPlan under `docs/exec/`.
 
@@ -48,23 +50,19 @@ UX/UI work must start from a separate design session using `docs/design/` as the
 
 ## Exact Next Action
 
-Use the manager tree before running more implementation:
+Independent verifier should review Stage 3 worker output:
 
 - Manager program: `docs/exec/2026-06-24-stage-outcomes-and-manager-program.md`
 - Manager prompts: `docs/exec/2026-06-24-manager-prompts.md`
+- Stage 3 handoff: `docs/handoffs/2026-06-24-chart-workflow-hardening.md`
 
-The Calculation / Technical Core Manager must first independently verify Stage 2 commit `5a2ad2c9c2cb0aebfa95079cb01bb29c12100a84`.
+After Stage 3 is accepted, choose the next single milestone through the manager tree.
 
-After Stage 2 is accepted, run Stage 3 Chart Workflow Hardening in a fresh worker session after adding a dedicated ExecPlan:
-
-- ExecPlan: `docs/exec/2026-06-24-03-chart-workflow-hardening.md`
-- Prompt: `docs/exec/2026-06-24-session-prompts.md`
-
-Do not implement formulas, AI review, OCR, JH/PL witness work, or UX redesign in the chart workflow hardening milestone.
+Do not implement formulas, AI review, OCR, JH/PL witness work, or UX redesign in this verification step.
 
 Recommended next candidates:
 
-- Chart workflow hardening: create/edit/calculate/view/recalculate state contracts and smoke checks.
+- Accuracy Witness or another manager-selected single ExecPlan after Stage 3 verifier acceptance.
 
 ## Do Not Touch Without New ExecPlan
 

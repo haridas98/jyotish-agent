@@ -14,12 +14,17 @@ const packageJson = read("../package.json");
 const chartsPage = read("../src/app/charts/page.tsx");
 const newChartPage = read("../src/app/charts/new/page.tsx");
 const detailPage = read("../src/app/charts/[id]/page.tsx");
+const editPage = read("../src/app/charts/[id]/edit/page.tsx");
+const profileForm = read("../src/app/charts/chart-profile-form.tsx");
+const workflowSmoke = read("smoke-chart-workflow.mjs");
 const fixture = read("../src/astrology/d1-workbench-smoke-fixture.ts");
 const component = read("../src/ui/d1-workbench/D1ChartWorkbench.tsx");
 
 for (const marker of [
   "test:chart-detail-smoke",
   "check-chart-detail-smoke.mjs",
+  "smoke:chart-workflow",
+  "smoke-chart-workflow.mjs",
 ]) {
   assert(packageJson.includes(marker), `Missing package chart detail smoke script marker: ${marker}`);
 }
@@ -50,6 +55,12 @@ for (const marker of [
   "refreshWorkbench",
   "handleRecalculate",
   "chart-detail-autocalculate",
+  "chart-workflow-state-not-calculated",
+  "chart-workflow-state-calculation-requested",
+  "chart-workflow-state-complete",
+  "chart-workflow-state-failed",
+  "chart-workflow-state-stale",
+  "chart-workflow-recalculate-complete",
   "buildD1WorkbenchSmokeModel()",
   "D1_WORKBENCH_SMOKE_USER_STATUS",
   "D1_WORKBENCH_POLISH_STAGE",
@@ -64,8 +75,39 @@ for (const marker of [
   "calculateSavedProfile",
   "handleSavedChartProfile",
   "chart-create-autocalculate",
+  "chart-workflow-state-calculation-requested",
 ]) {
   assert(newChartPage.includes(marker), `Missing chart create autocalculate marker: ${marker}`);
+}
+
+for (const marker of [
+  "ChartProfileForm",
+]) {
+  assert(editPage.includes(marker), `Missing edit page workflow marker: ${marker}`);
+}
+
+for (const marker of [
+  "chart-workflow-edit-preserves-assumptions",
+  "calculation_settings",
+]) {
+  assert(profileForm.includes(marker), `Missing profile form workflow marker: ${marker}`);
+}
+
+for (const marker of [
+  "chart-workflow-state-not-calculated",
+  "chart-workflow-state-calculation-requested",
+  "chart-workflow-state-complete",
+  "chart-workflow-state-failed",
+  "chart-workflow-state-stale",
+  "chart-workflow-recalculate-complete",
+  "chart-workflow-edit-preserves-assumptions",
+  "not_calculated",
+  "complete",
+  "stale",
+  "failed",
+  "/api/charts/profiles/${profile.id}/calculate",
+]) {
+  assert(workflowSmoke.includes(marker), `Missing chart workflow smoke marker: ${marker}`);
 }
 
 for (const marker of [

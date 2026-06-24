@@ -886,6 +886,7 @@ class BirthProfileWorkbenchView(APIView):
         )
         if scope not in _workbench_supported_scope_keys(profile):
             return Response({"error": "scope is not supported"}, status=400)
+        latest_calculation = profile.calculations.order_by("-created_at", "-id").first()
         calculation = (
             profile.calculations.filter(status=ChartCalculation.Status.COMPLETE)
             .order_by("-created_at", "-id")
@@ -894,7 +895,7 @@ class BirthProfileWorkbenchView(APIView):
         return Response(
             {
                 "scope": scope,
-                "profile": profile_payload(profile, latest_calculation=calculation),
+                "profile": profile_payload(profile, latest_calculation=latest_calculation),
                 "calculation": calculation_payload(calculation) if calculation else None,
                 "method": _workbench_scope_method_summary(calculation.result if calculation else {}, scope),
                 "warnings": _workbench_warnings(profile, scope),

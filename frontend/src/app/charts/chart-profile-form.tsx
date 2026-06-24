@@ -91,8 +91,9 @@ export function ChartProfileForm({ mode, profile, onSaved }: ChartProfileFormPro
       ...(draft.timezone.trim() ? { timezone: draft.timezone.trim() } : {}),
       ...(latitude !== undefined ? { latitude } : {}),
       ...(longitude !== undefined ? { longitude } : {}),
+      ...(mode === "edit" && profile?.calculation_settings ? profile.calculation_settings : {}),
     };
-  }, [draft]);
+  }, [draft, mode, profile]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -187,6 +188,7 @@ export function ChartProfileForm({ mode, profile, onSaved }: ChartProfileFormPro
         <a className="secondary-button" href="/charts">К списку</a>
       </div>
       {status ? <p className="chart-profile-status">{status}</p> : null}
+      {mode === "edit" ? <span hidden>chart-workflow-edit-preserves-assumptions</span> : null}
     </form>
   );
 }

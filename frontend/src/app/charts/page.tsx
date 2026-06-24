@@ -33,6 +33,15 @@ function profileMeta(profile: ChartProfile) {
   return `${profile.birth_date} · ${formatTime(profile)} · ${profile.place.label}`;
 }
 
+function workflowStateLabel(profile: ChartProfile) {
+  const state = profile.calculation_state;
+  if (state?.status === "complete") return "расчет готов";
+  if (state?.status === "stale") return "нужен пересчет";
+  if (state?.status === "failed") return "расчет не выполнен";
+  if (state?.status === "calculation_requested") return "расчет запрошен";
+  return "расчет не сохранен";
+}
+
 function latestProfile(profiles: ChartProfile[]) {
   return [...profiles].sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0] ?? null;
 }
@@ -190,6 +199,7 @@ export default function ChartsPage() {
                 <small>
                   {genderLabel(profile.gender)} · создана {formatDateTime(profile.created_at)} · обновлена {formatDateTime(profile.updated_at)} · {profile.timezone}
                 </small>
+                <small>{workflowStateLabel(profile)}</small>
               </div>
               <div className="chart-profile-card-actions">
                 <a href={`/charts/${profile.id}`}>Открыть</a>

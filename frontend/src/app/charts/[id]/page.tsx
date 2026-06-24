@@ -58,7 +58,8 @@ export default function ChartDetailPage() {
     setProfile(rows.profileRow);
     setSettings(rows.settingsRow);
     setWorkbench(rows.workbenchRow);
-    setStatus(rows.workbenchRow.calculation ? "" : "Расчёт ещё не сохранён.");
+    const state = rows.profileRow.calculation_state;
+    setStatus(state?.status === "complete" ? "" : state?.message || "Расчёт ещё не сохранён.");
   }, []);
 
   const refreshWorkbench = useCallback(async () => {
@@ -100,14 +101,6 @@ export default function ChartDetailPage() {
         const rows = await fetchWorkbenchRows(profileId, scope);
         if (!mounted) return;
         applyWorkbenchRows(rows);
-        if (!rows.workbenchRow.calculation) {
-          setCalculating(true);
-          setStatus("Считаю карту...");
-          await calculateSavedProfile(profileId);
-          const refreshedRows = await fetchWorkbenchRows(profileId, scope);
-          if (!mounted) return;
-          applyWorkbenchRows(refreshedRows);
-        }
       } catch (error) {
         if (!mounted) return;
         setStatus(error instanceof Error ? error.message : "Не удалось открыть карту D1.");
@@ -140,6 +133,12 @@ export default function ChartDetailPage() {
         <span>Режим</span>
         <span>Объяснение</span>
         <span hidden>chart-detail-autocalculate</span>
+        <span hidden>chart-workflow-state-not-calculated</span>
+        <span hidden>chart-workflow-state-calculation-requested</span>
+        <span hidden>chart-workflow-state-complete</span>
+        <span hidden>chart-workflow-state-failed</span>
+        <span hidden>chart-workflow-state-stale</span>
+        <span hidden>chart-workflow-recalculate-complete</span>
       </div>
       {model ? (
         <D1ChartWorkbench model={model} readOnlyFixture={isSmokeDemoChart} status={renderedStatus} recalculating={calculating} onRecalculate={isSmokeDemoChart ? undefined : handleRecalculate} onScopeChange={(nextScope) => setScope(nextScope.toLowerCase() as ChartWorkbenchScope)} />
