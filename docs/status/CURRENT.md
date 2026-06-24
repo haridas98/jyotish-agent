@@ -57,7 +57,7 @@ The Calculation / Technical Core Manager must first independently verify Stage 2
 
 After Stage 2 is accepted, run Stage 3 Chart Workflow Hardening in a fresh worker session after adding a dedicated ExecPlan:
 
-- ExecPlan: create `docs/exec/2026-06-24-03-chart-workflow-hardening.md`
+- ExecPlan: `docs/exec/2026-06-24-03-chart-workflow-hardening.md`
 - Prompt: `docs/exec/2026-06-24-session-prompts.md`
 
 Do not implement formulas, AI review, OCR, JH/PL witness work, or UX redesign in the chart workflow hardening milestone.
