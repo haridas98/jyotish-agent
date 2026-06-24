@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "fixtureKind": "saved_chart_workbench_fixture",
+  "fixtureId": "saved-chart-ai-review-quality-v1",
+  "sourceRoute": "/api/charts/107/workbench?scope=d1",
+  "provenance": {
+    "origin": "local_saved_chart_contract_fixture",
+    "workflow": "saved profile -> calculate -> workbench detail",
+    "rawWitnessArtifactsCommitted": false,
+    "publicQualityClaim": false,
+    "parityClaim": false
+  },
+  "profile": {
+    "id": 107,
+    "display_name": "AI review saved chart fixture",
+    "birth_date": "1990-08-15",
+    "birth_time": "10:24:00",
+    "timezone": "Asia/Kolkata",
+    "place": {
+      "name": "Vrindavan",
+      "country_code": "IN",
+      "latitude": 27.565,
+      "longitude": 77.659,
+      "timezone": "Asia/Kolkata"
+    }
+  },
+  "calculation": {
+    "id": 107,
+    "status": "complete",
+    "calculation_version": "saved-chart-ai-review-quality.v1",
+    "result": {
+      "passport": {
+        "zodiac": "sidereal",
+        "calculation_model": "drik_siddhanta",
+        "ayanamsa": "lahiri",
+        "node_type": "mean",
+        "ephemeris": "internal_contract_fixture",
+        "house_system": "whole_sign",
+        "varga_scheme": "parashara",
+        "timezone_source": "birth_place_timezone",
+        "coordinates": "27.565,77.659"
+      },
+      "ascendant": {
+        "body": "Lagna",
+        "rashi": "Cancer",
+        "house": 1,
+        "nakshatra": "Pushya",
+        "pada": 2,
+        "navamsa": "Virgo"
+      },
+      "grahas": [
+        { "body": "Sun", "rashi": "Cancer", "house": 1, "nakshatra": "Ashlesha", "pada": 1 },
+        { "body": "Moon", "rashi": "Aquarius", "house": 8, "nakshatra": "Purva Bhadrapada", "pada": 3 },
+        { "body": "Jupiter", "rashi": "Cancer", "house": 1, "nakshatra": "Punarvasu", "pada": 4, "dignity": "exalted" },
+        { "body": "Saturn", "rashi": "Capricorn", "house": 7, "nakshatra": "Uttara Ashadha", "pada": 3, "dignity": "own", "retrograde": true },
+        { "body": "Rahu", "rashi": "Taurus", "house": 11, "nakshatra": "Rohini", "pada": 1, "retrograde": true },
+        { "body": "Ketu", "rashi": "Scorpio", "house": 5, "nakshatra": "Anuradha", "pada": 3, "retrograde": true }
+      ],
+      "panchanga": {
+        "tithi": { "name": "Ekadashi" },
+        "vara": { "name": "Wednesday" },
+        "nakshatra": { "name": "Purva Bhadrapada", "pada": 3 },
+        "yoga": { "name": "Siddha" },
+        "karana": { "name": "Bava" }
+      },
+      "dashas": {
+        "vimshottari": {
+          "status": "calculated",
+          "current": { "lord": "Moon", "level": "mahadasha" },
+          "mahadashas": [
+            { "lord": "Moon", "starts_at": "2026-01-01", "ends_at": "2036-01-01" },
+            { "lord": "Mars", "starts_at": "2036-01-01", "ends_at": "2043-01-01" }
+          ]
+        }
+      },
+      "vargas": {
+        "D1": {
+          "status": "calculated",
+          "marker": "Cancer Lagna with Jupiter in Cancer"
+        },
+        "D9": {
+          "status": "calculated",
+          "marker": "Virgo Navamsa Lagna",
+          "placements": [
+            { "body": "Lagna", "rashi": "Virgo" },
+            { "body": "Moon", "rashi": "Gemini" }
+          ]
+        }
+      },
+      "classical": {
+        "shadbala": { "status": "calculated" },
+        "ashtakavarga": { "status": "calculated" },
+        "yogas": { "status": "calculated" },
+        "avasthas": { "status": "calculated" }
+      }
+    }
+  },
+  "drafts": {
+    "grounded": {
+      "id": "saved_chart_grounded_draft",
+      "text": "Chart anchors: Lagna in Cancer at Pushya pada 2 and Jupiter exalted in Cancer keep the review tied to D1 facts. Rule chain: Saturn in Capricorn in the 7th house is read as a concrete relationship-duty emphasis, while Moon in Aquarius in the 8th keeps the emotional reading cautious. Timing anchor: current Vimshottari Moon mahadasha is calculated, so timing language stays draft-only until more period detail is checked. Divisional anchor: D9 marker is Virgo Navamsa Lagna, so any dharma or relationship refinement is only a caveat, not a final claim. Classical caveat: shadbala, ashtakavarga, yogas, and avasthas are calculated payloads, but this draft does not rank planets from them. Practical question: which current relationship or public-duty decision should be checked first against the Moon dasha anchor? Emphasis points: Cancer Lagna with exalted Jupiter, Saturn in the 7th, Moon in the 8th, and calculated classical statuses."
+    },
+    "generic": {
+      "id": "saved_chart_generic_draft",
+      "text": "You have many opportunities and positive energy. Trust your intuition, follow your heart, and everything will unfold at the right time."
+    },
+    "overclaim": {
+      "id": "saved_chart_overclaim_draft",
+      "text": "This chart proves guaranteed relationship success, full JH/PL parity, and release accuracy. Shadbala and Ashtakavarga conclusively rank every planet without caveats or calculation anchors."
+    }
+  }
+}

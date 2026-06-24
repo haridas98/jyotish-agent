@@ -42,7 +42,18 @@ Known non-deployed branch work:
 
 ## Active Milestone
 
-Stage 3 Chart Workflow Hardening is implemented and ready for independent verifier review.
+AI Review Quality Saved Chart Grounding Gate is implemented and ready for independent verifier review.
+
+Evidence:
+
+- ExecPlan: `docs/exec/2026-06-24-ai-review-quality-saved-chart-gate.md`
+- Handoff: `docs/handoffs/2026-06-24-ai-review-saved-chart-grounding-gate.md`
+- Fixture: `frontend/src/data/ai-review-saved-chart-fixture.json`
+- Gate script: `frontend/scripts/check-ai-review-saved-chart-gate.mjs`
+- Named package script: `test:ai-review-saved-chart-gate`
+- `test:ai-review-quality` runs the existing harness plus the saved-chart gate.
+
+Production was not deployed.
 
 Next work must start from a fresh session with a single ExecPlan under `docs/exec/`.
 
