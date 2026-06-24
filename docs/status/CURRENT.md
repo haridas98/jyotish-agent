@@ -24,22 +24,20 @@ Evidence:
 - Focused validation passed: backend varga/chart API/services pytest, `test:launch-readiness`, `test:d1-workbench`, `test:chart-workbench-ux`, `test:chart-detail-smoke`, `test:dasha-workbench`, `typecheck`, `production-check`.
 - Runtime code was not changed.
 
-## Latest Non-Deployed Commit
+## Latest Non-Deployed Branch Work
 
-`e2b7bded` adds `smoke:launch-status-browser`.
+Branch commits after the deployed runtime are docs/test-safety/planning work unless a later handoff explicitly says runtime changed.
 
-Reason not deployed: test-safety only; production runtime is unchanged from `8c23a784`.
+Known non-deployed branch work:
 
-Verified:
-
-- `npm.cmd run test:launch-readiness`
-- `npm.cmd run typecheck`
-- `npm.cmd run smoke:launch-status-browser`
-- `npm.cmd run production-check`
+- `e2b7bded` adds `smoke:launch-status-browser`.
+- `d8c40a9e` documents the Stage 1 Technical Core Audit.
+- Current branch tip: run `git log -1 --oneline`.
+- Reason not deployed: no production runtime change requiring deploy.
 
 ## Active Milestone
 
-None in this thread.
+Stage 2 planned, not implemented in this supervisor thread.
 
 Next work must start from a fresh session with a single ExecPlan under `docs/exec/`.
 
@@ -49,7 +47,7 @@ UX/UI work must start from a separate design session using `docs/design/` as the
 
 Run Stage 2 Live Workbench Contract Gate in a fresh session:
 
-- Recommended ExecPlan: `docs/exec/2026-06-24-02-live-workbench-contract-gate.md`
+- ExecPlan: `docs/exec/2026-06-24-02-live-workbench-contract-gate.md`
 - Prompt: `docs/exec/2026-06-24-session-prompts.md`
 
 Do not implement formulas before the live saved-chart workbench gate proves a runtime failure.

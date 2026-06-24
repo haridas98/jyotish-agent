@@ -5,37 +5,38 @@ Use these prompts in fresh sessions. Do not run them all in parallel.
 ## Stage 1 Prompt: Technical Core Audit
 
 ```text
-Работай только над technical-core audit для Jyotish Agent.
+Work only on Stage 1 Technical Core Audit for Jyotish Agent.
 
-Рабочая папка: C:\w\jt-a
+Workspace: C:\w\jt-a
+Branch: codex/technical-launch-b
 
-Сначала прочитай:
+Read first:
 - docs/status/CURRENT.md
 - docs/roadmap/MASTER_PLAN.md
 - docs/exec/2026-06-24-functional-stage-program.md
 - docs/exec/2026-06-24-01-technical-core-audit.md
 - docs/handoffs/2026-06-24-technical-launch.md
 
-Не полагайся на историю старых чатов. Источник истины: repo + git.
+Do not rely on old chat history. Source of truth: repo + git.
 
-Цель:
-доказать, что именно уже работает в calculation / technical core, а что является настоящим пробелом.
+Goal:
+prove what already works in calculation / technical core and what is a real gap.
 
-Важно:
-- не менять runtime code;
-- не делать UX/UI;
-- не деплоить;
-- не claim parity с JH/PL;
-- не коммитить raw audio/ASR/Telegram/OCR.
+Rules:
+- do not change runtime code;
+- do not do UX/UI;
+- do not deploy;
+- do not claim JH/PL parity;
+- do not commit raw audio/ASR/Telegram/OCR.
 
-Можно использовать помощников, но только read-only:
+Use helpers only read-only:
 1. backend coverage helper;
 2. frontend/API visibility helper;
 3. test/regression helper.
 
-Не запускай помощника на каждую D-карту. D-карты проверяются матрицей, а не отдельными пишущими агентами.
+Do not create one helper per D-chart. Check D charts by matrix, not by separate writing agents.
 
-Сделай:
+Do:
 1. git status;
 2. baseline commit;
 3. production health;
@@ -45,47 +46,57 @@ Use these prompts in fresh sessions. Do not run them all in parallel.
 7. docs/handoffs/2026-06-24-technical-core-audit.md;
 8. update docs/status/CURRENT.md;
 9. one docs-only commit;
-10. stop.
+10. final must include READY_FOR_REVIEW, commit, tests, deploy status, git status.
 ```
 
-## Stage 2 Prompt: Calculation Gap Closure
+## Stage 2 Prompt: Live Workbench Contract Gate
 
 ```text
-Работай только над одним gap из technical-core audit.
+Work only on Stage 2 Live Workbench Contract Gate for Jyotish Agent.
 
-Сначала прочитай:
+Workspace: C:\w\jt-a
+Branch: codex/technical-launch-b
+
+Read first:
 - docs/status/CURRENT.md
 - docs/handoffs/2026-06-24-technical-core-audit.md
-- соответствующий docs/exec/<gap>.md
+- docs/exec/2026-06-24-functional-stage-program.md
+- docs/exec/2026-06-24-02-live-workbench-contract-gate.md
 
-Не выбирай gap сам, если CURRENT.md не называет точный next action.
+Goal:
+make the real saved-chart calculator smoke (npm.cmd run smoke:calculator-launch) required launch evidence for D1-D60 workbench scopes and core payload status.
 
-Цель:
-закрыть один подтверждённый calculation / technical-core gap минимальным изменением.
+Rules:
+- this is test/contract work first;
+- do not rewrite formulas unless the gate exposes a real runtime failure;
+- do not do UX/UI;
+- do not deploy test-only/docs-only changes;
+- do not create production users/charts;
+- keep JH/PL witness-only and make no parity claim;
+- do not touch raw audio/ASR/Telegram/OCR.
 
-Правила:
-- TDD: сначала failing test;
-- не менять UX/UI;
-- не трогать JH/PL parity claims;
-- не начинать следующий gap;
-- один commit.
+Expected focus:
+1. verify package scripts and launch-readiness contract;
+2. harden the contract so the calculator smoke cannot be skipped from launch evidence;
+3. run local calculator smoke against local services;
+4. run launch-readiness, production-check, typecheck, build;
+5. write docs/handoffs/2026-06-24-live-workbench-contract-gate.md;
+6. update docs/status/CURRENT.md;
+7. commit and push one focused milestone;
+8. stop.
 
-После:
-- обнови handoff;
-- обнови CURRENT.md;
-- запусти validation из ExecPlan;
-- stop.
+Final must include READY_FOR_REVIEW, commit, tests, deploy status, git status.
 ```
 
 ## Stage 3 Prompt: Chart Workflow Hardening
 
 ```text
-Работай только над chart workflow hardening.
+Work only on chart workflow hardening.
 
-Цель:
-сделать create/edit/calculate/view/recalculate состояния надёжными и проверяемыми.
+First read docs/status/CURRENT.md and the exact Stage 3 ExecPlan named there.
 
-Сначала создай/прочитай отдельный ExecPlan.
+Goal:
+make create/edit/calculate/view/recalculate states reliable and testable.
 
 In scope:
 - create profile;
@@ -101,64 +112,73 @@ Out of scope:
 - AI review;
 - OCR;
 - JH/PL parity.
+
+Final must include READY_FOR_REVIEW, commit, tests, deploy status, git status.
 ```
 
 ## Stage 4 Prompt: Accuracy Witness
 
 ```text
-Работай только над одним witness-only accuracy packet.
+Work only on one witness-only accuracy packet.
 
-JH/PL не являются authority и не дают parity claim.
+JH/PL are witness-only. Do not claim parity.
 
-Цель:
-добавить один reviewed witness packet/report with settings, version, reviewer/date, tolerances, artifacts.
+Goal:
+add one reviewed witness packet/report with settings, version, reviewer/date, tolerances, and artifacts.
 
 Out of scope:
 - proprietary internals;
 - bulk parity;
 - UI redesign;
 - AI interpretation.
+
+Final must include READY_FOR_REVIEW, commit, tests, deploy status, git status.
 ```
 
 ## Stage 5 Prompt: AI Review Quality
 
 ```text
-Работай только над одним AI review quality milestone.
+Work only on one AI review quality milestone.
 
-Цель:
-подключить stable saved-chart facts к gated review draft path.
+Goal:
+connect stable saved-chart facts to a gated review draft path.
 
-Правила:
+Rules:
 - no public quality claim;
 - no raw ASR/audio/Telegram/OCR;
 - require calculation anchors, evidence links, caveats, practical questions;
-- unsupported/generic analysis must be blocked before display.
+- block unsupported generic analysis before display.
+
+Final must include READY_FOR_REVIEW, commit, tests, deploy status, git status.
 ```
 
 ## Stage 6 Prompt: OCR Evidence Pipeline
 
 ```text
-Работай только над OCR evidence pipeline milestone.
+Work only on one OCR evidence pipeline milestone.
 
-Цель:
-валидировать reviewed OCR artifacts and provenance.
+Goal:
+validate reviewed OCR artifacts and provenance.
 
-Правила:
+Rules:
 - source artifact must include original/;
 - chart/table crops must be referenced;
 - research-only cannot become public citation;
 - no crude OCR chart blocks as final artifacts.
+
+Final must include READY_FOR_REVIEW, commit, tests, deploy status, git status.
 ```
 
 ## Stage 7 Prompt: UX/UI
 
 ```text
-Работай только как UX/UI design session.
+Work only as a UX/UI design session.
 
-Сначала прочитай docs/design.
+Read docs/design first.
+Do not change code.
 
-Не меняй code.
+Goal:
+audit /charts/:id, write a brief, produce 3 distinct visual directions, and stop for selection.
 
-Цель:
-audit /charts/:id, write brief, produce 3 distinct visual directions, stop for selection.
+Final must include READY_FOR_REVIEW, artifacts, tests/checks if any, deploy status, git status.
 ```
