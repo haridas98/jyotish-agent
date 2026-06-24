@@ -44,6 +44,10 @@ if (exists("src/astrology/d1-workbench.ts")) {
   assert(!model.includes('Ascendant: { code: "AS", entityId: "house.1"'), "Lagna must not be modeled as house.1 graha row");
   assert(model.includes("chartObjectCount"), "D1 model must expose total chart object count");
   assert(model.includes("technical:"), "D1 model must expose technical calculation payload");
+  assert(model.includes("latitude: profile.place.latitude"), "D1 model profile must carry birth-place latitude from API");
+  assert(model.includes("longitude: profile.place.longitude"), "D1 model profile must carry birth-place longitude from API");
+  assert(model.includes("countryCode: profile.place.country_code"), "D1 model profile must carry birth-place country code from API");
+  assert(model.includes("coordinates: formatCoordinates(profile.place.latitude, profile.place.longitude)"), "D1 model profile must expose formatted birth coordinates");
   assert(model.includes("buildTechnicalPayload"), "D1 model must normalize panchanga, dashas, vargas, house cusps and classical payload");
   assert(model.includes('scope.code === "D1"'), "D1 technical varga summary must treat the base D1 chart as available");
   assert(model.includes("chart.grahas.length + (chart.ascendant ? 1 : 0)"), "D1 technical varga summary must count D1 grahas plus Lagna");
@@ -113,13 +117,17 @@ if (exists("src/ui/d1-workbench/D1ChartWorkbench.tsx")) {
   assert(component.includes('href="#d1-technical-tab"'), "D1 technical payload index must link to the technical tab anchor");
   assert(component.includes("D1CalculationPassport"), "D1 workbench must render a technical calculation passport");
   assert(component.includes('data-d1-calculation-passport-stage="E149-A"'), "D1 calculation passport must expose the E149 marker");
+  assert(component.includes("E150-A"), "D1 calculation passport must expose the E150 birth-coordinate marker");
   assert(component.includes("chart_viewer_calculation_passport_visible=true"), "D1 calculation passport must expose visibility status");
   assert(component.includes("calculation_passport_input_settings_visible=true"), "D1 calculation passport must expose input settings status");
+  assert(component.includes("calculation_passport_birth_coordinates_visible=true"), "D1 calculation passport must expose birth coordinates status");
   assert(component.includes("calculation_passport_panchanga_visible=true"), "D1 calculation passport must expose panchanga status");
   assert(component.includes("calculation_passport_varga_scope_counts_visible=true"), "D1 calculation passport must expose varga scope count status");
   assert(component.includes("calculation_passport_dasha_classical_counts_visible=true"), "D1 calculation passport must expose dasha/classical count status");
   assert(component.includes("calculationPassportItems"), "D1 calculation passport must use one passport item registry");
   assert(component.includes("model.schemaVersion"), "D1 calculation passport must expose model schema version");
+  assert(component.includes("model.profile.coordinates"), "D1 calculation passport must render birth-place coordinates");
+  assert(component.includes("model.profile.countryCode"), "D1 calculation passport must render birth-place country code");
   assert(component.includes("model.technical.solarDay"), "D1 calculation passport must include solar-day payload facts");
   assert(component.includes("model.technical.houseCusps.length"), "D1 calculation passport must include house cusp count");
   assert(component.includes("data-calculation-passport-item={item.id}"), "D1 calculation passport must render stable item markers from registry ids");

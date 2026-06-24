@@ -88,8 +88,10 @@ if (frontendBaseUrl) {
     'data-d1-technical-payload-index-stage="E145-A"',
     "chart_viewer_payload_index_opens_technical_tab=true",
     'data-d1-calculation-passport-stage="E149-A"',
+    "E150-A",
     "chart_viewer_calculation_passport_visible=true",
     "calculation_passport_input_settings_visible=true",
+    "calculation_passport_birth_coordinates_visible=true",
   ], "demo chart detail page");
   const launchStatusHtml = await assertPageOk(`${frontendBaseUrl}/launch-status`, "launch status page");
   assertPageContains(launchStatusHtml, [

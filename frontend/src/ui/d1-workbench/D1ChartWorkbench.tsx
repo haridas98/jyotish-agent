@@ -458,7 +458,7 @@ function D1CalculationPassport({
       id: "birth-input",
       label: "Birth input",
       value: `${model.profile.birthDate} ${model.profile.birthTime}`,
-      detail: `${model.profile.place} / ${model.profile.timezone} / ${model.profile.birthTimeAccuracy}`,
+      detail: `${model.profile.place} / ${model.profile.coordinates} / ${model.profile.countryCode} / ${model.profile.timezone} / ${model.profile.birthTimeAccuracy}`,
     },
     {
       id: "calculation",
@@ -507,7 +507,7 @@ function D1CalculationPassport({
           </span>
         ))}
       </div>
-      <span hidden>E149-A; chart_viewer_calculation_passport_visible=true; calculation_passport_input_settings_visible=true; calculation_passport_panchanga_visible=true; calculation_passport_varga_scope_counts_visible=true; calculation_passport_dasha_classical_counts_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
+      <span hidden>E149-A; E150-A; chart_viewer_calculation_passport_visible=true; calculation_passport_input_settings_visible=true; calculation_passport_birth_coordinates_visible=true; calculation_passport_panchanga_visible=true; calculation_passport_varga_scope_counts_visible=true; calculation_passport_dasha_classical_counts_visible=true; backend_calculation_changed=false; {PRODUCTION_HEALTH_DEPLOY_MARKER}</span>
     </section>
   );
 }

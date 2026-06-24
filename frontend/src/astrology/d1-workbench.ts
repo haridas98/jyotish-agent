@@ -19,6 +19,10 @@ export type D1WorkbenchModel = {
     birthTime: string;
     birthTimeAccuracy: string;
     place: string;
+    latitude: number;
+    longitude: number;
+    countryCode: string;
+    coordinates: string;
     timezone: string;
     calculationPreset: string;
   };
@@ -278,6 +282,10 @@ export function buildD1WorkbenchModel(
       birthTime: profile.birth_time ?? "время не указано",
       birthTimeAccuracy: profile.birth_time_accuracy,
       place: profile.place.label,
+      latitude: profile.place.latitude,
+      longitude: profile.place.longitude,
+      countryCode: profile.place.country_code,
+      coordinates: formatCoordinates(profile.place.latitude, profile.place.longitude),
       timezone: profile.timezone,
       calculationPreset: profile.calculation_settings?.calculation_model ?? chart?.settings?.calculation_model ?? "drik_siddhanta",
     },
@@ -632,6 +640,10 @@ function formatDegreeInSign(longitude: number): string {
 
 function formatLongitude(longitude: number): string {
   return `${longitude.toFixed(6)}°`;
+}
+
+function formatCoordinates(latitude: number, longitude: number): string {
+  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 }
 
 function formatSpeed(speed: number): string {
